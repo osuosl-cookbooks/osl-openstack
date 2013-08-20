@@ -1,7 +1,6 @@
 
-# Define the the version of rdo wanted.
-default["osl-packstack"]["release"]     =   'havana'
-
+# RDO repo information
+default['osl-packstack']['rdo']['release']  = "grizzly"
 
 # TODO: Decide whether the repo url should go in here.
 

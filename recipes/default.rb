@@ -16,3 +16,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+# Setup the epel repo
+case node['platform']
+when "centos"
+  include_recipe "yum::epel"
+end
+
+
+# Setup the rdo repo
+yum_repository "openstack" do
+  repo_name "openstack-#{node['osl-packstack']['rdo']['release'].capitalize}"
+  description "Openstack #{node['osl-packstack']['rdo']['release'].capitalize} repo."
+  url "http://repos.fedorapeople.org/repos/openstack/openstack-#{node['osl-packstack']['rdo']['release']}/epel-#{node['platform_version'].to_i}/"
+  key "RPM-GPG-KEY-RDO-#{node['osl-packstack']['rdo']['release'].capitalize}"
+  action :add
+end
+
