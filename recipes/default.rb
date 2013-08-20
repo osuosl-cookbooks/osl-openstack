@@ -26,10 +26,10 @@ end
 
 # Setup the rdo repo
 yum_repository "openstack" do
-  repo_name "openstack-#{node['osl-packstack']['rdo']['release']}"
-  description "Openstack #{node['osl-packstack']['rdo']['release'].capitalize} repo."
+  repo_name "openstack-#{node['osl-packstack']['rdo']['release'].downcase}" # Sanity check, make sure it is entirely lowercase
+  description "Openstack #{node['osl-packstack']['rdo']['release'].capitalize} repo." # Make first letter capital
   url "http://repos.fedorapeople.org/repos/openstack/openstack-#{node['osl-packstack']['rdo']['release']}/epel-#{node['platform_version'].to_i}/"
-  key "RPM-GPG-KEY-RDO-#{node['osl-packstack']['rdo']['release'].upcaase}"
+  key "RPM-GPG-KEY-RDO-#{node['osl-packstack']['rdo']['release'].upcase}" # Make entirely uppercase
   action :add
 end
 
