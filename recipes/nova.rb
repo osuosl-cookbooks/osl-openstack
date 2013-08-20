@@ -5,6 +5,8 @@
     action :install
 end
 
+# TODO: install the nova compute package, also yum update to get the rdo update (kernel, iproute, etc)
+
 # libvirtd template stuff
 #Source: https://github.com/opscode-cookbooks/nova/blob/master/recipes/libvirt.rb
 template "/etc/libvirt/libvirtd.conf" do
