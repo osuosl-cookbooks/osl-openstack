@@ -26,10 +26,10 @@ end
 
 # Setup the rdo repo
 yum_repository "openstack" do
-  repo_name "openstack-#{node['osl-packstack']['rdo']['release'].capitalize}"
+  repo_name "openstack-#{node['osl-packstack']['rdo']['release']}"
   description "Openstack #{node['osl-packstack']['rdo']['release'].capitalize} repo."
   url "http://repos.fedorapeople.org/repos/openstack/openstack-#{node['osl-packstack']['rdo']['release']}/epel-#{node['platform_version'].to_i}/"
-  key "RPM-GPG-KEY-RDO-#{node['osl-packstack']['rdo']['release'].capitalize}"
+  key "RPM-GPG-KEY-RDO-#{node['osl-packstack']['rdo']['release'].upcaase}"
   action :add
 end
 
