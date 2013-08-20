@@ -1,3 +1,5 @@
+# include the umbrella packastack recipe
+include_recipe "osl-packstack::default"
 
 # Ensure a few packages are installed
 %{libvirt libvirt-client libvirt-python}.each do |pkg|
@@ -21,5 +23,4 @@ template "/etc/sysconfig/libvirtd" do
   owner "root"
   group "root"
   mode "0644"
-  only_if { platform?(%w{fedora redhat centos}) }
 end # Don't need to start the service, as packstack will automatically do that
