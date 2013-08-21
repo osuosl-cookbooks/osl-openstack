@@ -8,3 +8,6 @@ version          '0.0.0'
 
 
 depends "yum"
+
+## TODO: Setup the packstack  SSH Key,  setup the nova user + ssh on compute node
+## TODO: Test the cookbook, test that the repo gets installed
