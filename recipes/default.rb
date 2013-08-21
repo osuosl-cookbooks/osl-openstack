@@ -25,14 +25,14 @@ end
 
 # Using these vars enhances readability
 pltfrm_vers = node['platform_version'].to_i
-release_ver = node['osl-packstack']['rdo']['release'].downcase
+release_ver = node['osl-packstack']['rdo']['release'].downcase # Sanity check, and I'd like to start from an ensured lowercase
 
 # Setup the rdo repo
 yum_repository "openstack" do
   repo_name "openstack-#{release_ver}"
   description "Openstack #{release_ver.capitalize} repo." # Make first letter capital
-  url "http://repos.fedorapeople.org/repos/openstack/openstack-#{release_ver}/epel-#{platfrm_ver.to_i}/"
-  key "RPM-GPG-KEY-RDO-#{node['osl-packstack']['rdo']['release'].upcase}" # Make entirely uppercase
+  url "http://repos.fedorapeople.org/repos/openstack/openstack-#{release_ver}/epel-#{platfrm_ver}/"
+  key "RPM-GPG-KEY-RDO-#{release_ver.upcase}" # Make entirely uppercase
   action :add
 end
 
