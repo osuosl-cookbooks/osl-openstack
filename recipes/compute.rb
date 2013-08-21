@@ -35,4 +35,9 @@ directory dir do
   action :create
 end
 
-## TODO: enable the user dir, change the perms on the dir, get the ssh keys.
+# Enable the nova user to have a login
+execute "enable nova login" do
+  command "usermod -s /bin/sh nova"
+end
+
+## TODO: change the perms on the dir, get the ssh keys.
