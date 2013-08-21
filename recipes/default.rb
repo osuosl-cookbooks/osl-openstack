@@ -45,3 +45,14 @@ end
     action :install
   end
 end
+
+dir = "/root/.ssh"
+
+# Setup packstack ssh key for packstack puppet cms
+directoy dir do
+  owner "root"
+  group "root"
+  action :create
+end
+
+## TODO: Setup the ssh key for rdo packstack
