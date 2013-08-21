@@ -1,26 +1,11 @@
-# include the umbrella packastack recipe
+# Include the umbrella packstack recipe
 include_recipe "osl-packstack::default"
 
-# Ensure a few packages are installed
-%{libvirt libvirt-client libvirt-python}.each do |pkg|
-  package pkg
+#### NOTICE: This doesn't install the nova compute package. That is only for an explicit compute node.
+
+# Install nova and supporting packages
+%{openstack-nova-api openstack-nova-cert openstack-nova-common openstack-nova-conductor openstack-nova-console openstack-nova-network openstack-nova-novncproxy openstack-nova-scheduler python-nova python-novaclient}.each do |pkg|
+  package pkg do
     action :install
+  end
 end
-
-# TODO: install the nova compute package, also yum update to get the rdo update (kernel, iproute, etc)
-
-# libvirtd template stuff
-#Source: https://github.com/opscode-cookbooks/nova/blob/master/recipes/libvirt.rb
-template "/etc/libvirt/libvirtd.conf" do
-  source "libvirtd.conf.erb"
-  owner "root"
-  group "root"
-  mode "0644"
-end # Don't need to start the service, as packstack will automatically do that
-
-template "/etc/sysconfig/libvirtd" do
-  source "libvirtd.erb"
-  owner "root"
-  group "root"
-  mode "0644"
-end # Don't need to start the service, as packstack will automatically do that

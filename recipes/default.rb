@@ -36,7 +36,9 @@ yum_repository "openstack" do
   action :add
 end
 
-# Install packstack
-package "openstack-packstack" do
-  action :install
+#Install packstack and related packages
+%{openstack-packstack openstack-utils}.each do |pkg|
+  package pkg do
+    action :install
+  end
 end
