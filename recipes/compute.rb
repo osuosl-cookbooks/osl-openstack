@@ -24,3 +24,15 @@ template "/etc/sysconfig/libvirtd" do
   group "root"
   mode "0644"
 end # Don't need to start the service, as packstack will automatically do that
+
+
+dir = "/var/lib/nova/.ssh"
+
+# Setup the nova user dir for ssh, for non-live migration/rresizing operations
+directory dir do
+  owner "nova"
+  group "nova"
+  action :create
+end
+
+## TODO: enable the user dir, change the perms on the dir, get the ssh keys.
