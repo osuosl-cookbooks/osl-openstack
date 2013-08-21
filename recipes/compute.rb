@@ -40,4 +40,12 @@ execute "enable nova login" do
   command "usermod -s /bin/sh nova"
 end
 
-## TODO: change the perms on the dir, get the ssh keys.
+# Copy the ssh config to the nova user, change normal persm, not SELinux perms
+template "/var/lib/nova/.ssh/config" do
+  source "libvirtd-ssh-config.erb"
+  owner "nova"
+  group "nova"
+  mode "700"
+end
+
+## TODO: change the SELinux perms on the dir, get the ssh keys.
