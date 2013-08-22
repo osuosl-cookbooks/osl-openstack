@@ -46,10 +46,8 @@ end
   end
 end
 
-dir = "/root/.ssh"
-
 # Setup packstack ssh key for packstack puppet cms
-directoy dir do
+directoy "/root/.ssh" do
   owner "root"
   group "root"
   action :create
