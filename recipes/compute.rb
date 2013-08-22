@@ -4,7 +4,7 @@ include_recipe "osl-packstack::default"
 ##### NOTICE: This installs ONLY the nova compute package and configures libvirt for live migration. This does not setup any networking
 
 # Ensure a few packages are installed
-%{libvirt libvirt-client libvirt-python openstack-nova-compute}.each do |pkg|
+%w{libvirt libvirt-client libvirt-python openstack-nova-compute}.each do |pkg|
   package pkg
     action :install
 end

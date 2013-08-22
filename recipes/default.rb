@@ -40,7 +40,7 @@ when "centos"
 end
 
 #Install packstack and related packages
-%{openstack-packstack openstack-utils}.each do |pkg|
+%w{openstack-packstack openstack-utils}.each do |pkg|
   package pkg do
     action :install
   end
