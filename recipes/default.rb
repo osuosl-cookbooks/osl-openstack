@@ -28,19 +28,6 @@ platfrm_vers = node['platform_version'].to_i
 release_ver = node['osl-packstack']['rdo']['release'].downcase # Sanity check, and I'd like to start from an ensured lowercase
 
 # Setup GPG Key, since the rdo gpg key isn't in the rdo repo, but the rpm itself.
-
-# Setup the rdo repo
-case node['platform']
-when "centos"
-  yum_repository "openstack" do
-    repo_name "openstack-#{release_ver}"
-    description "Openstack #{release_ver.capitalize} repo." # Make first letter capital
-    url "http://repos.fedorapeople.org/repos/openstack/openstack-#{release_ver}/epel-#{platfrm_vers}/"
-    key "RPM-GPG-KEY-RDO-#{release_ver.upcase}" # Make entirely uppercase
-    action :add
-  end
-end
-
 case node['platform']
 when "centos"
   template "/etc/pki/rpm-gpg/RPM-GPG-KEY-RDO-#{release_ver.upcase}" do
@@ -49,6 +36,18 @@ when "centos"
     group "root"
     mode "644"
     action :create
+  end
+end
+
+
+# Setup the rdo repo
+case node['platform']
+when "centos"
+  yum_repository "openstack" do
+    repo_name "openstack-#{release_ver}"
+    description "Openstack #{release_ver.capitalize} repo." # Make first letter capital
+    url "http://repos.fedorapeople.org/repos/openstack/openstack-#{release_ver}/epel-#{platfrm_vers}/"
+    action :add
   end
 end
 
