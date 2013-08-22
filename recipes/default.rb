@@ -24,7 +24,7 @@ when "centos"
 end
 
 # Using these vars enhances readability
-pltfrm_vers = node['platform_version'].to_i
+platfrm_vers = node['platform_version'].to_i
 release_ver = node['osl-packstack']['rdo']['release'].downcase # Sanity check, and I'd like to start from an ensured lowercase
 
 # Setup the rdo repo
