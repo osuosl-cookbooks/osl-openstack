@@ -35,6 +35,12 @@ when "centos"
     description "Openstack #{release_ver.capitalize} repo." # Make first letter capital
     url "http://repos.fedorapeople.org/repos/openstack/openstack-#{release_ver}/epel-#{platfrm_vers}/"
     key "RPM-GPG-KEY-RDO-#{release_ver.upcase}" # Make entirely uppercase
+    case release_ver
+    when "grizzly"
+      key_url "https://raw.github.com/redhat-openstack/rdo-release/grizzly/RPM-GPG-KEY-RDO-Grizzly"
+    when "havana"
+      key_url "https://raw.github.com/redhat-openstack/rdo-release/master/RPM-GPG-KEY-RDO-Havana"
+    end
     action :add
   end
 end
