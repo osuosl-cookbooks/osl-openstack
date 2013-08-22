@@ -33,7 +33,7 @@ when "centos"
   yum_repository "openstack" do
     repo_name "openstack-#{release_ver}"
     description "Openstack #{release_ver.capitalize} repo." # Make first letter capital
-    url "http://repos.fedorapeople.org/repos/openstack/openstack-#{release_ver}/epel-#{platfrm_ver}/"
+    url "http://repos.fedorapeople.org/repos/openstack/openstack-#{release_ver}/epel-#{platfrm_vers}/"
     key "RPM-GPG-KEY-RDO-#{release_ver.upcase}" # Make entirely uppercase
     action :add
   end
