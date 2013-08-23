@@ -5,8 +5,9 @@ include_recipe "osl-packstack::default"
 
 # Ensure a few packages are installed
 %w{libvirt libvirt-client libvirt-python openstack-nova-compute}.each do |pkg|
-  package pkg
+  package pkg do
     action :install
+  end
 end
 
 # libvirtd template stuff
