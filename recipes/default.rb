@@ -52,7 +52,7 @@ release_ver = node['osl-packstack']['rdo']['release'].downcase # Sanity check, a
 #end
 
 # Rdo repo install
-package "rdo-repo" do
+package "rdo" do
   source "http://rdo.fedorapeople.org/openstack/openstack-#{release_ver}/rdo-release-#{release_ver}.rpm"
   action :install
   provider Chef::Provider::Package::Rpm
