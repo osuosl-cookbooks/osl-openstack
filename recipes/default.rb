@@ -37,7 +37,8 @@ when "centos"
     when "havana"
       url "https://raw.github.com/redhat-openstack/rdo-release/master/RPM-GPG-KEY-RDO-Havana"
     end
-  action :add
+    action :add
+  end
 end
 
 # Setup the rdo repo
@@ -50,13 +51,6 @@ when "centos"
     action :add
   end
 end
-
-# Rdo repo install
-#package "rdo" do
-#  source "http://rdo.fedorapeople.org/openstack/openstack-#{release_ver}/rdo-release-#{release_ver}.rpm"
-#  action :install
-#  provider Chef::Provider::Package::Rpm
-#end
 
 #Install packstack and related packages
 %w{openstack-packstack openstack-utils}.each do |pkg|
