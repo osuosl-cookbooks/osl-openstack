@@ -28,29 +28,35 @@ platfrm_vers = node['platform_version'].to_i
 release_ver = node['osl-packstack']['rdo']['release'].downcase # Sanity check, and I'd like to start from an ensured lowercase
 
 # RDO repo gpg key
-case node['platform']
-when "centos"
-  yum_key "RPM-GPG-KEY-RDO-#{release_ver.upcase}" do
-    case release_ver
-    when "grizzly"
-      url "https://raw.github.com/redhat-openstack/rdo-release/grizzly/RPM-GPG-KEY-RDO-Grizzly"
-    when "havana"
-      url "https://raw.github.com/redhat-openstack/rdo-release/master/RPM-GPG-KEY-RDO-Havana"
-    end
-  action :add
-end
+#case node['platform']
+#when "centos"
+#  yum_key "RPM-GPG-KEY-RDO-#{release_ver.upcase}" do
+#    case release_ver
+#    when "grizzly"
+#      url "https://raw.github.com/redhat-openstack/rdo-release/grizzly/RPM-GPG-KEY-RDO-Grizzly"
+#    when "havana"
+#      url "https://raw.github.com/redhat-openstack/rdo-release/master/RPM-GPG-KEY-RDO-Havana"
+#    end
+#  action :add
+#end
 
 # Setup the rdo repo
-case node['platform']
-when "centos"
-  yum_repository "openstack" do
-    repo_name "openstack-#{release_ver}"
-    description "Openstack #{release_ver.capitalize} repo." # Make first letter capital
-    url "http://repos.fedorapeople.org/repos/openstack/openstack-#{release_ver}/epel-#{platfrm_vers}/"
-    action :add
-  end
-end
+#case node['platform']
+#when "centos"
+#  yum_repository "openstack" do
+#    repo_name "openstack-#{release_ver}"
+#    description "Openstack #{release_ver.capitalize} repo." # Make first letter capital
+#    url "http://repos.fedorapeople.org/repos/openstack/openstack-#{release_ver}/epel-#{platfrm_vers}/"
+#    action :add
+#  end
+#end
 
+# Rdo repo install
+package "rdo-repo" do
+  source "http://rdo.fedorapeople.org/openstack/openstack-#{release_ver}/rdo-release-#{release-ver}.rpm"
+  action :install
+  provider Chef::Provider::Package::Rpm
+end
 
 #Install packstack and related packages
 %w{openstack-packstack openstack-utils}.each do |pkg|
