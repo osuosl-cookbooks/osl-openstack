@@ -1,8 +1,7 @@
 
 # RDO repo information
 default['osl-packstack']['rdo']['release']  = "grizzly"
-#default['users'] = ['packstack-root']
 default['user']['ssh_keygen'] = "false"
-# TODO: Decide whether the repo url should go in here.
+default['osl-packstack']['type'] = "compute"
 
-# TODO: Setup things like ssh keys
+## TODO: Get ssh private keys

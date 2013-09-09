@@ -66,10 +66,15 @@ directory "/root/.ssh" do
   action :create
 end
 
-## TODO: Setup the ssh key for rdo packstack
-#user 'root' do
-#  home  '/root'
-#end
 
-node.default['users'] = ['packstack-root']
+case node['osl-packstack']['type']
+when "compute"
+  node.default['users'] = ['packstack-root', 'packstack-nova']
+  include_recipe "osl-packstack::compute"
+else
+  node.default['users'] = ['packstack-root']
+end
+
 include_recipe "user::data_bag"
+
+## TODO: Setup the ssh private key for rdo packstack

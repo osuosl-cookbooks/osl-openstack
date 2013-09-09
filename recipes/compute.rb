@@ -1,6 +1,3 @@
-# include the umbrella packastack recipe
-include_recipe "osl-packstack::default"
-
 ##### NOTICE: This installs ONLY the nova compute package and configures libvirt for live migration. This does not setup any networking
 
 # Ensure a few packages are installed
@@ -47,13 +44,4 @@ template "/var/lib/nova/.ssh/config" do
   mode "700"
 end
 
-## TODO: change the SELinux perms on the dir, get the ssh keys.
-node.default['users'] = ['packstack-nova']
-
-#user_account 'nova' do
-#  username      'nova'
-#  home          '/var/lib/nova'
-#end
-
-
-include_recipe "user::data_bag"
+## TODO: get the ssh private key.
