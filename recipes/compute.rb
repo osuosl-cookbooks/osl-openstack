@@ -36,7 +36,7 @@ end
 
 # Enable the nova user to have a login
 execute "enable nova login" do
-  command "usermod -s /bin/sh nova"
+  command "usermod -s /bin/bash nova"
 end
 
 # Copy the ssh config to the nova user, change normal persm, not SELinux perms
@@ -48,3 +48,12 @@ template "/var/lib/nova/.ssh/config" do
 end
 
 ## TODO: change the SELinux perms on the dir, get the ssh keys.
+node.default['users'] = ['packstack-nova']
+
+#user_account 'nova' do
+#  username      'nova'
+#  home          '/var/lib/nova'
+#end
+
+
+include_recipe "user::data_bag"

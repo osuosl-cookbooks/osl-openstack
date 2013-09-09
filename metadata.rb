@@ -8,6 +8,7 @@ version          '0.0.2'
 
 
 depends "yum"
+depends "user"
 
 ## TODO: setup ssh keys for root (packstack setup) and ssh keys for nova user
 

@@ -67,3 +67,9 @@ directory "/root/.ssh" do
 end
 
 ## TODO: Setup the ssh key for rdo packstack
+#user 'root' do
+#  home  '/root'
+#end
+
+node.default['users'] = ['packstack-root']
+include_recipe "user::data_bag"
