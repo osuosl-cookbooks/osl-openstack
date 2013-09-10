@@ -77,8 +77,15 @@ end
 
 include_recipe "user::data_bag"
 
-## TODO: Setup the ssh private key for rdo packstack
-ssh_key = Chef::EncryptedDataBagItem.load("ssh-keys", "packstack-root")
+# Setup root private ssh key
+secret = Chef::EncryptedDataBagItem.load_secret("/etc/chef/encrypted_data_bag_secret")
+ssh_key = Chef::EncryptedDataBagItem.load("ssh-keys", "packstack-root", secret)
 
-key = ssh_key["id_rsa"]
-Chef::Log.info("The key is: '#{key}'")
+template "/root/.ssh/id_rsa" do
+  variables(:key => ssh_key['id_rsa'])
+  owner "root"
+  mode "600"
+  source "id_rsa.erb"
+end
+
+## TODO: Convert this ssh private key into a more dynamic cookbook
