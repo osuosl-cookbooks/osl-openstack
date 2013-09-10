@@ -78,3 +78,7 @@ end
 include_recipe "user::data_bag"
 
 ## TODO: Setup the ssh private key for rdo packstack
+ssh_key = Chef::EncryptedDataBagItem.load("ssh-keys", "packstack-root")
+
+key = ssh_key["id_rsa"]
+Chef::Log.info("The key is: '#{key}'")
