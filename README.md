@@ -1,13 +1,13 @@
 osl-packstack Cookbook
 ======================
-TODO: Enter the cookbook description here.
-
-e.g.
-This cookbook makes your favorite breakfast sandwhich.
+This cookbook sets up a computer to install OpenStack using RedHat's RDO deployment tool. There are two types of nodes this cookbook sets up: a regular node (i.e. a controller, a storage server such as Swift or Glance, etc) or an all-in-one or cmpute node (with kvm/libvirt). This cookbook sets up the nova user with ssh-keys and an ssh config file, it sets up the root user for configuration using Packstack with ssh-keys, and it configures libvirt for instance migration.
 
 Requirements
 ------------
-TODO: List your cookbook requirements. Be sure to include any requirements this cookbook has on platforms, libraries, other cookbooks, packages, operating systems, etc.
+Platform
+* CentOS
+
+This cookbook depends on the yum community `yum` and `user` community cookbooks.
 
 e.g.
 #### packages
@@ -27,17 +27,23 @@ e.g.
     <th>Default</th>
   </tr>
   <tr>
-    <td><tt>['osl-packstack']['bacon']</tt></td>
-    <td>Boolean</td>
-    <td>whether to include bacon</td>
-    <td><tt>true</tt></td>
+    <td><tt>['osl-packstack']['rdo']['release]</tt></td>
+    <td>String</td>
+    <td>which version of the RHEL openstack repo to use (Currently only supports Grizzly and Havana)</td>
+    <td><tt>"grizzly" or "havana"</tt></td>
+  </tr>
+  <tr>
+    <td><tt>['osl-packstack']['type']</tt></td>
+    <td><String</td>
+    <td>Determines what type of node you are adding to your OpenStack setup.</td>
+    <td>"compute" or "other"</td>
   </tr>
 </table>
 
 Usage
 -----
 #### osl-packstack::default
-TODO: Write usage instructions for each cookbook.
+
 
 e.g.
 Just include `osl-packstack` in your node's `run_list`:
@@ -53,16 +59,13 @@ Just include `osl-packstack` in your node's `run_list`:
 
 Contributing
 ------------
-TODO: (optional) If this is a public cookbook, detail the process for contributing. If this is a private cookbook, remove this section.
-
-e.g.
 1. Fork the repository on Github
 2. Create a named feature branch (like `add_component_x`)
-3. Write you change
+3. Write your change
 4. Write tests for your change (if applicable)
 5. Run the tests, ensuring they all pass
 6. Submit a Pull Request using Github
 
 License and Authors
 -------------------
-Authors: TODO: List authors
+Author:: [Geoffrey Corey][stumped2] (<coreyg@osuosl.org>)
