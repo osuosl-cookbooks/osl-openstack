@@ -20,14 +20,14 @@ Attributes
     <th>Default</th>
   </tr>
   <tr>
-    <td><tt>['osl-packstack']['rdo']['release]</tt></td>
+    <td><tt>['osl-packstack']['rdo']['release']</tt></td>
     <td>String</td>
-    <td>which version of the RHEL openstack repo to use (Currently only supports Grizzly and Havana)</td>
+    <td>which version of the RHEL openstack repo to use, currently only supports Grizzly and Havana</td>
     <td><tt>"grizzly" or "havana"</tt></td>
   </tr>
   <tr>
     <td><tt>['osl-packstack']['type']</tt></td>
-    <td><String</td>
+    <td>String</td>
     <td>Determines what type of node you are adding to your OpenStack setup.</td>
     <td>"compute" or "other"</td>
   </tr>
@@ -60,4 +60,4 @@ Contributing
 
 License and Authors
 -------------------
-Author:: [Geoffrey Corey][stumped2] (<coreyg@osuosl.org>)
+Author:: [Geoffrey Corey][stumped2] (<coreyg@onid.orst.edu>)
