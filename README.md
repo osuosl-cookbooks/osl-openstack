@@ -9,15 +9,8 @@ Platform
 
 This cookbook depends on the yum community `yum` and `user` community cookbooks.
 
-e.g.
-#### packages
-- `toaster` - osl-packstack needs toaster to brown your bagel.
-
 Attributes
 ----------
-TODO: List you cookbook attributes here.
-
-e.g.
 #### osl-packstack::default
 <table>
   <tr>
@@ -45,7 +38,6 @@ Usage
 #### osl-packstack::default
 
 
-e.g.
 Just include `osl-packstack` in your node's `run_list`:
 
 ```json
