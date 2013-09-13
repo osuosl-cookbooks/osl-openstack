@@ -60,4 +60,4 @@ Contributing
 
 License and Authors
 -------------------
-Author:: [Geoffrey Corey][stumped2] (<coreyg@onid.orst.edu>)
+Author:: [Geoffrey Corey][stumped2] (<coreyg@osuosl.org>)
