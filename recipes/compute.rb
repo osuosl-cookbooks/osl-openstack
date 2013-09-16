@@ -46,13 +46,20 @@ end
 
 # Setup nova's private ssh key
 secret = Chef::EncryptedDataBagItem.load_secret("/etc/chef/encrypted_data_bag_secret")
-
 ssh_key = Chef::EncryptedDataBagItem.load("ssh-keys", "packstack-nova", secret)
+
 template "/var/lib/nova/.ssh/id_rsa" do
   variables(:key => ssh_key['id_rsa'])
   owner "nova"
   mode "600"
   source "id_rsa.erb"
+end
+
+template "/var/lib/nova/.ssh/id_rsa.pub" do
+  variables(:pub_key => ssh_key['id_rsa.pub'])
+  owner "nova"
+  mode "644"
+  source "id_rsapub.erb"
 end
 
 ## TODO: Conver teh ssh key deployment to a more dynamic cookbook
