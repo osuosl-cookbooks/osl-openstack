@@ -67,25 +67,25 @@ directory "/root/.ssh" do
 end
 
 
-case node['osl-packstack']['type']
-when "compute"
-  node.default['users'] = ['packstack-root', 'packstack-nova']
-  include_recipe "osl-packstack::compute"
-else
-  node.default['users'] = ['packstack-root']
-end
+#case node['osl-packstack']['type']
+#when "compute"
+#  node.default['users'] = ['packstack-root', 'packstack-nova']
+#  include_recipe "osl-packstack::compute"
+#else
+#  node.default['users'] = ['packstack-root']
+#end
 
 include_recipe "user::data_bag"
 
-# Setup root private ssh key
-secret = Chef::EncryptedDataBagItem.load_secret("/etc/chef/encrypted_data_bag_secret")
-ssh_key = Chef::EncryptedDataBagItem.load("ssh-keys", "packstack-root", secret)
+## Setup root private ssh key
+#secret = Chef::EncryptedDataBagItem.load_secret("/etc/chef/encrypted_data_bag_secret")
+#ssh_key = Chef::EncryptedDataBagItem.load("ssh-keys", "packstack-root", secret)
 
-template "/root/.ssh/id_rsa" do
-  variables(:key => ssh_key['id_rsa'])
-  owner "root"
-  mode "600"
-  source "id_rsa.erb"
-end
+#template "/root/.ssh/id_rsa" do
+#  variables(:key => ssh_key['id_rsa'])
+#  owner "root"
+#  mode "600"
+#  source "id_rsa.erb"
+#end
 
 ## TODO: Convert this ssh private key into a more dynamic cookbook
