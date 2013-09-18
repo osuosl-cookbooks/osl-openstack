@@ -1,6 +1,6 @@
 #
 # Cookbook Name:: osl-packstack
-# Recipe:: ssh-key
+# Recipe:: packstack
 #
 # Copyright 2013, Geoffrey Corey
 #
@@ -16,3 +16,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+include_recipe "osl-packstack::packstack"
+include_recipe "user::data_bag"
