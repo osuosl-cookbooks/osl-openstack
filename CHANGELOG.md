@@ -11,4 +11,8 @@ This file is used to list changes made in each version of the osl-packstack cook
 ----
 - [Geoffrey Corey] - Restructure the recipe, moved user array to attributes to allow user overrides
 
+0.0.5 (September 18, 2013)
+----
+- [Geoffrey Corey] - More Recipe restructure, edit the cookbook for supoprted platforms
+
 - - -
