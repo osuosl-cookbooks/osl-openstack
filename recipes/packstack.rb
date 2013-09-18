@@ -1,6 +1,6 @@
 #
 # Cookbook Name:: osl-packstack
-# Recipe:: default
+# Recipe:: packstack
 #
 # Copyright 2013, Geoffrey Corey
 #
@@ -75,7 +75,6 @@ else
 #  node.default['users'] = ['packstack-root']
 end
 
-#include_recipe "user::data_bag"
 
 ## Setup root private ssh key
 secret = Chef::EncryptedDataBagItem.load_secret("/etc/chef/encrypted_data_bag_secret")
