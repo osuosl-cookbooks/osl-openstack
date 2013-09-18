@@ -7,8 +7,8 @@ default['osl-packstack']['secret_file'] = "/etc/chef/encrypted_data_bag_secret"
 
 case node['osl-packstack']['type']
 when "compute"
-  default['users'] = ['packstack-root', 'packstack-nova']
+  default['users'] = ["packstack-root", "packstack-nova"]
 else
-  default['users'] = ['packstack-root']
+  default['users'] = ["packstack-root"]
 end
 
