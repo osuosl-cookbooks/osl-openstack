@@ -1,76 +1,46 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-Vagrant.configure("2") do |config|
-  # All Vagrant configuration is done here. The most common configuration
-  # options are documented and commented below. For a complete reference,
-  # please see the online documentation at vagrantup.com.
+require 'vagrant-openstack-plugin'
 
+Vagrant.configure("2") do |config|
+
+  # Set the vm hostname
   config.vm.hostname = "osl-packstack-berkshelf"
 
-  # Every Vagrant virtual environment requires a box to build off of.
-  config.vm.box = "centos-6-provisionerless"
+  # Download the openstack box
+  config.vm.box = "openstack"
+  config.vm.box_url = "http://packages.osuosl.org/vagrant/openstack.box"
 
-  # The url from where the 'config.vm.box' box will be fetched if it
-  # doesn't already exist on the user's system.
-  config.vm.box_url = "http://packages.osuosl.org/vagrant/opscode_centos-6.4_provisionerless.box"
+  # Install chef omnibus
+  config.omnibus.chef_version = :latest
 
-  # Assign this VM to a host-only network IP, allowing you to access it
-  # via the IP. Host-only networks can talk to the host machine as well as
-  # any other machines on the same network, but cannot be accessed (through this
-  # network interface) by any external networks.
-  config.vm.network :private_network, ip: "33.33.33.10"
-
-  # Create a public network, which generally matched to bridged network.
-  # Bridged networks make the machine appear as another physical device on
-  # your network.
-
-  # config.vm.network :public_network
-
-  # Create a forwarded port mapping which allows access to a specific port
-  # within the machine from a port on the host machine. In the example below,
-  # accessing "localhost:8080" will access port 80 on the guest machine.
-
-  # Share an additional folder to the guest VM. The first argument is
-  # the path on the host to the actual folder. The second argument is
-  # the path on the guest to mount the folder. And the optional third
-  # argument is a set of non-required options.
-  # config.vm.synced_folder "../data", "/vagrant_data"
-
-  # Provider-specific configuration so you can fine-tune various
-  # backing providers for Vagrant. These expose provider-specific options.
-  # Example for VirtualBox:
-  #
-  # config.vm.provider :virtualbox do |vb|
-  #   # Don't boot with headless mode
-  #   vb.gui = true
-  #
-  #   # Use VBoxManage to customize the VM. For example to change memory:
-  #   vb.customize ["modifyvm", :id, "--memory", "1024"]
-  # end
-  #
-  # View the documentation for the provider you're using for more
-  # information on available options.
-
-
-
-
-  # The path to the Berksfile to use with Vagrant Berkshelf
-  # config.berkshelf.berksfile_path = "./Berksfile"
-
-  # Enabling the Berkshelf plugin. To enable this globally, add this configuration
-  # option to your ~/.vagrant.d/Vagrantfile file
+  # Enable berkshelf
   config.berkshelf.enabled = true
 
-  # An array of symbols representing groups of cookbook described in the Vagrantfile
-  # to exclusively install and copy to Vagrant's shelf.
-  # config.berkshelf.only = []
+  # Setup ssh key stuff for sshing into the vm
+  config.ssh.private_key_path = "#{ENV['OS_SSH_KEY']}" # Your openstack ssh private key location
+  
+  # Tell vagrant the IP to ssh to
+  config.ssh.host = "#{ENV['OS_FLOATING_IP']}"
 
-  # An array of symbols representing groups of cookbook described in the Vagrantfile
-  # to skip installing and copying to Vagrant's shelf.
-  # config.berkshelf.except = []
+  # Set OpenStack Variables for instance creation
+  config.vm.provider :openstack do |os|
+    os.username     = "#{ENV['OS_USERNAME']}"               # OpenStack username
+    os.api_key      = "#{ENV['OS_PASSWORD']}"               # User password from openstack
+    os.flavor       = /m1.tiny/                             # Change this based upon you resource requirements
+    os.image        = "CentOS 6.4"
+    os.endpoint     = "http://10.1.0.27:35357/v2.0/tokens"
+    os.keypair_name = "#{ENV['OS_SSH_KEYPAIR']}"            # Name of you ssh keypair that you setup in the browser (should be your username)
+    os.ssh_username = "centos"                              # login for the VM
+    os.security_groups = ['default']                        # add different security groups here for different ports
+    os.tenant       = "OSL"                                 # always use OSL as the tenant
+    os.server_name  = "#{ENV['USER']}-openstack"            # label for the instance
+    os.floating_ip  = "#{ENV['OS_FLOATING_IP']}"            # instance floating ip, make sure you claim from dns
+  end
 
-  config.vm.provision :chef_solo do |chef|
+    # Chef solo provisioning
+    config.vm.provision :chef_solo do |chef|
     chef.json = {
       :mysql => {
         :server_root_password => 'rootpass',
@@ -78,9 +48,15 @@ Vagrant.configure("2") do |config|
         :server_repl_password => 'replpass'
       }
     }
+    
+    # If using data bags, tell vagrant where they are located
+    chef.data_bags_path = "/home/#{ENV['USER']}/git/chef-repo/data_bags"
 
+    # If using encrypted data bags, make sure you tell vagrant where the secret key is
+    chef.encrypted_data_bag_secret_key_path = "/home/#{ENV['USER']}/.chef/encrypted_data_bag_secret"
+    
     chef.run_list = [
         "recipe[osl-packstack::default]"
     ]
-  end
+  end 
 end
