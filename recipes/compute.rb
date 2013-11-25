@@ -64,8 +64,7 @@ template "/var/lib/nova/.ssh/config" do
 end
 
 # Setup nova's private ssh key
-secret = Chef::EncryptedDataBagItem.load_secret(node['osl-packstack']['secret_file'])
-ssh_key = Chef::EncryptedDataBagItem.load("ssh-keys", "packstack-nova", secret)
+ssh_key = Chef::EncryptedDataBagItem.load("ssh-keys", "packstack-nova")
 
 template "/var/lib/nova/.ssh/id_rsa" do
   variables(:key => ssh_key['id_rsa'])
