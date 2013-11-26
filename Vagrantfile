@@ -27,7 +27,6 @@ Vagrant.configure("2") do |config|
   # Set OpenStack Variables for instance creation
   config.vm.provider :openstack do |os|
     os.username     = "#{ENV['OS_USERNAME']}"               # OpenStack username
-    os.api_key      = "#{ENV['OS_PASSWORD']}"               # User password from openstack
     os.flavor       = /m1.tiny/                             # Change this based upon you resource requirements
     os.image        = "CentOS 6.4"
     os.endpoint     = "http://10.1.0.27:35357/v2.0/tokens"
