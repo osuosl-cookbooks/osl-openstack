@@ -1,6 +1,6 @@
 #
 # Cookbook Name:: osl-packstack
-# Recipe:: packstack
+# Recipe:: default
 #
 # Copyright 2013, Oregon State University
 #
