@@ -15,6 +15,7 @@ recipe "osl-packstack::compute", "Sets up the machine for being a compute node, 
 end
 
 depends "yum"
+depends "yum-epel"
 depends "user"
 
 ## TODO: setup ssh keys for root (packstack setup) and ssh keys for nova user
