@@ -20,35 +20,27 @@
 # Setup the epel repo
 case node['platform']
 when "centos"
-  include_recipe "yum::epel"
+  include_recipe "yum-epel"
 end
 
 # Using these vars enhances readability
 platfrm_vers = node['platform_version'].to_i
 release_ver = node['osl-packstack']['rdo']['release'].downcase # Sanity check, and I'd like to start from an ensured lowercase
 
-# RDO repo gpg key
-case node['platform']
-when "centos"
-  yum_key "RPM-GPG-KEY-RDO-#{release_ver.upcase}" do
-    case release_ver
-    when "grizzly"
-      url "https://raw.github.com/redhat-openstack/rdo-release/grizzly/RPM-GPG-KEY-RDO-Grizzly"
-    when "havana"
-      url "https://raw.github.com/redhat-openstack/rdo-release/master/RPM-GPG-KEY-RDO-Havana"
-    end
-    action :add
-  end
-end
-
 # Setup the rdo repo
 case node['platform']
 when "centos"
-  yum_repository "openstack" do
-    repo_name "openstack-#{release_ver}"
+  yum_repository "openstack-#{release_ver}" do
     description "Openstack #{release_ver.capitalize} repo." # Make first letter capital
-    url "http://repos.fedorapeople.org/repos/openstack/openstack-#{release_ver}/epel-#{platfrm_vers}/"
-    action :add
+    baseurl "http://repos.fedorapeople.org/repos/openstack/openstack-#{release_ver}/epel-#{platfrm_vers}/"
+    # RDO repo gpg key
+    case release_ver
+    when "grizzly"
+      gpgkey "https://raw.github.com/redhat-openstack/rdo-release/grizzly/RPM-GPG-KEY-RDO-Grizzly"
+    when "havana"
+      gpgkey "https://raw.github.com/redhat-openstack/rdo-release/master/RPM-GPG-KEY-RDO-Havana"
+    end
+    action :create
   end
 end
 
