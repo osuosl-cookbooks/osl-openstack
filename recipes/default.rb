@@ -17,5 +17,22 @@
 # limitations under the License.
 #
 
-include_recipe "osl-packstack::packstack"
-include_recipe "user::data_bag"
+
+
+#################################################################################################
+# What this recipe accomplishes:  This recipe will enable to RDO repos to be able to setup      #
+#                                 openstack using RDO Foreman.                                  #
+#                                                                                               #
+# What this recipe does:          This recipe is given a remote URL to the rpm that will        #
+#                                 enable all the required repos for openstack installation      #
+#                                 using RDO Foreman.                                            #
+#################################################################################################
+remote_file "#{Chef::Config[:file_cache_path]}/rdo-release.rpm" do
+  source "http://repos.fedorapeople.org/repos/openstack/openstack-havana/rdo-release-havana-7.noarch.rpm"
+  action :create
+end
+
+rpm_package "rdo-release" do
+  source "#{Chef::Config[:file_cache_path]}/rdo-release.rpm"
+  action :install
+end
