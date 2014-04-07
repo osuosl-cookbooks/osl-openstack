@@ -28,7 +28,7 @@
 #                                 using RDO Foreman.                                            #
 #################################################################################################
 remote_file "#{Chef::Config[:file_cache_path]}/rdo-release.rpm" do
-  source "http://repos.fedorapeople.org/repos/openstack/openstack-havana/rdo-release-havana-7.noarch.rpm"
+  source node['rdo_repo_url']
   action :create
 end
 

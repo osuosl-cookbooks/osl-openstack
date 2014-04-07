@@ -4,7 +4,7 @@ maintainer_email 'coreyg@osuosl.org'
 license          'Apache 2.0'
 description      'Installs/Configures a base system for setting up RDO Openstack'
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
-version          '0.0.5'
+version          '0.0.6'
 
 recipe "osl-packstack", "Sets up the machine to be added to the packstack cluster"
 recipe "osl-packstack::packstack", "Packstack specific configuration and setup, doesn ot setup the compute node by itself"

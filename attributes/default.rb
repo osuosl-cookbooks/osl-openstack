@@ -1,14 +1,6 @@
-
 # RDO repo information
-default['osl-packstack']['rdo']['release']  = "grizzly"
 default['user']['ssh_keygen'] = "false"
-default['osl-packstack']['type'] = "other"
 default['osl-packstack']['secret_file'] = "/etc/chef/encrypted_data_bag_secret"
 
-case node['osl-packstack']['type']
-when "compute"
-  default['users'] = ["packstack-root", "packstack-nova"]
-else
-  default['users'] = ["packstack-root"]
-end
-
+# Edit this url to point to where the rd-release rpm you want is located.
+default['rdo_repo_url'] = "http://repos.fedorapeople.org/repos/openstack/openstack-havana/rdo-release-havana-7.noarch.rpm"
