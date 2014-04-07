@@ -1,5 +1,4 @@
 # RDO repo information
-default['user']['ssh_keygen'] = "false"
 default['osl-packstack']['secret_file'] = "/etc/chef/encrypted_data_bag_secret"
 
 # Edit this url to point to where the rd-release rpm you want is located.
