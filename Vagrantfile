@@ -63,7 +63,7 @@ Vagrant.configure("2") do |config|
     }
 
     chef.run_list = [
-      "recipe[osl-packstack::default]"
+      "recipe[osl-openstack::default]",
     ]
   end
 end

@@ -1,5 +1,5 @@
 #
-# Cookbook Name:: osl-packstack
+# Cookbook Name:: osl-openstack
 # Recipe:: compute
 #
 # Copyright 2013, Oregon State University
@@ -19,7 +19,7 @@
 
 ##### NOTICE: This installs ONLY the nova compute package and configures libvirt for live migration. This does not setup any networking
 
-include_recipe "osl-packstack"
+include_recipe "osl-openstack"
 
 # Ensure nova is installed
 package  "openstack-nova" do
@@ -42,7 +42,7 @@ template "/var/lib/nova/.ssh/config" do
 end
 
 # Setup nova's private ssh key
-ssh_key = Chef::EncryptedDataBagItem.load("ssh-keys", "packstack-nova")
+ssh_key = Chef::EncryptedDataBagItem.load("ssh-keys", "openstack-nova")
 
 template "/var/lib/nova/.ssh/id_rsa" do
   variables({:key => ssh_key['id_rsa']})
