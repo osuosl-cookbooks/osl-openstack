@@ -1,0 +1,46 @@
+---
+driver_plugin: vagrant
+deiver_plugin: openstack
+driver_config:
+  require_chef_omnibus: latest
+  openstack_username: <%= ENV['OS_USERNAME'] %>
+  openstack_api_key: <%= ENV['OS_PASSWORD'] %>
+  openstack_auth_url: "http://10.1.0.27:35357/v2.0/tokens"
+  key_name: <%= ENV['OS_SSH_KEYPAIR'] %>
+  openstack_tenant: <%= ENV['OS_TENANT'] %>
+  security_groups: "default"
+  floating_ip: <%= ENV['OS_FLOATING_IP'] %>
+  private_key_path: <%= ENV['OS_PRIVATE_KEY_PATH'] %>
+  public_key_path: <%= ENV["OS_SSH_KEY"] %>
+
+
+provisioner:
+  name: chef_solo
+  solo_rb:
+    ssl_verify_mode: verify_peer
+
+platforms:
+  - name: vagrant
+    driver_plugin: vagrant
+    driver_config:
+      username: vagrant
+      box: centos-6-20140121
+      box_url: http://vagrant.osuosl.org/centos-6-20140121.box
+  - name: openstack
+    driver_plugin: openstack
+    driver_config:
+      server_name: <%= "#{ENV['OS_USERNAME']}-openstack" %>
+      image_ref: "CentOS 6.5"
+      flavor_ref: "m1.tiny"
+      username: centos
+
+suites:
+  - name: default
+    run_list:
+      - recipe[osl-openstack::default]
+  - name: compute
+    data_bags_path: "/home/coreyg/git/chef-repo/data_bags"
+    encrypted_data_bag_secret_key_path: "/home/coreyg/.chef/encrypted_data_bag_secret"
+    run_list:
+      - recipe[osl-openstack::compute]
+
