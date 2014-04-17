@@ -22,8 +22,9 @@
 include_recipe "osl-openstack"
 
 # Ensure nova is installed
-package  "openstack-nova" do
-    action :install
+yum_package  "openstack-nova" do
+  action :install
+  flush_cache [:before]
 end
 
 # Setup the nova user dir for ssh, for non-live migration/rresizing operations
