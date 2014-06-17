@@ -1,36 +1,58 @@
 # -*- mode: ruby -*-
-# vi: set ft=ruby tabstop=2 :
-require 'vagrant-openstack-plugin'
-require 'vagrant-omnibus'
-require 'vagrant-berkshelf'
+# vi: set ft=ruby :
 
-box_ver = "20140121"
-box_url = "http://vagrant.osuosl.org/centos-6-#{box_ver}.box"
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
 
-Vagrant.configure("2") do |config|
-  config.vm.network   "forwarded_port", guest: 80, host: 8080, auto_correct: true
-  config.vm.box       = "centos-6-#{box_ver}"
-  config.vm.hostname  = "osl-packstack-berkshelf"
-  config.vm.box_url   = "#{box_url}"
+Vagrant.require_version ">= 1.5.0"
 
-  config.vm.provider "openstack" do |os, override|
-    # Your openstack ssh private key location
-    override.ssh.private_key_path = "#{ENV['OS_SSH_KEY']}"
-    override.ssh.host   = "#{ENV['OS_FLOATING_IP']}"
-    override.vm.box     = "openstack"
-    override.vm.box_url = "http://vagrant.osuosl.org/openstack.box"
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  # All Vagrant configuration is done here. The most common configuration
+  # options are documented and commented below. For a complete reference,
+  # please see the online documentation at vagrantup.com.
 
-    os.username     = "#{ENV['OS_USERNAME']}"
-    os.flavor       = /m1.tiny/
-    os.image        = "CentOS 6.5"
-    os.endpoint     = "http://10.1.0.27:35357/v2.0/tokens"
-    os.keypair_name = "#{ENV['OS_SSH_KEYPAIR']}"
-    os.ssh_username = "centos"
-    os.security_groups = ['default']
-    os.tenant       = "OSL"
-    os.server_name  = "#{ENV['USER']}-openstack"
-    os.floating_ip  = "#{ENV['OS_FLOATING_IP']}"
-  end
+  config.vm.hostname = "osl-openstack-berkshelf"
+
+  # Set the version of chef to install using the vagrant-omnibus plugin
+  config.omnibus.chef_version = :latest
+
+  # Every Vagrant virtual environment requires a box to build off of.
+  config.vm.box = "centos-6-20140121"
+
+  # The url from where the 'config.vm.box' box will be fetched if it
+  # doesn't already exist on the user's system.
+  config.vm.box_url = "http://vagrant.osuosl.org/centos-6-20140121.box"
+
+  # Assign this VM to a host-only network IP, allowing you to access it
+  # via the IP. Host-only networks can talk to the host machine as well as
+  # any other machines on the same network, but cannot be accessed (through this
+  # network interface) by any external networks.
+  config.vm.network :private_network, type: "dhcp"
+
+  # Create a forwarded port mapping which allows access to a specific port
+  # within the machine from a port on the host machine. In the example below,
+  # accessing "localhost:8080" will access port 80 on the guest machine.
+
+  # Share an additional folder to the guest VM. The first argument is
+  # the path on the host to the actual folder. The second argument is
+  # the path on the guest to mount the folder. And the optional third
+  # argument is a set of non-required options.
+  # config.vm.synced_folder "../data", "/vagrant_data"
+
+  # Provider-specific configuration so you can fine-tune various
+  # backing providers for Vagrant. These expose provider-specific options.
+  # Example for VirtualBox:
+  #
+  # config.vm.provider :virtualbox do |vb|
+  #   # Don't boot with headless mode
+  #   vb.gui = true
+  #
+  #   # Use VBoxManage to customize the VM. For example to change memory:
+  #   vb.customize ["modifyvm", :id, "--memory", "1024"]
+  # end
+  #
+  # View the documentation for the provider you're using for more
+  # information on available options.
 
   # The path to the Berksfile to use with Vagrant Berkshelf
   # config.berkshelf.berksfile_path = "./Berksfile"
@@ -47,23 +69,17 @@ Vagrant.configure("2") do |config|
   # to skip installing and copying to Vagrant's shelf.
   # config.berkshelf.except = []
 
-  config.omnibus.chef_version = :latest
-
-  config.vm.provision "chef_solo" do |chef|
-
-    chef.data_bags_path = "#{ENV['HOME']}/git/chef-repo/data_bags"
-    chef.encrypted_data_bag_secret_key_path = "#{ENV['HOME']}/.chef/encrypted_data_bag_secret"
-
+  config.vm.provision :chef_solo do |chef|
     chef.json = {
-      :mysql => {
-        :server_root_password => 'rootpass',
-        :server_debian_password => 'debpass',
-        :server_repl_password => 'replpass'
+      mysql: {
+        server_root_password: 'rootpass',
+        server_debian_password: 'debpass',
+        server_repl_password: 'replpass'
       }
     }
 
     chef.run_list = [
-      "recipe[osl-openstack::default]",
+        "recipe[osl-openstack::default]"
     ]
   end
 end

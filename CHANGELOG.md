@@ -1,18 +1,9 @@
-osl-packstack CHANGELOG
-=======================
+# 0.1.0
 
-This file is used to list changes made in each version of the osl-packstack cookbook.
+Initial release of osl-openstack
 
-0.0.2 (September 12, 2013)
------
-- [Geoffrey Corey] - Initial release and deployment of osl-packstack
+* Enhancements
+  * an enhancement
 
-0.0.4 (September 17, 2013)
-----
-- [Geoffrey Corey] - Restructure the recipe, moved user array to attributes to allow user overrides
-
-0.0.5 (September 18, 2013)
-----
-- [Geoffrey Corey] - More Recipe restructure, edit the cookbook for supoprted platforms
-
-- - -
+* Bug Fixes
+  * a bug fix

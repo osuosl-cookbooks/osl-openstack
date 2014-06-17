@@ -1,5 +1,3 @@
-cookbook "yum", "< 3.0.0"
-
-site :opscode
+source "https://api.berkshelf.com"
 
 metadata
