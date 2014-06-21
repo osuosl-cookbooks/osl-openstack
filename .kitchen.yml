@@ -3,14 +3,34 @@ driver:
   name: vagrant
 
 provisioner:
-  name: chef_solo
+  name: chef_zero
+  roles_path: ../../roles
 
 platforms:
   - name: ubuntu-12.04
-  - name: centos-6.4
+  - name: centos-6.5
 
 suites:
-  - name: default
+  - name: controller
     run_list:
-      - recipe[osl-openstack::default]
+      - role[openstack_base]
+      - recipe[openstack-ops-database::server]
+      - recipe[openstack-ops-database::openstack-db]
+      - recipe[openstack-ops-messaging::server]
+      - recipe[memcached]
+      - role[openstack_controller]
     attributes:
+      openstack:
+        developer_mode: true
+        release: havanah
+      mysql:
+        server_root_password: rootpass
+        server_debian_password: debpass
+        server_repl_password: replpass
+        allow_remote_root: true
+        root_network_acl: "%"
+      yum:
+        epel:
+          baseurl: "http://epel.osuosl.org/6/$basearch"
+          enable: true
+          gpgkey: "http://epel.osuosl.org/RPM-GPG-KEY-EPEL-6"
