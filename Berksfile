@@ -24,20 +24,20 @@ cookbook "openstack-common",
   github: "stackforge/cookbook-openstack-common",
   branch: "stable/havana"
 cookbook "openstack-compute",
-  github: "stackforge/cookbook-openstack-compute",
-  branch: "stable/havana"
+  github: "osuosl-cookbooks/cookbook-openstack-compute",
+  branch: "havana/ppc64-misc-fixes"
 cookbook "openstack-dashboard",
   github: "osuosl-cookbooks/cookbook-openstack-dashboard",
-  branch: "stable/havana"
+  branch: "havana/ssl_fix"
 cookbook "openstack-identity",
   github: "osuosl-cookbooks/cookbook-openstack-identity",
-  branch: "stable/havana"
+  branch: "havana/databag-fixes"
 cookbook "openstack-image",
   github: "osuosl-cookbooks/cookbook-openstack-image",
-  branch: "stable/havana"
+  branch: "havana/databag-fixes"
 cookbook "openstack-network",
   github: "osuosl-cookbooks/cookbook-openstack-network",
-  branch: "stable/havana"
+  branch: "havana/databag-fixes"
 cookbook "openstack-object-storage",
   github: "stackforge/cookbook-openstack-object-storage",
   branch: "stable/havana"
