@@ -1,6 +1,6 @@
 #
 # Cookbook Name:: osl-openstack
-# Recipe:: default
+# Recipe:: controller
 #
 # Copyright (C) 2014 Oregon State University
 #
@@ -16,3 +16,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+include_recipe "osl-apache::default"
+include_recipe "firewall::openstack"
