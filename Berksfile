@@ -17,41 +17,23 @@ cookbook "apt", "~> 2.2"
 
 # Openstack deps
 cookbook "mysql", "~> 4.1"
-cookbook "openstack-block-storage",
-  github: "stackforge/cookbook-openstack-block-storage",
-  branch: "stable/havana"
-cookbook "openstack-common",
-  github: "stackforge/cookbook-openstack-common",
-  branch: "stable/havana"
+%w(openstack-block-storage openstack-common
+openstack-object-storage openstack-ops-database openstack-ops-messaging
+openstack-orchestration openstack-telemetry).each do |cb|
+  cookbook cb,
+    github: "stackforge/cookbook-#{cb}",
+    branch: "stable/havana"
+end
+%w(openstack-identity openstack-image openstack-network).each do |cb|
+  cookbook cb,
+    github: "osuosl-cookbooks/cookbook-#{cb}",
+    branch: "havana/databag-fixes"
+end
 cookbook "openstack-compute",
   github: "osuosl-cookbooks/cookbook-openstack-compute",
   branch: "havana/ppc64-misc-fixes"
 cookbook "openstack-dashboard",
   github: "osuosl-cookbooks/cookbook-openstack-dashboard",
   branch: "havana/ssl_fix"
-cookbook "openstack-identity",
-  github: "osuosl-cookbooks/cookbook-openstack-identity",
-  branch: "havana/databag-fixes"
-cookbook "openstack-image",
-  github: "osuosl-cookbooks/cookbook-openstack-image",
-  branch: "havana/databag-fixes"
-cookbook "openstack-network",
-  github: "osuosl-cookbooks/cookbook-openstack-network",
-  branch: "havana/databag-fixes"
-cookbook "openstack-object-storage",
-  github: "stackforge/cookbook-openstack-object-storage",
-  branch: "stable/havana"
-cookbook "openstack-ops-database",
-  github: "stackforge/cookbook-openstack-ops-database",
-  branch: "stable/havana"
-cookbook "openstack-ops-messaging",
-  github: "stackforge/cookbook-openstack-ops-messaging",
-  branch: "stable/havana"
-cookbook "openstack-orchestration",
-  github: "stackforge/cookbook-openstack-orchestration",
-  branch: "stable/havana"
-cookbook "openstack-telemetry",
-  github: "stackforge/cookbook-openstack-telemetry",
-  branch: "stable/havana"
 
 metadata
