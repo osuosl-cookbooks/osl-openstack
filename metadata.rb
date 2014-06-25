@@ -4,7 +4,7 @@ maintainer_email 'systems@osuosl.org'
 license          'Apache 2.0'
 description      'Installs/Configures osl-openstack'
 long_description 'Installs/Configures osl-openstack'
-version          '0.1.0'
+version          '1.0.0'
 
 %w{ base firewall osl-apache mysql openstack-block-storage openstack-common
   openstack-compute openstack-dashboard openstack-identity openstack-image
