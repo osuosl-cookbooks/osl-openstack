@@ -17,3 +17,4 @@
 # limitations under the License.
 #
 include_recipe "firewall::openstack"
+include_recipe "firewall::vnc"
