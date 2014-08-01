@@ -22,3 +22,9 @@ include_recipe "firewall"
 
 include_recipe "firewall::openstack"
 include_recipe "osl-openstack::_common"
+
+# Enable the correct KVM module for OpenPOWER
+case node['kernel']['machine']
+when "ppc64"
+  include_recipe "modules"
+end

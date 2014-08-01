@@ -17,6 +17,7 @@ cookbook "yum-epel", ">= 0.3.4"
 cookbook "apt", ">= 2.3.8"
 cookbook "database", ">= 2.0.0"
 cookbook "statsd", github: "att-cloud/cookbook-statsd"
+cookbook "modules", git: "git@github.com:osuosl-cookbooks/modules-cookbook"
 
 # Openstack deps
 #cookbook "mysql", "~> 4.1"
