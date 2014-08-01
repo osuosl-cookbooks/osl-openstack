@@ -23,6 +23,6 @@ when 'fedora'
     gpgkey node['openstack']['yum']['repo-key']
     baseurl node['openstack']['yum']['uri']
     enabled true
-    action repo_action
+    action :add
   end
 end
