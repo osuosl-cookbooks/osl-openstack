@@ -2,9 +2,10 @@
 driver_config:
   openstack_username: <%= ENV['OS_USERNAME'] %>
   openstack_api_key: <%= ENV['OS_PASSWORD'] %>
-  openstack_auth_url: <%= ENV['OS_AUTH_URL'] %>
+  openstack_auth_url: <%= "#{ENV['OS_AUTH_URL']}/tokens" %>
   key_name: <%= ENV['OS_SSH_KEYPAIR'] %>
-  private_key_path: <%= ENV['OS_SSH_KEY'] %>
+  private_key_path: <%= ENV['OS_PRIVATE_SSH_KEY'] %>
+  public_key_path: <%= ENV['OS_PUBLIC_SSH_KEY'] %>
   openstack_tenant: <%= ENV['OS_TENANT'] %>
   floating_ip: <%= ENV['OS_FLOATING_IP'] %>
   flavor_ref: <%= ENV['OS_FLAVOR_REF'] %>
@@ -16,13 +17,14 @@ provisioner:
   attributes:
     openstack:
       developer_mode: true
-      release: havanah
+      release: icehouse
     mysql:
       server_root_password: rootpass
       server_debian_password: debpass
       server_repl_password: replpass
       allow_remote_root: true
-      root_network_acl: "%"
+      root_network_acl:
+        - "%"
     yum:
       epel:
         baseurl: "http://epel.osuosl.org/6/$basearch"
@@ -64,24 +66,22 @@ suites:
       - role[openstack_ops_database]
       - role[openstack_controller]
       - recipe[osl-openstack::controller]
+    excludes:
+      - fedora-20
   - name: controller_managed
     run_list:
       - role[base_managed]
       - role[openstack_ops_database]
       - role[openstack_controller]
       - recipe[osl-openstack::controller]
+    excludes:
+      - fedora-20
   - name: compute
     run_list:
-      - role[openstack_ops_database]
-      - role[openstack_controller]
-      - recipe[osl-openstack::controller]
       - recipe[osl-openstack::compute]
       - role[openstack_compute]
   - name: compute_managed
     run_list:
       - role[base_managed]
-      - role[openstack_ops_database]
-      - role[openstack_controller]
-      - recipe[osl-openstack::controller]
       - recipe[osl-openstack::compute]
       - role[openstack_compute]

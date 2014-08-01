@@ -16,4 +16,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# this is required because of the fedora deps. Will be fixed once its moved into
+# a _common recipe.
+include_recipe "firewall"
+
 include_recipe "firewall::openstack"
+include_recipe "osl-openstack::_common"
+
+# Enable the correct KVM module for OpenPOWER
+case node['kernel']['machine']
+when "ppc64"
+  include_recipe "modules"
+end

@@ -1,6 +1,6 @@
 #
 # Cookbook Name:: osl-openstack
-# Recipe:: controller
+# Recipe:: _common
 #
 # Copyright (C) 2014 Oregon State University
 #
@@ -16,7 +16,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-include_recipe "osl-apache::default"
-include_recipe "firewall::openstack"
-include_recipe "firewall::amqp"
-include_recipe "osl-openstack::_common"
+case node['platform_family']
+when 'fedora'
+  yum_repository "RDO-#{node['openstack']['release']}" do
+    description "OpenStack RDO repo for #{node['openstack']['release']}"
+    gpgkey node['openstack']['yum']['repo-key']
+    baseurl node['openstack']['yum']['uri']
+    enabled true
+    action :add
+  end
+end
