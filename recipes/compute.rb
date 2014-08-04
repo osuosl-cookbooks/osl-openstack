@@ -21,6 +21,7 @@
 include_recipe "firewall"
 
 include_recipe "firewall::openstack"
+include_recipe "firewall::vnc"
 include_recipe "osl-openstack::_common"
 
 # Enable the correct KVM module for OpenPOWER

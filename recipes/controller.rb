@@ -19,4 +19,5 @@
 include_recipe "osl-apache::default"
 include_recipe "firewall::openstack"
 include_recipe "firewall::amqp"
+include_recipe "firewall::vnc"
 include_recipe "osl-openstack::_common"
