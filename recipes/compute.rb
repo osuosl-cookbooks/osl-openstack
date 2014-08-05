@@ -22,7 +22,7 @@ include_recipe "firewall"
 
 include_recipe "firewall::openstack"
 include_recipe "firewall::vnc"
-include_recipe "osl-openstack::_common"
+include_recipe "osl-openstack::_fedora"
 
 # Enable the correct KVM module for OpenPOWER
 case node['kernel']['machine']
