@@ -29,3 +29,23 @@ case node['kernel']['machine']
 when "ppc64"
   include_recipe "modules"
 end
+
+case node['platform_family']
+when 'fedora'
+  case node['kernel']['machine']
+  when "ppc64"
+    yum_repository "OSL-Openpower" do
+      description "OSL Openpower repo for #{node['platform-family']}-#{node['platform_version']}"
+      gpgkey node['osl-openstack']['openpower']['yum']['repo-key']
+      baseurl node['osl-openstack']['openpower]'['yum']['uri']
+      enabled true
+      action :add
+    end
+
+    # Install latest version included in the repo above
+    package "kernel" do
+      version ">= #{node['osl-openstack']['openpower']['kernel_version']}"
+      action :install
+    end
+  end
+end
