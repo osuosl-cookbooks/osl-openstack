@@ -22,10 +22,44 @@ include_recipe "firewall"
 
 include_recipe "firewall::openstack"
 include_recipe "firewall::vnc"
-include_recipe "osl-openstack::_common"
+include_recipe "osl-openstack::_fedora"
 
 # Enable the correct KVM module for OpenPOWER
 case node['kernel']['machine']
 when "ppc64"
   include_recipe "modules"
+end
+
+case node['platform_family']
+when 'fedora'
+  case node['kernel']['machine']
+  when "ppc64"
+    yum_repository "OSL-Openpower" do
+      description "OSL Openpower repo for #{node['platform-family']}-#{node['platform_version']}"
+      gpgkey node['osl-openstack']['openpower']['yum']['repo-key']
+      baseurl node['osl-openstack']['openpower]'['yum']['uri']
+      enabled true
+      action :add
+    end
+
+    # Install latest version included in the repo above
+    package "kernel" do
+      version node['osl-openstack']['openpower']['kernel_version']
+      action :upgrade
+    end
+  end
+
+  # Turn off smt on boot (required for little endian support)
+  # NOTE: This really should be handled via an rclocal cookbook
+  cookbook_file "/etc/rc.d/rc.local" do
+    owner "root"
+    group "root"
+    mode 0755
+  end
+
+  # Turn off smt during runtime
+  execute "ppc64_cpu_smt_off" do
+    command "/sbin/ppc64_cpu --smt=off"
+    not_if "/sbin/ppc64_cpu --smt | grep 'SMT is off'"
+  end
 end

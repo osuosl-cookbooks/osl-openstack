@@ -1,6 +1,6 @@
 #
 # Cookbook Name:: osl-openstack
-# Recipe:: _common
+# Recipe:: _fedora
 #
 # Copyright (C) 2014 Oregon State University
 #
@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# Fedora specific common setup
 case node['platform_family']
 when 'fedora'
   yum_repository "RDO-#{node['openstack']['release']}" do
