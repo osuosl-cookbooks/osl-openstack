@@ -44,8 +44,8 @@ when 'fedora'
 
     # Install latest version included in the repo above
     package "kernel" do
-      version ">= #{node['osl-openstack']['openpower']['kernel_version']}"
-      action :install
+      version node['osl-openstack']['openpower']['kernel_version']
+      action :upgrade
     end
   end
 
