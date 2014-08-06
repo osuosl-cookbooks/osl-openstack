@@ -1,0 +1,4 @@
+#!/bin/bash
+# rc.local managed by Chef. Chagnes will be overwritten
+# Disable smt
+/sbin/ppc64_cpu --smt=off

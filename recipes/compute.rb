@@ -48,4 +48,18 @@ when 'fedora'
       action :install
     end
   end
+
+  # Turn off smt on boot (required for little endian support)
+  # NOTE: This really should be handled via an rclocal cookbook
+  cookbook_file "/etc/rc.d/rc.local" do
+    owner "root"
+    group "root"
+    mode 0755
+  end
+
+  # Turn off smt during runtime
+  execute "ppc64_cpu_smt_off" do
+    command "/sbin/ppc64_cpu --smt=off"
+    not_if "/sbin/ppc64_cpu --smt | grep 'SMT is off'"
+  end
 end
