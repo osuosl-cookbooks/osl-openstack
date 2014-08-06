@@ -37,7 +37,7 @@ when 'fedora'
     yum_repository "OSL-Openpower" do
       description "OSL Openpower repo for #{node['platform-family']}-#{node['platform_version']}"
       gpgkey node['osl-openstack']['openpower']['yum']['repo-key']
-      baseurl node['osl-openstack']['openpower]'['yum']['uri']
+      baseurl node['osl-openstack']['openpower']['yum']['uri']
       enabled true
       action :add
     end
