@@ -21,7 +21,7 @@ if node['openstack']['novnc']['ssl']['use_ssl']
   directory "#{node['openstack']['novnc']['ssl']['dir']}" do
     owner 'root'
     group 'nova'
-    mode 00644
+    mode 00755
     action :create
   end
 
