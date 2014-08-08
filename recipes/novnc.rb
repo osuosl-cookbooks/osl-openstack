@@ -35,7 +35,7 @@ if node['openstack']['novnc']['ssl']['use_ssl']
       mode cert_mode
       owner cert_owner
       group cert_group
-      notifies :restart, "service[openstack-nova-novncproxy"
+      notifies :restart, "service[openstack-nova-novncproxy]"
     end
   end
 
