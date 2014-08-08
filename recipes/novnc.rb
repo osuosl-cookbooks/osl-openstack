@@ -64,4 +64,3 @@ if node['openstack']['novnc']['ssl']['use_ssl']
     notifies :restart, 'service[openstack-nova-novncproxy]'
   end
 end
-end
