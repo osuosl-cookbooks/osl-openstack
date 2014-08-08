@@ -35,7 +35,15 @@ if node['openstack']['novnc']['ssl']['use_ssl']
       mode cert_mode
       owner cert_owner
       group cert_group
-      notifies :restart, "service[openstack-nova-novncproxy]"
+      notifies :restart, 'service[openstack-nova-novncproxy]'
+    end
+  else
+    cookbook_file cert_file do
+      source 'novnc.pem'
+      mode cert_mode
+      owner cert_owner
+      group cert_group
+      notifies :restart, 'service[openstack-nova-novncproxy]'
     end
   end
 
@@ -46,6 +54,14 @@ if node['openstack']['novnc']['ssl']['use_ssl']
   if node['openstack']['novnc']['ssl']['key_url']
     remote_file key_file do
       source node['openstack']['novnc']['ssl']['key_url']
+      mode key_mode
+      owner key_owner
+      group key_group
+      notifies :restart, 'service[openstack-nova-novncproxy]'
+    end
+  else
+    cookbook_file key_file do
+      source 'novnc.key'
       mode key_mode
       owner key_owner
       group key_group
