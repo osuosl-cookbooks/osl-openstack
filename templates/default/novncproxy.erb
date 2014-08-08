@@ -2,4 +2,6 @@
 
 <% if node["openstack"]["novnc"]["ssl"]["use_ssl"] %>
 OPTIONS="--ssl_only --cert <%= @cert %> --key <%= @key %> --novncproxy_host <%= @host %>"
+<% else -%>
+#OPTIONS=""
 <% end -%>
