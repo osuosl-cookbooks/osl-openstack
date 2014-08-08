@@ -59,7 +59,7 @@ if node['openstack']['novnc']['ssl']['use_ssl']
     owner 'root'
     group 'root'
     variables(:cert => cert_file,
-              :key => keyfile,
+              :key => key_file,
               :host => node['fqdn'])
     notifies :restart, 'service[openstack-nova-novncproxy]'
   end
