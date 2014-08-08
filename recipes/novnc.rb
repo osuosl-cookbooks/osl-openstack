@@ -58,8 +58,8 @@ if node['openstack']['novnc']['ssl']['use_ssl']
     mode 00644
     owner 'root'
     group 'root'
-    variables(:cert => cert_file
-              :key => keyfile
+    variables(:cert => cert_file,
+              :key => keyfile,
               :host => node['fqdn'])
     notifies :restart, 'service[openstack-nova-novncproxy]'
   end
