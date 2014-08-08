@@ -52,15 +52,18 @@ if node['openstack']['novnc']['ssl']['use_ssl']
       notifies :restart, 'service[openstack-nova-novncproxy]'
     end
   end
+else
+  cert_file = nil
+  key_file = nil
+end
 
-  template '/etc/sysconfig/openstack-nova-novncproxy' do
-    source 'novncproxy.erb'
-    mode 00644
-    owner 'root'
-    group 'root'
-    variables(:cert => cert_file,
-              :key => key_file,
-              :host => node['fqdn'])
-    notifies :restart, 'service[openstack-nova-novncproxy]'
-  end
+template '/etc/sysconfig/openstack-nova-novncproxy' do
+  source 'novncproxy.erb'
+  mode 00644
+  owner 'root'
+  group 'root'
+  variables(:cert => cert_file,
+            :key => key_file,
+            :host => node['fqdn'])
+  notifies :restart, 'service[openstack-nova-novncproxy]'
 end
