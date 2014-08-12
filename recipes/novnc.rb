@@ -18,7 +18,7 @@
 #
 
 if node['openstack']['novnc']['ssl']['use_ssl']
-  directory "#{node['openstack']['novnc']['ssl']['dir']}" do
+  directory node['openstack']['novnc']['ssl']['dir'] do
     owner 'root'
     group 'nova'
     mode 00755
