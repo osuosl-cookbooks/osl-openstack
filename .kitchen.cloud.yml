@@ -13,7 +13,8 @@ driver_config:
 provisioner:
   name: chef_zero
   roles_path: ../../roles
-  data_bags_path: ../../data_bags
+  data_bags_path: test/integration/default/data_bags
+  encrypted_data_bag_secret_key_path: test/integration/default/encrypted_data_bag_secret
   attributes:
     openstack:
       developer_mode: true
@@ -85,3 +86,11 @@ suites:
       - role[base_managed]
       - recipe[osl-openstack::compute]
       - role[openstack_compute]
+  - name: novnc
+    run_list:
+      - role[openstack_ops_database]
+      - role[openstack_controller]
+      - recipe[osl-openstack::controller]
+      - recipe[osl-openstack::novnc]
+    excludes:
+      - fedora-20
