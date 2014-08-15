@@ -49,7 +49,7 @@ when 'fedora'
     end
   end
 
-  # Turn off smt on boot (required for little endian support)
+  # Turn off smt on boot (required for KVM support)
   # NOTE: This really should be handled via an rclocal cookbook
   cookbook_file "/etc/rc.d/rc.local" do
     owner "root"
