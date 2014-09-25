@@ -23,6 +23,7 @@ when 'fedora'
     description "OpenStack RDO repo for #{node['openstack']['release']}"
     gpgkey node['openstack']['yum']['repo-key']
     baseurl node['openstack']['yum']['uri']
+    includepkgs "*#{node['platform_version']}*"
     enabled true
     action :add
   end
