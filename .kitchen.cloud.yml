@@ -6,8 +6,9 @@ driver_config:
   key_name: <%= ENV['OS_SSH_KEYPAIR'] %>
   private_key_path: <%= ENV['OS_PRIVATE_SSH_KEY'] %>
   public_key_path: <%= ENV['OS_PUBLIC_SSH_KEY'] %>
-  openstack_tenant: <%= ENV['OS_TENANT'] %>
+  openstack_tenant: <%= ENV['OS_TENANT_NAME'] %>
   floating_ip: <%= ENV['OS_FLOATING_IP'] %>
+  floating_ip_pool: <%= ENV['OS_FLOATING_IP_POOL'] %>
   flavor_ref: <%= ENV['OS_FLAVOR_REF'] %>
 
 provisioner:
