@@ -35,7 +35,7 @@ apache_app "openstack-https-proxy" do
   cert_file "/etc/pki/tls/certs/#{dashboard['ssl']['cert']}"
   cert_key "/etc/pki/tls/private/#{dashboard['ssl']['key']}"
   cert_chain "/etc/pki/tls/certs/#{dashboard['ssl']['chain']}" if dashboard['ssl']['chain']
-  ip_address endpoints['host']
+  ip_address endpoints['host'] == "127.0.0.1" ? node['ipaddress'] : endpoints['host']
   template "https-proxy.conf.erb"
   cookbook "osl-openstack"
   port [ endpoints['identity-api']['port'], endpoints['identity-admin']['port'] ]
