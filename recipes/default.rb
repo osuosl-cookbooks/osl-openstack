@@ -25,3 +25,19 @@ when 'centos'
   node.default['openstack']['yum']['repo-key'] = "https://github.com/redhat-openstack/rdo-release/raw/#{node['openstack']['release']}/RPM-GPG-KEY-RDO-#{node['openstack']['release'].capitalize}"
 end
 
+# Set database attributes with our suffix setting
+database_suffix = node['osl-openstack']['database_suffix']
+if database_suffix
+  node['osl-openstack']['databases'].each_pair do |db,name|
+    node.default['openstack']['db'][db]['db_name'] = "#{name}_#{database_suffix}"
+    node.default['openstack']['db'][db]['username'] = "#{name}_#{database_suffix}"
+  end
+end
+
+# set data bag attributes with our prefix
+databag_prefix = node['osl-openstack']['databag_prefix']
+if databag_prefix
+  node['osl-openstack']['data_bags'].each do |d|
+    node.default['openstack']['secret']["#{d}_data_bag"] = "#{databag_prefix}_#{d}"
+  end
+end
