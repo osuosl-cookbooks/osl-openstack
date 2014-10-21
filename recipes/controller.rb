@@ -23,3 +23,6 @@ include_recipe "firewall::vnc"
 include_recipe "osl-openstack::_fedora"
 include_recipe "osl-openstack::default"
 include_recipe "osl-openstack::novnc"
+
+vnc_bind_int = node['osl-openstack']['vnc_bind_interface']['controller']
+node.default['openstack']['endpoints']['compute-vnc-bind']['bind_interface'] = vnc_bind_int

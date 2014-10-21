@@ -25,6 +25,9 @@ include_recipe "firewall::vnc"
 include_recipe "osl-openstack::default"
 include_recipe "osl-openstack::_fedora"
 
+vnc_bind_int = node['osl-openstack']['vnc_bind_interface']['compute']
+node.default['openstack']['endpoints']['compute-vnc-bind']['bind_interface'] = vnc_bind_int
+
 # Enable the correct KVM module for OpenPOWER
 case node['kernel']['machine']
 when "ppc64"

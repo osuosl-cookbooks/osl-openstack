@@ -1,5 +1,22 @@
 # osl-openstack default attributes
 
+default['osl-openstack']['databases'] = {
+  "block-storage" => "cinder",
+  "compute" => "nova",
+  "dashboard" => "horizon",
+  "identity" => "keystone",
+  "image" => "glance",
+  "network" => "neutron",
+  "orchestration" => "heat",
+  "telemetry" => "ceilometer"
+}
+default['osl-openstack']['data_bags'] = [ 'db_passwords', 'secrets',
+  'service_passwords', 'user_passwords' ]
+default['osl-openstack']['database_suffix'] = nil
+default['osl-openstack']['databag_prefix'] = nil
+default['osl-openstack']['vnc_bind_interface']['controller'] = "eth1"
+default['osl-openstack']['vnc_bind_interface']['compute'] = "br42"
+
 # Include Fedora attribute fixes that aren't in upstream
 case platform
 when 'fedora'
