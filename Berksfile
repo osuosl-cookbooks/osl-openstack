@@ -14,6 +14,8 @@ cookbook "nagios", git: "git@github.com:osuosl-cookbooks/nagios"
 cookbook "omnibus_updater"
 cookbook "osl-apache", git: "git@github.com:osuosl-cookbooks/osl-apache"
 cookbook "osl-munin", git: "git@github.com:osuosl-cookbooks/osl-munin"
+cookbook 'resource_from_hash',
+         git: 'git@github.com:osuosl-cookbooks/resource_from_hash'
 cookbook "runit", "1.5.10"
 cookbook "statsd", github: "att-cloud/cookbook-statsd"
 cookbook "yum", ">= 3.1.4"
