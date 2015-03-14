@@ -101,6 +101,9 @@ suites:
       - recipe[openstack-identity::registration]
       - recipe[osl-openstack::cinder]
     attributes:
+      osl-openstack:
+        cinder:
+          iscsi_role: "openstack_base"
       openstack:
         block-storage:
           volume:

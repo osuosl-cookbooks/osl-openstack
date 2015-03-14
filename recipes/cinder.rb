@@ -18,6 +18,16 @@
 #
 # this is required because of the fedora deps. Will be fixed once its moved into
 # a _common recipe.
+iscsi_hosts = ['127.0.0.1']
+iscsi_role = node['osl-openstack']['cinder']['iscsi_role']
+unless iscsi_role.nil?
+  search(:node, "role:#{iscsi_role}") do |i|
+    iscsi_hosts << i['ipaddress']
+  end
+end
+
+node.override['firewall']['range']['iscsi'] = iscsi_hosts
+
 include_recipe 'firewall'
 include_recipe 'firewall::openstack'
 include_recipe 'firewall::iscsi'
