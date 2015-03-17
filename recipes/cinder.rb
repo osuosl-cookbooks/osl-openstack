@@ -32,7 +32,7 @@ include_recipe 'firewall'
 include_recipe 'firewall::openstack'
 include_recipe 'firewall::iscsi'
 include_recipe 'osl-openstack::default'
-include_recipe 'osl-openstack::_fedora'
+include_recipe 'osl-openstack::_fedora' if platform?('fedora')
 include_recipe 'openstack-block-storage::api'
 include_recipe 'openstack-block-storage::scheduler'
 include_recipe 'openstack-block-storage::volume'
