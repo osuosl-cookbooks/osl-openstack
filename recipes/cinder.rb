@@ -21,8 +21,8 @@
 iscsi_hosts = ['127.0.0.1']
 iscsi_role = node['osl-openstack']['cinder']['iscsi_role']
 unless iscsi_role.nil?
-  search(:node, "role:#{iscsi_role}") do |i|
-    iscsi_hosts << i['ipaddress']
+  search(:node, "role:#{iscsi_role}") do |n|
+    iscsi_hosts << n['ipaddress']
   end
 end
 
