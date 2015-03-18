@@ -9,8 +9,8 @@ set :backend, :exec
 ).each do |ip|
   describe iptables do
     it do
-      should have_rule("-A iscsi -s #{ip}/32 -p tcp -m tcp --dport 3260 -j
-ACCEPT")
+      should have_rule("-A iscsi -s #{ip}/32 -p tcp -m tcp --dport 3260 -j " \
+'ACCEPT')
     end
   end
 end
