@@ -19,8 +19,8 @@
 # this is required because of the fedora deps. Will be fixed once its moved into
 # a _common recipe.
 iscsi_hosts = ['127.0.0.1']
-iscsi_hosts << node['osl-openstack']['cinder']['ips'] unless
-  node['osl-openstack']['cinder']['ips'].nil?
+iscsi_hosts << node['osl-openstack']['cinder']['iscsi_ips'] unless
+  node['osl-openstack']['cinder']['iscsi_ips'].nil?
 iscsi_role = node['osl-openstack']['cinder']['iscsi_role']
 unless iscsi_role.nil? && Chef::Config[:solo]
   search(:node, "role:#{iscsi_role}") do |n|
