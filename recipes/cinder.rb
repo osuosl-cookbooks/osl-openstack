@@ -22,7 +22,7 @@ iscsi_hosts = ['127.0.0.1']
 iscsi_hosts << node['osl-openstack']['cinder']['ips'] unless
   node['osl-openstack']['cinder']['ips'].nil?
 iscsi_role = node['osl-openstack']['cinder']['iscsi_role']
-unless iscsi_role.nil?
+unless iscsi_role.nil? && Chef::Config[:solo]
   search(:node, "role:#{iscsi_role}") do |n|
     iscsi_hosts << n['ipaddress']
   end
