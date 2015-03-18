@@ -16,6 +16,8 @@ default['osl-openstack']['database_suffix'] = nil
 default['osl-openstack']['databag_prefix'] = nil
 default['osl-openstack']['vnc_bind_interface']['controller'] = "eth1"
 default['osl-openstack']['vnc_bind_interface']['compute'] = "br42"
+default['osl-openstack']['cinder']['iscsi_role'] = nil
+default['osl-openstack']['cinder']['iscsi_ips'] = []
 
 # Include Fedora attribute fixes that aren't in upstream
 case platform

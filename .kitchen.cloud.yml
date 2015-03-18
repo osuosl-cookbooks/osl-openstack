@@ -50,11 +50,11 @@ provisioner:
       disabled: true
 
 platforms:
-- name: centos-6.5
+- name: centos-6.6
   driver_plugin: openstack
   driver_config:
     username: centos
-    image_ref: "CentOS 6.5"
+    image_ref: "CentOS 6.6"
     attributes:
       mysql:
         version: 5.1
@@ -92,6 +92,25 @@ suites:
       - role[base_managed]
       - recipe[osl-openstack::compute]
       - role[openstack_compute]
+  - name: cinder
+    run_list:
+      - role[openstack_base]
+      - role[openstack_ops_database]
+      - recipe[openstack-ops-messaging::server]
+      - recipe[openstack-identity::server]
+      - recipe[openstack-identity::registration]
+      - recipe[osl-openstack::cinder]
+    attributes:
+      osl-openstack:
+        cinder:
+          iscsi_role: "openstack_base"
+          iscsi_ips:
+            - 127.0.2.1
+            - 127.0.3.1
+      openstack:
+        block-storage:
+          volume:
+            create_volume_group: true
   - name: novnc
     run_list:
       - role[openstack_ops_database]
