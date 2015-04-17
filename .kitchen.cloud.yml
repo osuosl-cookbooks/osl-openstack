@@ -58,11 +58,6 @@ platforms:
     attributes:
       mysql:
         version: 5.1
-- name: ubuntu-12.04
-  driver_plugin: openstack
-  driver_config:
-    username: ubuntu
-    image_ref: "Ubuntu 12.04"
 - name: fedora-20
   driver_plugin: openstack
   driver_config:

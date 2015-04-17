@@ -40,7 +40,6 @@ provisioner:
       disabled: true
 
 platforms:
-  - name: ubuntu-12.04
   - name: centos-6.6
     attributes:
       mysql:
