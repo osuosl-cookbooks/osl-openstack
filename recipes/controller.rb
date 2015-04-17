@@ -2,7 +2,7 @@
 # Cookbook Name:: osl-openstack
 # Recipe:: controller
 #
-# Copyright (C) 2014 Oregon State University
+# Copyright (C) 2014, 2015 Oregon State University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-include_recipe "osl-apache::default"
-include_recipe "firewall::openstack"
-include_recipe "firewall::amqp"
-include_recipe "firewall::vnc"
-include_recipe "osl-openstack::_fedora"
-include_recipe "osl-openstack::default"
-include_recipe "osl-openstack::novnc"
+include_recipe 'osl-apache::default'
+include_recipe 'firewall::openstack'
+include_recipe 'firewall::amqp'
+include_recipe 'firewall::vnc'
+include_recipe 'osl-openstack::_fedora'
+include_recipe 'osl-openstack::default'
+include_recipe 'osl-openstack::novnc'
 
 vnc_bind_int = node['osl-openstack']['vnc_bind_interface']['controller']
-node.default['openstack']['endpoints']['compute-vnc-bind']['bind_interface'] = vnc_bind_int
+node.default['openstack']['endpoints']['compute-vnc-bind']['bind_interface'] =
+  vnc_bind_int

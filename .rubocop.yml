@@ -4,7 +4,3 @@ AllCops:
     - '**/Cheffile'
   Exclude:
     - 'metadata.rb'
-
-Lint/AmbiguousRegexpLiteral:
-  Exclude:
-    - 'test/integration/**/*.rb'
