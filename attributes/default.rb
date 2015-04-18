@@ -10,7 +10,7 @@ default['osl-openstack']['databases'] = {
   'orchestration' => 'heat',
   'telemetry' => 'ceilometer'
 }
-default['osl-openstack']['data_bags'] = %(
+default['osl-openstack']['data_bags'] = %w(
   db_passwords
   secrets
   service_passwords
