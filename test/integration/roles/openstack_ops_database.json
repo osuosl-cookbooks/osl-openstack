@@ -1,0 +1,22 @@
+{
+    "chef_type": "role",
+    "default_attributes": {},
+    "description": "Deploying a non-HA Mysql server for OpenStack",
+    "env_run_lists": {},
+    "json_class": "Chef::Role",
+    "name": "openstack_ops_database",
+    "override_attributes": {
+        "authorization": {
+            "sudo": {
+                "include_sudoers_d": true
+            }
+        }
+    },
+    "run_list": [
+      "role[openstack_base]",
+      "recipe[openstack-ops-database::server]",
+      "recipe[openstack-ops-database::openstack-db]",
+      "recipe[openstack-ops-messaging::server]",
+      "recipe[memcached]"
+    ]
+}

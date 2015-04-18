@@ -1,0 +1,46 @@
+{
+    "chef_type": "role",
+    "default_attributes": {},
+    "description": "OpenStack Controller role to setup. Installs and configures a controller node for openstack infra",
+    "env_run_lists": {},
+    "json_class": "Chef::Role",
+    "name": "openstack_controller",
+    "override_attributes": {
+        "authorization": {
+            "sudo": {
+                "include_sudoers_d": true
+            }
+        }
+    },
+    "run_list": [
+        "role[openstack_base]",
+        "recipe[openstack-ops-messaging::server]",
+        "recipe[openstack-identity::server]",
+        "recipe[openstack-identity::registration]",
+        "recipe[openstack-image::api]",
+        "recipe[openstack-image::registry]",
+        "recipe[openstack-image::identity_registration]",
+        "recipe[openstack-image::image_upload]",
+        "recipe[openstack-network::identity_registration]",
+        "recipe[openstack-network::openvswitch]",
+        "recipe[openstack-network::l3_agent]",
+        "recipe[openstack-network::dhcp_agent]",
+        "recipe[openstack-network::metadata_agent]",
+        "recipe[openstack-network::server]",
+        "recipe[openstack-compute::nova-setup]",
+        "recipe[openstack-compute::identity_registration]",
+        "recipe[openstack-compute::conductor]",
+        "recipe[openstack-compute::scheduler]",
+        "recipe[openstack-compute::api-ec2]",
+        "recipe[openstack-compute::api-os-compute]",
+        "recipe[openstack-compute::api-metadata]",
+        "recipe[openstack-block-storage::api]",
+        "recipe[openstack-block-storage::scheduler]",
+        "recipe[openstack-block-storage::volume]",
+        "recipe[certificate::wildcard]",
+        "recipe[openstack-compute::nova-cert]",
+        "recipe[openstack-compute::vncproxy]",
+        "recipe[openstack-dashboard::server]",
+        "recipe[osl-openstack::controller]"
+    ]
+}
