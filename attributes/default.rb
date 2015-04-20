@@ -32,7 +32,7 @@ when 'fedora'
     '3.16.0-1.fc20.ppc64'
   # openstack-* cookbook attributes
   default['openstack']['compute']['platform']['dbus_service'] = 'dbus'
-  default['openstack']['db']['python_packages']['mysql'] = %(MySQL-python)
+  default['openstack']['db']['python_packages']['mysql'] = %w(MySQL-python)
 end
 
 case node['kernel']['machine']
