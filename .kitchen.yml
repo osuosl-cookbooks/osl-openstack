@@ -4,7 +4,7 @@ driver:
 
 provisioner:
   name: chef_zero
-  roles_path: ../../roles
+  roles_path: test/integration/roles
   data_bags_path: test/integration/default/data_bags
   encrypted_data_bag_secret_key_path: test/integration/default/encrypted_data_bag_secret
 
@@ -40,7 +40,6 @@ provisioner:
       disabled: true
 
 platforms:
-  - name: ubuntu-12.04
   - name: centos-6.6
     attributes:
       mysql:
@@ -54,20 +53,8 @@ suites:
       - role[openstack_controller]
     excludes:
       - fedora-20
-  - name: controller_managed
-    run_list:
-      - role[base_managed]
-      - role[openstack_ops_database]
-      - role[openstack_controller]
-    excludes:
-      - fedora-20
   - name: compute
     run_list:
-      - recipe[osl-openstack::compute]
-      - role[openstack_compute]
-  - name: compute_managed
-    run_list:
-      - role[base_managed]
       - recipe[osl-openstack::compute]
       - role[openstack_compute]
   - name: cinder

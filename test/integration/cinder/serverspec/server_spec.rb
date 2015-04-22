@@ -23,7 +23,7 @@ describe command(cinder + ' create --display-name=test-volume 1') do
 end
 
 describe command(cinder + 'list') do
-  its(:stdout) { should match /test-volume/ }
+  its(:stdout) { should match(/test-volume/) }
 end
 
 describe command(cinder + 'delete test-volume') do

@@ -1,0 +1,26 @@
+{
+    "chef_type": "role",
+    "default_attributes": {},
+    "description": "OpenStack Compute role to setup a compute node in openstack infra",
+    "env_run_lists": {},
+    "json_class": "Chef::Role",
+    "name": "openstack_compute",
+    "override_attributes": {
+        "authorization": {
+            "sudo": {
+                "include_sudoers_d": true
+            }
+        },
+        "firewall": {
+          "iptables-config": {
+            "save_on_restart": "yes",
+            "save_on_stop": "yes"
+          }
+        }
+    },
+    "run_list": [
+      "recipe[osl-openstack::compute]",
+      "role[openstack_base]",
+      "recipe[openstack-compute::compute]"
+    ]
+}

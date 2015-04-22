@@ -2,7 +2,7 @@
 # Cookbook Name:: osl-openstack
 # Recipe:: novnc
 #
-# Copyright (C) 2014 Oregon State University
+# Copyright (C) 2014, 2015 Oregon State University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,7 +25,8 @@ if node['openstack']['novnc']['ssl']['use_ssl']
     action :create
   end
 
-  cert_file = "#{node['openstack']['novnc']['ssl']['dir']}/#{node['openstack']['novnc']['ssl']['cert']}"
+  cert_file = node['openstack']['novnc']['ssl']['dir'] + \
+              '/' + node['openstack']['novnc']['ssl']['cert']
   cert_mode = 00644
   cert_owner = 'root'
   cert_group = 'nova'
@@ -47,7 +48,8 @@ if node['openstack']['novnc']['ssl']['use_ssl']
     end
   end
 
-  key_file = "#{node['openstack']['novnc']['ssl']['dir']}/#{node['openstack']['novnc']['ssl']['key']}"
+  key_file = node['openstack']['novnc']['ssl']['dir'] + \
+             '/' + node['openstack']['novnc']['ssl']['key']
   key_mode = 00644
   key_owner = 'root'
   key_group = 'nova'
@@ -78,8 +80,8 @@ template '/etc/sysconfig/openstack-nova-novncproxy' do
   mode 00644
   owner 'root'
   group 'root'
-  variables(:cert => cert_file,
-            :key => key_file,
-            :host => node['fqdn'])
+  variables(cert: cert_file,
+            key: key_file,
+            host: node['fqdn'])
   notifies :restart, 'service[openstack-nova-novncproxy]'
 end
