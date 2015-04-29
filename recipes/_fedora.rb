@@ -19,6 +19,7 @@
 # Fedora specific common setup
 case node['platform_family']
 when 'fedora'
+  include_recipe 'yum-fedora'
   yum_repository "RDO-#{node['openstack']['release']}" do
     description "OpenStack RDO repo for #{node['openstack']['release']}"
     gpgkey node['openstack']['yum']['repo-key']
