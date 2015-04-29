@@ -37,5 +37,5 @@ end
 
 case node['kernel']['machine']
 when 'ppc64'
-  default['modules']['modules'] = %(kvm_hv)
+  default['modules']['modules'] = %w(kvm_hv)
 end
