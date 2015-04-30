@@ -54,6 +54,7 @@ suites:
       - role[openstack_controller]
     excludes:
       - fedora-20
+      - fedora-21
   - name: compute
     run_list:
       - recipe[osl-openstack::compute]
@@ -84,3 +85,4 @@ suites:
       - recipe[osl-openstack::novnc]
     excludes:
       - fedora-20
+      - fedora-21
