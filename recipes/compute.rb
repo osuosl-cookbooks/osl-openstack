@@ -40,7 +40,7 @@ when 'fedora'
   case node['kernel']['machine']
   when 'ppc64'
     yum_repository 'OSL-Openpower' do
-      description "OSL Openpower repo for #{node['platform_family']}-" + \
+      description "OSL Openpower repo for #{node['platform_family']}-" +
         node['platform_version']
       gpgkey node['osl-openstack']['openpower']['yum']['repo-key']
       baseurl node['osl-openstack']['openpower']['yum']['uri']
