@@ -46,8 +46,8 @@ when 'ppc64'
     default['osl-openstack']['openpower']['kernel_version'] =
       value_for_platform(
         'fedora' => {
-          '~> 20.0' => '3.16.0-1.fc20.ppc64',
-          '~> 21.0' => '3.19.5-200.fc21.ppc64'
+          '= 20.0' => '3.16.0-1.fc20.ppc64',
+          '= 21.0' => '3.19.5-200.fc21.ppc64'
         }
       )
   end
