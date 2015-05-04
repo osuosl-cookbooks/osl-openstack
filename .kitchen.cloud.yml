@@ -9,7 +9,7 @@ driver_config:
   openstack_tenant: <%= ENV['OS_TENANT_NAME'] %>
   floating_ip: <%= ENV['OS_FLOATING_IP'] %>
   floating_ip_pool: <%= ENV['OS_FLOATING_IP_POOL'] %>
-  flavor_ref: <%= ENV['OS_FLAVOR_REF'] %>
+  flavor_ref: 'm1.medium'
 
 provisioner:
   name: chef_zero
