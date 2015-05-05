@@ -45,6 +45,7 @@ platforms:
       mysql:
         version: 5.1
   - name: fedora-20
+  - name: fedora-21
 
 suites:
   - name: controller
@@ -53,6 +54,7 @@ suites:
       - role[openstack_controller]
     excludes:
       - fedora-20
+      - fedora-21
   - name: compute
     run_list:
       - recipe[osl-openstack::compute]
@@ -83,3 +85,4 @@ suites:
       - recipe[osl-openstack::novnc]
     excludes:
       - fedora-20
+      - fedora-21

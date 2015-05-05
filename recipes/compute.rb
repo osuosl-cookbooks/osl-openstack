@@ -40,7 +40,7 @@ when 'fedora'
   case node['kernel']['machine']
   when 'ppc64'
     yum_repository 'OSL-Openpower' do
-      description "OSL Openpower repo for #{node['platform-family']}-" + \
+      description "OSL Openpower repo for #{node['platform_family']}-" +
         node['platform_version']
       gpgkey node['osl-openstack']['openpower']['yum']['repo-key']
       baseurl node['osl-openstack']['openpower']['yum']['uri']
@@ -61,11 +61,12 @@ when 'fedora'
       group 'root'
       mode 0755
     end
-    
+
     # Turn off smt during runtime
     execute 'ppc64_cpu_smt_off' do
       command '/sbin/ppc64_cpu --smt=off'
-      not_if '/sbin/ppc64_cpu --smt | grep \'SMT is off\''
+      not_if '/sbin/ppc64_cpu --smt 2>&1 | ' \
+        'grep -E \'SMT is off|Machine is not SMT capable\''
     end
   end
 end

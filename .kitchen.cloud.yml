@@ -9,7 +9,7 @@ driver_config:
   openstack_tenant: <%= ENV['OS_TENANT_NAME'] %>
   floating_ip: <%= ENV['OS_FLOATING_IP'] %>
   floating_ip_pool: <%= ENV['OS_FLOATING_IP_POOL'] %>
-  flavor_ref: <%= ENV['OS_FLAVOR_REF'] %>
+  flavor_ref: 'm1.medium'
 
 provisioner:
   name: chef_zero
@@ -63,6 +63,11 @@ platforms:
   driver_config:
     username: fedora
     image_ref: "Fedora 20"
+- name: fedora-21
+  driver_plugin: openstack
+  driver_config:
+    username: fedora
+    image_ref: "Fedora 21"
 
 suites:
   - name: controller
@@ -71,6 +76,7 @@ suites:
       - role[openstack_controller]
     excludes:
       - fedora-20
+      - fedora-21
   - name: compute
     run_list:
       - recipe[osl-openstack::compute]
@@ -101,3 +107,4 @@ suites:
       - recipe[osl-openstack::novnc]
     excludes:
       - fedora-20
+      - fedora-21

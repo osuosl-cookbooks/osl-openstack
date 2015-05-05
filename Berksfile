@@ -20,6 +20,7 @@ cookbook 'runit', '1.5.10'
 cookbook 'statsd', github: 'att-cloud/cookbook-statsd'
 cookbook 'yum', '>= 3.1.4'
 cookbook 'yum-epel', '>= 0.3.4'
+cookbook 'yum-fedora'
 
 # Openstack deps
 # cookbook 'mysql', '~> 4.1'
