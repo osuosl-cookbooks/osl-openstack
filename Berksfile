@@ -12,7 +12,9 @@ cookbook 'monitoring', git: 'git@github.com:osuosl-cookbooks/monitoring'
 cookbook 'munin'
 cookbook 'nagios', git: 'git@github.com:osuosl-cookbooks/nagios'
 cookbook 'omnibus_updater'
-cookbook 'osl-apache', git: 'git@github.com:osuosl-cookbooks/osl-apache'
+cookbook 'osl-apache',
+         git: 'git@github.com:osuosl-cookbooks/osl-apache',
+         tag: 'v1.0.17'
 cookbook 'osl-munin', git: 'git@github.com:osuosl-cookbooks/osl-munin'
 cookbook 'resource_from_hash',
          git: 'git@github.com:osuosl-cookbooks/resource_from_hash'
