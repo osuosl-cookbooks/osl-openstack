@@ -29,8 +29,8 @@ cookbook 'yum-fedora'
 %w(openstack-block-storage openstack-common
    openstack-object-storage openstack-ops-database openstack-ops-messaging
    openstack-orchestration openstack-telemetry openstack-identity
-   openstack-image openstack-network openstack-compute
-   openstack-dashboard).each do |cb|
+   openstack-integration-test openstack-image openstack-network
+   openstack-compute openstack-dashboard).each do |cb|
   cookbook cb,
            github: "stackforge/cookbook-#{cb}",
            branch: 'stable/icehouse'
