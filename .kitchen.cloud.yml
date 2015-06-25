@@ -39,6 +39,9 @@ provisioner:
         baseurl: "http://epel.osuosl.org/6/$basearch"
         enable: true
         gpgkey: "http://epel.osuosl.org/RPM-GPG-KEY-EPEL-6"
+    scl:
+      packages:
+        - python27
     authorization:
       sudo:
         users:
@@ -74,6 +77,8 @@ suites:
     run_list:
       - role[openstack_ops_database]
       - role[openstack_controller]
+      - recipe[openstack-integration-test::setup]
+      - recipe[scl]
     excludes:
       - fedora-20
       - fedora-21
