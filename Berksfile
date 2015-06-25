@@ -16,6 +16,7 @@ cookbook 'osl-apache',
          git: 'git@github.com:osuosl-cookbooks/osl-apache',
          tag: 'v1.0.17'
 cookbook 'osl-munin', git: 'git@github.com:osuosl-cookbooks/osl-munin'
+cookbook 'scl'
 cookbook 'resource_from_hash',
          git: 'git@github.com:osuosl-cookbooks/resource_from_hash'
 cookbook 'runit', '1.5.10'

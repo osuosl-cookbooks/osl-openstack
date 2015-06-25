@@ -10,6 +10,6 @@ version          '1.0.12'
   openstack-common openstack-compute openstack-dashboard openstack-identity
   openstack-integration-test openstack-image openstack-network
   openstack-object-storage openstack-ops-database openstack-ops-messaging
-  openstack-orchestration openstack-telemetry scl yum-fedora}.each do |cb|
+  openstack-orchestration openstack-telemetry yum-fedora}.each do |cb|
   depends cb
 end
