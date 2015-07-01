@@ -11,6 +11,8 @@ EOF
     role 'openstack_vagrant'
     role 'openstack_ops_database'
     role 'openstack_controller'
+    recipe 'openstack-integration-test::setup'
+    recipe 'scl'
     file('/etc/chef/encrypted_data_bag_secret',
          "#{File.dirname(__FILE__)}/test/integration/" \
          'default/encrypted_data_bag_secret')

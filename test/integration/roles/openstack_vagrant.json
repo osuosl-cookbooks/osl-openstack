@@ -113,6 +113,11 @@
           "uri": "http://192.168.60.10:8003/v1"
         }
       }
+    },
+    "scl": {
+      "packages": [
+        "python27"
+      ]
     }
    },
   "json_class": "Chef::Role",
