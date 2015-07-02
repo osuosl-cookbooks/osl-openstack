@@ -20,8 +20,8 @@ EOF
     recipe 'openstack-integration-test::setup'
     recipe 'scl'
     file('/etc/chef/encrypted_data_bag_secret',
-         "#{File.dirname(__FILE__)}/test/integration/" \
-         'default/encrypted_data_bag_secret')
+         File.dirname(__FILE__) +
+         '/../default/encrypted_data_bag_secret')
     converge true
   end
   machine 'compute' do
@@ -34,8 +34,8 @@ EOF
     role 'openstack_vagrant'
     role 'openstack_compute'
     file('/etc/chef/encrypted_data_bag_secret',
-         "#{File.dirname(__FILE__)}/test/integration/" \
-         'default/encrypted_data_bag_secret')
+         File.dirname(__FILE__) +
+         '/../default/encrypted_data_bag_secret')
     converge true
   end
 end

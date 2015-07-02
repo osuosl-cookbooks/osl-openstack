@@ -11,6 +11,8 @@ def run_command(command)
   end
 end
 
+prov_path = 'test/integration/chef-provisioning'
+
 task :destroy_all do
   Rake::Task[:destroy_machines].invoke
   run_command('rm -rf Gemfile.lock && rm -rf Berksfile.lock && ' \
@@ -19,7 +21,7 @@ end
 
 desc 'Destroy machines'
 task :destroy_machines do
-  run_command('chef-client --force-formatter -z destroy_all.rb')
+  run_command("chef-client --force-formatter -z #{prov_path}/destroy_all.rb")
 end
 
 desc 'Vendor your cookbooks/'
@@ -37,8 +39,9 @@ end
 
 desc 'Controller/Compute nodes'
 task controller_compute: [:create_key, :berks_vendor] do
-  run_command('chef-client --force-formatter -z vagrant_linux.rb ' \
-    'controller_compute.rb')
+  run_command('chef-client --force-formatter -z ' \
+    "#{prov_path}/vagrant_linux.rb " \
+    "#{prov_path}/controller_compute.rb")
 end
 
 desc 'Blow everything away'
