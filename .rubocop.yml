@@ -4,3 +4,4 @@ AllCops:
     - '**/Cheffile'
   Exclude:
     - 'metadata.rb'
+    - 'cookbooks/**/*'

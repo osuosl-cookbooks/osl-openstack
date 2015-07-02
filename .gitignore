@@ -15,3 +15,10 @@ bin/*
 
 .kitchen/
 .kitchen.local.yml
+
+# chef-provisioner
+.chef/*.pem
+.chef/local-mode-cache/
+/clients/
+/nodes/
+/vms/

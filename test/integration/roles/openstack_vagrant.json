@@ -1,0 +1,126 @@
+{
+  "env_run_lists": {},
+  "run_list": [
+    "role[openstack_base]"
+  ],
+  "chef_type": "role",
+  "override_attributes": {
+    "openstack": {
+      "compute": {
+        "networks": [
+          {
+            "bridge": "br-tenant",
+            "bridge_dev": "eth1",
+            "dns1": "140.211.166.130",
+            "dns2": "140.211.166.131",
+            "ipv4_cidr": "192.168.56.0/22",
+            "label": "private",
+            "multi_host": "T",
+            "network_size": "1024",
+            "num_networks": "1"
+          }
+        ]
+      },
+      "image": {
+        "image_upload": true,
+        "upload_image": {
+          "cirros": "https://launchpad.net/cirros/trunk/0.3.0/+download/cirros-0.3.0-x86_64-disk.img"
+        },
+        "upload_images": [
+          "cirros"
+        ]
+      }
+    }
+  },
+  "default_attributes": {
+    "mysql": {
+      "server_root_password": "rootpass",
+      "server_debian_password": "debpass",
+      "server_repl_password": "replpass",
+      "allow_remote_root": true,
+      "root_network_acl": [
+        "%"
+      ]
+    },
+    "osl-openstack": {
+      "database_suffix": "x86",
+      "databag_prefix": "x86",
+      "vnc_bind_interface": {
+        "controller": "eth1",
+        "compute": "eth1"
+      }
+    },
+    "openstack": {
+      "compute": {
+        "network": {
+          "libvirt_inject_key": "false",
+          "libvirt_inject_password": "false",
+          "public_interface": "br108"
+        }
+      },
+      "dashboard": {
+        "server_hostname": "192.168.60.10"
+      },
+      "endpoints": {
+        "bind-host": "192.168.60.10",
+        "db": {
+          "host": "192.168.60.10"
+        },
+        "host": "192.168.60.10",
+        "mq": {
+          "host": "192.168.60.10"
+        },
+        "identity-api": {
+          "uri": "http://192.168.60.10:35357/v2.0"
+        },
+        "identity-admin": {
+          "uri": "http://192.168.60.10:5000/v2.0"
+        },
+        "compute-api": {
+          "uri": "http://192.168.60.10:8774/v2/%(tenant_id)s"
+        },
+        "compute-ec2-api": {
+          "uri": "http://192.168.60.10:8773/services/Cloud"
+        },
+        "compute-ec2-admin": {
+          "uri": "http://192.168.60.10:8773/services/Admin"
+        },
+        "compute-xvpvnc": {
+          "uri": "http://192.168.60.10:6081/console"
+        },
+        "compute-novnc": {
+          "uri": "https://192.168.60.10:6080/vnc_auto.html"
+        },
+        "image-api": {
+          "uri": "http://192.168.60.10:9292/v2"
+        },
+        "image-registry": {
+          "uri": "http://192.168.60.10:9191/v2"
+        },
+        "block-storage-api": {
+          "uri": "http://192.168.60.10:8776/v1/%(tenant_id)s"
+        },
+        "telemetry-api": {
+          "uri": "http://192.168.60.10:9000/v1"
+        },
+        "orchestration-api": {
+          "uri": "http://192.168.60.10:8004/v1/%(tenant_id)s"
+        },
+        "orchestration-api-cfn": {
+          "uri": "http://192.168.60.10:8000/v1"
+        },
+        "orchestration-api-cloudwatch": {
+          "uri": "http://192.168.60.10:8003/v1"
+        }
+      }
+    },
+    "scl": {
+      "packages": [
+        "python27"
+      ]
+    }
+   },
+  "json_class": "Chef::Role",
+  "description": "Openstack x86 Vagrant Role",
+  "name": "openstack_vagrant"
+}

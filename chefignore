@@ -92,3 +92,10 @@ Vagrantfile
 # Travis #
 ##########
 .travis.yml
+
+# chef-provisioner
+.chef/*.pem
+.chef/local-mode-cache/
+/clients/
+/nodes/
+/vms/
