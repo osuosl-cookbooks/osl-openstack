@@ -15,8 +15,8 @@ machine_batch do
   config.vm.network "private_network", ip: "192.168.60.10"
 EOF
     role 'openstack_vagrant'
-    role 'openstack_ops_database'
-    role 'openstack_controller'
+    recipe 'osl-openstack::ops_database'
+    recipe 'osl-openstack::controller'
     recipe 'openstack-integration-test::setup'
     recipe 'scl'
     file('/etc/chef/encrypted_data_bag_secret',
@@ -32,7 +32,7 @@ EOF
   config.vm.network "private_network", ip: "192.168.60.11"
 EOF
     role 'openstack_vagrant'
-    role 'openstack_compute'
+    recipe 'osl-openstack::compute'
     file('/etc/chef/encrypted_data_bag_secret',
          File.dirname(__FILE__) +
          '/../default/encrypted_data_bag_secret')
