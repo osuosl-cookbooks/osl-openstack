@@ -10,7 +10,7 @@
         "networks": [
           {
             "bridge": "br-tenant",
-            "bridge_dev": "eth1",
+            "bridge_dev": "enp0s8",
             "dns1": "140.211.166.130",
             "dns2": "140.211.166.131",
             "ipv4_cidr": "192.168.56.0/22",
@@ -46,8 +46,8 @@
       "database_suffix": "x86",
       "databag_prefix": "x86",
       "vnc_bind_interface": {
-        "controller": "eth1",
-        "compute": "eth1"
+        "controller": "enp0s8",
+        "compute": "enp0s8"
       }
     },
     "openstack": {
