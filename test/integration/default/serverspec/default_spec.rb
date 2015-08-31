@@ -2,7 +2,7 @@ require 'serverspec'
 
 set :backend, :exec
 
-describe yumrepo('RDO-icehouse') do
+describe yumrepo('RDO-kilo') do
   it { should exist }
   it { should be_enabled }
 end

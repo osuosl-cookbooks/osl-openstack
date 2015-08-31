@@ -21,7 +21,7 @@ node.default['apache']['contact'] = 'hostmaster@osuosl.org'
 node.default['openstack']['compute']['config']['allow_same_net_traffic'] =
   false
 node.default['openstack']['compute']['config']['ram_allocation_ratio'] = '5.0'
-node.default['openstack']['compute']['network']['service_type'] = 'nova'
+node.default['openstack']['compute']['network']['service_type'] = 'neutron'
 node.default['openstack']['compute']['network']['multi_host'] = true
 node.default['openstack']['compute']['network']['force_dhcp_release'] = true
 node.default['openstack']['libvirt']['virt_type'] = 'kvm'
@@ -34,13 +34,24 @@ node.default['openstack']['dashboard']['ssl']['key'] = 'horizon.key'
 node.default['openstack']['dashboard']['ssl']['key_url'] =
   'file:///etc/pki/tls/private/wildcard.key'
 node.default['openstack']['endpoints']['compute-novnc']['scheme'] = 'https'
-node.default['openstack']['developer_mode'] = false
-node.default['openstack']['release'] = 'icehouse'
+node.default['openstack']['release'] = 'kilo'
 node.default['openstack']['secret']['key_path'] =
   '/etc/chef/encrypted_data_bag_secret'
 node.default['openstack']['sysctl']['net.ipv4.conf.all.rp_filter'] = 0
 node.default['openstack']['sysctl']['net.ipv4.conf.default.rp_filter'] = 0
 node.default['openstack']['sysctl']['net.ipv4.ip_forward'] = 1
+node.override['apache']['listen_addresses'] = %w(0.0.0.0)
+%w(identity identity-admin compute-api compute-ec2-api compute-ec2-admin
+   compute-xvpvnc compute-novnc compute-vnc compute-vnc-proxy
+   compute-metadata-api compute-serial-console network-api image-api
+   image-registry block-storage-api object-storage-api telemetry-api
+   orchestration-api orchestration-api-cfn orchestration-api-cloudwatch
+   database-api bare-metal-api dashboard-http dashboard-https).each do |s|
+  node.default['openstack']['endpoints']["#{s}-bind"]['host'] = '0.0.0.0'
+end
+
+#node.default['openstack']['endpoints']['dashboard-http-bind']['host'] = '*'
+#node.default['openstack']['endpoints']['dashboard-https-bind']['host'] = '*'
 
 case node['platform']
 when 'fedora'
@@ -59,12 +70,6 @@ when 'fedora'
     node.default['yum']['updates']['exclude'] = 'kernel* libvirt qemu* ksm ' \
       'libcacard* perf* python-perf*'
   end
-when 'centos'
-  node.default['openstack']['yum']['uri'] = 'http://repos.fedorapeople.org/' \
-    "repos/openstack/EOL/openstack-#{node['openstack']['release']}/epel-6"
-  node.default['openstack']['yum']['repo-key'] = 'https://github.com/' \
-    "redhat-openstack/rdo-release/raw/#{node['openstack']['release']}/" \
-    "RPM-GPG-KEY-RDO-#{node['openstack']['release'].capitalize}"
 end
 
 # Set database attributes with our suffix setting
