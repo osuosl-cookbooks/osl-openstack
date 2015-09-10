@@ -44,6 +44,13 @@ task controller_compute: [:create_key, :berks_vendor] do
     "#{PROV_PATH}/controller_compute.rb")
 end
 
+desc 'Controller/Compute nodes (OpenStack)'
+task os_controller_compute: [:create_key, :berks_vendor] do
+  run_command('chef-client --force-formatter -z ' \
+    "#{PROV_PATH}/controller_compute.rb")
+end
+
+
 desc 'Blow everything away'
 task clean: [:destroy_all]
 
