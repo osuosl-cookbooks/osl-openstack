@@ -60,18 +60,13 @@ platforms:
     attributes:
       mysql:
 #        version: 5.1
-- name: fedora-20
-  driver_plugin: openstack
-  driver_config:
-    username: fedora
-    image_ref: "Fedora 20"
-  run_list:
-    - recipe[yum-fedora]
 - name: fedora-21
   driver_plugin: openstack
   driver_config:
     username: fedora
     image_ref: "Fedora 21"
+  run_list:
+    - recipe[yum-fedora]
 
 suites:
   - name: default
