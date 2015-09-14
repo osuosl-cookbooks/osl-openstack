@@ -13,7 +13,11 @@ describe file('/root/openrc') do
 export OS_USERNAME=admin
 export OS_PASSWORD=admin
 export OS_TENANT_NAME=admin
-export OS_AUTH_URL=http://127.0.0.1:5000/v2.0
+export OS_AUTH_URL=http://.*:35357/v2.0
 export OS_REGION_NAME=RegionOne})
   end
+end
+
+describe file('/root/openrc') do
+  its(:content) { should_not match(%r{OS_AUTH_URL=http://127.0.0.1/v2.0}) }
 end

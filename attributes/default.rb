@@ -21,6 +21,8 @@ default['osl-openstack']['vnc_bind_interface']['controller'] = 'eth1'
 default['osl-openstack']['vnc_bind_interface']['compute'] = 'br42'
 default['osl-openstack']['cinder']['iscsi_role'] = nil
 default['osl-openstack']['cinder']['iscsi_ips'] = []
+default['osl-openstack']['endpoint_hostname'] = nil
+default['osl-openstack']['db_hostname'] = nil
 
 case node['kernel']['machine']
 when 'ppc64'

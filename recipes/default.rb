@@ -27,7 +27,7 @@ node.default['openstack']['compute']['network']['multi_host'] = true
 node.default['openstack']['compute']['network']['force_dhcp_release'] = true
 node.default['openstack']['libvirt']['virt_type'] = 'kvm'
 node.default['openstack']['network']['service_plugins'] =
-  [ 'neutron.services.l3_router.l3_router_plugin.L3RouterPlugin' ]
+  ['neutron.services.l3_router.l3_router_plugin.L3RouterPlugin']
 node.default['openstack']['network']['dhcp']['enable_isolated_metadata'] =
   'True'
 node.default['openstack']['network']['openvswitch']['tunnel_id_ranges'] =
@@ -54,6 +54,60 @@ node.default['openstack']['sysctl']['net.ipv4.conf.all.rp_filter'] = 0
 node.default['openstack']['sysctl']['net.ipv4.conf.default.rp_filter'] = 0
 node.default['openstack']['sysctl']['net.ipv4.ip_forward'] = 1
 node.override['apache']['listen_addresses'] = %w(0.0.0.0)
+
+# Dynamically find the hostname for the controller node, or use a pre-determined
+# DNS name
+if node['osl-openstack']['endpoint_hostname'].nil?
+  if Chef::Config[:solo]
+    Chef::Log.warn('This recipe uses search which Chef Solo does not support')
+  else
+    controller_node = search(:node, 'recipes:osl-openstack\:\:controller').first
+    # Set the controller address to the public ipv4 on openstack, otherwise just
+    # use the ipaddress.
+    controller_address = unless controller_node['cloud']['public_ipv4'].empty?
+                           controller_node['cloud']['public_ipv4']
+                         end
+    endpoint_hostname = if controller_node.nil?
+                          node['ipaddress']
+                        else
+                          controller_address
+                        end
+  end
+else
+  endpoint_hostname = node['osl-openstack']['endpoint_hostname']
+end
+
+# Dynamically find the hostname for the db node, or use a pre-determined DNS
+# name
+if node['osl-openstack']['db_hostname'].nil?
+  if Chef::Config[:solo]
+    Chef::Log.warn('This recipe uses search which Chef Solo does not support')
+  else
+    db_node = search(:node, 'recipes:osl-openstack\:\:ops_database').first
+    # Set the db address to the public ipv4 on openstack, otherwise just use the
+    # ipaddress.
+    db_address = unless db_node['cloud']['public_ipv4'].empty?
+                   db_node['cloud']['public_ipv4']
+                 end
+    db_hostname = if db_node.nil?
+                    node['ipaddress']
+                  else
+                    db_address
+                  end
+  end
+else
+  db_hostname = node['osl-openstack']['db_hostname']
+end
+
+# DB host lists on all address
+node.default['openstack']['endpoints']['db']['host'] = '0.0.0.0'
+# Set the endpoints for the database and mq servers
+%w(compute identity image network block-storage dashboard telemetry
+   orchestration database).each do |c|
+  node.default['openstack']['db'][c]['host'] = db_hostname
+  node.default['openstack']['mq'][c]['rabbit']['host'] = endpoint_hostname
+end
+
 %w(identity identity-admin compute-api compute-ec2-api compute-ec2-admin
    compute-xvpvnc compute-novnc compute-vnc compute-vnc-proxy
    compute-metadata-api compute-serial-console network-api image-api
@@ -61,10 +115,48 @@ node.override['apache']['listen_addresses'] = %w(0.0.0.0)
    orchestration-api orchestration-api-cfn orchestration-api-cloudwatch
    database-api bare-metal-api dashboard-http dashboard-https).each do |s|
   node.default['openstack']['endpoints']["#{s}-bind"]['host'] = '0.0.0.0'
+  node.default['openstack']['endpoints'][s]['host'] = endpoint_hostname
 end
 
-#node.default['openstack']['endpoints']['dashboard-http-bind']['host'] = '*'
-#node.default['openstack']['endpoints']['dashboard-https-bind']['host'] = '*'
+# Set all URI's based on the endpoint hostname to by-pass attribute craziness
+node.default['openstack']['endpoints']['identity-api']['host'] =
+  endpoint_hostname
+node.default['openstack']['endpoints']['identity-internal']['host'] =
+  endpoint_hostname
+node.default['openstack']['endpoints']['compute-serial-proxy']['host'] =
+  endpoint_hostname
+node.default['openstack']['endpoints']['mq']['host'] = '0.0.0.0'
+node.default['openstack']['endpoints']['identity-api']['uri'] =
+  "http://#{endpoint_hostname}:35357/v2.0"
+node.default['openstack']['endpoints']['identity-admin']['uri'] =
+  "http://#{endpoint_hostname}:5000/v2.0"
+node.default['openstack']['endpoints']['compute-api']['uri'] =
+  "http://#{endpoint_hostname}:8774/v2/%(tenant_id)s"
+node.default['openstack']['endpoints']['compute-ec2-api']['uri'] =
+  "http://#{endpoint_hostname}:8773/services/Cloud"
+node.default['openstack']['endpoints']['compute-ec2-admin']['uri'] =
+  "http://#{endpoint_hostname}:8773/services/Admin"
+node.default['openstack']['endpoints']['compute-xvpvnc']['uri'] =
+  "http://#{endpoint_hostname}:6081/console"
+node.default['openstack']['endpoints']['compute-novnc']['uri'] =
+  "http://#{endpoint_hostname}:6080/vnc_auto.html"
+node.default['openstack']['endpoints']['image-api']['uri'] =
+  "http://#{endpoint_hostname}:9292/v2"
+node.default['openstack']['endpoints']['image-registry']['uri'] =
+  "http://#{endpoint_hostname}:9191/v2"
+node.default['openstack']['endpoints']['block-storage-api']['uri'] =
+  "http://#{endpoint_hostname}:8776/v1/%(tenant_id)s"
+node.default['openstack']['endpoints']['telemetry-api']['uri'] =
+  "http://#{endpoint_hostname}:9000/v1"
+node.default['openstack']['endpoints']['orchestration-api']['uri'] =
+  "http://#{endpoint_hostname}:8004//v1/%(tenant_id)s"
+node.default['openstack']['endpoints']['orchestration-api-cfn']['uri'] =
+  "http://#{endpoint_hostname}:8000/v1"
+node.default['openstack']['endpoints']['orchestration-api-cloudwatch']['uri'] =
+  "http://#{endpoint_hostname}:8003/v1"
+
+# node.default['openstack']['endpoints']['dashboard-http-bind']['host'] = '*'
+# node.default['openstack']['endpoints']['dashboard-https-bind']['host'] = '*'
 
 case node['platform']
 when 'fedora'
@@ -109,6 +201,5 @@ include_recipe 'base::ifconfig'
 include_recipe 'selinux::permissive'
 include_recipe 'openstack-common'
 include_recipe 'openstack-common::logging'
-include_recipe 'openstack-common::set_endpoints_by_interface'
 include_recipe 'openstack-common::sysctl'
 include_recipe 'openstack-common::openrc'
