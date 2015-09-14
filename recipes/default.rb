@@ -64,8 +64,12 @@ if node['osl-openstack']['endpoint_hostname'].nil?
     controller_node = search(:node, 'recipes:osl-openstack\:\:controller').first
     # Set the controller address to the public ipv4 on openstack, otherwise just
     # use the ipaddress.
-    controller_address = unless controller_node['cloud']['public_ipv4'].empty?
-                           controller_node['cloud']['public_ipv4']
+    controller_address = unless controller_node.nil?
+                           if controller_node['cloud']['public_ipv4'].nil?
+                             controller_node['ipaddress']
+                           else
+                             controller_node['cloud']['public_ipv4']
+                           end
                          end
     endpoint_hostname = if controller_node.nil?
                           node['ipaddress']
@@ -86,8 +90,12 @@ if node['osl-openstack']['db_hostname'].nil?
     db_node = search(:node, 'recipes:osl-openstack\:\:ops_database').first
     # Set the db address to the public ipv4 on openstack, otherwise just use the
     # ipaddress.
-    db_address = unless db_node['cloud']['public_ipv4'].empty?
-                   db_node['cloud']['public_ipv4']
+    db_address = unless db_node.nil?
+                   if db_node['cloud']['public_ipv4'].nil?
+                     db_node['ipaddress']
+                   else
+                     db_node['cloud']['public_ipv4']
+                   end
                  end
     db_hostname = if db_node.nil?
                     node['ipaddress']
