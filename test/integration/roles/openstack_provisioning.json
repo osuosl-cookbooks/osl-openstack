@@ -69,6 +69,6 @@
     }
    },
   "json_class": "Chef::Role",
-  "description": "Openstack x86 Vagrant Role",
-  "name": "openstack_vagrant"
+  "description": "Openstack x86 Provisioning Role",
+  "name": "openstack_provisioning"
 }
