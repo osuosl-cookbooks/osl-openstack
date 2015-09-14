@@ -13,13 +13,13 @@ machine 'controller' do
   machine_options vagrant_options: {
     'vm.box' => controller_os
   },
-  bootstrap_options: {
-    image_ref: controller_os,
-    flavor_ref: flavor_ref,
-    key_name: ENV['OS_SSH_KEYPAIR']
-  },
-  ssh_username: controller_ssh_user,
-  floating_ip_pool: ENV['OS_FLOATING_IP_POOL']
+                  bootstrap_options: {
+                    image_ref: controller_os,
+                    flavor_ref: flavor_ref,
+                    key_name: ENV['OS_SSH_KEYPAIR']
+                  },
+                  ssh_username: controller_ssh_user,
+                  floating_ip_pool: ENV['OS_FLOATING_IP_POOL']
 
   ohai_hints 'openstack' => '{}'
   add_machine_options vagrant_config: <<-EOF
@@ -43,13 +43,13 @@ machine 'compute' do
   machine_options vagrant_options: {
     'vm.box' => compute_os
   },
-  bootstrap_options: {
-    image_ref: compute_os,
-    flavor_ref: flavor_ref,
-    key_name: ENV['OS_SSH_KEYPAIR']
-  },
-  ssh_username: compute_ssh_user,
-  floating_ip_pool: ENV['OS_FLOATING_IP_POOL']
+                  bootstrap_options: {
+                    image_ref: compute_os,
+                    flavor_ref: flavor_ref,
+                    key_name: ENV['OS_SSH_KEYPAIR']
+                  },
+                  ssh_username: compute_ssh_user,
+                  floating_ip_pool: ENV['OS_FLOATING_IP_POOL']
 
   ohai_hints 'openstack' => '{}'
   add_machine_options vagrant_config: <<-EOF
