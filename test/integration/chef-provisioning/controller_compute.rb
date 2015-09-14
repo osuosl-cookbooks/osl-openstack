@@ -21,6 +21,7 @@ machine 'controller' do
   ssh_username: controller_ssh_user,
   floating_ip_pool: ENV['OS_FLOATING_IP_POOL']
 
+  ohai_hints 'openstack' => '{}'
   add_machine_options vagrant_config: <<-EOF
 config.vm.network "private_network", ip: "192.168.60.10"
 config.vm.provider "virtualbox" do |v|
@@ -50,6 +51,7 @@ machine 'compute' do
   ssh_username: compute_ssh_user,
   floating_ip_pool: ENV['OS_FLOATING_IP_POOL']
 
+  ohai_hints 'openstack' => '{}'
   add_machine_options vagrant_config: <<-EOF
 config.vm.network "private_network", ip: "192.168.60.11"
 EOF
