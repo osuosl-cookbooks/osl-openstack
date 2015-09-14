@@ -60,19 +60,6 @@
           "libvirt_inject_password": "false",
           "public_interface": "br108"
         }
-      },
-      "dashboard": {
-        "server_hostname": "192.168.56.14"
-      },
-      "endpoints": {
-        "bind-host": "192.168.56.14",
-        "db": {
-          "host": "192.168.56.14"
-        },
-        "host": "192.168.56.14",
-        "mq": {
-          "host": "192.168.56.14"
-        }
       }
     },
     "scl": {
