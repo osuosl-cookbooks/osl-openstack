@@ -16,10 +16,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-vnc_bind_int = node['osl-openstack']['vnc_bind_interface']['controller']
-node.default['openstack']['endpoints']['compute-vnc-bind']['bind_interface'] =
-  vnc_bind_int
-
 include_recipe 'osl-apache::default'
 include_recipe 'firewall::openstack'
 include_recipe 'firewall::amqp'
