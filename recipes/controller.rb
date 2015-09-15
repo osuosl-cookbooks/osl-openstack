@@ -50,3 +50,12 @@ include_recipe 'openstack-compute::nova-cert'
 include_recipe 'openstack-compute::vncproxy'
 include_recipe 'osl-openstack::novnc'
 include_recipe 'openstack-dashboard::server'
+
+# XXX: Temporary workaround for https://bugs.launchpad.net/bugs/1496158
+file ::File.join(node['openstack']['dashboard']['django_path'],
+                 'openstack_dashboard',
+                 'local',
+                 '_usr_share_openstack-dashboard_openstack_dashboard_local_.' \
+                 'secret_key_store.lock') do
+  mode 0774
+end
