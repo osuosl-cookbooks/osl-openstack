@@ -47,11 +47,7 @@
     },
     "osl-openstack": {
       "database_suffix": "x86",
-      "databag_prefix": "x86",
-      "vnc_bind_interface": {
-        "controller": "eth0",
-        "compute": "eth0"
-      }
+      "databag_prefix": "x86"
     },
     "openstack": {
       "compute": {
