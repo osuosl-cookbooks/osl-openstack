@@ -19,13 +19,13 @@
 case node['platform']
 when 'fedora'
   node.default['openstack']['yum']['uri'] = 'http://repos.fedorapeople.org/' \
-    "repos/openstack/openstack-#{node['openstack']['release']}/fedora-20"
+    "repos/openstack/EOL/openstack-#{node['openstack']['release']}/fedora-20"
   node.default['openstack']['yum']['repo-key'] = 'https://github.com/' \
     "redhat-openstack/rdo-release/raw/#{node['openstack']['release']}/" \
     "RPM-GPG-KEY-RDO-#{node['openstack']['release'].capitalize}"
 when 'centos'
   node.default['openstack']['yum']['uri'] = 'http://repos.fedorapeople.org/' \
-    "repos/openstack/openstack-#{node['openstack']['release']}/epel-6"
+    "repos/openstack/EOL/openstack-#{node['openstack']['release']}/epel-6"
   node.default['openstack']['yum']['repo-key'] = 'https://github.com/' \
     "redhat-openstack/rdo-release/raw/#{node['openstack']['release']}/" \
     "RPM-GPG-KEY-RDO-#{node['openstack']['release'].capitalize}"
