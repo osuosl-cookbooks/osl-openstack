@@ -72,3 +72,4 @@ when 'fedora'
 end
 
 include_recipe 'openstack-compute::compute'
+include_recipe 'openstack-compute::api-metadata'
