@@ -17,13 +17,14 @@
 # limitations under the License.
 #
 node.default['authorization']['sudo']['include_sudoers_d'] = true
+node.default['apache']['contact'] = 'hostmaster@osuosl.org'
 node.default['openstack']['compute']['config']['allow_same_net_traffic'] =
   false
 node.default['openstack']['compute']['config']['ram_allocation_ratio'] = '5.0'
+node.default['openstack']['compute']['network']['service_type'] = 'nova'
+node.default['openstack']['compute']['network']['multi_host'] = true
+node.default['openstack']['compute']['network']['force_dhcp_release'] = true
 node.default['openstack']['libvirt']['virt_type'] = 'kvm'
-node.default['openstack']['network']['force_dhcp_release'] = true
-node.default['openstack']['network']['multi_host'] = true
-node.default['openstack']['network']['service_type'] = 'nova'
 node.default['openstack']['dashboard']['keystone_default_role'] = '_member_'
 node.default['openstack']['dashboard']['ssl']['cert'] = 'horizon.pem'
 node.default['openstack']['dashboard']['ssl']['cert_url'] =
@@ -32,6 +33,7 @@ node.default['openstack']['dashboard']['ssl']['chain'] = 'wildcard-bundle.crt'
 node.default['openstack']['dashboard']['ssl']['key'] = 'horizon.key'
 node.default['openstack']['dashboard']['ssl']['key_url'] =
   'file:///etc/pki/tls/private/wildcard.key'
+node.default['openstack']['endpoints']['compute-novnc']['scheme'] = 'https'
 node.default['openstack']['developer_mode'] = false
 node.default['openstack']['release'] = 'icehouse'
 node.default['openstack']['secret']['key_path'] =
