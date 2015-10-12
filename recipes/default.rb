@@ -17,6 +17,7 @@
 # limitations under the License.
 #
 node.default['authorization']['sudo']['include_sudoers_d'] = true
+node.default['apache']['contact'] = 'hostmaster@osuosl.org'
 node.default['openstack']['compute']['config']['allow_same_net_traffic'] =
   false
 node.default['openstack']['compute']['config']['ram_allocation_ratio'] = '5.0'
