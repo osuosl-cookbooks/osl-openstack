@@ -70,3 +70,5 @@ when 'fedora'
     end
   end
 end
+
+include_recipe 'openstack-compute::compute'

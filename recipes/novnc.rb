@@ -2,7 +2,7 @@
 # Cookbook Name:: osl-openstack
 # Recipe:: novnc
 #
-# Copyright (C) 2014, 2015 Oregon State University
+# Copyright (C) 2014-2015 Oregon State University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,6 +16,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+node.default['openstack']['novnc']['ssl']['use_ssl'] = true
+
+# Location of ssl cert and key to use
+node.default['openstack']['novnc']['ssl']['dir'] = '/etc/ssl/nova'
+
+# Name of ssl certificate for nova-novncproxy to use
+node.default['openstack']['novnc']['ssl']['cert'] = 'nova.pem'
+node.default['openstack']['novnc']['ssl']['key']  = 'nova.key'
+
+# Remote uri for the certificate and key
+# This assumes the certificate::wildcard recipe was run beforehand
+node.default['openstack']['novnc']['ssl']['cert_url'] = nil
+node.default['openstack']['novnc']['ssl']['key_url'] = nil
 
 if node['openstack']['novnc']['ssl']['use_ssl']
   directory node['openstack']['novnc']['ssl']['dir'] do

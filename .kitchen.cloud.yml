@@ -13,7 +13,6 @@ driver_config:
 
 provisioner:
   name: chef_zero
-  roles_path: test/integration/roles
   data_bags_path: test/integration/default/data_bags
   encrypted_data_bag_secret_key_path: test/integration/default/encrypted_data_bag_secret
   attributes:
@@ -24,7 +23,6 @@ provisioner:
         controller: eth0
         compute: eth0
     openstack:
-      release: icehouse
       secret:
         key_path: /tmp/kitchen/encrypted_data_bag_secret
     mysql:
@@ -75,10 +73,13 @@ platforms:
     image_ref: "Fedora 21"
 
 suites:
+  - name: default
+    run_list:
+      - recipe[osl-openstack::default]
   - name: controller
     run_list:
-      - role[openstack_ops_database]
-      - role[openstack_controller]
+      - recipe[osl-openstack::ops_database]
+      - recipe[osl-openstack::controller]
       - recipe[openstack-integration-test::setup]
       - recipe[scl]
     excludes:
@@ -87,11 +88,9 @@ suites:
   - name: compute
     run_list:
       - recipe[osl-openstack::compute]
-      - role[openstack_compute]
   - name: cinder
     run_list:
-      - role[openstack_base]
-      - role[openstack_ops_database]
+      - recipe[osl-openstack::ops_database]
       - recipe[openstack-ops-messaging::server]
       - recipe[openstack-identity::server]
       - recipe[openstack-identity::registration]
@@ -109,8 +108,8 @@ suites:
             create_volume_group: true
   - name: novnc
     run_list:
-      - role[openstack_ops_database]
-      - role[openstack_controller]
+      - recipe[osl-openstack::ops_database]
+      - recipe[osl-openstack::controller]
       - recipe[osl-openstack::novnc]
     excludes:
       - fedora-20
