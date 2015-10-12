@@ -33,6 +33,7 @@ node.default['openstack']['dashboard']['ssl']['chain'] = 'wildcard-bundle.crt'
 node.default['openstack']['dashboard']['ssl']['key'] = 'horizon.key'
 node.default['openstack']['dashboard']['ssl']['key_url'] =
   'file:///etc/pki/tls/private/wildcard.key'
+node.default['openstack']['endpoints']['compute-novnc']['scheme'] = 'https'
 node.default['openstack']['developer_mode'] = false
 node.default['openstack']['release'] = 'icehouse'
 node.default['openstack']['secret']['key_path'] =
