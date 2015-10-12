@@ -20,10 +20,10 @@ node.default['authorization']['sudo']['include_sudoers_d'] = true
 node.default['openstack']['compute']['config']['allow_same_net_traffic'] =
   false
 node.default['openstack']['compute']['config']['ram_allocation_ratio'] = '5.0'
+node.default['openstack']['compute']['network']['service_type'] = 'nova'
+node.default['openstack']['compute']['network']['multi_host'] = true
+node.default['openstack']['compute']['network']['force_dhcp_release'] = true
 node.default['openstack']['libvirt']['virt_type'] = 'kvm'
-node.default['openstack']['network']['force_dhcp_release'] = true
-node.default['openstack']['network']['multi_host'] = true
-node.default['openstack']['network']['service_type'] = 'nova'
 node.default['openstack']['dashboard']['keystone_default_role'] = '_member_'
 node.default['openstack']['dashboard']['ssl']['cert'] = 'horizon.pem'
 node.default['openstack']['dashboard']['ssl']['cert_url'] =
