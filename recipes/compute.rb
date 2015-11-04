@@ -29,16 +29,11 @@ vnc_bind_int = node['osl-openstack']['vnc_bind_interface']['compute']
 node.default['openstack']['endpoints']['compute-vnc-bind']['bind_interface'] =
   vnc_bind_int
 
-# Enable the correct KVM module for OpenPOWER
-case node['kernel']['machine']
-when 'ppc64'
-  include_recipe 'modules'
-end
-
 case node['platform_family']
 when 'fedora'
   case node['kernel']['machine']
   when 'ppc64'
+    modules 'kvm_hv'
     yum_repository 'OSL-Openpower' do
       description "OSL Openpower repo for #{node['platform_family']}-" +
         node['platform_version']
