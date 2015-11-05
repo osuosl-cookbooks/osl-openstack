@@ -54,7 +54,6 @@ when 'fedora'
     %w(MySQL-python)
   case node['kernel']['machine']
   when 'ppc64'
-    node.default['modules']['modules'] = %w(kvm_hv)
     node.default['yum']['fedora']['exclude'] = 'kernel* libvirt qemu* ksm ' \
       'libcacard* perf* python-perf*'
     node.default['yum']['updates']['exclude'] = 'kernel* libvirt qemu* ksm ' \
