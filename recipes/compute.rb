@@ -29,6 +29,8 @@ vnc_bind_int = node['osl-openstack']['vnc_bind_interface']['compute']
 node.default['openstack']['endpoints']['compute-vnc-bind']['bind_interface'] =
   vnc_bind_int
 
+modules 'tun'
+
 case node['platform_family']
 when 'fedora'
   case node['kernel']['machine']
