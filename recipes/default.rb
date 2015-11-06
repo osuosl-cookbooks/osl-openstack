@@ -166,13 +166,14 @@ node.default['openstack']['endpoints']['orchestration-api-cloudwatch']['uri'] =
 # node.default['openstack']['endpoints']['dashboard-http-bind']['host'] = '*'
 # node.default['openstack']['endpoints']['dashboard-https-bind']['host'] = '*'
 
+node.default['openstack']['yum']['repo-key'] = 'https://github.com/' \
+  "redhat-openstack/rdo-release/raw/#{node['openstack']['release']}/" \
+  "RPM-GPG-KEY-RDO-#{node['openstack']['release']}"
+
 case node['platform']
 when 'fedora'
   node.default['openstack']['yum']['uri'] = 'http://repos.fedorapeople.org/' \
     "repos/openstack/openstack-#{node['openstack']['release']}/f21"
-  node.default['openstack']['yum']['repo-key'] = 'https://github.com/' \
-    "redhat-openstack/rdo-release/raw/#{node['openstack']['release']}/" \
-    "RPM-GPG-KEY-RDO-#{node['openstack']['release'].capitalize}"
   node.default['openstack']['compute']['platform']['dbus_service'] = 'dbus'
   node.default['openstack']['db']['python_packages']['mariadb'] =
     %w(MySQL-python)
