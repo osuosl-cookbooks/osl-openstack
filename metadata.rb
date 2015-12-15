@@ -16,3 +16,7 @@ version          '1.0.19'
 end
 
 depends 'firewall', '>= 2.2.0'
+
+supports         'centos', '~> 6'
+supports         'fedora', '20'
+supports         'fedora', '21'
