@@ -64,5 +64,11 @@ when 'fedora'
   end
 end
 
+# CentOS 7.2 removes provides for nfs-utils-lib so lets set it to libnfsidmap
+# which is what CentOS 7 and Fedora uses anyways.
+node.default['openstack']['compute']['platform']['nfs_packages'] = %w(
+  nfs-utils
+  libnfsidmap)
+
 include_recipe 'openstack-compute::compute'
 include_recipe 'openstack-compute::api-metadata'
