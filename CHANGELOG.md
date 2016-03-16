@@ -7,6 +7,11 @@ osl-openstack cookbook.
 2.2.21
 ------
 
+- Require firewall cookbook >= 2.2.0
+
+2.2.18
+------
+
 - Adds firewall::rabbitmq_mgt recipe to controller recipe
 - Require firewall cookbook >= 2.2.21
 
