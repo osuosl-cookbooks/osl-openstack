@@ -54,7 +54,7 @@ node.default['openstack']['dashboard']['ssl']['key'] = 'horizon.key'
 node.default['openstack']['dashboard']['ssl']['key_url'] =
   'file:///etc/pki/tls/private/wildcard.key'
 node.default['openstack']['endpoints']['compute-novnc']['scheme'] = 'https'
-node.default['openstack']['release'] = 'kilo'
+node.default['openstack']['release'] = 'liberty'
 node.default['openstack']['secret']['key_path'] =
   '/etc/chef/encrypted_data_bag_secret'
 node.default['openstack']['sysctl']['net.ipv4.conf.all.rp_filter'] = 0

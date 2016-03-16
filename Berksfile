@@ -27,7 +27,7 @@ cookbook 'yum-fedora'
    openstack-compute openstack-dashboard).each do |cb|
   cookbook cb,
            github: "openstack/cookbook-#{cb}",
-           branch: 'stable/kilo'
+           branch: 'stable/liberty'
 end
 
 metadata
