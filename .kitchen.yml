@@ -4,6 +4,7 @@ driver:
 
 provisioner:
   name: chef_zero
+  roles_path: test/integration/roles
   data_bags_path: test/integration/default/data_bags
   encrypted_data_bag_secret_key_path: test/integration/default/encrypted_data_bag_secret
 
@@ -41,10 +42,9 @@ platforms:
     attributes:
       mysql:
         version: 5.1
-  - name: fedora-20
+  - name: fedora-21
     run_list:
       - recipe[yum-fedora]
-  - name: fedora-21
 
 suites:
   - name: default
@@ -56,6 +56,7 @@ suites:
       - recipe[osl-openstack::mon]
   - name: controller
     run_list:
+      - role[openstack_tk]
       - recipe[osl-openstack::ops_database]
       - recipe[osl-openstack::controller]
       - recipe[openstack-integration-test::setup]
@@ -65,9 +66,11 @@ suites:
       - fedora-21
   - name: compute
     run_list:
+      - role[openstack_tk]
       - recipe[osl-openstack::compute]
   - name: cinder
     run_list:
+      - role[openstack_tk]
       - recipe[osl-openstack::ops_database]
       - recipe[openstack-ops-messaging::server]
       - recipe[openstack-identity::server]
@@ -86,6 +89,7 @@ suites:
             create_volume_group: true
   - name: novnc
     run_list:
+      - role[openstack_tk]
       - recipe[osl-openstack::ops_database]
       - recipe[osl-openstack::controller]
       - recipe[osl-openstack::novnc]

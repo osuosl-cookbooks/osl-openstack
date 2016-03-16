@@ -25,10 +25,6 @@ include_recipe 'firewall::vnc'
 include_recipe 'osl-openstack::default'
 include_recipe 'osl-openstack::_fedora'
 
-vnc_bind_int = node['osl-openstack']['vnc_bind_interface']['compute']
-node.default['openstack']['endpoints']['compute-vnc-bind']['bind_interface'] =
-  vnc_bind_int
-
 modules 'tun'
 
 case node['platform_family']
@@ -67,6 +63,12 @@ when 'fedora'
     end
   end
 end
+
+# CentOS 7.2 removes provides for nfs-utils-lib so lets set it to libnfsidmap
+# which is what CentOS 7 and Fedora uses anyways.
+node.default['openstack']['compute']['platform']['nfs_packages'] = %w(
+  nfs-utils
+  libnfsidmap)
 
 include_recipe 'openstack-compute::compute'
 include_recipe 'openstack-compute::api-metadata'

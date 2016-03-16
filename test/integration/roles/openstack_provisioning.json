@@ -6,14 +6,17 @@
   "chef_type": "role",
   "override_attributes": {
     "openstack": {
+      "mq": {
+        "user": "admin"
+      },
       "compute": {
         "networks": [
           {
             "bridge": "br-tenant",
-            "bridge_dev": "eth1",
+            "bridge_dev": "eth0",
             "dns1": "140.211.166.130",
             "dns2": "140.211.166.131",
-            "ipv4_cidr": "192.168.56.0/22",
+            "ipv4_cidr": "192.168.100.0/22",
             "label": "private",
             "multi_host": "T",
             "network_size": "1024",
@@ -44,11 +47,7 @@
     },
     "osl-openstack": {
       "database_suffix": "x86",
-      "databag_prefix": "x86",
-      "vnc_bind_interface": {
-        "controller": "eth1",
-        "compute": "eth1"
-      }
+      "databag_prefix": "x86"
     },
     "openstack": {
       "compute": {
@@ -56,19 +55,6 @@
           "libvirt_inject_key": "false",
           "libvirt_inject_password": "false",
           "public_interface": "br108"
-        }
-      },
-      "dashboard": {
-        "server_hostname": "192.168.60.10"
-      },
-      "endpoints": {
-        "bind-host": "192.168.60.10",
-        "db": {
-          "host": "192.168.60.10"
-        },
-        "host": "192.168.60.10",
-        "mq": {
-          "host": "192.168.60.10"
         }
       }
     },
@@ -79,6 +65,6 @@
     }
    },
   "json_class": "Chef::Role",
-  "description": "Openstack x86 Vagrant Role",
-  "name": "openstack_vagrant"
+  "description": "Openstack x86 Provisioning Role",
+  "name": "openstack_provisioning"
 }

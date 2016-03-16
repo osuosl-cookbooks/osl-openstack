@@ -40,7 +40,6 @@ end
 desc 'Controller/Compute nodes'
 task controller_compute: [:create_key, :berks_vendor] do
   run_command('chef-client --force-formatter -z ' \
-    "#{PROV_PATH}/vagrant_linux.rb " \
     "#{PROV_PATH}/controller_compute.rb")
 end
 

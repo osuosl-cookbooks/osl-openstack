@@ -13,6 +13,7 @@ driver_config:
 
 provisioner:
   name: chef_zero
+  roles_path: test/integration/roles
   data_bags_path: test/integration/default/data_bags
   encrypted_data_bag_secret_key_path: test/integration/default/encrypted_data_bag_secret
   attributes:
@@ -34,9 +35,9 @@ provisioner:
         - "%"
     yum:
       epel:
-        baseurl: "http://epel.osuosl.org/6/$basearch"
+        baseurl: "http://epel.osuosl.org/7/$basearch"
         enable: true
-        gpgkey: "http://epel.osuosl.org/RPM-GPG-KEY-EPEL-6"
+        gpgkey: "http://epel.osuosl.org/RPM-GPG-KEY-EPEL-7"
     scl:
       packages:
         - python27
@@ -51,26 +52,21 @@ provisioner:
       disabled: true
 
 platforms:
-- name: centos-6.6
+- name: centos-7.1
   driver_plugin: openstack
   driver_config:
     username: centos
-    image_ref: "CentOS 6.6"
+    image_ref: "CentOS 7.1"
     attributes:
       mysql:
-        version: 5.1
-- name: fedora-20
-  driver_plugin: openstack
-  driver_config:
-    username: fedora
-    image_ref: "Fedora 20"
-  run_list:
-    - recipe[yum-fedora]
+#        version: 5.1
 - name: fedora-21
   driver_plugin: openstack
   driver_config:
     username: fedora
     image_ref: "Fedora 21"
+  run_list:
+    - recipe[yum-fedora]
 
 suites:
   - name: default
@@ -82,18 +78,21 @@ suites:
       - recipe[osl-openstack::mon]
   - name: controller
     run_list:
+      - role[openstack_tk]
       - recipe[osl-openstack::ops_database]
       - recipe[osl-openstack::controller]
       - recipe[openstack-integration-test::setup]
-      - recipe[scl]
+      #- recipe[scl]
     excludes:
       - fedora-20
       - fedora-21
   - name: compute
     run_list:
+      - role[openstack_tk]
       - recipe[osl-openstack::compute]
   - name: cinder
     run_list:
+      - role[openstack_tk]
       - recipe[osl-openstack::ops_database]
       - recipe[openstack-ops-messaging::server]
       - recipe[openstack-identity::server]
@@ -112,6 +111,7 @@ suites:
             create_volume_group: true
   - name: novnc
     run_list:
+      - role[openstack_tk]
       - recipe[osl-openstack::ops_database]
       - recipe[osl-openstack::controller]
       - recipe[osl-openstack::novnc]

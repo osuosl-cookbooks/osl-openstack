@@ -1,0 +1,21 @@
+{
+  "env_run_lists": {},
+  "run_list": [
+    "recipe[osl-openstack]"
+  ],
+  "chef_type": "role",
+  "override_attributes": {
+    "openstack": {
+      "db": {
+        "service_type": "mariadb"
+      },
+      "mq": {
+        "user": "admin"
+      }
+    }
+  },
+  "default_attributes": {},
+  "json_class": "Chef::Role",
+  "description": "Openstack x86 Test Kitchen Role",
+  "name": "openstack_tk"
+}

@@ -16,10 +16,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-vnc_bind_int = node['osl-openstack']['vnc_bind_interface']['controller']
-node.default['openstack']['endpoints']['compute-vnc-bind']['bind_interface'] =
-  vnc_bind_int
-
 include_recipe 'osl-apache::default'
 include_recipe 'firewall::openstack'
 include_recipe 'firewall::amqp'
@@ -54,3 +50,12 @@ include_recipe 'openstack-compute::nova-cert'
 include_recipe 'openstack-compute::vncproxy'
 include_recipe 'osl-openstack::novnc'
 include_recipe 'openstack-dashboard::server'
+
+# XXX: Temporary workaround for https://bugs.launchpad.net/bugs/1496158
+file ::File.join(node['openstack']['dashboard']['django_path'],
+                 'openstack_dashboard',
+                 'local',
+                 '_usr_share_openstack-dashboard_openstack_dashboard_local_.' \
+                 'secret_key_store.lock') do
+  mode 0774
+end
