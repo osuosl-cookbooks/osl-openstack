@@ -76,6 +76,10 @@ suites:
   - name: default
     run_list:
       - recipe[osl-openstack::default]
+  - name: mon
+    provisioner: chef_solo
+    run_list:
+      - recipe[osl-openstack::mon]
   - name: controller
     run_list:
       - recipe[osl-openstack::ops_database]

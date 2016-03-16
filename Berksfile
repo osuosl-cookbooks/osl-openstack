@@ -10,12 +10,12 @@ cookbook 'firewall', git: 'git@github.com:osuosl-cookbooks/firewall'
 cookbook 'modules', git: 'git@github.com:osuosl-cookbooks/modules-cookbook'
 cookbook 'monitoring', git: 'git@github.com:osuosl-cookbooks/monitoring'
 cookbook 'munin'
-cookbook 'nagios', git: 'git@github.com:osuosl-cookbooks/nagios'
 cookbook 'omnibus_updater'
 cookbook 'osl-apache',
          git: 'git@github.com:osuosl-cookbooks/osl-apache',
          tag: 'v1.0.17'
 cookbook 'osl-munin', git: 'git@github.com:osuosl-cookbooks/osl-munin'
+cookbook 'osl-nrpe', git: 'git@github.com:osuosl-cookbooks/osl-nrpe'
 cookbook 'scl'
 cookbook 'resource_from_hash',
          git: 'git@github.com:osuosl-cookbooks/resource_from_hash'
