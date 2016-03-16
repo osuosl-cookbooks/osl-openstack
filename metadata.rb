@@ -15,4 +15,4 @@ version          '1.0.18'
   depends cb
 end
 
-depends 'firewall', '>= 2.2.21'
+depends 'firewall', '>= 2.2.0'
