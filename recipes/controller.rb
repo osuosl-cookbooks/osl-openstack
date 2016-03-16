@@ -23,6 +23,7 @@ node.default['openstack']['endpoints']['compute-vnc-bind']['bind_interface'] =
 include_recipe 'osl-apache::default'
 include_recipe 'firewall::openstack'
 include_recipe 'firewall::amqp'
+include_recipe 'firewall::rabbitmq_mgt'
 include_recipe 'firewall::vnc'
 include_recipe 'osl-openstack::_fedora'
 include_recipe 'osl-openstack::default'
