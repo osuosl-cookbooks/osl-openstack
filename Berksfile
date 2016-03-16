@@ -33,8 +33,8 @@ cookbook 'yum-fedora'
    openstack-integration-test openstack-image openstack-network
    openstack-compute openstack-dashboard).each do |cb|
   cookbook cb,
-           github: "stackforge/cookbook-#{cb}",
-           branch: 'stable/icehouse'
+           github: "openstack/cookbook-#{cb}",
+           tag: 'eol-icehouse'
 end
 
 metadata
