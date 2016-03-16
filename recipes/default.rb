@@ -26,8 +26,15 @@ node.default['openstack']['compute']['network']['service_type'] = 'neutron'
 node.default['openstack']['compute']['network']['multi_host'] = true
 node.default['openstack']['compute']['network']['force_dhcp_release'] = true
 node.default['openstack']['libvirt']['virt_type'] = 'kvm'
-node.default['openstack']['network']['service_plugins'] =
-  ['neutron.services.l3_router.l3_router_plugin.L3RouterPlugin']
+#node.default['openstack']['network']['service_plugins'] =
+#  ['neutron.services.l3_router.l3_router_plugin.L3RouterPlugin']
+node.default['openstack']['network']['core_plugin'] = 'ml2'
+node.default['openstack']['network']['ml2']['type_drivers'] = 'flat,vlan'
+node.default['openstack']['network']['ml2']['tenant_network_types'] = ''
+node.default['openstack']['network']['ml2']['mechanism_drivers'] =
+node.default['openstack']['network']['ml2']['flat_networks'] = 'provider'
+node.default['openstack']['network']['ml2']['network_vlan_ranges'] = 'provider'
+node.default['openstack']['network']
 node.default['openstack']['network']['dhcp']['enable_isolated_metadata'] =
   'True'
 node.default['openstack']['network']['openvswitch']['tunnel_id_ranges'] =
