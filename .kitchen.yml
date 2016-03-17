@@ -1,4 +1,6 @@
 ---
+driver:
+  flavor_ref: 'm1.medium'
 provisioner:
   name: chef_zero
   data_bags_path: test/integration/default/data_bags
@@ -19,7 +21,7 @@ provisioner:
       server_repl_password: replpass
       allow_remote_root: true
       root_network_acl:
-        - %
+        - "%"
     yum:
       epel:
         baseurl: http://epel.osuosl.org/6/$basearch
