@@ -3,9 +3,9 @@ require 'serverspec'
 set :backend, :exec
 
 load_thres = if %w(ppc64 ppc64le).include?(os[:arch])
-               '-w 14,9,4 -c 18,13,8'
+               '-w 18,13,8 -c 26,21,16'
              else
-               '-w 12,7,2 -c 14,9,4'
+               '-w 14,9,4 -c 18,13,8'
              end
 
 describe file('/etc/nagios/nrpe.d/check_load.cfg') do
