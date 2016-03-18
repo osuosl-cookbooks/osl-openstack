@@ -25,9 +25,9 @@ provisioner:
         - "%"
     yum:
       epel:
-        baseurl: http://epel.osuosl.org/6/$basearch
+        baseurl: http://epel.osuosl.org/7/$basearch
         enable: true
-        gpgkey: http://epel.osuosl.org/RPM-GPG-KEY-EPEL-6
+        gpgkey: http://epel.osuosl.org/RPM-GPG-KEY-EPEL-7
     scl:
       packages:
         - python27
@@ -49,9 +49,6 @@ suites:
       - recipe[osl-openstack::controller]
       - recipe[openstack-integration-test::setup]
       - recipe[scl]
-    excludes:
-      - fedora-20
-      - fedora-21
   - name: compute
     run_list:
       - role[openstack_tk]
@@ -81,6 +78,3 @@ suites:
       - recipe[osl-openstack::ops_database]
       - recipe[osl-openstack::controller]
       - recipe[osl-openstack::novnc]
-    excludes:
-      - fedora-20
-      - fedora-21
