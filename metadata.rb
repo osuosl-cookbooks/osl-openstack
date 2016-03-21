@@ -16,5 +16,6 @@ version          '1.0.19'
 end
 
 depends 'firewall', '>= 2.2.0'
+depends 'iptables', '< 2.2.0'
 
 supports         'centos', '~> 7.0'
