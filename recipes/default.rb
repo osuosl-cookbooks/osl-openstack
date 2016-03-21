@@ -18,33 +18,35 @@
 #
 node.default['authorization']['sudo']['include_sudoers_d'] = true
 node.default['apache']['contact'] = 'hostmaster@osuosl.org'
-node.default['openstack']['compute']['config']['allow_same_net_traffic'] =
-  false
-node.default['openstack']['compute']['config']['ram_allocation_ratio'] = '5.0'
-node.default['openstack']['compute']['enabled_apis'] = 'ec2,osapi_compute'
+#node.default['openstack']['compute']['config']['allow_same_net_traffic'] =
+#  false
+#node.default['openstack']['compute']['config']['ram_allocation_ratio'] = '5.0'
+#node.default['openstack']['compute']['enabled_apis'] = 'ec2,osapi_compute'
 node.default['openstack']['compute']['network']['service_type'] = 'neutron'
-node.default['openstack']['compute']['network']['multi_host'] = true
-node.default['openstack']['compute']['network']['force_dhcp_release'] = true
+#node.default['openstack']['compute']['network']['multi_host'] = true
+#node.default['openstack']['compute']['network']['force_dhcp_release'] = true
+node.default['openstack']['identity']['saml']['idp_contact_type'] = 'support'
+node.default["openstack"]["identity"]["verbose"] = 'false'
 node.default['openstack']['libvirt']['virt_type'] = 'kvm'
-#node.default['openstack']['network']['service_plugins'] =
-#  ['neutron.services.l3_router.l3_router_plugin.L3RouterPlugin']
-node.default['openstack']['network']['core_plugin'] = 'ml2'
-node.default['openstack']['network']['ml2']['type_drivers'] = 'flat,vlan'
-node.default['openstack']['network']['ml2']['tenant_network_types'] = ''
-node.default['openstack']['network']['ml2']['mechanism_drivers'] =
-node.default['openstack']['network']['ml2']['flat_networks'] = 'provider'
-node.default['openstack']['network']['ml2']['network_vlan_ranges'] = 'provider'
-node.default['openstack']['network']
-node.default['openstack']['network']['dhcp']['enable_isolated_metadata'] =
-  'True'
-node.default['openstack']['network']['openvswitch']['tunnel_id_ranges'] =
-  '1:1000'
-node.default['openstack']['network']['openvswitch']['enable_tunneling'] =
-  'True'
-node.default['openstack']['network']['openvswitch']['tunnel_type'] = 'gre'
-node.default['openstack']['network']['openvswitch']['tenant_network_type'] =
-  'gre'
-node.default['openstack']['network']['quota']['floatingip'] = 50
+node.default['openstack']['network']['service_plugins'] =
+  ['neutron.services.l3_router.l3_router_plugin.L3RouterPlugin']
+node.default['openstack']['network']['l3']['router_distributed'] = 'True'
+#node.default['openstack']['network']['core_plugin'] = 'ml2'
+#node.default['openstack']['network']['ml2']['type_drivers'] = 'flat,vlan'
+#node.default['openstack']['network']['ml2']['tenant_network_types'] = ''
+#node.default['openstack']['network']['ml2']['mechanism_drivers'] =
+#node.default['openstack']['network']['ml2']['flat_networks'] = 'provider'
+#node.default['openstack']['network']['ml2']['network_vlan_ranges'] = 'provider'
+#node.default['openstack']['network']['dhcp']['enable_isolated_metadata'] =
+#  'True'
+#node.default['openstack']['network']['openvswitch']['tunnel_id_ranges'] =
+#  '1:1000'
+#node.default['openstack']['network']['openvswitch']['enable_tunneling'] =
+#  'True'
+#node.default['openstack']['network']['openvswitch']['tunnel_type'] = 'gre'
+#node.default['openstack']['network']['openvswitch']['tenant_network_type'] =
+#  'gre'
+#node.default['openstack']['network']['quota']['floatingip'] = 50
 node.default['openstack']['dashboard']['keystone_default_role'] = '_member_'
 node.default['openstack']['dashboard']['ssl']['cert'] = 'horizon.pem'
 node.default['openstack']['dashboard']['ssl']['cert_url'] =
@@ -173,9 +175,9 @@ node.default['openstack']['endpoints']['orchestration-api-cloudwatch']['uri'] =
 # node.default['openstack']['endpoints']['dashboard-http-bind']['host'] = '*'
 # node.default['openstack']['endpoints']['dashboard-https-bind']['host'] = '*'
 
-node.default['openstack']['yum']['repo-key'] = 'https://github.com/' \
-  "redhat-openstack/rdo-release/raw/#{node['openstack']['release']}/" \
-  "RPM-GPG-KEY-RDO-#{node['openstack']['release']}"
+#node.default['openstack']['yum']['repo-key'] = 'https://github.com/' \
+#  "redhat-openstack/rdo-release/raw/#{node['openstack']['release']}/" \
+#  "RPM-GPG-KEY-RDO-#{node['openstack']['release']}"
 
 case node['platform']
 when 'fedora'
