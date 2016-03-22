@@ -1,3 +1,8 @@
+current_dir = File.dirname(__FILE__)
+client_cfg = "#{current_dir}/test/chef-config"
+client_options = '--force-formatter -z ' \
+    "--config #{client_cfg}/knife.rb"
+
 task default: ['test']
 
 desc 'Default gate tests to run'
@@ -21,7 +26,7 @@ end
 
 desc 'Destroy machines'
 task :destroy_machines do
-  run_command("chef-client --force-formatter -z #{PROV_PATH}/destroy_all.rb")
+  run_command("chef-client #{client_options} #{PROV_PATH}/destroy_all.rb")
 end
 
 desc 'Vendor your cookbooks/'
@@ -31,15 +36,16 @@ end
 
 desc 'Create Chef Key'
 task :create_key do
-  unless File.exist?('.chef/validator.pem')
+  unless File.exist?("#{client_cfg}/validator.pem")
     sh %(chef exec ruby -e "require 'openssl';
-File.binwrite('.chef/validator.pem', OpenSSL::PKey::RSA.new(2048).to_pem)")
+File.binwrite('#{client_cfg}/validator.pem',
+OpenSSL::PKey::RSA.new(2048).to_pem)")
   end
 end
 
 desc 'Controller/Compute nodes'
 task controller_compute: [:create_key, :berks_vendor] do
-  run_command('chef-client --force-formatter -z ' \
+  run_command("chef-client #{client_options} " \
     "#{PROV_PATH}/controller_compute.rb")
 end
 
