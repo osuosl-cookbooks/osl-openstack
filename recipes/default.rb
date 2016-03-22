@@ -18,35 +18,27 @@
 #
 node.default['authorization']['sudo']['include_sudoers_d'] = true
 node.default['apache']['contact'] = 'hostmaster@osuosl.org'
-#node.default['openstack']['compute']['config']['allow_same_net_traffic'] =
-#  false
-#node.default['openstack']['compute']['config']['ram_allocation_ratio'] = '5.0'
-#node.default['openstack']['compute']['enabled_apis'] = 'ec2,osapi_compute'
 node.default['openstack']['compute']['network']['service_type'] = 'neutron'
-#node.default['openstack']['compute']['network']['multi_host'] = true
-#node.default['openstack']['compute']['network']['force_dhcp_release'] = true
 node.default['openstack']['identity']['saml']['idp_contact_type'] = 'support'
 node.default["openstack"]["identity"]["verbose"] = 'false'
 node.default['openstack']['libvirt']['virt_type'] = 'kvm'
 node.default['openstack']['network']['service_plugins'] =
   ['neutron.services.l3_router.l3_router_plugin.L3RouterPlugin']
-node.default['openstack']['network']['l3']['router_distributed'] = 'True'
-#node.default['openstack']['network']['core_plugin'] = 'ml2'
-#node.default['openstack']['network']['ml2']['type_drivers'] = 'flat,vlan'
-#node.default['openstack']['network']['ml2']['tenant_network_types'] = ''
-#node.default['openstack']['network']['ml2']['mechanism_drivers'] =
-#node.default['openstack']['network']['ml2']['flat_networks'] = 'provider'
-#node.default['openstack']['network']['ml2']['network_vlan_ranges'] = 'provider'
-#node.default['openstack']['network']['dhcp']['enable_isolated_metadata'] =
-#  'True'
-#node.default['openstack']['network']['openvswitch']['tunnel_id_ranges'] =
-#  '1:1000'
-#node.default['openstack']['network']['openvswitch']['enable_tunneling'] =
-#  'True'
-#node.default['openstack']['network']['openvswitch']['tunnel_type'] = 'gre'
-#node.default['openstack']['network']['openvswitch']['tenant_network_type'] =
-#  'gre'
-#node.default['openstack']['network']['quota']['floatingip'] = 50
+node.default['openstack']['network']['l3']['router_distributed'] = true
+node.default['openstack']['network']['l3']['external_network_bridge_interface'] = 'eth1.108'
+node.default['openstack']['network']['ml2']['type_drivers'] =
+  'flat,vlan,gre,vxlan'
+node.default['openstack']['network']['ml2']['tenant_network_types'] =
+  'vlan,gre,vxlan'
+node.default['openstack']['network']['ml2']['mechanism_drivers'] =
+  'openvswitch,l2population'
+node.default['openstack']['network']['ml2']['flat_networks'] = 'external'
+node.default['openstack']['network']['ml2']['network_vlan_ranges'] =
+  'external:108:108'
+node.default['openstack']['network']['ml2']['tunnel_id_ranges'] = '32769:34000'
+node.default['openstack']['network']['ml2']['vni_ranges'] = '65537:69999'
+node.default['openstack']['network']['openvswitch']['bridge_mappings'] =
+  'vlan:br-vlan,external:br-ex'
 node.default['openstack']['dashboard']['keystone_default_role'] = '_member_'
 node.default['openstack']['dashboard']['ssl']['cert'] = 'horizon.pem'
 node.default['openstack']['dashboard']['ssl']['cert_url'] =
@@ -127,10 +119,11 @@ end
 
 %w(identity identity-admin compute-api compute-ec2-api compute-ec2-admin
    compute-xvpvnc compute-novnc compute-vnc compute-vnc-proxy
-   compute-metadata-api compute-serial-console network-api image-api
-   image-registry block-storage-api object-storage-api telemetry-api
-   orchestration-api orchestration-api-cfn orchestration-api-cloudwatch
-   database-api bare-metal-api dashboard-http dashboard-https).each do |s|
+   compute-metadata-api compute-serial-console network-api network-linuxbridge
+   network-openvswitch image-api image-registry block-storage-api
+   object-storage-api telemetry-api orchestration-api orchestration-api-cfn
+   orchestration-api-cloudwatch database-api bare-metal-api dashboard-http
+   dashboard-https).each do |s|
   node.default['openstack']['endpoints']["#{s}-bind"]['host'] = '0.0.0.0'
   node.default['openstack']['endpoints'][s]['host'] = endpoint_hostname
 end
@@ -178,6 +171,7 @@ node.default['openstack']['endpoints']['orchestration-api-cloudwatch']['uri'] =
 #node.default['openstack']['yum']['repo-key'] = 'https://github.com/' \
 #  "redhat-openstack/rdo-release/raw/#{node['openstack']['release']}/" \
 #  "RPM-GPG-KEY-RDO-#{node['openstack']['release']}"
+node.default['openstack']['yum']['uri'] = 'http://mirror.centos.org/centos/$releasever/cloud/x86_64/openstack-liberty'
 
 case node['platform']
 when 'fedora'
@@ -214,6 +208,18 @@ if databag_prefix
       "#{databag_prefix}_#{d}"
   end
 end
+
+yum_repository 'OSL-Openpower' do
+  description "OSL Openpower repo for #{node['platform_family']}-" +
+    node['platform_version']
+  gpgkey node['osl-openstack']['openpower']['yum']['repo-key']
+  gpgcheck false
+  baseurl node['osl-openstack']['openpower']['yum']['uri']
+  enabled true
+  only_if { %w(ppc64 ppc64le).include?(node['kernel']['machine']) }
+  action :add
+end
+
 
 include_recipe 'base::ifconfig'
 include_recipe 'selinux::permissive'
