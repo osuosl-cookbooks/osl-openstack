@@ -9,21 +9,6 @@
       "mq": {
         "user": "admin"
       },
-      "compute": {
-        "networks": [
-          {
-            "bridge": "br-tenant",
-            "bridge_dev": "eth0",
-            "dns1": "140.211.166.130",
-            "dns2": "140.211.166.131",
-            "ipv4_cidr": "192.168.100.0/22",
-            "label": "private",
-            "multi_host": "T",
-            "network_size": "1024",
-            "num_networks": "1"
-          }
-        ]
-      },
       "image": {
         "image_upload": true,
         "upload_image": {
@@ -48,15 +33,6 @@
     "osl-openstack": {
       "database_suffix": "x86",
       "databag_prefix": "x86"
-    },
-    "openstack": {
-      "compute": {
-        "network": {
-          "libvirt_inject_key": "false",
-          "libvirt_inject_password": "false",
-          "public_interface": "br108"
-        }
-      }
     },
     "scl": {
       "packages": [
