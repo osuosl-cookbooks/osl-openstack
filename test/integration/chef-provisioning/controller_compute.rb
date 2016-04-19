@@ -1,8 +1,5 @@
 require 'chef/provisioning'
 
-# temporary workaround for a bug with chef-provisioning
-with_chef_server Chef::Config[:chef_server_url].sub('chefzero', 'http')
-
 controller_os = ENV['CONTROLLER_OS'] || 'chef/centos-7.1'
 compute_os = ENV['COMPUTE_OS'] || 'chef/centos-7.1'
 controller_ssh_user = ENV['CONTROLLER_SSH_USER'] || 'centos'
@@ -40,6 +37,7 @@ config.vm.provider "virtualbox" do |v|
 end
 EOF
   role 'openstack_provisioning'
+  # recipe 'openstack_test'
   recipe 'osl-openstack::ops_database'
   recipe 'osl-openstack::controller'
   recipe 'openstack-integration-test::setup'
@@ -69,6 +67,7 @@ machine 'compute' do
 config.vm.network "private_network", ip: "192.168.60.11"
 EOF
   role 'openstack_provisioning'
+  # recipe 'openstack_test::compute'
   recipe 'osl-openstack::compute'
   file('/etc/chef/encrypted_data_bag_secret',
        File.dirname(__FILE__) +
