@@ -11,6 +11,11 @@
       },
       "mq": {
         "user": "admin"
+      },
+      "compute": {
+        "libvirt": {
+          "virt_type": "qemu"
+        }
       }
     }
   },
