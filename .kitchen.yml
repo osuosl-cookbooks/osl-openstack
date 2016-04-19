@@ -1,6 +1,6 @@
 ---
 driver:
-  flavor_ref: 'm1.medium'
+  flavor_ref: 'm1.large'
 provisioner:
   name: chef_zero
   roles_path: test/integration/roles
@@ -38,6 +38,30 @@ suites:
   - name: default
     run_list:
       - recipe[osl-openstack::default]
+  - name: allinone
+    run_list:
+      - role[openstack_tk]
+      - recipe[openstack_test]
+      - recipe[firewall::mysql]
+      - recipe[osl-openstack::ops_database]
+      - recipe[osl-openstack::controller]
+      - recipe[osl-openstack::novnc]
+      - recipe[osl-openstack::compute]
+      - recipe[osl-openstack::cinder]
+      - recipe[openstack-integration-test::setup]
+    attributes:
+      osl-openstack:
+        endpoint_hostname: localhost
+        endpoint_ip: 127.0.0.1
+        cinder:
+          iscsi_role: openstack_base
+          iscsi_ips:
+            - 127.0.2.1
+            - 127.0.3.1
+      openstack:
+        block-storage:
+          volume:
+            create_volume_group: true
   - name: mon
     provisioner: chef_solo
     run_list:
