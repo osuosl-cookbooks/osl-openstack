@@ -28,7 +28,7 @@ include_recipe 'osl-openstack::_fedora'
 modules 'tun'
 
 case node['kernel']['machine']
-when 'ppc64','ppc64le'
+when 'ppc64', 'ppc64le'
   include_recipe 'chef-sugar::default'
   if %w(openstack).include?(node.deep_fetch('cloud', 'provider'))
     modules 'kvm_pr'
@@ -65,5 +65,11 @@ node.default['openstack']['compute']['platform']['nfs_packages'] = %w(
   nfs-utils
   libnfsidmap)
 
+node.default['openstack']['network']['l3']['external_network_bridge_interface'] = \
+  node['osl-openstack']['ext_interface']['compute']
+node.default['openstack']['network']['linuxbridge']['physical_interface_mappings'] = \
+  "public:#{node['osl-openstack']['ext_interface']['compute']}"
+
 include_recipe 'openstack-compute::compute'
-include_recipe 'openstack-compute::api-metadata'
+include_recipe 'osl-openstack::linuxbridge'
+include_recipe 'openstack-bare-metal::conductor'
