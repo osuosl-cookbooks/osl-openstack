@@ -6,7 +6,6 @@ Berksfile.lock
 \#*#
 .*.sw[a-z]
 *.un~
-/cookbooks
 
 # Bundler
 Gemfile.lock
@@ -19,6 +18,7 @@ bin/*
 # chef-provisioner
 test/chef-config/*.pem
 test/chef-config/local-mode-cache/
-/clients/
-/nodes/
-/vms/
+test/cookbooks
+clients/
+nodes/
+vms/
