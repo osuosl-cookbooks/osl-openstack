@@ -1,12 +1,16 @@
 # osl-openstack default attributes
 
 default['osl-openstack']['databases'] = {
+  'bare-metal' => 'ironic',
   'block-storage' => 'cinder',
   'compute' => 'nova',
+  'compute_api' => 'nova_api',
   'dashboard' => 'horizon',
+  'database' => 'trove',
   'identity' => 'keystone',
   'image' => 'glance',
   'network' => 'neutron',
+  'object-storage' => 'swift',
   'orchestration' => 'heat',
   'telemetry' => 'ceilometer'
 }
@@ -21,6 +25,8 @@ default['osl-openstack']['cinder']['iscsi_role'] = nil
 default['osl-openstack']['cinder']['iscsi_ips'] = []
 default['osl-openstack']['endpoint_hostname'] = nil
 default['osl-openstack']['db_hostname'] = nil
+default['osl-openstack']['ext_interface']['controller'] = 'eth1'
+default['osl-openstack']['ext_interface']['compute'] = 'eth1'
 
 case platform
 when 'fedora'
