@@ -1,0 +1,10 @@
+{
+  "id": "ironic",
+  "ironic": {
+    "encrypted_data": "e+irnSQQwgMwev2PZRRjTQSOTatRqDtKqdP/0B6H5Y8=\n",
+    "hmac": "rmdidxz0wwMwiwMG1/Ij29IskbCymfhJlUofMg8GkhM=\n",
+    "iv": "sxrF3fhBdGaVoueYSGQk+g==\n",
+    "version": 2,
+    "cipher": "aes-256-cbc"
+  }
+}
