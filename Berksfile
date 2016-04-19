@@ -30,4 +30,6 @@ cookbook 'yum-fedora'
            branch: 'stable/liberty'
 end
 
+cookbook 'openstack_test', path: 'test/cookbooks/openstack_test'
+
 metadata
