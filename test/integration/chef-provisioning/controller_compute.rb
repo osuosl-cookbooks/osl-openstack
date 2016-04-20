@@ -5,11 +5,13 @@ compute_os = ENV['COMPUTE_OS'] || 'chef/centos-7.1'
 controller_ssh_user = ENV['CONTROLLER_SSH_USER'] || 'centos'
 compute_ssh_user = ENV['COMPUTE_SSH_USER'] || 'centos'
 flavor_ref = ENV['FLAVOR'] || 3
+provision_role = 'openstack_provisioning'
 
 unless ENV['CHEF_DRIVER'] == 'fog:OpenStack'
   require 'chef/provisioning/vagrant_driver'
   vagrant_box controller_os
   vagrant_box compute_os
+  provision_role = 'vagrant_provisioning'
   with_driver "vagrant:#{File.dirname(__FILE__)}/../../../vms"
 end
 
@@ -32,11 +34,11 @@ machine 'controller' do
   add_machine_options vagrant_config: <<-EOF
 config.vm.network "private_network", ip: "192.168.60.10"
 config.vm.provider "virtualbox" do |v|
-  v.memory = 1024
+  v.memory = 4096
   v.cpus = 2
 end
 EOF
-  role 'openstack_provisioning'
+  role provision_role
   # recipe 'openstack_test'
   recipe 'osl-openstack::ops_database'
   recipe 'osl-openstack::controller'
@@ -65,8 +67,11 @@ machine 'compute' do
   ohai_hints 'openstack' => '{}'
   add_machine_options vagrant_config: <<-EOF
 config.vm.network "private_network", ip: "192.168.60.11"
+config.vm.provider "virtualbox" do |v|
+  v.memory = 1024
+end
 EOF
-  role 'openstack_provisioning'
+  role provision_role
   # recipe 'openstack_test::compute'
   recipe 'osl-openstack::compute'
   file('/etc/chef/encrypted_data_bag_secret',
