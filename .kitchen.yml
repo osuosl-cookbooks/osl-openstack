@@ -13,6 +13,9 @@ provisioner:
       vnc_bind_interface:
         controller: eth0
         compute: eth0
+      ext_interface:
+        controller: eth0
+        compute: eth0
     openstack:
       secret:
         key_path: "/tmp/kitchen/encrypted_data_bag_secret"
@@ -45,14 +48,12 @@ suites:
       - recipe[firewall::mysql]
       - recipe[osl-openstack::ops_database]
       - recipe[osl-openstack::controller]
-      - recipe[osl-openstack::novnc]
       - recipe[osl-openstack::compute]
       - recipe[osl-openstack::cinder]
       - recipe[openstack-integration-test::setup]
     attributes:
       osl-openstack:
         endpoint_hostname: localhost
-        endpoint_ip: 127.0.0.1
         cinder:
           iscsi_role: openstack_base
           iscsi_ips:
