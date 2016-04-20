@@ -9,6 +9,15 @@
       "db": {
         "service_type": "mariadb"
       },
+      "image": {
+        "image_upload": true,
+        "upload_image": {
+          "cirros": "http://download.cirros-cloud.net/daily/20150923/cirros-d150923-x86_64-disk.img"
+        },
+        "upload_images": [
+          "cirros"
+        ]
+      },
       "mq": {
         "user": "admin"
       },
