@@ -147,7 +147,6 @@ end
   compute-xvpvnc
   compute-novnc
   compute-vnc
-  compute-vnc-proxy
   compute-metadata-api
   compute-serial-console
   network-api
@@ -174,6 +173,8 @@ node.default['openstack']['endpoints']['network-openvswitch-bind']['host'] = '0.
 node.default['openstack']['endpoints']['network-linuxbridge']['host'] = \
   node['ipaddress']
 node.default['openstack']['endpoints']['network-openvswitch']['host'] = \
+  node['ipaddress']
+node.default['openstack']['endpoints']['compute-vnc-proxy-bind']['host'] = \
   node['ipaddress']
 
 # Set all URI's based on the endpoint hostname to by-pass attribute craziness
