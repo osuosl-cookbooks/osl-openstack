@@ -204,7 +204,7 @@ node.default['openstack']['endpoints']['image-api']['uri'] =
 node.default['openstack']['endpoints']['image-registry']['uri'] =
   "http://#{endpoint_hostname}:9191/v2"
 node.default['openstack']['endpoints']['block-storage-api']['uri'] =
-  "http://#{endpoint_hostname}:8776/v1/%(tenant_id)s"
+  "http://#{endpoint_hostname}:8776/v2/%(tenant_id)s"
 node.default['openstack']['endpoints']['telemetry-api']['uri'] =
   "http://#{endpoint_hostname}:9000/v1"
 node.default['openstack']['endpoints']['orchestration-api']['uri'] =
