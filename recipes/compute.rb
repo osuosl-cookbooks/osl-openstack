@@ -54,8 +54,6 @@ node.default['openstack']['compute']['platform']['nfs_packages'] = %w(
   nfs-utils
   libnfsidmap)
 
-node.default['openstack']['network']['l3']['external_network_bridge_interface'] = \
-  node['osl-openstack']['ext_interface']['compute']
 node.default['openstack']['network']['linuxbridge']['physical_interface_mappings'] = \
   "public:#{node['osl-openstack']['ext_interface']['compute']}"
 

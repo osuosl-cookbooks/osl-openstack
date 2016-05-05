@@ -17,8 +17,6 @@
 # limitations under the License.
 #
 
-node.default['openstack']['network']['l3']['external_network_bridge_interface'] = \
-  node['osl-openstack']['ext_interface']['controller']
 node.default['openstack']['network']['linuxbridge']['physical_interface_mappings'] = \
   "public:#{node['osl-openstack']['ext_interface']['controller']}"
 
