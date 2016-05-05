@@ -74,6 +74,7 @@ EOF
   role provision_role
   # recipe 'openstack_test::compute'
   recipe 'osl-openstack::compute'
+  role 'openstack_cinder'
   file('/etc/chef/encrypted_data_bag_secret',
        File.dirname(__FILE__) +
        '/../default/encrypted_data_bag_secret')

@@ -9,10 +9,15 @@
       "mq": {
         "user": "admin"
       },
+      "compute": {
+        "libvirt": {
+          "virt_type": "qemu"
+        }
+      },
       "image": {
         "image_upload": true,
         "upload_image": {
-          "cirros": "https://launchpad.net/cirros/trunk/0.3.0/+download/cirros-0.3.0-x86_64-disk.img"
+          "cirros": "http://download.cirros-cloud.net/daily/20150923/cirros-d150923-x86_64-disk.img"
         },
         "upload_images": [
           "cirros"
@@ -32,7 +37,11 @@
     },
     "osl-openstack": {
       "database_suffix": "x86",
-      "databag_prefix": "x86"
+      "databag_prefix": "x86",
+      "ext_interface":{
+        "controller": "eth0",
+        "compute": "eth0"
+      }
     },
     "scl": {
       "packages": [
