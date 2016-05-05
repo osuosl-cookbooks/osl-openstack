@@ -217,9 +217,9 @@ node.default['openstack']['endpoints']['orchestration-api-cloudwatch']['uri'] =
 # node.default['openstack']['endpoints']['dashboard-http-bind']['host'] = '*'
 # node.default['openstack']['endpoints']['dashboard-https-bind']['host'] = '*'
 
-# node.default['openstack']['yum']['repo-key'] = 'https://github.com/' \
-#  "redhat-openstack/rdo-release/raw/#{node['openstack']['release']}/" \
-#  "RPM-GPG-KEY-RDO-#{node['openstack']['release']}"
+node.default['openstack']['yum']['repo-key'] = 'https://github.com/' \
+ "redhat-openstack/rdo-release/raw/#{node['openstack']['release']}/" \
+ 'RPM-GPG-KEY-CentOS-SIG-Cloud'
 node.default['openstack']['yum']['uri'] = 'http://centos.osuosl.org/$releasever/cloud/x86_64/openstack-liberty'
 
 case node['platform']
