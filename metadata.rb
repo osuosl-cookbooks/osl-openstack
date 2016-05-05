@@ -10,8 +10,8 @@ version          '1.0.19'
   openstack-block-storage openstack-common openstack-compute openstack-dashboard
   openstack-identity openstack-integration-test openstack-image
   openstack-network openstack-object-storage openstack-ops-database
-  openstack-ops-messaging openstack-orchestration openstack-telemetry selinux
-  yum-fedora}.each do |cb|
+  openstack-ops-messaging openstack-orchestration openstack-telemetry
+  selinux}.each do |cb|
   depends cb
 end
 

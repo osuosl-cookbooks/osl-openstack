@@ -28,22 +28,7 @@ default['osl-openstack']['db_hostname'] = nil
 default['osl-openstack']['ext_interface']['controller'] = 'eth1'
 default['osl-openstack']['ext_interface']['compute'] = 'eth1'
 
-case platform
-when 'fedora'
-  # osl-openstack cookbook attributes
-  default['osl-openstack']['openpower']['yum']['repo-key'] = 'http://ftp.osuosl.org/pub/osl/repos/yum/RPM-GPG-KEY-osuosl'
-  default['osl-openstack']['openpower']['yum']['uri'] =
-    'http://ftp.osuosl.org/pub/osl/repos/yum/openpower/f$releasever/ppc64'
-  default['osl-openstack']['openpower']['kernel_version'] =
-    value_for_platform(
-      'fedora' => {
-        '= 20.0' => '3.16.0-1.fc20.ppc64',
-        '= 21.0' => '3.19.5-200.fc21.ppc64'
-      }
-    )
-when 'centos'
-  # osl-openstack cookbook attributes
-  default['osl-openstack']['openpower']['yum']['repo-key'] = 'http://ftp.osuosl.org/pub/osl/repos/yum/RPM-GPG-KEY-osuosl'
-  default['osl-openstack']['openpower']['yum']['uri'] =
-    'http://ftp.osuosl.org/pub/osl/repos/yum/openpower/centos-$releasever/$basearch'
-end
+# osl-openstack cookbook attributes
+default['osl-openstack']['openpower']['yum']['repo-key'] = 'http://ftp.osuosl.org/pub/osl/repos/yum/RPM-GPG-KEY-osuosl'
+default['osl-openstack']['openpower']['yum']['uri'] =
+  'http://ftp.osuosl.org/pub/osl/repos/yum/openpower/centos-$releasever/$basearch'

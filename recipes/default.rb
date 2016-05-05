@@ -222,22 +222,6 @@ node.default['openstack']['yum']['repo-key'] = 'https://github.com/' \
  'RPM-GPG-KEY-CentOS-SIG-Cloud'
 node.default['openstack']['yum']['uri'] = 'http://centos.osuosl.org/$releasever/cloud/x86_64/openstack-liberty'
 
-case node['platform']
-when 'fedora'
-  node.default['openstack']['yum']['uri'] = 'http://repos.fedorapeople.org/' \
-    "repos/openstack/openstack-#{node['openstack']['release']}/f21"
-  node.default['openstack']['compute']['platform']['dbus_service'] = 'dbus'
-  node.default['openstack']['db']['python_packages']['mariadb'] =
-    %w(MySQL-python)
-  case node['kernel']['machine']
-  when 'ppc64'
-    node.default['yum']['fedora']['exclude'] = 'kernel* libvirt qemu* ksm ' \
-      'libcacard* perf* python-perf*'
-    node.default['yum']['updates']['exclude'] = 'kernel* libvirt qemu* ksm ' \
-      'libcacard* perf* python-perf*'
-  end
-end
-
 # Set database attributes with our suffix setting
 database_suffix = node['osl-openstack']['database_suffix']
 if database_suffix

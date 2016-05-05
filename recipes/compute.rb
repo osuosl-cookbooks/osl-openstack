@@ -16,14 +16,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# this is required because of the fedora deps. Will be fixed once its moved into
-# a _common recipe.
 include_recipe 'firewall'
-
 include_recipe 'firewall::openstack'
 include_recipe 'firewall::vnc'
 include_recipe 'osl-openstack::default'
-include_recipe 'osl-openstack::_fedora'
 
 modules 'tun'
 
@@ -34,13 +30,6 @@ when 'ppc64', 'ppc64le'
     modules 'kvm_pr'
   else
     modules 'kvm_hv'
-  end
-
-  # Install latest version included in the repo above
-  package 'kernel' do
-    version node['osl-openstack']['openpower']['kernel_version']
-    only_if { platform_family?('fedora') }
-    action :upgrade
   end
 
   # Turn off smt on boot (required for KVM support)

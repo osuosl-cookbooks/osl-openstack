@@ -16,8 +16,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# this is required because of the fedora deps. Will be fixed once its moved into
-# a _common recipe.
 include_recipe 'osl-openstack'
 include_recipe 'openstack-ops-database::server'
 include_recipe 'openstack-ops-database::openstack-db'

@@ -16,7 +16,6 @@ cookbook 'scl'
 cookbook 'resource_from_hash',
          git: 'git@github.com:osuosl-cookbooks/resource_from_hash'
 cookbook 'statsd', github: 'att-cloud/cookbook-statsd'
-cookbook 'yum-fedora'
 
 # Openstack deps
 # cookbook 'mysql', '~> 4.1'
