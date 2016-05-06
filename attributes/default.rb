@@ -25,10 +25,13 @@ default['osl-openstack']['cinder']['iscsi_role'] = nil
 default['osl-openstack']['cinder']['iscsi_ips'] = []
 default['osl-openstack']['endpoint_hostname'] = nil
 default['osl-openstack']['db_hostname'] = nil
-default['osl-openstack']['ext_interface']['controller'] = 'eth1'
-default['osl-openstack']['ext_interface']['compute'] = 'eth1'
-
-# osl-openstack cookbook attributes
+default['osl-openstack']['physical_interface_mappings'] = [
+  {
+    'name' => 'public',
+    'controller' => 'eth0',
+    'compute' => 'eth0'
+  }
+]
 default['osl-openstack']['openpower']['yum']['repo-key'] = 'http://ftp.osuosl.org/pub/osl/repos/yum/RPM-GPG-KEY-osuosl'
 default['osl-openstack']['openpower']['yum']['uri'] =
   'http://ftp.osuosl.org/pub/osl/repos/yum/openpower/centos-$releasever/$basearch'

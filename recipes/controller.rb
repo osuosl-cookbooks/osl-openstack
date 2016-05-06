@@ -16,9 +16,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+int_mappings = []
+node['osl-openstack']['physical_interface_mappings'].each do |int|
+  int_mappings.push("#{int['name']}:#{int['controller']}")
+end
 
 node.default['openstack']['network']['linuxbridge']['physical_interface_mappings'] = \
-  "public:#{node['osl-openstack']['ext_interface']['controller']}"
+  int_mappings.join(',')
 
 include_recipe 'osl-apache::default'
 include_recipe 'firewall::openstack'

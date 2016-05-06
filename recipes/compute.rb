@@ -54,8 +54,13 @@ node.default['openstack']['compute']['platform']['nfs_packages'] = %w(
   nfs-utils
   libnfsidmap)
 
+int_mappings = []
+node['osl-openstack']['physical_interface_mappings'].each do |int|
+  int_mappings.push("#{int['name']}:#{int['compute']}")
+end
+
 node.default['openstack']['network']['linuxbridge']['physical_interface_mappings'] = \
-  "public:#{node['osl-openstack']['ext_interface']['compute']}"
+  int_mappings.join(',')
 
 include_recipe 'openstack-compute::compute'
 include_recipe 'osl-openstack::linuxbridge'

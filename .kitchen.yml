@@ -13,9 +13,6 @@ provisioner:
       vnc_bind_interface:
         controller: eth0
         compute: eth0
-      ext_interface:
-        controller: eth0
-        compute: eth0
     openstack:
       secret:
         key_path: "/tmp/kitchen/encrypted_data_bag_secret"
