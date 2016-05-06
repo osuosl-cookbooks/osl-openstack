@@ -64,4 +64,5 @@ node.default['openstack']['network']['linuxbridge']['physical_interface_mappings
 
 include_recipe 'openstack-compute::compute'
 include_recipe 'osl-openstack::linuxbridge'
+include_recipe 'openstack-telemetry::agent-compute'
 # include_recipe 'openstack-bare-metal::conductor'
