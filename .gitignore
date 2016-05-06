@@ -18,7 +18,6 @@ bin/*
 # chef-provisioner
 test/chef-config/*.pem
 test/chef-config/local-mode-cache/
-test/cookbooks
 clients/
 nodes/
 vms/
