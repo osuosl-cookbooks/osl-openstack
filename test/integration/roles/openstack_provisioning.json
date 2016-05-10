@@ -10,6 +10,7 @@
         "user": "admin"
       },
       "compute": {
+        "metering": true,
         "libvirt": {
           "virt_type": "qemu"
         }

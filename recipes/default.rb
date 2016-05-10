@@ -22,6 +22,7 @@ node.default['openstack']['compute']['network']['service_type'] = 'neutron'
 node.default['openstack']['compute']['network']['plugins'] = %w(linuxbridge)
 node.default['openstack']['identity']['saml']['idp_contact_type'] = 'support'
 node.default['openstack']['identity']['verbose'] = 'false'
+node.default['openstack']['image']['notification_driver'] = 'messaging'
 node.default['openstack']['libvirt']['virt_type'] = 'kvm'
 node.default['openstack']['network']['service_plugins'] =
   ['neutron.services.l3_router.l3_router_plugin.L3RouterPlugin']
@@ -50,6 +51,7 @@ node.default['openstack']['network']['linuxbridge']['polling_interval'] =
   "2\nprevent_arp_spoofing = True"
 node.default['openstack']['network']['linuxbridge']['firewall_driver'] =
   'neutron.agent.linux.iptables_firewall.IptablesFirewallDriver'
+node.default['openstack']['block-storage']['notification_driver'] = 'messagingv2'
 node.default['openstack']['dashboard']['keystone_default_role'] = '_member_'
 node.default['openstack']['dashboard']['ssl']['cert'] = 'horizon.pem'
 node.default['openstack']['dashboard']['ssl']['cert_url'] =
@@ -58,6 +60,7 @@ node.default['openstack']['dashboard']['ssl']['chain'] = 'wildcard-bundle.crt'
 node.default['openstack']['dashboard']['ssl']['key'] = 'horizon.key'
 node.default['openstack']['dashboard']['ssl']['key_url'] =
   'file:///etc/pki/tls/private/wildcard.key'
+node.default['openstack']['mq']['image']['notifier_strategy'] = 'messagingv2'
 node.default['openstack']['endpoints']['compute-novnc']['scheme'] = 'https'
 node.default['openstack']['release'] = 'liberty'
 node.default['openstack']['secret']['key_path'] =
@@ -206,7 +209,7 @@ node.default['openstack']['endpoints']['image-registry']['uri'] =
 node.default['openstack']['endpoints']['block-storage-api']['uri'] =
   "http://#{endpoint_hostname}:8776/v2/%(tenant_id)s"
 node.default['openstack']['endpoints']['telemetry-api']['uri'] =
-  "http://#{endpoint_hostname}:9000/v1"
+  "http://#{endpoint_hostname}:8777"
 node.default['openstack']['endpoints']['orchestration-api']['uri'] =
   "http://#{endpoint_hostname}:8004/v1/%(tenant_id)s"
 node.default['openstack']['endpoints']['orchestration-api-cfn']['uri'] =
