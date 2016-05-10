@@ -122,6 +122,22 @@ else
   db_hostname = node['osl-openstack']['db_hostname']
 end
 
+# Set memcache server to controller node
+memcached_servers = "#{endpoint_hostname}:11211"
+node.default['openstack']['memcached_servers'] = [memcached_servers]
+node.default['openstack']['image']['api']['auth']['memcached_servers'] =
+  memcached_servers
+node.default['openstack']['image']['registry']['auth']['memcached_servers'] =
+  memcached_servers
+node.default['openstack']['compute']['api']['auth']['memcached_servers'] =
+  memcached_servers
+node.default['openstack']['network']['api']['auth']['memcached_servers'] =
+  memcached_servers
+node.default['openstack']['block-storage']['api']['auth']['memcached_servers'] =
+  memcached_servers
+node.default['openstack']['telemetry']['api']['auth']['memcached_servers'] =
+  memcached_servers
+
 # DB host lists on all address
 node.default['openstack']['endpoints']['db']['host'] = '0.0.0.0'
 # Set the endpoints for the database and mq servers
