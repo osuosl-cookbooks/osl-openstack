@@ -1,0 +1,10 @@
+{
+  "id": "dispersion_auth_key",
+  "dispersion_auth_key": {
+    "encrypted_data": "TsE2S6KZ0JMvmx1+9cTAwITTfaZ3oipTo8bqqYpaHC0=\n",
+    "hmac": "GnpD/YdE110Ea4Z/0jTlsmahTCmQdWAYXXeiMHdb2Ng=\n",
+    "iv": "T3RxouCif0fj6UNDqm95Sg==\n",
+    "version": 2,
+    "cipher": "aes-256-cbc"
+  }
+}

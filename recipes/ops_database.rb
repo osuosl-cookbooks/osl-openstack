@@ -16,7 +16,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+node.default['mariadb']['mysqld']['lc_messages_dir'] = '/usr/share/mariadb'
 include_recipe 'osl-openstack'
 include_recipe 'openstack-ops-database::server'
 include_recipe 'openstack-ops-database::openstack-db'
-include_recipe 'openstack-ops-messaging::server'
+include_recipe 'openstack-ops-messaging::rabbitmq-server'

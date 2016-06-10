@@ -1,0 +1,10 @@
+{
+  "id": "swift_hash_path_suffix",
+  "swift_hash_path_suffix": {
+    "encrypted_data": "3z2IaCz60gNsY4r8kt3Oo85n5IbFIrFYuxViWX3qjQErAQ6TzXcVZkVoUDmW\n8z0b\n",
+    "hmac": "XhKs9ycxWtcjezTW5kkD7FH331L6qsjtcFWZIAfgT6s=\n",
+    "iv": "S0Z4UEwaKj7F8BpLEbhw0w==\n",
+    "version": 2,
+    "cipher": "aes-256-cbc"
+  }
+}

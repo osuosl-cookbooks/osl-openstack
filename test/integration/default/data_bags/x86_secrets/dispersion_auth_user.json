@@ -1,0 +1,10 @@
+{
+  "id": "dispersion_auth_user",
+  "dispersion_auth_user": {
+    "encrypted_data": "/e5S3fHxyZpDsmlL/dQ0IE9tg3qPhhBmEYqikhA8xuU=\n",
+    "hmac": "PWTjQbEYAnBQOGVtL0Ds5NmyFhG6abYFzpyhqfmgQbo=\n",
+    "iv": "DpzRSf04TxYMN7b62Y79GA==\n",
+    "version": 2,
+    "cipher": "aes-256-cbc"
+  }
+}

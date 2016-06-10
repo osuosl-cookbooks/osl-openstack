@@ -18,57 +18,65 @@
 #
 node.default['authorization']['sudo']['include_sudoers_d'] = true
 node.default['apache']['contact'] = 'hostmaster@osuosl.org'
-node.default['openstack']['compute']['network']['service_type'] = 'neutron'
-node.default['openstack']['compute']['network']['plugins'] = %w(linuxbridge)
-node.default['openstack']['identity']['saml']['idp_contact_type'] = 'support'
-node.default['openstack']['identity']['verbose'] = 'false'
 node.default['openstack']['image']['notification_driver'] = 'messaging'
-node.default['openstack']['libvirt']['virt_type'] = 'kvm'
-node.default['openstack']['network']['service_plugins'] =
-  ['neutron.services.l3_router.l3_router_plugin.L3RouterPlugin']
-node.default['openstack']['network']['interface_driver'] =
-  'neutron.agent.linux.interface.BridgeInterfaceDriver'
-node.default['openstack']['network']['allow_overlapping_ips'] = 'True'
-node.default['openstack']['network']['l3']['router_distributed'] = 'auto'
-node.default['openstack']['network']['l3']['external_network_bridge'] = nil
-node.default['openstack']['network']['dhcp']['enable_isolated_metadata'] =
-  'True'
-node.default['openstack']['network']['dhcp']['dhcp-option'] = '26,1450'
-node.default['openstack']['network']['ml2']['type_drivers'] =
-  "flat,vlan,vxlan\nextension_drivers = port_security"
-node.default['openstack']['network']['ml2']['tenant_network_types'] =
-  'vxlan'
-node.default['openstack']['network']['ml2']['mechanism_drivers'] =
-  'linuxbridge,l2population'
-node.default['openstack']['network']['ml2']['flat_networks'] = '*'
-node.default['openstack']['network']['ml2']['tunnel_id_ranges'] = '32769:34000'
-node.default['openstack']['network']['ml2']['vni_ranges'] = '1:1000'
-node.default['openstack']['network']['linuxbridge']['tenant_network_type'] = \
-  'gre,vxlan'
-node.default['openstack']['network']['linuxbridge']['enable_vxlan'] = true
-node.default['openstack']['network']['linuxbridge']['l2_population'] = true
-node.default['openstack']['network']['linuxbridge']['polling_interval'] =
-  "2\nprevent_arp_spoofing = True"
-node.default['openstack']['network']['linuxbridge']['firewall_driver'] =
-  'neutron.agent.linux.iptables_firewall.IptablesFirewallDriver'
 node.default['openstack']['block-storage']['notification_driver'] = 'messagingv2'
-node.default['openstack']['dashboard']['keystone_default_role'] = '_member_'
-node.default['openstack']['dashboard']['ssl']['cert'] = 'horizon.pem'
-node.default['openstack']['dashboard']['ssl']['cert_url'] =
-  'file:///etc/pki/tls/certs/wildcard.pem'
-node.default['openstack']['dashboard']['ssl']['chain'] = 'wildcard-bundle.crt'
-node.default['openstack']['dashboard']['ssl']['key'] = 'horizon.key'
-node.default['openstack']['dashboard']['ssl']['key_url'] =
-  'file:///etc/pki/tls/private/wildcard.key'
 node.default['openstack']['mq']['image']['notifier_strategy'] = 'messagingv2'
-node.default['openstack']['endpoints']['compute-novnc']['scheme'] = 'https'
-node.default['openstack']['release'] = 'liberty'
+node.default['openstack']['release'] = 'mitaka'
 node.default['openstack']['secret']['key_path'] =
   '/etc/chef/encrypted_data_bag_secret'
-node.default['openstack']['sysctl']['net.ipv4.conf.all.rp_filter'] = 0
-node.default['openstack']['sysctl']['net.ipv4.conf.default.rp_filter'] = 0
-node.default['openstack']['sysctl']['net.ipv4.ip_forward'] = 1
-node.override['apache']['listen_addresses'] = %w(0.0.0.0)
+# node.default['openstack']['sysctl']['net.ipv4.conf.all.rp_filter'] = 0
+# node.default['openstack']['sysctl']['net.ipv4.conf.default.rp_filter'] = 0
+# node.default['openstack']['sysctl']['net.ipv4.ip_forward'] = 1
+node.default['openstack']['yum']['uri'] = \
+  'http://centos.osuosl.org/$releasever/cloud/x86_64/openstack-' +
+  node['openstack']['release']
+node.default['openstack']['yum']['repo-key'] = 'https://github.com/' \
+ "redhat-openstack/rdo-release/raw/#{node['openstack']['release']}/" \
+ 'RPM-GPG-KEY-CentOS-SIG-Cloud'
+node.default['openstack']['compute']['conf'].tap do |conf|
+  conf['DEFAULT']['linuxnet_interface_driver'] = \
+    'nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver'
+  conf['DEFAULT']['dns_server'] = '140.211.166.130 140.211.166.131'
+end
+node.default['openstack']['network'].tap do |conf|
+  conf['conf']['DEFAULT']['service_plugins'] =
+    'neutron.services.l3_router.l3_router_plugin.L3RouterPlugin'
+  conf['conf']['DEFAULT']['allow_overlapping_ips'] = 'True'
+  conf['conf']['DEFAULT']['router_distributed'] = 'False'
+  conf['dnsmasq']['upstream_dns_servers'] = %w(140.211.166.130 140.211.166.131)
+end
+node.default['openstack']['network_l3'].tap do |conf|
+  conf['DEFAULT']['interface_driver'] =
+    'neutron.agent.linux.interface.BridgeInterfaceDriver'
+  conf['DEFAULT']['external_network_bridge'] = nil
+end
+node.default['openstack']['network_dhcp'].tap do |conf|
+  conf['DEFAULT']['interface_driver'] =
+    'neutron.agent.linux.interface.BridgeInterfaceDriver'
+  conf['DEFAULT']['enable_isolated_metadata'] = 'True'
+end
+node.override['openstack']['network']['plugins']['ml2']['conf'].tap do |conf|
+  conf['ml2']['type_drivers'] = 'flat,vlan,vxlan'
+  conf['ml2']['extension_drivers'] = 'port_security'
+  conf['ml2']['tenant_network_types'] = 'vxlan'
+  conf['ml2']['mechanism_drivers'] = 'linuxbridge,l2population'
+  conf['ml2_type_flat']['flat_networks'] = '*'
+  conf['ml2_type_vlan']['network_vlan_ranges'] = nil
+  conf['ml2_type_gre']['tunnel_id_ranges'] = '32769:34000'
+  conf['ml2_type_vxlan']['vni_ranges'] = '1:1000'
+end
+node.default['openstack']['network']['plugins']['linuxbridge']['conf'].tap do |conf|
+  conf['vlans']['tenant_network_type'] = 'gre,vxlan'
+  conf['vxlan']['enable_vxlan'] = true
+  conf['vxlan']['l2_population'] = true
+  conf['agent']['polling_interval'] = 2
+end
+# conf['dhcp']['dhcp-option'] = '26,1450' needs fixed
+node.default['openstack']['dashboard'].tap do |conf|
+#  conf['ssl']['cert'] = 'horizon.pem'
+  conf['ssl']['chain'] = 'wildcard-bundle.crt'
+#  conf['ssl']['key'] = 'horizon.key'
+end
 
 # Dynamically find the hostname for the controller node, or use a pre-determined
 # DNS name
@@ -125,121 +133,38 @@ end
 # Set memcache server to controller node
 memcached_servers = "#{endpoint_hostname}:11211"
 node.default['openstack']['memcached_servers'] = [memcached_servers]
-node.default['openstack']['image']['api']['auth']['memcached_servers'] =
-  memcached_servers
-node.default['openstack']['image']['registry']['auth']['memcached_servers'] =
-  memcached_servers
-node.default['openstack']['compute']['api']['auth']['memcached_servers'] =
-  memcached_servers
-node.default['openstack']['network']['api']['auth']['memcached_servers'] =
-  memcached_servers
-node.default['openstack']['block-storage']['api']['auth']['memcached_servers'] =
-  memcached_servers
-node.default['openstack']['telemetry']['api']['auth']['memcached_servers'] =
-  memcached_servers
 
-# DB host lists on all address
-node.default['openstack']['endpoints']['db']['host'] = '0.0.0.0'
-# Set the endpoints for the database and mq servers
-%w(
-  compute
-  bare-metal
-  nova_api
-  identity
-  image
-  network
-  block-storage
-  dashboard
-  telemetry
-  orchestration
-  database).each do |c|
-  node.default['openstack']['db'][c]['host'] = db_hostname
-  node.default['openstack']['mq'][c]['rabbit']['host'] = endpoint_hostname
+# Endpoints
+node.default['openstack']['endpoints'].tap do |conf|
+  conf['db']['host'] = db_hostname
+  conf['mq']['host'] = endpoint_hostname
+end
+# Binding
+node.default['openstack']['bind_service'].tap do |conf|
+  conf['mq']['host'] = '0.0.0.0'
+  conf['db']['host'] = '0.0.0.0'
+  conf['admin']['identity']['host'] = '0.0.0.0'
+  conf['main']['identity']['host'] = '0.0.0.0'
 end
 
+# Looping magic for endpoints and binding
 %w(
   identity
-  identity-admin
-  compute-api
-  compute-ec2-api
-  compute-ec2-admin
   compute-xvpvnc
   compute-novnc
-  compute-vnc
   compute-metadata-api
-  compute-serial-console
-  network-api
-  network-openvswitch
-  image-api
-  image-registry
-  block-storage-api
-  object-storage-api
-  telemetry-api
-  orchestration-api
-  orchestration-api-cfn
-  orchestration-api-cloudwatch
-  database-api
-  bare-metal-api
-  dashboard-http
-  dashboard-https
-).each do |s|
-  node.default['openstack']['endpoints']["#{s}-bind"]['host'] = '0.0.0.0'
-  node.default['openstack']['endpoints'][s]['host'] = endpoint_hostname
+  compute-vnc
+  compute-api
+  compute-serial-proxy
+  network
+).each do |service|
+  node.default['openstack']['bind_service']['all'][service]['host'] = '0.0.0.0'
+  node.default['openstack']['endpoints'].tap do |conf|
+    conf['admin'][service]['host'] = endpoint_hostname
+    conf['public'][service]['host'] = endpoint_hostname
+    conf['internal'][service]['host'] = endpoint_hostname
+  end
 end
-
-node.default['openstack']['endpoints']['network-linuxbridge-bind']['host'] = '0.0.0.0'
-node.default['openstack']['endpoints']['network-openvswitch-bind']['host'] = '0.0.0.0'
-node.default['openstack']['endpoints']['network-linuxbridge']['host'] = \
-  node['ipaddress']
-node.default['openstack']['endpoints']['network-openvswitch']['host'] = \
-  node['ipaddress']
-node.default['openstack']['endpoints']['compute-vnc-proxy-bind']['host'] = \
-  node['ipaddress']
-
-# Set all URI's based on the endpoint hostname to by-pass attribute craziness
-node.default['openstack']['endpoints']['identity-api']['host'] =
-  endpoint_hostname
-node.default['openstack']['endpoints']['identity-internal']['host'] =
-  endpoint_hostname
-node.default['openstack']['endpoints']['compute-serial-proxy']['host'] =
-  endpoint_hostname
-node.default['openstack']['endpoints']['mq']['host'] = '0.0.0.0'
-node.default['openstack']['endpoints']['identity-api']['uri'] =
-  "http://#{endpoint_hostname}:35357/v2.0"
-node.default['openstack']['endpoints']['identity-admin']['uri'] =
-  "http://#{endpoint_hostname}:5000/v2.0"
-node.default['openstack']['endpoints']['compute-api']['uri'] =
-  "http://#{endpoint_hostname}:8774/v2/%(tenant_id)s"
-node.default['openstack']['endpoints']['compute-ec2-api']['uri'] =
-  "http://#{endpoint_hostname}:8773/services/Cloud"
-node.default['openstack']['endpoints']['compute-ec2-admin']['uri'] =
-  "http://#{endpoint_hostname}:8773/services/Admin"
-node.default['openstack']['endpoints']['compute-xvpvnc']['uri'] =
-  "http://#{endpoint_hostname}:6081/console"
-node.default['openstack']['endpoints']['compute-novnc']['uri'] =
-  "https://#{endpoint_hostname}:6080/vnc_auto.html"
-node.default['openstack']['endpoints']['image-api']['uri'] =
-  "http://#{endpoint_hostname}:9292/v2"
-node.default['openstack']['endpoints']['image-registry']['uri'] =
-  "http://#{endpoint_hostname}:9191/v2"
-node.default['openstack']['endpoints']['block-storage-api']['uri'] =
-  "http://#{endpoint_hostname}:8776/v2/%(tenant_id)s"
-node.default['openstack']['endpoints']['telemetry-api']['uri'] =
-  "http://#{endpoint_hostname}:8777"
-node.default['openstack']['endpoints']['orchestration-api']['uri'] =
-  "http://#{endpoint_hostname}:8004/v1/%(tenant_id)s"
-node.default['openstack']['endpoints']['orchestration-api-cfn']['uri'] =
-  "http://#{endpoint_hostname}:8000/v1"
-node.default['openstack']['endpoints']['orchestration-api-cloudwatch']['uri'] =
-  "http://#{endpoint_hostname}:8003/v1"
-
-# node.default['openstack']['endpoints']['dashboard-http-bind']['host'] = '*'
-# node.default['openstack']['endpoints']['dashboard-https-bind']['host'] = '*'
-
-node.default['openstack']['yum']['repo-key'] = 'https://github.com/' \
- "redhat-openstack/rdo-release/raw/#{node['openstack']['release']}/" \
- 'RPM-GPG-KEY-CentOS-SIG-Cloud'
-node.default['openstack']['yum']['uri'] = 'http://centos.osuosl.org/$releasever/cloud/x86_64/openstack-liberty'
 
 # Set database attributes with our suffix setting
 database_suffix = node['osl-openstack']['database_suffix']
@@ -277,6 +202,6 @@ include_recipe 'selinux::permissive'
 include_recipe 'openstack-common'
 include_recipe 'openstack-common::logging'
 include_recipe 'openstack-common::sysctl'
-include_recipe 'openstack-common::openrc'
+include_recipe 'openstack-identity::openrc'
 include_recipe 'openstack-common::client'
 include_recipe 'openstack-telemetry::client'

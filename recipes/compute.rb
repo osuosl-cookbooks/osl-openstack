@@ -50,9 +50,9 @@ end
 
 # CentOS 7.2 removes provides for nfs-utils-lib so lets set it to libnfsidmap
 # which is what CentOS 7 and Fedora uses anyways.
-node.default['openstack']['compute']['platform']['nfs_packages'] = %w(
-  nfs-utils
-  libnfsidmap)
+# node.default['openstack']['compute']['platform']['nfs_packages'] = %w(
+#   nfs-utils
+#   libnfsidmap)
 
 int_mappings = []
 node['osl-openstack']['physical_interface_mappings'].each do |int|
@@ -63,6 +63,6 @@ node.default['openstack']['network']['linuxbridge']['physical_interface_mappings
   int_mappings.join(',')
 
 include_recipe 'openstack-compute::compute'
-include_recipe 'osl-openstack::linuxbridge'
-include_recipe 'openstack-telemetry::agent-compute'
+# include_recipe 'osl-openstack::linuxbridge'
+# include_recipe 'openstack-telemetry::agent-compute'
 # include_recipe 'openstack-bare-metal::conductor'

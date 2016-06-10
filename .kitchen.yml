@@ -71,14 +71,13 @@ suites:
       - recipe[osl-openstack::ops_database]
       - recipe[osl-openstack::controller]
       - recipe[openstack-integration-test::setup]
-      - recipe[scl]
   - name: compute
     run_list:
       - role[openstack_tk]
       - recipe[firewall::mysql]
       - recipe[osl-openstack::ops_database]
-      - recipe[openstack-ops-messaging::server]
-      - recipe[openstack-identity::server]
+      - recipe[openstack-ops-messaging::rabbitmq-server]
+      - recipe[openstack-identity::server-apache]
       - recipe[openstack-identity::registration]
       - recipe[openstack-compute::nova-setup]
       - recipe[openstack-compute::identity_registration]
@@ -90,8 +89,8 @@ suites:
       - role[openstack_tk]
       - recipe[firewall::mysql]
       - recipe[osl-openstack::ops_database]
-      - recipe[openstack-ops-messaging::server]
-      - recipe[openstack-identity::server]
+      - recipe[openstack-ops-messaging::rabbitmq-server]
+      - recipe[openstack-identity::server-apache]
       - recipe[openstack-identity::registration]
       - recipe[osl-openstack::cinder]
     attributes:
