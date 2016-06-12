@@ -56,3 +56,13 @@ task clean: [:destroy_all]
 require 'rubocop/rake_task'
 desc 'Run RuboCop'
 RuboCop::RakeTask.new(:rubocop)
+
+desc 'Run FoodCritic (lint) tests'
+task :lint do
+    run_command('foodcritic --epic-fail any .')
+end
+
+desc 'Run RSpec (unit) tests'
+task :unit do
+    run_command('rspec --format documentation --color')
+end
