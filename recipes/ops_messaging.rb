@@ -1,8 +1,8 @@
 #
 # Cookbook Name:: osl-openstack
-# Recipe:: ops_database
+# Recipe:: ops_messaging
 #
-# Copyright (C) 2015 Oregon State University
+# Copyright (C) 2016 Oregon State University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-node.default['mariadb']['mysqld']['lc_messages_dir'] = '/usr/share/mariadb'
 include_recipe 'osl-openstack'
-include_recipe 'openstack-ops-database::server'
-include_recipe 'openstack-ops-database::openstack-db'
+include_recipe 'firewall::amqp'
+include_recipe 'firewall::rabbitmq_mgt'
+include_recipe 'openstack-ops-messaging::rabbitmq-server'

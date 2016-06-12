@@ -64,6 +64,15 @@ suites:
     provisioner: chef_solo
     run_list:
       - recipe[osl-openstack::mon]
+  - name: ops_messaging
+    run_list:
+      - role[openstack_tk]
+      - recipe[osl-openstack::ops_messaging]
+  - name: identity
+    run_list:
+      - role[openstack_tk]
+      - recipe[osl-openstack::ops_database]
+      - recipe[osl-openstack::identity]
   - name: controller
     run_list:
       - role[openstack_tk]
@@ -76,9 +85,7 @@ suites:
       - role[openstack_tk]
       - recipe[firewall::mysql]
       - recipe[osl-openstack::ops_database]
-      - recipe[openstack-ops-messaging::rabbitmq-server]
-      - recipe[openstack-identity::server-apache]
-      - recipe[openstack-identity::registration]
+      - recipe[osl-openstack::identity]
       - recipe[openstack-compute::nova-setup]
       - recipe[openstack-compute::identity_registration]
       - recipe[openstack-compute::conductor]
@@ -89,9 +96,7 @@ suites:
       - role[openstack_tk]
       - recipe[firewall::mysql]
       - recipe[osl-openstack::ops_database]
-      - recipe[openstack-ops-messaging::rabbitmq-server]
-      - recipe[openstack-identity::server-apache]
-      - recipe[openstack-identity::registration]
+      - recipe[osl-openstack::identity]
       - recipe[osl-openstack::cinder]
     attributes:
       osl-openstack:
