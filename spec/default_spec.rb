@@ -29,19 +29,19 @@ describe 'osl-openstack::default' do
       end
     end
   end
-    let(:chef_run) { runner.converge(described_recipe) }
-    %w(
-      base::ifconfig
-      selinux::permissive
-      openstack-common
-      openstack-common::logging
-      openstack-common::sysctl
-      openstack-identity::openrc
-      openstack-common::client
-      openstack-telemetry::client
-    ).each do |r|
-      it "includes cookbook #{r}" do
-        expect(chef_run).to include_recipe(r)
-      end
+  let(:chef_run) { runner.converge(described_recipe) }
+  %w(
+    base::ifconfig
+    selinux::permissive
+    openstack-common
+    openstack-common::logging
+    openstack-common::sysctl
+    openstack-identity::openrc
+    openstack-common::client
+    openstack-telemetry::client
+  ).each do |r|
+    it "includes cookbook #{r}" do
+      expect(chef_run).to include_recipe(r)
     end
+  end
 end
