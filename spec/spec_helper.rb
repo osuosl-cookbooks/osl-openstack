@@ -48,3 +48,36 @@ shared_context 'identity_stubs' do
       .and_return('admin')
   end
 end
+
+shared_context 'image_stubs' do
+  before do
+    allow_any_instance_of(Chef::Recipe).to receive(:address_for)
+      .with('lo')
+      .and_return('127.0.1.1')
+    allow_any_instance_of(Chef::Recipe).to receive(:config_by_role)
+      .with('rabbitmq-server', 'queue')
+      .and_return(
+        'host' => 'rabbit-host', 'port' => 'rabbit-port'
+      )
+    allow_any_instance_of(Chef::Recipe).to receive(:rabbit_servers)
+      .and_return '1.1.1.1:5672,2.2.2.2:5672'
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('token', 'openstack_identity_bootstrap_token')
+      .and_return('bootstrap-token')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('token', 'openstack_vmware_secret_name')
+      .and_return 'vmware_secret_name'
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('db', 'glance')
+      .and_return('db-pass')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('service', 'openstack-image')
+      .and_return('glance-pass')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('user', 'guest')
+      .and_return('mq-pass')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('user', 'admin')
+      .and_return('admin-pass')
+  end
+end

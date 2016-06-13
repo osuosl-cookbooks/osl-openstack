@@ -73,6 +73,12 @@ suites:
       - role[openstack_tk]
       - recipe[osl-openstack::ops_database]
       - recipe[osl-openstack::identity]
+  - name: image
+    run_list:
+      - role[openstack_tk]
+      - recipe[osl-openstack::ops_database]
+      - recipe[osl-openstack::identity]
+      - recipe[osl-openstack::image]
   - name: controller
     run_list:
       - role[openstack_tk]

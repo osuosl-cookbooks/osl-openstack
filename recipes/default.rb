@@ -18,9 +18,7 @@
 #
 node.default['authorization']['sudo']['include_sudoers_d'] = true
 node.default['apache']['contact'] = 'hostmaster@osuosl.org'
-node.default['openstack']['image']['notification_driver'] = 'messaging'
 node.default['openstack']['block-storage']['notification_driver'] = 'messagingv2'
-node.default['openstack']['mq']['image']['notifier_strategy'] = 'messagingv2'
 node.default['openstack']['release'] = 'mitaka'
 node.default['openstack']['secret']['key_path'] =
   '/etc/chef/encrypted_data_bag_secret'
@@ -133,6 +131,14 @@ end
 # Set memcache server to controller node
 memcached_servers = "#{endpoint_hostname}:11211"
 node.default['openstack']['memcached_servers'] = [memcached_servers]
+
+%w(image_registry image_api).each do |i|
+  node.default['openstack'][i]['conf'].tap do |conf|
+    conf['DEFAULT']['notifier_strategy'] = 'messagingv2'
+    conf['DEFAULT']['notification_driver'] = 'messaging'
+    conf['keystone_authtoken']['memcached_servers'] = memcached_servers
+  end
+end
 
 # Endpoints
 node.default['openstack']['endpoints'].tap do |conf|
