@@ -13,6 +13,7 @@ describe 'osl-openstack::identity' do
   %w(
     osl-openstack
     osl-openstack::ops_messaging
+    firewall::openstack
     openstack-identity::server-apache
     openstack-identity::registration
   ).each do |r|

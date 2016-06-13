@@ -18,5 +18,6 @@
 #
 include_recipe 'osl-openstack'
 include_recipe 'osl-openstack::ops_messaging'
+include_recipe 'firewall::openstack'
 include_recipe 'openstack-identity::server-apache'
 include_recipe 'openstack-identity::registration'
