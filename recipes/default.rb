@@ -18,7 +18,6 @@
 #
 node.default['authorization']['sudo']['include_sudoers_d'] = true
 node.default['apache']['contact'] = 'hostmaster@osuosl.org'
-node.default['openstack']['block-storage']['notification_driver'] = 'messagingv2'
 node.default['openstack']['release'] = 'mitaka'
 node.default['openstack']['secret']['key_path'] =
   '/etc/chef/encrypted_data_bag_secret'
@@ -31,7 +30,7 @@ node.default['openstack']['yum']['uri'] = \
 node.default['openstack']['yum']['repo-key'] = 'https://github.com/' \
  "redhat-openstack/rdo-release/raw/#{node['openstack']['release']}/" \
  'RPM-GPG-KEY-CentOS-SIG-Cloud'
-%w(image_registry image_api).each do |i|
+%w(block-storage image_registry image_api).each do |i|
   node.default['openstack'][i]['conf'].tap do |conf|
     conf['DEFAULT']['notifier_strategy'] = 'messagingv2'
     conf['DEFAULT']['notification_driver'] = 'messaging'

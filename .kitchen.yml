@@ -124,6 +124,12 @@ suites:
         block-storage:
           volume:
             create_volume_group: true
+  - name: block_storage_controller
+    run_list:
+      - role[openstack_tk]
+      - recipe[osl-openstack::ops_database]
+      - recipe[osl-openstack::identity]
+      - recipe[osl-openstack::block_storage_controller]
   - name: novnc
     run_list:
       - role[openstack_tk]

@@ -191,3 +191,44 @@ shared_context 'compute_stubs' do
       .and_return('ad3313264ea51d8c6a3d1c5b140b9883')
   end
 end
+
+shared_context 'block_storage_stubs' do
+  before do
+    allow_any_instance_of(Chef::Recipe).to receive(:rabbit_servers)
+      .and_return('1.1.1.1:5672,2.2.2.2:5672')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('service', anything)
+      .and_return('')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('db', anything)
+      .and_return('')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('token', 'openstack_identity_bootstrap_token')
+      .and_return('bootstrap-token')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('token', 'rbd_secret_uuid')
+      .and_return('b0ff3bba-e07b-49b1-beed-09a45552b1ad')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('token', 'openstack_vmware_secret_name')
+      .and_return 'vmware_secret_name'
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('user', 'guest')
+      .and_return('mq-pass')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('service', 'netapp')
+      .and_return 'netapp-pass'
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('service', 'openstack-block-storage')
+      .and_return('cinder-pass')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('service', 'openstack_image_cephx_key')
+      .and_return('cephx-key')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('user', 'admin')
+      .and_return('emc_test_pass')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('user', 'ibmnas_admin')
+      .and_return('test_pass')
+    allow(Chef::Application).to receive(:fatal!)
+  end
+end
