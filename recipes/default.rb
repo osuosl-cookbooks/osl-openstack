@@ -31,6 +31,12 @@ node.default['openstack']['yum']['uri'] = \
 node.default['openstack']['yum']['repo-key'] = 'https://github.com/' \
  "redhat-openstack/rdo-release/raw/#{node['openstack']['release']}/" \
  'RPM-GPG-KEY-CentOS-SIG-Cloud'
+%w(image_registry image_api).each do |i|
+  node.default['openstack'][i]['conf'].tap do |conf|
+    conf['DEFAULT']['notifier_strategy'] = 'messagingv2'
+    conf['DEFAULT']['notification_driver'] = 'messaging'
+  end
+end
 node.default['openstack']['compute']['conf'].tap do |conf|
   conf['DEFAULT']['linuxnet_interface_driver'] = \
     'nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver'
@@ -43,12 +49,12 @@ node.default['openstack']['network'].tap do |conf|
   conf['conf']['DEFAULT']['router_distributed'] = 'False'
   conf['dnsmasq']['upstream_dns_servers'] = %w(140.211.166.130 140.211.166.131)
 end
-node.default['openstack']['network_l3'].tap do |conf|
+node.default['openstack']['network_l3']['conf'].tap do |conf|
   conf['DEFAULT']['interface_driver'] =
     'neutron.agent.linux.interface.BridgeInterfaceDriver'
   conf['DEFAULT']['external_network_bridge'] = nil
 end
-node.default['openstack']['network_dhcp'].tap do |conf|
+node.default['openstack']['network_dhcp']['conf'].tap do |conf|
   conf['DEFAULT']['interface_driver'] =
     'neutron.agent.linux.interface.BridgeInterfaceDriver'
   conf['DEFAULT']['enable_isolated_metadata'] = 'True'
@@ -67,7 +73,16 @@ node.default['openstack']['network']['plugins']['linuxbridge']['conf'].tap do |c
   conf['vlans']['tenant_network_type'] = 'gre,vxlan'
   conf['vxlan']['enable_vxlan'] = true
   conf['vxlan']['l2_population'] = true
+  conf['vxlan']['local_ip'] = node['ipaddress']
   conf['agent']['polling_interval'] = 2
+end
+# XXX: Temp fix until its fixed upstream
+# https://review.openstack.org/329695
+node.normal['openstack']['network']['plugins']['linuxbridge'].tap do |lb|
+   lb['path'] =
+    '/etc/neutron/plugins/ml2'
+  lb['filename'] =
+    'linuxbridge_agent.ini'
 end
 # conf['dhcp']['dhcp-option'] = '26,1450' needs fixed
 node.default['openstack']['dashboard'].tap do |conf|
@@ -132,10 +147,17 @@ end
 memcached_servers = "#{endpoint_hostname}:11211"
 node.default['openstack']['memcached_servers'] = [memcached_servers]
 
-%w(image_registry image_api).each do |i|
+%w(
+  image_registry
+  image_api
+  network
+  network_dhcp
+  network_l3
+  network_metadata
+  network_metering
+).each do |i|
   node.default['openstack'][i]['conf'].tap do |conf|
-    conf['DEFAULT']['notifier_strategy'] = 'messagingv2'
-    conf['DEFAULT']['notification_driver'] = 'messaging'
+    conf['DEFAULT']['memcached_servers'] = memcached_servers
     conf['keystone_authtoken']['memcached_servers'] = memcached_servers
   end
 end
