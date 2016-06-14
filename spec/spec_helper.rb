@@ -138,3 +138,56 @@ shared_context 'network_stubs' do
     end
   end
 end
+
+shared_context 'compute_stubs' do
+  before do
+    allow_any_instance_of(Chef::Recipe).to receive(:rabbit_servers)
+      .and_return '1.1.1.1:5672,2.2.2.2:5672'
+    allow_any_instance_of(Chef::Recipe).to receive(:address_for)
+      .with('lo')
+      .and_return '127.0.1.1'
+    allow_any_instance_of(Chef::Recipe).to receive(:search_for)
+      .with('os-identity').and_return(
+        [{
+          'openstack' => {
+            'identity' => {
+              'admin_tenant_name' => 'admin',
+              'admin_user' => 'admin'
+            }
+          }
+        }]
+      )
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('token', 'openstack_identity_bootstrap_token')
+      .and_return('bootstrap-token')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('token', 'neutron_metadata_secret')
+      .and_return('metadata-secret')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('db', 'nova')
+      .and_return('nova_db_pass')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('db', 'nova_api')
+      .and_return('nova_api_db_pass')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('user', 'guest')
+      .and_return('mq-pass')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('user', 'admin')
+      .and_return('admin')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('service', 'openstack-compute')
+      .and_return('nova-pass')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('service', 'openstack-network')
+      .and_return('neutron-pass')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('service', 'rbd_block_storage')
+      .and_return 'cinder-rbd-pass'
+    allow_any_instance_of(Chef::Recipe).to receive(:memcached_servers)
+      .and_return []
+    allow(Chef::Application).to receive(:fatal!)
+    allow(SecureRandom).to receive(:hex)
+      .and_return('ad3313264ea51d8c6a3d1c5b140b9883')
+  end
+end
