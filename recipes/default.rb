@@ -85,9 +85,7 @@ node.normal['openstack']['network']['plugins']['linuxbridge'].tap do |lb|
 end
 # conf['dhcp']['dhcp-option'] = '26,1450' needs fixed
 node.default['openstack']['dashboard'].tap do |conf|
-#  conf['ssl']['cert'] = 'horizon.pem'
   conf['ssl']['chain'] = 'wildcard-bundle.crt'
-#  conf['ssl']['key'] = 'horizon.key'
 end
 
 # Dynamically find the hostname for the controller node, or use a pre-determined

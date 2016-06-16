@@ -44,7 +44,6 @@ include_recipe 'osl-openstack::block_storage_controller'
 # include_recipe 'openstack-telemetry::alarm-notifier'
 # include_recipe 'openstack-telemetry::collector'
 # include_recipe 'openstack-telemetry::api'
-# include_recipe 'certificate::wildcard'
 # include_recipe 'osl-openstack::novnc'
 # include_recipe 'openstack-bare-metal::api'
 # include_recipe 'openstack-bare-metal::identity_registration'
@@ -53,13 +52,4 @@ include_recipe 'osl-openstack::block_storage_controller'
 # include_recipe 'openstack-orchestration::api-cfn'
 # include_recipe 'openstack-orchestration::api-cloudwatch'
 # include_recipe 'openstack-orchestration::identity_registration'
-include_recipe 'openstack-dashboard::server'
-
-# XXX: Temporary workaround for https://bugs.launchpad.net/bugs/1496158
-file ::File.join(node['openstack']['dashboard']['django_path'],
-                 'openstack_dashboard',
-                 'local',
-                 '_usr_share_openstack-dashboard_openstack_dashboard_local_.' \
-                 'secret_key_store.lock') do
-  mode 0774
-end
+include_recipe 'osl-openstack::dashboard'

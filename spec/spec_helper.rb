@@ -232,3 +232,27 @@ shared_context 'block_storage_stubs' do
     allow(Chef::Application).to receive(:fatal!)
   end
 end
+
+shared_context 'dashboard_stubs' do
+  before do
+    allow_any_instance_of(Chef::Recipe).to receive(:memcached_servers)
+      .and_return ['hostA:port', 'hostB:port']
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('db', 'horizon')
+      .and_return('test-passes')
+    allow_any_instance_of(Chef::Recipe).to receive(:secret)
+      .with('certs', 'horizon.pem')
+      .and_return('horizon_pem_value')
+    allow_any_instance_of(Chef::Recipe).to receive(:secret)
+      .with('certs', 'horizon.key')
+      .and_return('horizon_key_value')
+    stub_command('/usr/sbin/httpd -t')
+    stub_command('[ ! -e /etc/httpd/conf/httpd.conf ] && [ -e /etc/redhat-rel' \
+      "ease ] && [ $(/sbin/sestatus | grep -c '^Current mode:.*enforcing') -e" \
+      'q 1 ]').and_return(true)
+    stub_command('[ -e /etc/httpd/conf/httpd.conf ] && [ -e /etc/redhat-relea' \
+      "se ] && [ $(/sbin/sestatus | grep -c '^Current mode:.*permissive') -eq" \
+      "1 ] && [ $(/sbin/sestatus | grep -c '^Mode from config file:.*enforcin" \
+      "g') -eq 1 ]").and_return(true)
+  end
+end
