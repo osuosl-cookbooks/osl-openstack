@@ -30,7 +30,7 @@ node.default['openstack']['yum']['uri'] = \
 node.default['openstack']['yum']['repo-key'] = 'https://github.com/' \
  "redhat-openstack/rdo-release/raw/#{node['openstack']['release']}/" \
  'RPM-GPG-KEY-CentOS-SIG-Cloud'
-%w(block-storage image_registry image_api).each do |i|
+%w(block-storage compute image_registry image_api).each do |i|
   node.default['openstack'][i]['conf'].tap do |conf|
     conf['DEFAULT']['notifier_strategy'] = 'messagingv2'
     conf['DEFAULT']['notification_driver'] = 'messaging'
@@ -40,6 +40,9 @@ node.default['openstack']['compute']['conf'].tap do |conf|
   conf['DEFAULT']['linuxnet_interface_driver'] = \
     'nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver'
   conf['DEFAULT']['dns_server'] = '140.211.166.130 140.211.166.131'
+  conf['DEFAULT']['instance_usage_audit'] = 'True'
+  conf['DEFAULT']['instance_usage_audit_period'] = 'hour'
+  conf['DEFAULT']['notify_on_state_change'] = 'vm_and_task_state'
 end
 node.default['openstack']['network'].tap do |conf|
   conf['conf']['DEFAULT']['service_plugins'] =
@@ -91,6 +94,10 @@ end
 
 node.default['openstack']['telemetry']['conf'].tap do |conf|
   conf['DEFAULT']['meter_dispatchers'] = 'database'
+end
+
+node.default['openstack']['block-storage']['conf'].tap do |conf|
+  conf['oslo_messaging_notifications']['driver'] = 'messagingv2'
 end
 
 # Dynamically find the hostname for the controller node, or use a pre-determined
@@ -150,6 +157,7 @@ memcached_servers = "#{endpoint_hostname}:11211"
 node.default['openstack']['memcached_servers'] = [memcached_servers]
 
 %w(
+  compute
   image_registry
   image_api
   network

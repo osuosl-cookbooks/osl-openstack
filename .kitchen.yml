@@ -91,6 +91,14 @@ suites:
       - recipe[osl-openstack::ops_database]
       - recipe[osl-openstack::identity]
       - recipe[osl-openstack::compute_controller]
+  - name: compute
+    run_list:
+      - role[openstack_tk]
+      - recipe[firewall::mysql]
+      - recipe[osl-openstack::ops_database]
+      - recipe[osl-openstack::identity]
+      - recipe[osl-openstack::compute_controller]
+      - recipe[osl-openstack::compute]
   - name: dashboard
     run_list:
       - role[openstack_tk]
@@ -105,14 +113,6 @@ suites:
       - recipe[osl-openstack::ops_database]
       - recipe[osl-openstack::controller]
       - recipe[openstack-integration-test::setup]
-  - name: compute
-    run_list:
-      - role[openstack_tk]
-      - recipe[firewall::mysql]
-      - recipe[osl-openstack::ops_database]
-      - recipe[osl-openstack::identity]
-      - recipe[osl-openstack::compute_controller]
-      - recipe[osl-openstack::compute]
   - name: cinder
     run_list:
       - role[openstack_tk]
