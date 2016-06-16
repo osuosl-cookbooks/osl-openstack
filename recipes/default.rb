@@ -88,6 +88,10 @@ node.default['openstack']['dashboard'].tap do |conf|
   conf['ssl']['chain'] = 'wildcard-bundle.crt'
 end
 
+node.default['openstack']['telemetry']['conf'].tap do |conf|
+  conf['DEFAULT']['meter_dispatchers'] = 'database'
+end
+
 # Dynamically find the hostname for the controller node, or use a pre-determined
 # DNS name
 if node['osl-openstack']['endpoint_hostname'].nil?
@@ -152,6 +156,7 @@ node.default['openstack']['memcached_servers'] = [memcached_servers]
   network_l3
   network_metadata
   network_metering
+  telemetry
 ).each do |i|
   node.default['openstack'][i]['conf'].tap do |conf|
     conf['DEFAULT']['memcached_servers'] = memcached_servers

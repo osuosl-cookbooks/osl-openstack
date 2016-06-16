@@ -137,6 +137,12 @@ suites:
       - recipe[osl-openstack::ops_database]
       - recipe[osl-openstack::identity]
       - recipe[osl-openstack::block_storage_controller]
+  - name: telemetry
+    run_list:
+      - role[openstack_tk]
+      - recipe[osl-openstack::ops_database]
+      - recipe[osl-openstack::identity]
+      - recipe[osl-openstack::telemetry]
   - name: novnc
     run_list:
       - role[openstack_tk]
