@@ -16,23 +16,23 @@ cookbook 'statsd', github: 'att-cloud/cookbook-statsd'
 
 # Openstack deps
 %w(
-    bare-metal
-    database
-    data-processing
-    integration-test
-    object-storage
-    orchestration
-    telemetry
-    block-storage
-    common
-    compute
-    dashboard
-    identity
-    image
-    ops-database
-    ops-messaging
-    network
-  ).each do |cb|
+  bare-metal
+  block-storage
+  common
+  compute
+  dashboard
+  database
+  data-processing
+  identity
+  image
+  integration-test
+  network
+  object-storage
+  ops-database
+  ops-messaging
+  orchestration
+  telemetry
+).each do |cb|
   cookbook "openstack-#{cb}",
            github: "openstack/cookbook-openstack-#{cb}",
            branch: 'master'

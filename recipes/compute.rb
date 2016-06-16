@@ -59,8 +59,9 @@ node['osl-openstack']['physical_interface_mappings'].each do |int|
   int_mappings.push("#{int['name']}:#{int['compute']}")
 end
 
-node.default['openstack']['network']['linuxbridge']['physical_interface_mappings'] = \
-  int_mappings.join(',')
+node.default['openstack']['network']['linuxbridge'].tap do |conf|
+  conf['physical_interface_mappings'] = int_mappings.join(',')
+end
 
 include_recipe 'openstack-compute::compute'
 # include_recipe 'osl-openstack::linuxbridge'

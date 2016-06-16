@@ -68,7 +68,8 @@ node.override['openstack']['network']['plugins']['ml2']['conf'].tap do |conf|
   conf['ml2_type_gre']['tunnel_id_ranges'] = '32769:34000'
   conf['ml2_type_vxlan']['vni_ranges'] = '1:1000'
 end
-node.default['openstack']['network']['plugins']['linuxbridge']['conf'].tap do |conf|
+node.default['openstack']['network']['plugins']['linuxbridge']['conf']
+  .tap do |conf|
   conf['vlans']['tenant_network_type'] = 'gre,vxlan'
   conf['vxlan']['enable_vxlan'] = true
   conf['vxlan']['l2_population'] = true
@@ -78,7 +79,7 @@ end
 # XXX: Temp fix until its fixed upstream
 # https://review.openstack.org/329695
 node.normal['openstack']['network']['plugins']['linuxbridge'].tap do |lb|
-   lb['path'] =
+  lb['path'] =
     '/etc/neutron/plugins/ml2'
   lb['filename'] =
     'linuxbridge_agent.ini'

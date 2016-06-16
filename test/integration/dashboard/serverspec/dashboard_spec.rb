@@ -21,11 +21,11 @@ end
 # Simulate logging into horizon with curl and test the output to ensure the
 # application is running correctly
 horizon_command =
-  # Get initial cookbooks for curl
+  # 1. Get initial cookbooks for curl
+  # 2. Grab the CSRF token
+  # 3. Try logging into the site with the token
   'curl -so /dev/null -k -c c.txt -b c.txt https://localhost/auth/login/ && ' \
-  # Grab the CSRF token
   'token=$(grep csrftoken c.txt | cut -f7) &&' \
-  # Try logging into the site with the token
   'curl -H \'Referer:https://localhost/auth/login/\' -k -c c.txt -b c.txt -d ' \
   '"login=admin&password=admin&csrfmiddlewaretoken=${token}" -v ' \
   'https://localhost/auth/login/ 2>&1'
