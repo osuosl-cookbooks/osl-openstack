@@ -44,6 +44,22 @@ describe file('/etc/nova/nova.conf') do
   end
 end
 
+%w(
+  /etc/nova/pki/certs/novnc.pem
+  /etc/nova/pki/private/novnc.key
+).each do |c|
+  describe file(c) do
+    it { should be_owned_by 'nova' }
+    it { should be_grouped_into 'nova' }
+  end
+end
+
+# describe file('/etc/sysconfig/openstack-nova-novncproxy') do
+#   its(:content) do
+#     should contain(%r{cert.*/etc/nova/pki})
+#   end
+# end
+
 describe command('source /root/openrc && openstack compute service list') do
   list_output = '\s*\|\scomputecontroll.+\s*\|\sinternal\s\|\senabled\s\|\sup' \
     '\s*\|\s[0-9]{4}-[0-9]{2}-[0-9]{2}'
@@ -52,4 +68,9 @@ describe command('source /root/openrc && openstack compute service list') do
       should contain(/nova-#{s}#{list_output}/)
     end
   end
+end
+
+describe command('curl -k -v https://localhost:6080 2>&1') do
+  its(:stdout) { should contain(/SSL connection/) }
+  its(:stdout) { should contain(/HTTP.*200 OK/) }
 end

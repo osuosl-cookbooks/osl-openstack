@@ -26,3 +26,31 @@ include_recipe 'openstack-compute::api-metadata'
 include_recipe 'openstack-compute::nova-cert'
 include_recipe 'openstack-compute::vncproxy'
 include_recipe 'openstack-compute::identity_registration'
+
+platform_options = node['openstack']['compute']['platform']
+proxy_service = "service[#{platform_options['compute_vncproxy_service']}]"
+ssl_dir = node['osl-openstack']['nova_ssl_dir']
+novnc = node['osl-openstack']['novnc']
+
+directory '/etc/nova/pki'
+
+certificate_manage 'novnc' do
+  cert_path ssl_dir
+  cert_file novnc['cert_file']
+  key_file  novnc['key_file']
+  chain_file 'novnc-bundle.crt'
+  nginx_cert true
+  owner node['openstack']['compute']['user']
+  group node['openstack']['compute']['group']
+  notifies :restart, resources(proxy_service)
+end
+
+template '/etc/sysconfig/openstack-nova-novncproxy' do
+  source 'novncproxy.erb'
+  mode 00644
+  owner 'root'
+  group 'root'
+  variables(cert: ::File.join(ssl_dir, 'certs', novnc['cert_file']),
+            key: ::File.join(ssl_dir, 'private', novnc['key_file']))
+  notifies :restart, proxy_service
+end

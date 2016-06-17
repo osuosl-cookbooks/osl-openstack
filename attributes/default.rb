@@ -26,6 +26,12 @@ default['osl-openstack']['cinder']['iscsi_ips'] = []
 default['osl-openstack']['endpoint_hostname'] = nil
 default['osl-openstack']['db_hostname'] = nil
 default['osl-openstack']['physical_interface_mappings'] = []
+default['osl-openstack']['nova_ssl_dir'] = '/etc/nova/pki'
+default['osl-openstack']['novnc'] = {
+  'use_ssl' => true,
+  'cert_file' => 'novnc.pem',
+  'key_file' => 'novnc.key'
+}
 default['osl-openstack']['openpower']['yum']['repo-key'] = 'http://ftp.osuosl.org/pub/osl/repos/yum/RPM-GPG-KEY-osuosl'
 default['osl-openstack']['openpower']['yum']['uri'] =
   'http://ftp.osuosl.org/pub/osl/repos/yum/openpower/centos-$releasever/$basearch'

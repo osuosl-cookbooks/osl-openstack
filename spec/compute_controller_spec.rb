@@ -28,4 +28,22 @@ describe 'osl-openstack::compute_controller' do
       expect(chef_run).to include_recipe(r)
     end
   end
+
+  it 'creates /etc/nova/pki directory' do
+    expect(chef_run).to create_directory('/etc/nova/pki')
+  end
+
+  it 'creates novnc certificate resource' do
+    expect(chef_run).to create_certificate_manage('novnc')
+  end
+
+  it 'creates novncproxy sysconfig template' do
+    expect(chef_run).to \
+      create_template('/etc/sysconfig/openstack-nova-novncproxy')
+  end
+
+  it 'novnc-proxy sysconfig file notifies openstack-nova-novncproxy service' do
+    expect(chef_run.template('/etc/sysconfig/openstack-nova-novncproxy')).to \
+      notify('service[openstack-nova-novncproxy]')
+  end
 end
