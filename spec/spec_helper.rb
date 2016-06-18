@@ -189,6 +189,9 @@ shared_context 'compute_stubs' do
     allow(Chef::Application).to receive(:fatal!)
     allow(SecureRandom).to receive(:hex)
       .and_return('ad3313264ea51d8c6a3d1c5b140b9883')
+    stub_command('virsh net-list | grep -q default').and_return(true)
+    stub_command("/sbin/ppc64_cpu --smt 2>&1 | grep -E 'SMT is off|Machine is" \
+      " not SMT capable'").and_return(false)
   end
 end
 
