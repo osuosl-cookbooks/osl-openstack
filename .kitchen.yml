@@ -113,13 +113,15 @@ suites:
       - recipe[osl-openstack::ops_database]
       - recipe[osl-openstack::controller]
       - recipe[openstack-integration-test::setup]
-  - name: cinder
+  - name: block_storage
     run_list:
       - role[openstack_tk]
       - recipe[firewall::mysql]
       - recipe[osl-openstack::ops_database]
       - recipe[osl-openstack::identity]
-      - recipe[osl-openstack::cinder]
+      - recipe[osl-openstack::block_storage_controller]
+      - recipe[openstack-block-storage::volume_driver_lvm]
+      - recipe[osl-openstack::block_storage]
     attributes:
       osl-openstack:
         cinder:
@@ -127,10 +129,6 @@ suites:
           iscsi_ips:
             - 127.0.2.1
             - 127.0.3.1
-      openstack:
-        block-storage:
-          volume:
-            create_volume_group: true
   - name: block_storage_controller
     run_list:
       - role[openstack_tk]

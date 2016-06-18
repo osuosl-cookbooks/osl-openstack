@@ -1,8 +1,8 @@
 #
 # Cookbook Name:: osl-openstack
-# Recipe:: cinder
+# Recipe:: block_storage
 #
-# Copyright (C) 2015 Oregon State University
+# Copyright (C) 2015-2016 Oregon State University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,10 +27,8 @@ end
 
 node.override['firewall']['range']['iscsi'] = iscsi_hosts
 
-include_recipe 'firewall'
-include_recipe 'firewall::openstack'
 include_recipe 'firewall::iscsi'
-include_recipe 'osl-openstack::default'
+include_recipe 'osl-openstack'
 include_recipe 'openstack-block-storage::volume'
 include_recipe 'openstack-block-storage::client'
 include_recipe 'openstack-block-storage::identity_registration'
