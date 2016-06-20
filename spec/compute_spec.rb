@@ -9,7 +9,7 @@ describe 'osl-openstack::compute' do
     end
   end
   let(:node) { runner.node }
-  let(:chef_run) { runner.converge(described_recipe) }
+  cached(:chef_run) { runner.converge(described_recipe) }
   include_context 'identity_stubs'
   include_context 'compute_stubs'
   %w(
@@ -28,11 +28,12 @@ describe 'osl-openstack::compute' do
   end
   %w(ppc64 ppc64le).each do |a|
     context "setting arch to #{a}" do
-      let(:chef_run) { runner.converge(described_recipe) }
+      cached(:chef_run) { runner.converge(described_recipe) }
       before do
         node.automatic['kernel']['machine'] = a
       end
       context 'Setting as openstack guest' do
+        let(:chef_run) { runner.converge(described_recipe) }
         before do
           node.automatic['cloud']['provider'] = 'openstack'
         end
@@ -50,6 +51,7 @@ describe 'osl-openstack::compute' do
         expect(chef_run).to create_cookbook_file('/etc/rc.d/rc.local')
       end
       context 'SMT not enabled' do
+        let(:chef_run) { runner.converge(described_recipe) }
         before do
           stub_command('/sbin/ppc64_cpu --smt 2>&1 | grep -E ' \
           "'SMT is off|Machine is not SMT capable'").and_return(true)

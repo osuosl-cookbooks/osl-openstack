@@ -9,7 +9,7 @@ describe 'osl-openstack::compute_controller' do
     end
   end
   let(:node) { runner.node }
-  let(:chef_run) { runner.converge(described_recipe) }
+  cached(:chef_run) { runner.converge(described_recipe) }
   include_context 'identity_stubs'
   include_context 'compute_stubs'
   %w(

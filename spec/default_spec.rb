@@ -8,7 +8,7 @@ describe 'osl-openstack::default' do
     end
   end
   let(:node) { runner.node }
-  let(:chef_run) { runner.converge(described_recipe) }
+  cached(:chef_run) { runner.converge(described_recipe) }
   include_context 'identity_stubs'
   context 'setting arch to x86_64' do
     before do
@@ -29,7 +29,7 @@ describe 'osl-openstack::default' do
       end
     end
   end
-  let(:chef_run) { runner.converge(described_recipe) }
+  cached(:chef_run) { runner.converge(described_recipe) }
   %w(
     base::ifconfig
     selinux::permissive

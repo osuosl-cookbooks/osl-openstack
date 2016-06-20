@@ -9,7 +9,7 @@ describe 'osl-openstack::telemetry' do
     end
   end
   let(:node) { runner.node }
-  let(:chef_run) { runner.converge(described_recipe) }
+  cached(:chef_run) { runner.converge(described_recipe) }
   include_context 'identity_stubs'
   include_context 'telemetry_stubs'
   %w(

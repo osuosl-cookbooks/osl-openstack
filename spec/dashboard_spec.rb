@@ -17,9 +17,9 @@ describe 'osl-openstack::dashboard' do
     end
   end
   let(:node) { runner.node }
-  let(:chef_run) { runner.converge(described_recipe) }
   let(:secret_lock_file_resource) { chef_run.file(secret_lock_file) }
   let(:secret_file_resource) { chef_run.file(secret_file) }
+  cached(:chef_run) { runner.converge(described_recipe) }
   include_context 'identity_stubs'
   include_context 'dashboard_stubs'
   %w(
@@ -32,6 +32,7 @@ describe 'osl-openstack::dashboard' do
     end
   end
   context 'Secret files already exist' do
+    let(:chef_run) { runner.converge(described_recipe) }
     it 'Set secret key lock file permissions' do
       allow(File).to receive(:exist?).and_call_original
       allow(File).to receive(:exist?).with(secret_lock_file).and_return(true)
@@ -52,6 +53,7 @@ describe 'osl-openstack::dashboard' do
     end
   end
   context 'Secret files do not exist' do
+    cached(:chef_run) { runner.converge(described_recipe) }
     it 'Does not set secret key lock file permissions' do
       allow(File).to receive(:exist?).and_call_original
       allow(File).to receive(:exist?).with(secret_lock_file).and_return(false)
