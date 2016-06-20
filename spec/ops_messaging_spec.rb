@@ -1,6 +1,6 @@
 require_relative 'spec_helper'
 
-describe 'osl-openstack::ops_messaging' do
+describe 'osl-openstack::ops_messaging', ops_messaging: true do
   let(:runner) do
     ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
       # Work around for base::ifconfig:47

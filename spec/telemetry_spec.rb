@@ -1,7 +1,7 @@
 require_relative 'spec_helper'
 require 'chef/application'
 
-describe 'osl-openstack::telemetry' do
+describe 'osl-openstack::telemetry', telemetry: true do
   let(:runner) do
     ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
       # Work around for base::ifconfig:47

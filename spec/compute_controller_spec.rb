@@ -1,7 +1,7 @@
 require_relative 'spec_helper'
 require 'chef/application'
 
-describe 'osl-openstack::compute_controller' do
+describe 'osl-openstack::compute_controller', compute_controller: true do
   let(:runner) do
     ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
       # Work around for base::ifconfig:47

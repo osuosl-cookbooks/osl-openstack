@@ -1,6 +1,6 @@
 require_relative 'spec_helper'
 
-describe 'osl-openstack::image' do
+describe 'osl-openstack::image', image: true do
   let(:runner) do
     ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
       # Work around for base::ifconfig:47

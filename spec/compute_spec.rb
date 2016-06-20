@@ -1,11 +1,14 @@
 require_relative 'spec_helper'
 require 'chef/application'
 
-describe 'osl-openstack::compute' do
+describe 'osl-openstack::compute', compute: true do
   let(:runner) do
     ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
       # Work around for base::ifconfig:47
       node.automatic['virtualization']['system']
+      node.set['osl-openstack']['physical_interface_mappings'] = {
+        compute: 'eth1'
+      }
     end
   end
   let(:node) { runner.node }

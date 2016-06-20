@@ -1,7 +1,7 @@
 require_relative 'spec_helper'
 require 'chef/application'
 
-describe 'osl-openstack::dashboard' do
+describe 'osl-openstack::dashboard', dashboard: true do
   secret_lock_file =
     ::File.join('/', 'usr', 'share', 'openstack-dashboard',
                 'openstack_dashboard', 'local',
