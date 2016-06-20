@@ -74,6 +74,7 @@ end
 node.default['openstack']['network']['plugins']['linuxbridge']['conf']
   .tap do |conf|
   conf['vlans']['tenant_network_type'] = 'gre,vxlan'
+  conf['vlans']['network_vlan_ranges'] = nil
   conf['vxlan']['enable_vxlan'] = true
   conf['vxlan']['l2_population'] = true
   conf['vxlan']['local_ip'] = node['ipaddress']

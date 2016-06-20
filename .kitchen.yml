@@ -85,6 +85,20 @@ suites:
       - recipe[osl-openstack::ops_database]
       - recipe[osl-openstack::identity]
       - recipe[osl-openstack::network]
+  - name: linuxbridge
+    run_list:
+      - role[openstack_tk]
+      - recipe[openstack_test]
+      - recipe[osl-openstack::ops_database]
+      - recipe[osl-openstack::identity]
+      - recipe[osl-openstack::linuxbridge]
+    attributes:
+      osl-openstack:
+        physical_interface_mappings:
+          -
+           name: public
+           controller: eth1
+           compute: eth1
   - name: compute_controller
     run_list:
       - role[openstack_tk]

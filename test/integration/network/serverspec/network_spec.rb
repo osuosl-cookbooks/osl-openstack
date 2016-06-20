@@ -5,7 +5,6 @@ set :backend, :exec
 %w(
   neutron-dhcp-agent
   neutron-l3-agent
-  neutron-linuxbridge-agent
   neutron-metadata-agent
   neutron-server
 ).each do |s|
@@ -73,24 +72,6 @@ end
 ].each do |s|
   describe file('/etc/neutron/plugin.ini') do
     its(:content) { should contain(/#{s}/).after(/^\[ml2\]/) }
-  end
-end
-[
-  'enable_vxlan = true',
-  'l2_population = true',
-  'local_ip = (?:[0-9]{1,3}\.){3}[0-9]{1,3}'
-].each do |s|
-  describe file('/etc/neutron/plugins/ml2/linuxbridge_agent.ini') do
-    its(:content) { should contain(/#{s}/).after(/^\[vxlan\]/) }
-  end
-end
-
-describe file('/etc/neutron/plugins/ml2/linuxbridge_agent.ini') do
-  its(:content) do
-    should contain(/tenant_network_type = gre,vxlan/).after(/^\[vlans\]/)
-  end
-  its(:content) do
-    should contain(/polling_interval = 2/).after(/^\[agent\]/)
   end
 end
 
