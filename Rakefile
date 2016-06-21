@@ -43,11 +43,20 @@ OpenSSL::PKey::RSA.new(2048).to_pem)")
   end
 end
 
-desc 'Controller/Compute nodes'
-task controller_compute: [:create_key, :berks_vendor] do
+desc 'Controller nodes'
+task controller: [:create_key, :berks_vendor] do
   run_command("chef-client #{client_options} " \
-    "#{PROV_PATH}/controller_compute.rb")
+    "#{PROV_PATH}/controller.rb")
 end
+
+desc 'Compute nodes'
+task compute: [:create_key, :berks_vendor] do
+  run_command("chef-client #{client_options} " \
+    "#{PROV_PATH}/compute.rb")
+end
+
+desc 'Controller/Compute nodes'
+task controller_compute: [:create_key, :berks_vendor, :controller, :compute]
 
 desc 'Blow everything away'
 task clean: [:destroy_all]
