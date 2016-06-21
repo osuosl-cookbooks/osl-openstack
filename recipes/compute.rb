@@ -49,5 +49,5 @@ when 'ppc64', 'ppc64le'
 end
 
 include_recipe 'openstack-compute::compute'
-# include_recipe 'openstack-telemetry::agent-compute'
+include_recipe 'openstack-telemetry::agent-compute'
 # include_recipe 'openstack-bare-metal::conductor'
