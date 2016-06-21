@@ -1,7 +1,7 @@
 require 'chef/provisioning'
 
-controller_os = ENV['CONTROLLER_OS'] || 'chef/centos-7.1'
-compute_os = ENV['COMPUTE_OS'] || 'chef/centos-7.1'
+controller_os = ENV['CONTROLLER_OS'] || 'bento/centos-7.2'
+compute_os = ENV['COMPUTE_OS'] || 'bento/centos-7.2'
 controller_ssh_user = ENV['CONTROLLER_SSH_USER'] || 'centos'
 compute_ssh_user = ENV['COMPUTE_SSH_USER'] || 'centos'
 flavor_ref = ENV['FLAVOR'] || 3
@@ -27,7 +27,7 @@ machine 'controller' do
                   },
                   ssh_username: controller_ssh_user,
                   convergence_options: {
-                    chef_version: '12.4.3'
+                    chef_version: '12.10.24'
                   }
 
   ohai_hints 'openstack' => '{}'
@@ -61,7 +61,7 @@ machine 'compute' do
                   },
                   ssh_username: compute_ssh_user,
                   convergence_options: {
-                    chef_version: '12.4.3'
+                    chef_version: '12.10.24'
                   }
 
   ohai_hints 'openstack' => '{}'

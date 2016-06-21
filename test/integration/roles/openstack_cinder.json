@@ -15,18 +15,11 @@
           "cinder": {
             "iscsi_role": "openstack_cinder"
           }
-        },
-        "openstack": {
-          "block-storage": {
-            "volume": {
-              "create_volume_group": true,
-              "default_volume_type": "lvm"
-            }
-          }
         }
     },
     "run_list": [
       "recipe[osl-openstack]",
-      "recipe[osl-openstack::cinder]"
+      "recipe[openstack-block-storage::volume_driver_lvm]",
+      "recipe[osl-openstack::block_storage]"
     ]
 }
