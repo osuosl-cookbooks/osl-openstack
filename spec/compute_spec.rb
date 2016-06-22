@@ -13,13 +13,18 @@ describe 'osl-openstack::compute', compute: true do
   end
   let(:node) { runner.node }
   cached(:chef_run) { runner.converge(described_recipe) }
+  include_context 'common_stubs'
   include_context 'identity_stubs'
   include_context 'compute_stubs'
+  include_context 'linuxbridge_stubs'
+  include_context 'network_stubs'
+  include_context 'telemetry_stubs'
   %w(
     firewall
     firewall::openstack
     firewall::vnc
     osl-openstack::default
+    osl-openstack::linuxbridge
     openstack-compute::compute
     openstack-telemetry::agent-compute
   ).each do |r|
@@ -27,6 +32,7 @@ describe 'osl-openstack::compute', compute: true do
       expect(chef_run).to include_recipe(r)
     end
   end
+
   it 'loads tun module' do
     expect(chef_run).to save_modules('tun')
   end

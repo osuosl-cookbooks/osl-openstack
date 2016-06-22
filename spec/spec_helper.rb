@@ -10,6 +10,26 @@ REDHAT_OPTS = {
   log_level: LOG_LEVEL
 }.freeze
 
+shared_context 'common_stubs' do
+  before do
+    node.set['osl-openstack']['endpoint_hostname'] = '10.0.0.10'
+    node.set['osl-openstack']['db_hostname'] = '10.0.0.10'
+    node.set['osl-openstack']['database_suffix'] = 'x86'
+    node.set['osl-openstack']['databag_suffix'] = 'x86'
+  end
+end
+
+shared_context 'linuxbridge_stubs' do
+  before do
+    node.set['osl-openstack']['physical_interface_mappings'] =
+      [
+        name: 'public',
+        controller: 'eth2',
+        compute: 'eth1'
+      ]
+  end
+end
+
 shared_context 'identity_stubs' do
   before do
     allow_any_instance_of(Chef::Recipe).to receive(:rabbit_servers)
@@ -18,7 +38,7 @@ shared_context 'identity_stubs' do
       .and_return([])
     allow_any_instance_of(Chef::Recipe).to receive(:get_password)
       .with('db', anything)
-      .and_return('')
+      .and_return('keystone_db_pass')
     allow_any_instance_of(Chef::Recipe).to receive(:get_password)
       .with('user', anything)
       .and_return('')
@@ -204,7 +224,7 @@ shared_context 'block_storage_stubs' do
       .and_return('')
     allow_any_instance_of(Chef::Recipe).to receive(:get_password)
       .with('db', anything)
-      .and_return('')
+      .and_return('cinder')
     allow_any_instance_of(Chef::Recipe).to receive(:get_password)
       .with('token', 'openstack_identity_bootstrap_token')
       .and_return('bootstrap-token')

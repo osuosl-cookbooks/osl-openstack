@@ -10,6 +10,7 @@ describe 'osl-openstack::compute_controller', compute_controller: true do
   end
   let(:node) { runner.node }
   cached(:chef_run) { runner.converge(described_recipe) }
+  include_context 'common_stubs'
   include_context 'identity_stubs'
   include_context 'compute_stubs'
   %w(
@@ -26,6 +27,110 @@ describe 'osl-openstack::compute_controller', compute_controller: true do
   ).each do |r|
     it "includes cookbook #{r}" do
       expect(chef_run).to include_recipe(r)
+    end
+  end
+
+  describe '/etc/nova/nova.conf' do
+    let(:file) { chef_run.template('/etc/nova/nova.conf') }
+
+    [
+      /^linuxnet_interface_driver = \
+nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver$/,
+      /^dns_server = 140.211.166.130 140.211.166.131$/,
+      /^instance_usage_audit = True$/,
+      /^instance_usage_audit_period = hour$/,
+      /^notify_on_state_change = vm_and_task_state$/,
+      /^memcached_servers = 10.0.0.10:11211$/,
+      /^osapi_compute_listen = 0.0.0.0$/,
+      /^metadata_listen = 0.0.0.0$/
+    ].each do |line|
+      it do
+        expect(chef_run).to render_config_file(file.name)
+          .with_section_content('DEFAULT', line)
+      end
+    end
+
+    [
+      /^memcached_servers = 10.0.0.10:11211$/,
+      %r{^auth_url = http://10.0.0.10:5000/v2.0$}
+    ].each do |line|
+      it do
+        expect(chef_run).to render_config_file(file.name)
+          .with_section_content('keystone_authtoken', line)
+      end
+    end
+
+    [
+      /^service_metadata_proxy = true$/,
+      %r{^url = http://10.0.0.10:9696$},
+      %r{^auth_url = http://10.0.0.10:5000/v2.0$}
+    ].each do |line|
+      it do
+        expect(chef_run).to render_config_file(file.name)
+          .with_section_content('neutron', line)
+      end
+    end
+
+    [
+      /^rabbit_host = 10.0.0.10$/,
+      /^rabbit_userid = guest$/,
+      /^rabbit_password = mq-pass$/
+    ].each do |line|
+      it do
+        expect(chef_run).to render_config_file(file.name)
+          .with_section_content('oslo_messaging_rabbit', line)
+      end
+    end
+
+    [
+      %r{^novncproxy_base_url = http://10.0.0.10:6080/vnc_auto.html$},
+      %r{^xvpvncproxy_base_url = http://10.0.0.10:6081/console$},
+      /^xvpvncproxy_host = 0.0.0.0$/,
+      /^novncproxy_host = 0.0.0.0$/,
+      /^vncserver_listen = 0.0.0.0$/,
+      /^vncserver_proxyclient_address = 0.0.0.0$/
+    ].each do |line|
+      it do
+        expect(chef_run).to render_config_file(file.name)
+          .with_section_content('vnc', line)
+      end
+    end
+
+    [
+      %r{^api_servers = http://10.0.0.10:9292$}
+    ].each do |line|
+      it do
+        expect(chef_run).to render_config_file(file.name)
+          .with_section_content('glance', line)
+      end
+    end
+
+    [
+      %r{^base_url = ws://10.0.0.10:6083$},
+      /^proxyclient_address = 127.0.0.1$/
+    ].each do |line|
+      it do
+        expect(chef_run).to render_config_file(file.name)
+          .with_section_content('serial_console', line)
+      end
+    end
+
+    it do
+      expect(chef_run).to render_config_file(file.name)
+        .with_section_content(
+          'database',
+          %r{^connection = mysql://nova_x86:nova_db_pass@10.0.0.10:3306/\
+nova_x86\?charset=utf8$}
+        )
+    end
+
+    it do
+      expect(chef_run).to render_config_file(file.name)
+        .with_section_content(
+          'api_database',
+          %r{^connection = mysql://nova_api_x86:nova_api_db_pass@10.0.0.10:\
+3306/nova_api_x86\?charset=utf8$}
+        )
     end
   end
 

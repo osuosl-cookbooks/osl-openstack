@@ -12,6 +12,7 @@ describe 'osl-openstack::linuxbridge', linuxbridge: true do
   cached(:chef_run) { runner.converge(described_recipe) }
   include_context 'identity_stubs'
   include_context 'network_stubs'
+  include_context 'linuxbridge_stubs'
   %w(
     osl-openstack
     openstack-network
@@ -52,24 +53,22 @@ describe 'osl-openstack::linuxbridge', linuxbridge: true do
           .with_section_content('agent', line)
       end
     end
-    [
-      /^physical_interface_mappings = $/
-    ].each do |line|
-      it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('linux_bridge', line)
+    context 'physical_interface_mappings is empty by default' do
+      cached(:chef_run) { runner.converge(described_recipe) }
+      [
+        /^physical_interface_mappings = $/
+      ].each do |line|
+        before do
+          node.set['osl-openstack']['physical_interface_mappings'] = []
+        end
+        it do
+          expect(chef_run).to render_config_file(file.name)
+            .with_section_content('linux_bridge', line)
+        end
       end
     end
     context 'Create a public:eth1' do
       cached(:chef_run) { runner.converge(described_recipe) }
-      before do
-        node.set['osl-openstack']['physical_interface_mappings'] =
-          [
-            name: 'public',
-            controller: 'eth1',
-            compute: 'eth1'
-          ]
-      end
       [
         /^physical_interface_mappings = public:eth1$/
       ].each do |line|
@@ -83,12 +82,6 @@ describe 'osl-openstack::linuxbridge', linuxbridge: true do
       cached(:chef_run) { runner.converge(described_recipe) }
       before do
         node.set['osl-openstack']['node_type'] = 'controller'
-        node.set['osl-openstack']['physical_interface_mappings'] =
-          [
-            name: 'public',
-            controller: 'eth2',
-            compute: 'eth1'
-          ]
       end
       [
         /^physical_interface_mappings = public:eth2$/

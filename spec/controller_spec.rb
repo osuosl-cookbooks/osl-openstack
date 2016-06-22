@@ -40,4 +40,18 @@ describe 'osl-openstack::controller', controller: true do
       expect(chef_run).to include_recipe(r)
     end
   end
+  describe '/etc/nova/nova.conf' do
+    let(:file) { chef_run.template('/etc/nova/nova.conf') }
+
+    [
+      /^backend = oslo_cache.memcache_pool$/,
+      /^enabled = true$/,
+      /^memcache_servers = 10.0.0.10:11211$/
+    ].each do |line|
+      it do
+        expect(chef_run).to render_config_file(file.name)
+          .with_section_content('cache', line)
+      end
+    end
+  end
 end
