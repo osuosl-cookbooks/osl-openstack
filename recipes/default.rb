@@ -171,14 +171,19 @@ node.default['openstack']['memcached_servers'] = [memcached_servers]
   node.default['openstack'][i]['conf'].tap do |conf|
     conf['DEFAULT']['memcached_servers'] = memcached_servers
     conf['keystone_authtoken']['memcached_servers'] = memcached_servers
+    conf['oslo_messaging_rabbit']['rabbit_host'] = endpoint_hostname
   end
 end
 
-# Endpoints
-node.default['openstack']['endpoints'].tap do |conf|
-  conf['db']['host'] = db_hostname
-  conf['mq']['host'] = endpoint_hostname
+database_suffix = node['osl-openstack']['database_suffix']
+node['openstack']['common']['services'].each do |service, name|
+  node.default['openstack']['db'][service]['host'] = db_hostname
+  node.default['openstack']['db'][service]['db_name'] =
+    "#{name}_#{database_suffix}"
+  node.default['openstack']['db'][service]['username'] =
+    "#{name}_#{database_suffix}"
 end
+
 # Binding
 node.default['openstack']['bind_service'].tap do |conf|
   conf['mq']['host'] = '0.0.0.0'
@@ -189,31 +194,28 @@ end
 
 # Looping magic for endpoints and binding
 %w(
+  block-storage
   identity
+  image_registry
+  image_api
   compute-xvpvnc
   compute-novnc
   compute-metadata-api
   compute-vnc
+  compute-vnc-proxy
   compute-api
   compute-serial-proxy
   network
+  telemetry
+  telemetry-metric
 ).each do |service|
   node.default['openstack']['bind_service']['all'][service]['host'] = '0.0.0.0'
   node.default['openstack']['endpoints'].tap do |conf|
+    conf['db']['host'] = db_hostname
+    conf['mq']['host'] = endpoint_hostname
     conf['admin'][service]['host'] = endpoint_hostname
     conf['public'][service]['host'] = endpoint_hostname
     conf['internal'][service]['host'] = endpoint_hostname
-  end
-end
-
-# Set database attributes with our suffix setting
-database_suffix = node['osl-openstack']['database_suffix']
-if database_suffix
-  node['osl-openstack']['databases'].each_pair do |db, name|
-    node.default['openstack']['db'][db]['db_name'] =
-      "#{name}_#{database_suffix}"
-    node.default['openstack']['db'][db]['username'] =
-      "#{name}_#{database_suffix}"
   end
 end
 
