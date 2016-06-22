@@ -14,28 +14,36 @@ cookbook 'resource_from_hash',
          git: 'git@github.com:osuosl-cookbooks/resource_from_hash'
 cookbook 'statsd', github: 'att-cloud/cookbook-statsd'
 
-# Openstack deps
+# Openstack deps (cookbooks that don't have stable/mitaka yet)
 %w(
   bare-metal
-  block-storage
-  common
-  compute
-  dashboard
-  database
   data-processing
-  identity
-  image
-  integration-test
-  network
+  database
   object-storage
-  ops-database
-  ops-messaging
-  orchestration
   telemetry
 ).each do |cb|
   cookbook "openstack-#{cb}",
            github: "openstack/cookbook-openstack-#{cb}",
            branch: 'master'
+end
+
+# Openstack deps
+%w(
+  block-storage
+  common
+  compute
+  dashboard
+  identity
+  image
+  integration-test
+  network
+  ops-database
+  ops-messaging
+  orchestration
+).each do |cb|
+  cookbook "openstack-#{cb}",
+           github: "openstack/cookbook-openstack-#{cb}",
+           branch: 'stable/mitaka'
 end
 
 cookbook 'openstack_test', path: 'test/cookbooks/openstack_test'
