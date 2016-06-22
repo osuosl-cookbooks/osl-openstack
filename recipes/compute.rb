@@ -48,6 +48,7 @@ when 'ppc64', 'ppc64le'
   end
 end
 
+include_recipe 'osl-openstack::linuxbridge'
 include_recipe 'openstack-compute::compute'
 include_recipe 'openstack-telemetry::agent-compute'
 # include_recipe 'openstack-bare-metal::conductor'
