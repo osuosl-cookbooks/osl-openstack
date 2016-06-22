@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
 node.default['authorization']['sudo']['include_sudoers_d'] = true
 node.default['apache']['contact'] = 'hostmaster@osuosl.org'
 node.default['openstack']['release'] = 'mitaka'
@@ -30,12 +31,6 @@ node.default['openstack']['yum']['uri'] = \
 node.default['openstack']['yum']['repo-key'] = 'https://github.com/' \
  "redhat-openstack/rdo-release/raw/#{node['openstack']['release']}/" \
  'RPM-GPG-KEY-CentOS-SIG-Cloud'
-%w(block-storage compute image_registry image_api).each do |i|
-  node.default['openstack'][i]['conf'].tap do |conf|
-    conf['DEFAULT']['notifier_strategy'] = 'messagingv2'
-    conf['DEFAULT']['notification_driver'] = 'messaging'
-  end
-end
 node.default['openstack']['compute']['conf'].tap do |conf|
   conf['DEFAULT']['linuxnet_interface_driver'] = \
     'nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver'
@@ -157,8 +152,19 @@ end
 memcached_servers = "#{endpoint_hostname}:11211"
 node.default['openstack']['memcached_servers'] = [memcached_servers]
 
+# set data bag attributes with our prefix
+databag_prefix = node['osl-openstack']['databag_prefix']
+if databag_prefix
+  node['osl-openstack']['data_bags'].each do |d|
+    node.default['openstack']['secret']["#{d}_data_bag"] =
+      "#{databag_prefix}_#{d}"
+  end
+end
+
 %w(
   compute
+  block-storage
+  identity
   image_registry
   image_api
   network
@@ -169,9 +175,18 @@ node.default['openstack']['memcached_servers'] = [memcached_servers]
   telemetry
 ).each do |i|
   node.default['openstack'][i]['conf'].tap do |conf|
+    # Make Openstack object available in Chef::Recipe
+    class ::Chef::Recipe
+      include ::Openstack
+    end
+    user = node['openstack']['mq']['network']['rabbit']['userid']
+    conf['DEFAULT']['notifier_strategy'] = 'messagingv2'
+    conf['DEFAULT']['notification_driver'] = 'messaging'
     conf['DEFAULT']['memcached_servers'] = memcached_servers
     conf['keystone_authtoken']['memcached_servers'] = memcached_servers
     conf['oslo_messaging_rabbit']['rabbit_host'] = endpoint_hostname
+    conf['oslo_messaging_rabbit']['rabbit_userid'] = user
+    conf['oslo_messaging_rabbit']['rabbit_password'] = get_password 'user', user
   end
 end
 
@@ -216,15 +231,6 @@ end
     conf['admin'][service]['host'] = endpoint_hostname
     conf['public'][service]['host'] = endpoint_hostname
     conf['internal'][service]['host'] = endpoint_hostname
-  end
-end
-
-# set data bag attributes with our prefix
-databag_prefix = node['osl-openstack']['databag_prefix']
-if databag_prefix
-  node['osl-openstack']['data_bags'].each do |d|
-    node.default['openstack']['secret']["#{d}_data_bag"] =
-      "#{databag_prefix}_#{d}"
   end
 end
 

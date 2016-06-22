@@ -8,3 +8,5 @@ AllCops:
     - 'test/chef-config/knife.rb'
 Metrics/BlockNesting:
   Max: 4
+Style/ClassAndModuleChildren:
+  Enabled: false
