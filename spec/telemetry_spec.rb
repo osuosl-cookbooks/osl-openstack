@@ -27,14 +27,12 @@ describe 'osl-openstack::telemetry', telemetry: true do
   end
   describe '/etc/ceilometer/ceilometer.conf' do
     let(:file) { chef_run.template('/etc/ceilometer/ceilometer.conf') }
-    [
-      /^notifier_strategy = messagingv2$/,
-      /^notification_driver = messaging$/
-    ].each do |line|
-      it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('DEFAULT', line)
-      end
+    it do
+      expect(chef_run).to render_config_file(file.name)
+        .with_section_content(
+          'oslo_messaging_notifications',
+          /^driver = messagingv2$/
+        )
     end
     it do
       expect(chef_run).to render_config_file(file.name)

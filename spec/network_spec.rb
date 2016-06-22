@@ -139,6 +139,14 @@ neutron.agent.linux.interface.BridgeInterfaceDriver$/,
           )
       end
 
+      it do
+        expect(chef_run).to render_config_file(file.name)
+          .with_section_content(
+            'oslo_messaging_notifications',
+            /^driver = messagingv2$/
+          )
+      end
+
       [
         /^backend = oslo_cache.memcache_pool$/,
         /^enabled = true$/,

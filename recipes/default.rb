@@ -180,8 +180,7 @@ end
       include ::Openstack
     end
     user = node['openstack']['mq']['network']['rabbit']['userid']
-    conf['DEFAULT']['notifier_strategy'] = 'messagingv2'
-    conf['DEFAULT']['notification_driver'] = 'messaging'
+    conf['oslo_messaging_notifications']['driver'] = 'messagingv2'
     conf['cache']['memcache_servers'] = memcached_servers
     conf['cache']['enabled'] = true
     conf['cache']['backend'] = 'oslo_cache.memcache_pool'

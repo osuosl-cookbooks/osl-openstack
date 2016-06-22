@@ -28,8 +28,6 @@ describe 'osl-openstack::block_storage_controller',
   describe '/etc/cinder/cinder.conf' do
     let(:file) { chef_run.template('/etc/cinder/cinder.conf') }
     [
-      /^notifier_strategy = messagingv2$/,
-      /^notification_driver = messaging$/,
       /^glance_host = 10.0.0.10$/,
       /^my_ip = 0.0.0.0$/,
       %r{^glance_api_servers = http://10.0.0.10:9292},
@@ -39,6 +37,13 @@ describe 'osl-openstack::block_storage_controller',
         expect(chef_run).to render_config_file(file.name)
           .with_section_content('DEFAULT', line)
       end
+    end
+    it do
+      expect(chef_run).to render_config_file(file.name)
+        .with_section_content(
+          'oslo_messaging_notifications',
+          /^driver = messagingv2$/
+        )
     end
     it do
       expect(chef_run).to render_config_file(file.name)

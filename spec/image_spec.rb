@@ -28,15 +28,20 @@ describe 'osl-openstack::image', image: true do
     describe "/etc/glance/glance-#{f}.conf" do
       let(:file) { chef_run.template("/etc/glance/glance-#{f}.conf") }
 
-      [
-        /^bind_host = 0.0.0.0$/,
-        /^notifier_strategy = messagingv2$/,
-        /^notification_driver = messaging$/
-      ].each do |line|
-        it do
-          expect(chef_run).to render_config_file(file.name)
-            .with_section_content('DEFAULT', line)
-        end
+      it do
+        expect(chef_run).to render_config_file(file.name)
+          .with_section_content(
+            'DEFAULT',
+            /^bind_host = 0.0.0.0$/
+          )
+      end
+
+      it do
+        expect(chef_run).to render_config_file(file.name)
+          .with_section_content(
+            'oslo_messaging_notifications',
+            /^driver = messagingv2$/
+          )
       end
 
       [
