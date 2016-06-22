@@ -65,11 +65,22 @@ describe 'osl-openstack::telemetry', telemetry: true do
 3306/ceilometer_x86\?charset=utf8}
         )
     end
-    memcached_servers = /^memcached_servers = 10.0.0.10:11211$/
-    %w(DEFAULT keystone_authtoken).each do |s|
+    it do
+      expect(chef_run).to render_config_file(file.name)
+        .with_section_content(
+          'keystone_authtoken',
+          /^memcached_servers = 10.0.0.10:11211$/
+        )
+    end
+
+    [
+      /^backend = oslo_cache.memcache_pool$/,
+      /^enabled = true$/,
+      /^memcache_servers = 10.0.0.10:11211$/
+    ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
-          .with_section_content(s, memcached_servers)
+          .with_section_content('cache', line)
       end
     end
 

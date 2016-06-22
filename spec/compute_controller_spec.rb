@@ -40,13 +40,22 @@ nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver$/,
       /^instance_usage_audit = True$/,
       /^instance_usage_audit_period = hour$/,
       /^notify_on_state_change = vm_and_task_state$/,
-      /^memcached_servers = 10.0.0.10:11211$/,
       /^osapi_compute_listen = 0.0.0.0$/,
       /^metadata_listen = 0.0.0.0$/
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
           .with_section_content('DEFAULT', line)
+      end
+    end
+    [
+      /^backend = oslo_cache.memcache_pool$/,
+      /^enabled = true$/,
+      /^memcache_servers = 10.0.0.10:11211$/
+    ].each do |line|
+      it do
+        expect(chef_run).to render_config_file(file.name)
+          .with_section_content('cache', line)
       end
     end
 

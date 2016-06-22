@@ -182,7 +182,9 @@ end
     user = node['openstack']['mq']['network']['rabbit']['userid']
     conf['DEFAULT']['notifier_strategy'] = 'messagingv2'
     conf['DEFAULT']['notification_driver'] = 'messaging'
-    conf['DEFAULT']['memcached_servers'] = memcached_servers
+    conf['cache']['memcache_servers'] = memcached_servers
+    conf['cache']['enabled'] = true
+    conf['cache']['backend'] = 'oslo_cache.memcache_pool'
     conf['keystone_authtoken']['memcached_servers'] = memcached_servers
     conf['oslo_messaging_rabbit']['rabbit_host'] = endpoint_hostname
     conf['oslo_messaging_rabbit']['rabbit_userid'] = user

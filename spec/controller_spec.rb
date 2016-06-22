@@ -11,6 +11,7 @@ describe 'osl-openstack::controller', controller: true do
   let(:node) { runner.node }
   cached(:chef_run) { runner.converge(described_recipe) }
   %w(
+    common_stubs
     identity_stubs
     image_stubs
     network_stubs

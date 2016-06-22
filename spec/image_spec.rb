@@ -31,12 +31,22 @@ describe 'osl-openstack::image', image: true do
       [
         /^bind_host = 0.0.0.0$/,
         /^notifier_strategy = messagingv2$/,
-        /^notification_driver = messaging$/,
-        /^memcached_servers = 10.0.0.10:11211$/
+        /^notification_driver = messaging$/
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name)
             .with_section_content('DEFAULT', line)
+        end
+      end
+
+      [
+        /^backend = oslo_cache.memcache_pool$/,
+        /^enabled = true$/,
+        /^memcache_servers = 10.0.0.10:11211$/
+      ].each do |line|
+        it do
+          expect(chef_run).to render_config_file(file.name)
+            .with_section_content('cache', line)
         end
       end
 
