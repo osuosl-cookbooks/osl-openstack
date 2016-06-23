@@ -74,6 +74,9 @@ node.default['openstack']['network']['plugins']['linuxbridge']['conf']
   conf['vxlan']['l2_population'] = true
   conf['vxlan']['local_ip'] = node['ipaddress']
   conf['agent']['polling_interval'] = 2
+  conf['securitygroup']['enable_security_group'] = 'True'
+  conf['securitygroup']['firewall_driver'] =
+    'neutron.agent.linux.iptables_firewall.IptablesFirewallDriver'
 end
 # XXX: Temp fix until its fixed upstream
 # https://review.openstack.org/329695
