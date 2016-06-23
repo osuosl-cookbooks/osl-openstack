@@ -18,6 +18,10 @@ end
 
 describe file('/etc/cinder/cinder.conf') do
   its(:content) do
+    should contain(/^volume_group = openstack$/)
+      .from(/^\[DEFAULT\]$/).to(/^\[/)
+  end
+  its(:content) do
     should contain(/memcached_servers = .*:11211/)
       .from(/^\[keystone_authtoken\]$/).to(/^\[/)
   end

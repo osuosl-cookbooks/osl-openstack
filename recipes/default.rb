@@ -97,6 +97,7 @@ end
 
 node.default['openstack']['block-storage']['conf'].tap do |conf|
   conf['oslo_messaging_notifications']['driver'] = 'messagingv2'
+  conf['DEFAULT']['volume_group'] = 'openstack'
 end
 
 # Dynamically find the hostname for the controller node, or use a pre-determined
