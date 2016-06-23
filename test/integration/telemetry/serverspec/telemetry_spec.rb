@@ -18,9 +18,23 @@ describe port('8777') do
   it { should be_listening.with('tcp') }
 end
 
+describe file('/etc/ceilometer/ceilometer.conf') do
+  its(:content) do
+    should contain(/memcached_servers = .*:11211/)
+      .from(/^\[keystone_authtoken\]$/).to(/^\[/)
+  end
+  its(:content) do
+    should contain(/memcache_servers = .*:11211/)
+      .from(/^\[cache\]$/).to(/^\[/)
+  end
+  its(:content) do
+    should contain(/driver = messagingv2/)
+      .from(/^\[oslo_messaging_notifications\]$/).to(/^\[/)
+  end
+end
+
 [
-  'meter_dispatchers = database',
-  'memcached_servers = .*:11211'
+  'meter_dispatchers = database'
 ].each do |s|
   describe file('/etc/ceilometer/ceilometer.conf') do
     its(:content) { should contain(/#{s}/).after(/^\[DEFAULT\]/) }

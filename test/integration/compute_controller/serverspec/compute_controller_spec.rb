@@ -29,18 +29,27 @@ end
   'dns_server = 140.211.166.130 140.211.166.131',
   'instance_usage_audit = True',
   'instance_usage_audit_period = hour',
-  'notify_on_state_change = vm_and_task_state',
-  'memcached_servers = .*:11211'
+  'notify_on_state_change = vm_and_task_state'
 ].each do |s|
   describe file('/etc/nova/nova.conf') do
-    its(:content) { should contain(/#{s}/).after(/^\[DEFAULT\]/) }
+    its(:content) do
+      should contain(/#{s}/).from(/^\[DEFAULT\]/).to(/^\[/)
+    end
   end
 end
 
 describe file('/etc/nova/nova.conf') do
   its(:content) do
     should contain(/memcached_servers = .*:11211/)
-      .after(/^\[keystone_authtoken\]/)
+      .from(/^\[keystone_authtoken\]/).to(/^\[/)
+  end
+  its(:content) do
+    should contain(/memcache_servers = .*:11211/)
+      .from(/^\[cache\]$/).to(/^\[/)
+  end
+  its(:content) do
+    should contain(/driver = messagingv2/)
+      .from(/^\[oslo_messaging_notifications\]$/).to(/^\[/)
   end
 end
 

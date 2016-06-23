@@ -36,12 +36,16 @@ end
 ).each do |f|
   describe file("/etc/neutron/#{f}") do
     its(:content) do
-      should contain(/memcached_servers = .*:11211/)
-        .after(/^\[DEFAULT\]/)
+      should contain(/memcache_servers = .*:11211/)
+        .from(/^\[cache\]/).to(/^\[/)
     end
     its(:content) do
       should contain(/memcached_servers = .*:11211/)
-        .after(/^\[keystone_authtoken\]/)
+        .from(/^\[keystone_authtoken\]/).to(/^\[/)
+    end
+    its(:content) do
+      should contain(/driver = messagingv2/)
+        .from(/^\[oslo_messaging_notifications\]$/).to(/^\[/)
     end
   end
 end

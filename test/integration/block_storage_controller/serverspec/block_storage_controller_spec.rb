@@ -16,12 +16,18 @@ describe port('8776') do
   it { should be_listening.with('tcp') }
 end
 
-[
-  'notifier_strategy = messagingv2',
-  'notification_driver = messaging'
-].each do |s|
-  describe file('/etc/cinder/cinder.conf') do
-    its(:content) { should contain(/#{s}/).after(/^\[DEFAULT\]/) }
+describe file('/etc/cinder/cinder.conf') do
+  its(:content) do
+    should contain(/memcached_servers = .*:11211/)
+      .from(/^\[keystone_authtoken\]$/).to(/^\[/)
+  end
+  its(:content) do
+    should contain(/memcache_servers = .*:11211/)
+      .from(/^\[cache\]$/).to(/^\[/)
+  end
+  its(:content) do
+    should contain(/driver = messagingv2/)
+      .from(/^\[oslo_messaging_notifications\]$/).to(/^\[/)
   end
 end
 

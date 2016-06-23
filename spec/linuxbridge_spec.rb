@@ -36,6 +36,16 @@ describe 'osl-openstack::linuxbridge', linuxbridge: true do
       end
     end
     [
+      /^enable_security_group = True$/,
+      /^firewall_driver = \
+neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/
+    ].each do |line|
+      it do
+        expect(chef_run).to render_config_file(file.name)
+          .with_section_content('securitygroup', line)
+      end
+    end
+    [
       /^enable_vxlan = true$/,
       /^l2_population = true$/,
       /^local_ip = (?:[0-9]{1,3}\.){3}[0-9]{1,3}$/
