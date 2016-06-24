@@ -27,16 +27,24 @@ cookbook 'statsd', github: 'att-cloud/cookbook-statsd'
            branch: 'master'
 end
 
+# WIP patches
+%w(
+  dashboard
+  network
+).each do |cb|
+  cookbook "openstack-#{cb}",
+           github: "osuosl-cookbooks/cookbook-openstack-#{cb}",
+           branch: 'stable/mitaka'
+end
+
 # Openstack deps
 %w(
   block-storage
   common
   compute
-  dashboard
   identity
   image
   integration-test
-  network
   ops-database
   ops-messaging
   orchestration
