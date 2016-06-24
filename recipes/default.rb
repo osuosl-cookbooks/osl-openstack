@@ -230,6 +230,12 @@ end
   end
 end
 
+node.default['openstack']['endpoints'].tap do |conf|
+  %w(admin public internal).each do |t|
+    conf[t]['compute-novnc']['scheme'] = 'https'
+  end
+end
+
 yum_repository 'OSL-Openpower' do
   description "OSL Openpower repo for #{node['platform_family']}-" +
               node['platform_version']

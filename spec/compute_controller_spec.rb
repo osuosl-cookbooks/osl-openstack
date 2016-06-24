@@ -99,7 +99,7 @@ nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver$/,
     end
 
     [
-      %r{^novncproxy_base_url = http://10.0.0.10:6080/vnc_auto.html$},
+      %r{^novncproxy_base_url = https://10.0.0.10:6080/vnc_auto.html$},
       %r{^xvpvncproxy_base_url = http://10.0.0.10:6081/console$},
       /^xvpvncproxy_host = 0.0.0.0$/,
       /^novncproxy_host = 0.0.0.0$/,
