@@ -78,15 +78,6 @@ node.default['openstack']['network']['plugins']['linuxbridge']['conf']
   conf['securitygroup']['firewall_driver'] =
     'neutron.agent.linux.iptables_firewall.IptablesFirewallDriver'
 end
-# XXX: Temp fix until its fixed upstream
-# https://review.openstack.org/329695
-node.normal['openstack']['network']['plugins']['linuxbridge'].tap do |lb|
-  lb['path'] =
-    '/etc/neutron/plugins/ml2'
-  lb['filename'] =
-    'linuxbridge_agent.ini'
-end
-# conf['dhcp']['dhcp-option'] = '26,1450' needs fixed
 node.default['openstack']['dashboard'].tap do |conf|
   conf['ssl']['chain'] = 'wildcard-bundle.crt'
 end
