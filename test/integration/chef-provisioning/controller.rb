@@ -2,7 +2,7 @@ require 'chef/provisioning'
 
 controller_os = ENV['CONTROLLER_OS'] || 'bento/centos-7.2'
 controller_ssh_user = ENV['CONTROLLER_SSH_USER'] || 'centos'
-flavor_ref = ENV['FLAVOR'] || 3
+flavor_ref = ENV['FLAVOR'] || 4
 provision_role = 'openstack_provisioning'
 
 unless ENV['CHEF_DRIVER'] == 'fog:OpenStack'
@@ -39,7 +39,7 @@ EOF
   # recipe 'openstack_test'
   recipe 'osl-openstack::ops_database'
   recipe 'osl-openstack::controller'
-  recipe 'openstack-integration-test::setup'
+  # recipe 'openstack-integration-test::setup'
   file('/etc/chef/encrypted_data_bag_secret',
        File.dirname(__FILE__) +
        '/../default/encrypted_data_bag_secret')
