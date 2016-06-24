@@ -3,11 +3,10 @@ require 'chefspec/berkshelf'
 
 ChefSpec::Coverage.start! { add_filter 'osl-openstack' }
 
-LOG_LEVEL = :fatal
 REDHAT_OPTS = {
-  platform: 'redhat',
-  version: '7.1',
-  log_level: LOG_LEVEL
+  platform: 'centos',
+  version: '7.2.1511',
+  log_level: :fatal
 }.freeze
 
 shared_context 'common_stubs' do
