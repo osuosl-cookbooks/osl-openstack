@@ -20,7 +20,6 @@ cookbook 'statsd', github: 'att-cloud/cookbook-statsd'
   data-processing
   database
   object-storage
-  telemetry
 ).each do |cb|
   cookbook "openstack-#{cb}",
            github: "openstack/cookbook-openstack-#{cb}",
@@ -48,6 +47,7 @@ end
   ops-database
   ops-messaging
   orchestration
+  telemetry
 ).each do |cb|
   cookbook "openstack-#{cb}",
            github: "openstack/cookbook-openstack-#{cb}",
