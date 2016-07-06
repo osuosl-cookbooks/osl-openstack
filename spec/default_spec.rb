@@ -24,8 +24,16 @@ describe 'osl-openstack::default', default: true do
       before do
         node.automatic['kernel']['machine'] = a
       end
-      it "add OSL-Openpower repository on #{a}" do
-        expect(chef_run).to add_yum_repository('OSL-Openpower')
+      it "add OSL-openpower-openstack repository on #{a}" do
+        expect(chef_run).to add_yum_repository('OSL-openpower-openstack')
+          .with(
+            description: 'OSL Openpower OpenStack repo for centos-7/openstack' \
+              '-mitaka',
+            gpgkey: 'http://ftp.osuosl.org/pub/osl/repos/yum/RPM-GPG-KEY-osuosl',
+            gpgcheck: true,
+            baseurl: 'http://ftp.osuosl.org/pub/osl/repos/yum/openpower/cento' \
+              's-$releasever/$basearch/openstack-mitaka'
+          )
       end
     end
   end
