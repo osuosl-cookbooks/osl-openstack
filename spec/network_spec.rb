@@ -37,7 +37,7 @@ describe 'osl-openstack::network', network: true do
 neutron.services.l3_router.l3_router_plugin.L3RouterPlugin$/,
       /^allow_overlapping_ips = True$/,
       /^router_distributed = False$/,
-      /^bind_host = 0.0.0.0$/
+      /^bind_host = 10.0.0.2$/
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)

@@ -29,9 +29,9 @@ describe 'osl-openstack::block_storage_controller',
     let(:file) { chef_run.template('/etc/cinder/cinder.conf') }
     [
       /^glance_host = 10.0.0.10$/,
-      /^my_ip = 0.0.0.0$/,
+      /^my_ip = 10.0.0.2$/,
       %r{^glance_api_servers = http://10.0.0.10:9292},
-      /^osapi_volume_listen = 0.0.0.0$/,
+      /^osapi_volume_listen = 10.0.0.2$/,
       /^volume_group = openstack$/
     ].each do |line|
       it do

@@ -32,7 +32,7 @@ describe 'osl-openstack::image', image: true do
         expect(chef_run).to render_config_file(file.name)
           .with_section_content(
             'DEFAULT',
-            /^bind_host = 0.0.0.0$/
+            /^bind_host = 10.0.0.2$/
           )
       end
 

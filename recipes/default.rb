@@ -220,7 +220,8 @@ end
   telemetry
   telemetry-metric
 ).each do |service|
-  node.default['openstack']['bind_service']['all'][service]['host'] = '0.0.0.0'
+  node.default['openstack']['bind_service']['all'][service]['host'] =
+    node['ipaddress']
   node.default['openstack']['endpoints'].tap do |conf|
     conf['db']['host'] = db_hostname
     conf['mq']['host'] = endpoint_hostname

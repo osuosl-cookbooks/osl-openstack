@@ -45,7 +45,7 @@ describe 'osl-openstack::telemetry', telemetry: true do
       expect(chef_run).to render_config_file(file.name)
         .with_section_content(
           'api',
-          /^host = 0.0.0.0$/
+          /^host = 10.0.0.2$/
         )
     end
     it do
