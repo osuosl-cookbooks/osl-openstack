@@ -37,6 +37,18 @@ describe 'osl-openstack::default', default: true do
       end
     end
   end
+  describe '/etc/sysconfig/iptables-config' do
+    let(:file) { chef_run.template('/etc/sysconfig/iptables-config') }
+    [
+      /^IPTABLES_SAVE_ON_STOP="yes"$/,
+      /^IPTABLES_SAVE_ON_RESTART="yes"$/
+    ].each do |line|
+      it do
+        expect(chef_run).to render_config_file(file.name)
+          .with_content(line)
+      end
+    end
+  end
   cached(:chef_run) { runner.converge(described_recipe) }
   %w(
     base::ifconfig

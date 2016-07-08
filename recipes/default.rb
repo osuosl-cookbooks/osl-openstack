@@ -19,6 +19,10 @@
 
 node.default['authorization']['sudo']['include_sudoers_d'] = true
 node.default['apache']['contact'] = 'hostmaster@osuosl.org'
+node.default['firewall']['iptables-config'].tap do |conf|
+  conf['save_on_restart'] = 'yes'
+  conf['save_on_stop'] = 'yes'
+end
 node.default['openstack']['release'] = 'mitaka'
 node.default['openstack']['secret']['key_path'] =
   '/etc/chef/encrypted_data_bag_secret'
@@ -251,6 +255,7 @@ yum_repository 'OSL-openpower-openstack' do
 end
 
 include_recipe 'base::ifconfig'
+include_recipe 'firewall'
 include_recipe 'selinux::permissive'
 include_recipe 'yum-qemu-ev'
 include_recipe 'openstack-common'
