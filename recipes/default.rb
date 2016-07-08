@@ -252,6 +252,7 @@ end
 
 include_recipe 'base::ifconfig'
 include_recipe 'selinux::permissive'
+include_recipe 'yum-qemu-ev'
 include_recipe 'openstack-common'
 include_recipe 'openstack-common::logging'
 include_recipe 'openstack-common::sysctl'

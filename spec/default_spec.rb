@@ -41,6 +41,7 @@ describe 'osl-openstack::default', default: true do
   %w(
     base::ifconfig
     selinux::permissive
+    yum-qemu-ev
     openstack-common
     openstack-common::logging
     openstack-common::sysctl

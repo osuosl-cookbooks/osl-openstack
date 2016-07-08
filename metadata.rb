@@ -11,7 +11,7 @@ version          '1.0.19'
   openstack-identity openstack-integration-test openstack-image
   openstack-network openstack-object-storage openstack-ops-database
   openstack-ops-messaging openstack-orchestration openstack-telemetry
-  selinux}.each do |cb|
+  selinux yum-qemu-ev}.each do |cb|
   depends cb
 end
 
