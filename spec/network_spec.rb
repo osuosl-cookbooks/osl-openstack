@@ -123,6 +123,13 @@ neutron.agent.linux.interface.BridgeInterfaceDriver$/,
         .with_section_content('ml2_type_vxlan', /^vni_ranges = 1:1000$/)
     end
   end
+  describe '/etc/neutron/metadata_agent.ini' do
+    let(:file) { chef_run.template('/etc/neutron/metadata_agent.ini') }
+    it do
+      expect(chef_run).to render_config_file(file.name)
+        .with_section_content('DEFAULT', /^nova_metadata_ip = 10.0.0.2$/)
+    end
+  end
   %w(
     neutron.conf
     l3_agent.ini

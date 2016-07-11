@@ -60,6 +60,9 @@ node.default['openstack']['network_dhcp']['conf'].tap do |conf|
     'neutron.agent.linux.interface.BridgeInterfaceDriver'
   conf['DEFAULT']['enable_isolated_metadata'] = 'True'
 end
+node.default['openstack']['network_metadata']['conf'].tap do |conf|
+  conf['DEFAULT']['nova_metadata_ip'] = node['ipaddress']
+end
 node.override['openstack']['network']['plugins']['ml2']['conf'].tap do |conf|
   conf['ml2']['type_drivers'] = 'flat,vlan,vxlan'
   conf['ml2']['extension_drivers'] = 'port_security'
