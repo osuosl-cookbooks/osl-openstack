@@ -86,6 +86,9 @@ node.default['openstack']['network']['plugins']['linuxbridge']['conf']
     'neutron.agent.linux.iptables_firewall.IptablesFirewallDriver'
 end
 node.default['openstack']['dashboard'].tap do |conf|
+  conf['ssl']['use_data_bag'] = false
+  conf['ssl']['key'] = 'wildcard.key'
+  conf['ssl']['cert'] = 'wildcard.pem'
   conf['ssl']['chain'] = 'wildcard-bundle.crt'
 end
 
@@ -232,9 +235,9 @@ end
   node.default['openstack']['endpoints'].tap do |conf|
     conf['db']['host'] = db_hostname
     conf['mq']['host'] = endpoint_hostname
-    conf['admin'][service]['host'] = endpoint_hostname
-    conf['public'][service]['host'] = endpoint_hostname
-    conf['internal'][service]['host'] = endpoint_hostname
+    %w(admin public internal).each do |t|
+      conf[t][service]['host'] = endpoint_hostname
+    end
   end
 end
 
