@@ -23,6 +23,7 @@ default['osl-openstack']['database_suffix'] = nil
 default['osl-openstack']['databag_prefix'] = nil
 default['osl-openstack']['cinder']['iscsi_role'] = nil
 default['osl-openstack']['cinder']['iscsi_ips'] = []
+default['osl-openstack']['image']['glance_vol'] = nil
 default['osl-openstack']['endpoint_hostname'] = nil
 default['osl-openstack']['db_hostname'] = nil
 default['osl-openstack']['physical_interface_mappings'] = []

@@ -18,7 +18,16 @@
 #
 include_recipe 'osl-openstack'
 include_recipe 'firewall::openstack'
+include_recipe 'base::glusterfs'
 include_recipe 'openstack-image::api'
 include_recipe 'openstack-image::registry'
 include_recipe 'openstack-image::identity_registration'
+
+mount '/var/lib/glance/images' do
+  device node['osl-openstack']['image']['glance_vol']
+  fstype 'glusterfs'
+  action [:mount, :enable]
+  only_if { node['osl-openstack']['image']['glance_vol'] }
+end
+
 include_recipe 'openstack-image::image_upload'
