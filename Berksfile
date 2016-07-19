@@ -13,8 +13,7 @@ cookbook 'osl-munin', git: 'git@github.com:osuosl-cookbooks/osl-munin'
 cookbook 'resource_from_hash',
          git: 'git@github.com:osuosl-cookbooks/resource_from_hash'
 cookbook 'statsd', github: 'att-cloud/cookbook-statsd'
-cookbook 'yum-qemu-ev',
-  path: '/home/lance/git/osl/chef-repo/osuosl-cookbooks/yum-qemu-ev'
+cookbook 'yum-qemu-ev', git: 'git@github.com:osuosl-cookbooks/yum-qemu-ev.git'
 
 # Openstack deps (cookbooks that don't have stable/mitaka yet)
 %w(
