@@ -42,7 +42,7 @@ certificate_manage 'novnc' do
   nginx_cert true
   owner node['openstack']['compute']['user']
   group node['openstack']['compute']['group']
-  notifies :restart, resources(proxy_service)
+  notifies :restart, proxy_service
 end
 
 template '/etc/sysconfig/openstack-nova-novncproxy' do
