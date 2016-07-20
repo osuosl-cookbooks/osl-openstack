@@ -33,15 +33,16 @@ describe 'osl-openstack::identity', identity: true do
           .with_section_content('DEFAULT', line)
       end
     end
-
-    it do
-      expect(chef_run).to render_config_file(file.name)
-        .with_section_content(
-          'memcache',
-          /^servers = 10.0.0.10:11211$/
-        )
+    [
+      /^backend = oslo_cache.memcache_pool$/,
+      /^enabled = true$/,
+      /^memcache_servers = 10.0.0.10:11211$/
+    ].each do |line|
+      it do
+        expect(chef_run).to render_config_file(file.name)
+          .with_section_content('cache', line)
+      end
     end
-
     [
       /^rabbit_host = 10.0.0.10$/,
       /^rabbit_userid = guest$/,
