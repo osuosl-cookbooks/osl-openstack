@@ -41,7 +41,7 @@ file secret_lock_file do
   group node['openstack']['dashboard']['horizon_user']
   mode 0660
   subscribes :create, 'service[apache2]', :immediately
-  only_if { File.exist?(secret_lock_file) }
+  only_if { ::File.exist?(secret_lock_file) }
 end
 
 file secret_file do
@@ -49,5 +49,5 @@ file secret_file do
   group node['openstack']['dashboard']['horizon_user']
   mode 0600
   subscribes :create, 'service[apache2]', :immediately
-  only_if { File.exist?(secret_file) }
+  only_if { ::File.exist?(secret_file) }
 end
