@@ -32,7 +32,8 @@ describe 'osl-openstack::block_storage_controller',
       /^my_ip = 10.0.0.2$/,
       %r{^glance_api_servers = http://10.0.0.10:9292},
       /^osapi_volume_listen = 10.0.0.2$/,
-      /^volume_group = openstack$/
+      /^volume_group = openstack$/,
+      /^volume_clear_size = 256$/
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
