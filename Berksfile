@@ -16,7 +16,6 @@ cookbook 'yum-qemu-ev', git: 'git@github.com:osuosl-cookbooks/yum-qemu-ev.git'
 # WIP patches
 %w(
   dashboard
-  network
 ).each do |cb|
   cookbook "openstack-#{cb}",
            github: "osuosl-cookbooks/cookbook-openstack-#{cb}",
@@ -31,6 +30,7 @@ end
   identity
   image
   integration-test
+  network
   ops-database
   ops-messaging
   orchestration
