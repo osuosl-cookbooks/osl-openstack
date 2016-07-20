@@ -31,6 +31,16 @@ describe 'osl-openstack::dashboard', dashboard: true do
       expect(chef_run).to include_recipe(r)
     end
   end
+  it 'sets the attributes correctly' do
+    expect(chef_run.node['openstack']['dashboard']['ssl'] \
+      ['use_data_bag']).to eq(false)
+    expect(chef_run.node['openstack']['dashboard']['ssl'] \
+      ['key']).to eq('wildcard.key')
+    expect(chef_run.node['openstack']['dashboard']['ssl'] \
+      ['cert']).to eq('wildcard.pem')
+    expect(chef_run.node['openstack']['dashboard']['ssl'] \
+      ['chain']).to eq('wildcard-bundle.crt')
+  end
   context 'Secret files already exist' do
     let(:chef_run) { runner.converge(described_recipe) }
     it 'Set secret key lock file permissions' do
