@@ -20,5 +20,5 @@ test/chef-config/*.pem
 test/chef-config/local-mode-cache/
 clients/
 nodes/
-cookbooks/
+^cookbooks/
 vms/
