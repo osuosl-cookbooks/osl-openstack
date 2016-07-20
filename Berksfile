@@ -13,18 +13,6 @@ cookbook 'resource_from_hash',
 cookbook 'statsd', github: 'att-cloud/cookbook-statsd'
 cookbook 'yum-qemu-ev', git: 'git@github.com:osuosl-cookbooks/yum-qemu-ev.git'
 
-# Openstack deps (cookbooks that don't have stable/mitaka yet)
-%w(
-  bare-metal
-  data-processing
-  database
-  object-storage
-).each do |cb|
-  cookbook "openstack-#{cb}",
-           github: "openstack/cookbook-openstack-#{cb}",
-           branch: 'master'
-end
-
 # WIP patches
 %w(
   dashboard
