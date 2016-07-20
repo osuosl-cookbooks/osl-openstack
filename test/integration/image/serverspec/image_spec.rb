@@ -38,5 +38,5 @@ describe command('source /root/openrc && openstack image list') do
 end
 
 describe file('/var/lib/glance/images') do
-  it { should be_mounted.with(fstype: 'glusterfs') }
+  it { should be_mounted.with(type: 'fuse.glusterfs') }
 end
