@@ -26,9 +26,6 @@ end
 node.default['openstack']['release'] = 'mitaka'
 node.default['openstack']['secret']['key_path'] =
   '/etc/chef/encrypted_data_bag_secret'
-# node.default['openstack']['sysctl']['net.ipv4.conf.all.rp_filter'] = 0
-# node.default['openstack']['sysctl']['net.ipv4.conf.default.rp_filter'] = 0
-# node.default['openstack']['sysctl']['net.ipv4.ip_forward'] = 1
 node.default['openstack']['yum']['uri'] = \
   'http://centos.osuosl.org/$releasever/cloud/x86_64/openstack-' +
   node['openstack']['release']
