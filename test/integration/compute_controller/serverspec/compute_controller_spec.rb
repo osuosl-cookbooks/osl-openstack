@@ -79,7 +79,11 @@ describe command('source /root/openrc && openstack compute service list') do
   end
 end
 
-describe command('curl -k -v https://localhost:6080 2>&1') do
+# Get the primary IP address since we bind specifically to it.
+require 'socket'
+machine_ip = Socket.ip_address_list[1].ip_address
+
+describe command("curl -k -v https://#{machine_ip}:6080 2>&1") do
   its(:stdout) { should contain(/SSL connection/) }
   its(:stdout) { should contain(/HTTP.*200 OK/) }
 end
