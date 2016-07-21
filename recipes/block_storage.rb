@@ -19,7 +19,7 @@
 iscsi_hosts = ['127.0.0.1']
 iscsi_hosts += node['osl-openstack']['cinder']['iscsi_ips']
 iscsi_role = node['osl-openstack']['cinder']['iscsi_role']
-unless (iscsi_role.nil? && Chef::Config[:solo]) || !defined?(ChefSpec)
+if (iscsi_role && !Chef::Config[:solo]) || defined?(ChefSpec)
   search(:node, "role:#{iscsi_role}") do |n|
     iscsi_hosts << n['ipaddress']
   end
