@@ -1,5 +1,5 @@
 include_recipe 'base::glusterfs'
-include_recipe 'openstack-image::api'
+package 'openstack-glance'
 package 'glusterfs-server'
 service 'glusterd' do
   action [:enable, :start]
