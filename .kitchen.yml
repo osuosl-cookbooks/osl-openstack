@@ -132,6 +132,7 @@ suites:
       - role[openstack_tk]
       - recipe[firewall::mysql]
       - recipe[osl-openstack::ops_database]
+      - recipe[openstack_test::gluster]
       - recipe[osl-openstack::controller]
       - recipe[openstack-integration-test::setup]
   - name: allinone
