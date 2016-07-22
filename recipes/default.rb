@@ -23,6 +23,7 @@ node.default['firewall']['iptables-config'].tap do |conf|
   conf['save_on_restart'] = 'yes'
   conf['save_on_stop'] = 'yes'
 end
+node.default['yum']['qemu-ev-attr']['glusterfs_34'] = true
 node.default['openstack']['release'] = 'mitaka'
 node.default['openstack']['secret']['key_path'] =
   '/etc/chef/encrypted_data_bag_secret'

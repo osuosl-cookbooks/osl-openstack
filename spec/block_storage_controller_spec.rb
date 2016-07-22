@@ -25,6 +25,12 @@ describe 'osl-openstack::block_storage_controller',
       expect(chef_run).to include_recipe(r)
     end
   end
+  it 'Uses GlusterFS 3.4 yum-qemu-ev repo' do
+    expect(chef_run.node['yum']['qemu-ev-attr']['glusterfs_34']).to \
+      eq(true)
+    expect(chef_run).to create_yum_repository('qemu-ev')
+      .with(baseurl: 'http://ftp.osuosl.org/pub/osl/repos/yum/$releasever/RHEV-glusterfs-34/$basearch')
+  end
   describe '/etc/cinder/cinder.conf' do
     let(:file) { chef_run.template('/etc/cinder/cinder.conf') }
     [
