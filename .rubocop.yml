@@ -10,3 +10,5 @@ Metrics/BlockNesting:
   Max: 4
 Style/ClassAndModuleChildren:
   Enabled: false
+Style/NumericLiteralPrefix:
+  EnforcedOctalStyle: zero_only
