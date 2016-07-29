@@ -18,7 +18,8 @@ default['osl-openstack']['data_bags'] = %w(
   db_passwords
   secrets
   service_passwords
-  user_passwords)
+  user_passwords
+)
 default['osl-openstack']['database_suffix'] = nil
 default['osl-openstack']['databag_prefix'] = nil
 default['osl-openstack']['cinder']['iscsi_role'] = nil

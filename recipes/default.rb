@@ -72,7 +72,7 @@ node.override['openstack']['network']['plugins']['ml2']['conf'].tap do |conf|
   conf['ml2_type_vxlan']['vni_ranges'] = '1:1000'
 end
 node.default['openstack']['network']['plugins']['linuxbridge']['conf']
-  .tap do |conf|
+    .tap do |conf|
   conf['vlans']['tenant_network_type'] = 'gre,vxlan'
   conf['vlans']['network_vlan_ranges'] = nil
   conf['vxlan']['enable_vxlan'] = true
