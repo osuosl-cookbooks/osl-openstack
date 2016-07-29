@@ -77,7 +77,6 @@ node.default['openstack']['network']['plugins']['linuxbridge']['conf']
   conf['vlans']['network_vlan_ranges'] = nil
   conf['vxlan']['enable_vxlan'] = true
   conf['vxlan']['l2_population'] = true
-  conf['vxlan']['local_ip'] = node['ipaddress']
   conf['agent']['polling_interval'] = 2
   conf['securitygroup']['enable_security_group'] = 'True'
   conf['securitygroup']['firewall_driver'] =

@@ -25,9 +25,17 @@ node['osl-openstack']['physical_interface_mappings'].each do |int|
   int_mappings.push("#{int['name']}:#{int[node_type]}")
 end
 
+# Get the IP for the interface we're using VXLAN for
+vxlan_interface = node['osl-openstack']['vxlan_interface'][node_type]
+vxlan_addrs = node['network']['interfaces'][vxlan_interface]
+vxlan_ip = vxlan_addrs['addresses'].find do |_, attrs|
+  attrs['family'] == 'inet'
+end[0]
+
 node.default['openstack']['network']['plugins']['linuxbridge']['conf']
-  .tap do |conf|
+    .tap do |conf|
   conf['linux_bridge']['physical_interface_mappings'] = int_mappings.join(',')
+  conf['vxlan']['local_ip'] = vxlan_ip
 end
 
 include_recipe 'openstack-network::ml2_linuxbridge'

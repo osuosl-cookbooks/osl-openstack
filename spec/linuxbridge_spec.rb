@@ -55,6 +55,25 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/
           .with_section_content('vxlan', line)
       end
     end
+    context 'Setting controller vxlan_interface to eth1' do
+      cached(:chef_run) { runner.converge(described_recipe) }
+      before do
+        node.set['osl-openstack']['node_type'] = 'controller'
+        node.set['osl-openstack']['vxlan_interface']['controller'] = 'eth1'
+        node.automatic['network']['interfaces']['eth1']['addresses'] = {
+          '192.168.1.10' => {
+            'family' => 'inet'
+          }
+        }
+      end
+      it do
+        expect(chef_run).to render_config_file(file.name)
+          .with_section_content(
+            'vxlan',
+            /^local_ip = 192.168.1.10$/
+          )
+      end
+    end
     [
       /^polling_interval = 2$/
     ].each do |line|

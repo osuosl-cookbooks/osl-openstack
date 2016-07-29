@@ -27,6 +27,10 @@ default['osl-openstack']['image']['glance_vol'] = nil
 default['osl-openstack']['endpoint_hostname'] = nil
 default['osl-openstack']['db_hostname'] = nil
 default['osl-openstack']['physical_interface_mappings'] = []
+default['osl-openstack']['vxlan_interface'] = {
+  'controller' => 'eth0',
+  'compute' => 'eth0'
+}
 default['osl-openstack']['node_type'] = 'compute'
 default['osl-openstack']['nova_ssl_dir'] = '/etc/nova/pki'
 default['osl-openstack']['novnc'] = {
