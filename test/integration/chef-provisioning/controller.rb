@@ -19,6 +19,7 @@ machine 'controller' do
                   bootstrap_options: {
                     image_ref: controller_os,
                     flavor_ref: flavor_ref,
+                    security_groups: 'no-firewall',
                     key_name: ENV['OS_SSH_KEYPAIR'],
                     floating_ip_pool: ENV['OS_FLOATING_IP_POOL']
                   },
@@ -36,10 +37,9 @@ config.vm.provider "virtualbox" do |v|
 end
 EOF
   role provision_role
-  # recipe 'openstack_test'
   recipe 'osl-openstack::ops_database'
+  recipe 'openstack_test::gluster'
   recipe 'osl-openstack::controller'
-  # recipe 'openstack-integration-test::setup'
   file('/etc/chef/encrypted_data_bag_secret',
        File.dirname(__FILE__) +
        '/../default/encrypted_data_bag_secret')

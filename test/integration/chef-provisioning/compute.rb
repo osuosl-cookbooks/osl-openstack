@@ -19,6 +19,7 @@ machine 'compute' do
                   bootstrap_options: {
                     image_ref: compute_os,
                     flavor_ref: flavor_ref,
+                    security_groups: 'no-firewall',
                     key_name: ENV['OS_SSH_KEYPAIR'],
                     floating_ip_pool: ENV['OS_FLOATING_IP_POOL']
                   },
@@ -35,7 +36,6 @@ config.vm.provider "virtualbox" do |v|
 end
 EOF
   role provision_role
-  # recipe 'openstack_test::compute'
   recipe 'osl-openstack::compute'
   role 'openstack_cinder'
   file('/etc/chef/encrypted_data_bag_secret',
