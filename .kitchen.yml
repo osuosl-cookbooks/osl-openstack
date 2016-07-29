@@ -87,7 +87,6 @@ suites:
   - name: compute
     run_list:
       - role[openstack_tk]
-      - recipe[firewall::mysql]
       - recipe[osl-openstack::ops_database]
       - recipe[osl-openstack::identity]
       - recipe[osl-openstack::compute_controller]
@@ -95,14 +94,12 @@ suites:
   - name: dashboard
     run_list:
       - role[openstack_tk]
-      - recipe[firewall::mysql]
       - recipe[osl-openstack::ops_database]
       - recipe[osl-openstack::identity]
       - recipe[osl-openstack::dashboard]
   - name: block_storage
     run_list:
       - role[openstack_tk]
-      - recipe[firewall::mysql]
       - recipe[osl-openstack::ops_database]
       - recipe[osl-openstack::identity]
       - recipe[osl-openstack::block_storage_controller]
@@ -130,7 +127,6 @@ suites:
   - name: controller
     run_list:
       - role[openstack_tk]
-      - recipe[firewall::mysql]
       - recipe[osl-openstack::ops_database]
       - recipe[openstack_test::gluster]
       - recipe[osl-openstack::controller]
@@ -139,7 +135,6 @@ suites:
     run_list:
       - role[openstack_tk]
       - recipe[openstack_test]
-      - recipe[firewall::mysql]
       - recipe[osl-openstack::ops_database]
       - recipe[openstack_test::gluster]
       - recipe[osl-openstack::controller]

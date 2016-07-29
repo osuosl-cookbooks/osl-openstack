@@ -18,5 +18,6 @@
 #
 node.default['mariadb']['mysqld']['lc_messages_dir'] = '/usr/share/mariadb'
 include_recipe 'osl-openstack'
+include_recipe 'firewall::mysql'
 include_recipe 'openstack-ops-database::server'
 include_recipe 'openstack-ops-database::openstack-db'
