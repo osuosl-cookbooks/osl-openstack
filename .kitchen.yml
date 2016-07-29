@@ -141,6 +141,7 @@ suites:
       - recipe[openstack_test]
       - recipe[firewall::mysql]
       - recipe[osl-openstack::ops_database]
+      - recipe[openstack_test::gluster]
       - recipe[osl-openstack::controller]
       - recipe[osl-openstack::compute]
       - recipe[osl-openstack::cinder]
