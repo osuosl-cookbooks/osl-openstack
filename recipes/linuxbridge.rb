@@ -28,9 +28,14 @@ end
 # Get the IP for the interface we're using VXLAN for
 vxlan_interface = node['osl-openstack']['vxlan_interface'][node_type]
 vxlan_addrs = node['network']['interfaces'][vxlan_interface]
-vxlan_ip = vxlan_addrs['addresses'].find do |_, attrs|
-  attrs['family'] == 'inet'
-end[0]
+vxlan_ip = if vxlan_addrs.nil?
+             # Fall back to localhost if the interface has no IP
+             '127.0.0.1'
+           else
+             vxlan_addrs['addresses'].find do |_, attrs|
+               attrs['family'] == 'inet'
+             end[0]
+           end
 
 node.default['openstack']['network']['plugins']['linuxbridge']['conf']
     .tap do |conf|
