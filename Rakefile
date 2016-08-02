@@ -5,8 +5,8 @@ client_options = '--force-formatter -z ' \
 
 task default: ['test']
 
-desc 'Default gate tests to run'
-task test: [:rubocop, :berks_vendor]
+desc 'Run all tests'
+task test: [:style, :lint, :unit]
 
 def run_command(command)
   if File.exist?('Gemfile.lock')
@@ -63,8 +63,8 @@ task clean: [:destroy_all]
 
 # CI tasks
 require 'rubocop/rake_task'
-desc 'Run RuboCop'
-RuboCop::RakeTask.new(:rubocop)
+desc 'Run RuboCop (style) tests'
+RuboCop::RakeTask.new(:style)
 
 desc 'Run FoodCritic (lint) tests'
 task :lint do
