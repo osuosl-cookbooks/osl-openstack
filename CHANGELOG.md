@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.0.0 (2016-08-02)
+------------------
+- Mitaka release
+
 2.2.21
 ------
 
