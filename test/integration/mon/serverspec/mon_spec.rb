@@ -2,10 +2,15 @@ require 'serverspec'
 
 set :backend, :exec
 
+# Should match the number of VCPUs the VMs use
+t_cpu = 4
+
 load_thres = if %w(ppc64 ppc64le).include?(os[:arch])
-               '-w 18,13,8 -c 26,21,16'
+               "-w #{t_cpu * 4 + 10},#{t_cpu * 4 + 5},#{t_cpu * 4} " \
+               "-c #{t_cpu * 8 + 10},#{t_cpu * 8 + 5},#{t_cpu * 8}"
              else
-               '-w 14,9,4 -c 18,13,8'
+               "-w #{t_cpu * 2 + 10},#{t_cpu * 2 + 5},#{t_cpu * 2} " \
+               "-c #{t_cpu * 4 + 10},#{t_cpu * 4 + 5},#{t_cpu * 4}"
              end
 
 describe file('/etc/nagios/nrpe.d/check_load.cfg') do

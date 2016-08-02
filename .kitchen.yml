@@ -1,8 +1,9 @@
 ---
 driver:
-  flavor_ref: 'm1.medium'
+  flavor_ref: 'm1.large'
 provisioner:
   name: chef_zero
+  roles_path: test/integration/roles
   data_bags_path: test/integration/default/data_bags
   encrypted_data_bag_secret_key_path: test/integration/default/encrypted_data_bag_secret
   attributes:
@@ -24,9 +25,9 @@ provisioner:
         - "%"
     yum:
       epel:
-        baseurl: http://epel.osuosl.org/6/$basearch
+        baseurl: http://epel.osuosl.org/7/$basearch
         enable: true
-        gpgkey: http://epel.osuosl.org/RPM-GPG-KEY-EPEL-6
+        gpgkey: http://epel.osuosl.org/RPM-GPG-KEY-EPEL-7
     scl:
       packages:
         - python27
@@ -41,27 +42,108 @@ suites:
     provisioner: chef_solo
     run_list:
       - recipe[osl-openstack::mon]
-  - name: controller
+  - name: ops_messaging
     run_list:
+      - role[openstack_tk]
+      - recipe[osl-openstack::ops_messaging]
+  - name: identity
+    run_list:
+      - role[openstack_tk]
       - recipe[osl-openstack::ops_database]
-      - recipe[osl-openstack::controller]
-      - recipe[openstack-integration-test::setup]
-      - recipe[scl]
-    excludes:
-      - fedora-20
-      - fedora-21
-  - name: compute
+      - recipe[osl-openstack::identity]
+  - name: image
     run_list:
-      - recipe[osl-openstack::compute]
-  - name: cinder
-    run_list:
+      - role[openstack_tk]
       - recipe[osl-openstack::ops_database]
-      - recipe[openstack-ops-messaging::server]
-      - recipe[openstack-identity::server]
-      - recipe[openstack-identity::registration]
-      - recipe[osl-openstack::cinder]
+      - recipe[osl-openstack::identity]
+      - recipe[openstack_test::gluster]
+      - recipe[osl-openstack::image]
+  - name: network
+    run_list:
+      - role[openstack_tk]
+      - recipe[osl-openstack::ops_database]
+      - recipe[osl-openstack::identity]
+      - recipe[osl-openstack::network]
+  - name: linuxbridge
+    run_list:
+      - role[openstack_tk]
+      - recipe[openstack_test]
+      - recipe[osl-openstack::ops_database]
+      - recipe[osl-openstack::identity]
+      - recipe[osl-openstack::linuxbridge]
     attributes:
       osl-openstack:
+        physical_interface_mappings:
+          -
+           name: public
+           controller: eth1
+           compute: eth1
+  - name: compute_controller
+    run_list:
+      - role[openstack_tk]
+      - recipe[osl-openstack::ops_database]
+      - recipe[osl-openstack::identity]
+      - recipe[osl-openstack::compute_controller]
+  - name: compute
+    run_list:
+      - role[openstack_tk]
+      - recipe[osl-openstack::ops_database]
+      - recipe[osl-openstack::identity]
+      - recipe[osl-openstack::compute_controller]
+      - recipe[osl-openstack::compute]
+  - name: dashboard
+    run_list:
+      - role[openstack_tk]
+      - recipe[osl-openstack::ops_database]
+      - recipe[osl-openstack::identity]
+      - recipe[osl-openstack::dashboard]
+  - name: block_storage
+    run_list:
+      - role[openstack_tk]
+      - recipe[osl-openstack::ops_database]
+      - recipe[osl-openstack::identity]
+      - recipe[osl-openstack::block_storage_controller]
+      - recipe[openstack-block-storage::volume_driver_lvm]
+      - recipe[osl-openstack::block_storage]
+    attributes:
+      osl-openstack:
+        cinder:
+          iscsi_role: openstack_base
+          iscsi_ips:
+            - 127.0.2.1
+            - 127.0.3.1
+  - name: block_storage_controller
+    run_list:
+      - role[openstack_tk]
+      - recipe[osl-openstack::ops_database]
+      - recipe[osl-openstack::identity]
+      - recipe[osl-openstack::block_storage_controller]
+  - name: telemetry
+    run_list:
+      - role[openstack_tk]
+      - recipe[osl-openstack::ops_database]
+      - recipe[osl-openstack::identity]
+      - recipe[osl-openstack::telemetry]
+  - name: controller
+    run_list:
+      - role[openstack_tk]
+      - recipe[osl-openstack::ops_database]
+      - recipe[openstack_test::gluster]
+      - recipe[osl-openstack::controller]
+      - recipe[openstack-integration-test::setup]
+  - name: allinone
+    run_list:
+      - role[openstack_tk]
+      - recipe[openstack_test]
+      - recipe[osl-openstack::ops_database]
+      - recipe[openstack_test::gluster]
+      - recipe[osl-openstack::controller]
+      - recipe[osl-openstack::compute]
+      - recipe[osl-openstack::cinder]
+      - recipe[openstack-integration-test::setup]
+    attributes:
+      osl-openstack:
+        endpoint_hostname: localhost
         cinder:
           iscsi_role: openstack_base
           iscsi_ips:
@@ -71,11 +153,3 @@ suites:
         block-storage:
           volume:
             create_volume_group: true
-  - name: novnc
-    run_list:
-      - recipe[osl-openstack::ops_database]
-      - recipe[osl-openstack::controller]
-      - recipe[osl-openstack::novnc]
-    excludes:
-      - fedora-20
-      - fedora-21

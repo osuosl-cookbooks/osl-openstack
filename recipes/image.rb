@@ -1,8 +1,8 @@
 #
 # Cookbook Name:: osl-openstack
-# Recipe:: _fedora
+# Recipe:: image
 #
-# Copyright (C) 2014, 2015 Oregon State University
+# Copyright (C) 2016 Oregon State University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,16 +16,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Fedora specific common setup
-case node['platform_family']
-when 'fedora'
-  include_recipe 'yum-fedora'
-  yum_repository "RDO-#{node['openstack']['release']}" do
-    description "OpenStack RDO repo for #{node['openstack']['release']}"
-    gpgkey node['openstack']['yum']['repo-key']
-    baseurl node['openstack']['yum']['uri']
-    includepkgs "*fc#{node['platform_version']}*"
-    enabled true
-    action :add
-  end
+include_recipe 'osl-openstack'
+include_recipe 'firewall::openstack'
+include_recipe 'base::glusterfs'
+include_recipe 'openstack-image::api'
+include_recipe 'openstack-image::registry'
+include_recipe 'openstack-image::identity_registration'
+
+mount '/var/lib/glance/images' do
+  device node['osl-openstack']['image']['glance_vol']
+  fstype 'glusterfs'
+  action [:mount, :enable]
+  only_if { node['osl-openstack']['image']['glance_vol'] }
 end
+
+include_recipe 'openstack-image::image_upload'

@@ -1,0 +1,56 @@
+{
+  "env_run_lists": {},
+  "run_list": [
+    "recipe[osl-openstack]"
+  ],
+  "chef_type": "role",
+  "override_attributes": {
+    "openstack": {
+      "mq": {
+        "user": "admin"
+      },
+      "compute": {
+        "metering": true,
+        "libvirt": {
+          "virt_type": "qemu"
+        }
+      },
+      "image": {
+        "image_upload": true,
+        "upload_image": {
+          "cirros": "http://download.cirros-cloud.net/daily/20150923/cirros-d150923-x86_64-rootfs.img.gz"
+        },
+        "upload_images": [
+          "cirros"
+        ]
+      }
+    }
+  },
+  "default_attributes": {
+    "mysql": {
+      "server_root_password": "rootpass",
+      "server_debian_password": "debpass",
+      "server_repl_password": "replpass",
+      "allow_remote_root": true,
+      "root_network_acl": [
+        "%"
+      ]
+    },
+    "osl-openstack": {
+      "database_suffix": "x86",
+      "databag_prefix": "x86",
+      "endpoint_hostname": "192.168.60.10",
+      "db_hostname": "192.168.60.10",
+      "physical_interface_mappings": [
+        {
+          "name": "public",
+          "controller": "enp0s8",
+          "compute": "enp0s8"
+        }
+      ]
+    }
+   },
+  "json_class": "Chef::Role",
+  "description": "Vagrant x86 Provisioning Role",
+  "name": "vagrant_provisioning"
+}

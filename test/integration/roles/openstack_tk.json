@@ -1,0 +1,29 @@
+{
+  "env_run_lists": {},
+  "run_list": [
+    "recipe[osl-openstack]"
+  ],
+  "chef_type": "role",
+  "override_attributes": {
+    "openstack": {
+      "image": {
+        "image_upload": true
+      },
+      "mq": {
+        "user": "admin"
+      },
+      "compute": {
+        "metering": true,
+        "conf": {
+          "libvirt": {
+            "virt_type": "qemu"
+          }
+        }
+      }
+    }
+  },
+  "default_attributes": {},
+  "json_class": "Chef::Role",
+  "description": "Openstack x86 Test Kitchen Role",
+  "name": "openstack_tk"
+}
