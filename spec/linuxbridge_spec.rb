@@ -74,6 +74,21 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/
           )
       end
     end
+    context 'Setting controller vxlan_interface to downed eth2' do
+      cached(:chef_run) { runner.converge(described_recipe) }
+      before do
+        node.set['osl-openstack']['node_type'] = 'controller'
+        node.set['osl-openstack']['vxlan_interface']['controller'] = 'eth2'
+        node.automatic['network']['interfaces']['eth1']['addresses'] = {}
+      end
+      it do
+        expect(chef_run).to render_config_file(file.name)
+          .with_section_content(
+            'vxlan',
+            /^local_ip = 127.0.0.1$/
+          )
+      end
+    end
     [
       /^polling_interval = 2$/
     ].each do |line|

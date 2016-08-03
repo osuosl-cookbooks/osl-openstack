@@ -1,4 +1,6 @@
 name             'osl-openstack'
+issues_url       'https://github.com/osuosl-cookbooks/osl-openstack/issues'
+source_url       'https://github.com/osuosl-cookbooks/osl-openstack'
 maintainer       'Oregon State University'
 maintainer_email 'systems@osuosl.org'
 license          'Apache 2.0'
