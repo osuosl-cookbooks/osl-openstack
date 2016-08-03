@@ -61,7 +61,8 @@ end
 
 [
   'interface_driver = neutron.agent.linux.interface.BridgeInterfaceDriver',
-  'enable_isolated_metadata = True'
+  'enable_isolated_metadata = True',
+  'dhcp_lease_duration = 120'
 ].each do |s|
   describe file('/etc/neutron/dhcp_agent.ini') do
     its(:content) { should contain(/#{s}/).after(/^\[DEFAULT\]/) }
