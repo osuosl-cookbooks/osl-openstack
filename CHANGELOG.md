@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.0.1 (2016-08-03)
+------------------
+- Set fallback IP for vxlan local_ip
+
 2.0.0 (2016-08-02)
 ------------------
 - Mitaka release
