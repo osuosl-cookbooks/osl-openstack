@@ -82,7 +82,8 @@ neutron.agent.linux.interface.BridgeInterfaceDriver$/,
     [
       /^interface_driver = \
 neutron.agent.linux.interface.BridgeInterfaceDriver$/,
-      /^enable_isolated_metadata = True/
+      /^enable_isolated_metadata = True/,
+      /^dhcp_lease_duration = 120/
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
