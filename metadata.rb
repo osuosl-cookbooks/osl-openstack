@@ -6,7 +6,7 @@ maintainer_email 'systems@osuosl.org'
 license          'Apache 2.0'
 description      'Installs/Configures osl-openstack'
 long_description 'Installs/Configures osl-openstack'
-version          '2.0.1'
+version          '2.0.2'
 
 %w{ base certificate chef-sugar memcached osl-apache osl-nrpe modules mysql
   openstack-block-storage openstack-common openstack-compute openstack-dashboard
