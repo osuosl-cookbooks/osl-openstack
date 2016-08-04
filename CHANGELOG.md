@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.0.3 (2016-08-04)
+------------------
+- Increase disk_allocation_ratio to 1.5 to allow for overcommit
+
 2.0.2 (2016-08-03)
 ------------------
 - Reduce DHCP lease to 120 seconds instead of 1 day
