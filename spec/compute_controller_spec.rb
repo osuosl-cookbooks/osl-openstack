@@ -37,6 +37,7 @@ describe 'osl-openstack::compute_controller', compute_controller: true do
       /^linuxnet_interface_driver = \
 nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver$/,
       /^dns_server = 140.211.166.130 140.211.166.131$/,
+      /^disk_allocation_ratio = 1.5$/,
       /^instance_usage_audit = True$/,
       /^instance_usage_audit_period = hour$/,
       /^notify_on_state_change = vm_and_task_state$/,
