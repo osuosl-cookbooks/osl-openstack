@@ -13,6 +13,11 @@ end
   end
 end
 
+# Ensure we install the package from RDO
+describe command('rpm -qi rabbitmq-server | grep Signature') do
+  its(:stdout) { should contain(/Key ID f9b9fee7764429e6/) }
+end
+
 describe command('rabbitmqctl -q list_users') do
   its(:stdout) { should contain(/admin.*[administrator]/) }
 end

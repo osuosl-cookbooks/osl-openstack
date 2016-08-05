@@ -20,4 +20,9 @@ describe 'osl-openstack::ops_messaging', ops_messaging: true do
       expect(chef_run).to include_recipe(r)
     end
   end
+  it 'sets rabbitmq attributes' do
+    expect(chef_run.node['rabbitmq']['use_distro_version']).to eq(
+      true
+    )
+  end
 end
