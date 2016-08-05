@@ -1,0 +1,4 @@
+cookbook=osl-openstack
+version=2.0.3
+envs=openstack_mitaka
+pr_link=https://github.com/osuosl-cookbooks/osl-openstack/pull/45
