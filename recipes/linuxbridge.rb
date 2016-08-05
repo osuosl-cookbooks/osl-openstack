@@ -26,7 +26,12 @@ node['osl-openstack']['physical_interface_mappings'].each do |int|
 end
 
 # Get the IP for the interface we're using VXLAN for
-vxlan_interface = node['osl-openstack']['vxlan_interface'][node_type]
+vxlan = node['osl-openstack']['vxlan_interface']
+vxlan_interface = if vxlan[node_type][node['fqdn']]
+                    vxlan[node_type][node['fqdn']]
+                  else
+                    vxlan[node_type]['default']
+                  end
 vxlan_addrs = node['network']['interfaces'][vxlan_interface]
 vxlan_ip = if vxlan_addrs.nil?
              # Fall back to localhost if the interface has no IP

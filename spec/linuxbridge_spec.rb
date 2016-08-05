@@ -55,12 +55,13 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/
           .with_section_content('vxlan', line)
       end
     end
-    context 'Setting controller vxlan_interface to eth1' do
+    context 'Setting controller vxlan_interface to eth0 on controller' do
       cached(:chef_run) { runner.converge(described_recipe) }
       before do
         node.set['osl-openstack']['node_type'] = 'controller'
-        node.set['osl-openstack']['vxlan_interface']['controller'] = 'eth1'
-        node.automatic['network']['interfaces']['eth1']['addresses'] = {
+        node.set['osl-openstack']['vxlan_interface']['controller'] \
+          ['default'] = 'eth0'
+        node.automatic['network']['interfaces']['eth0']['addresses'] = {
           '192.168.1.10' => {
             'family' => 'inet'
           }
@@ -78,7 +79,8 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/
       cached(:chef_run) { runner.converge(described_recipe) }
       before do
         node.set['osl-openstack']['node_type'] = 'controller'
-        node.set['osl-openstack']['vxlan_interface']['controller'] = 'eth2'
+        node.set['osl-openstack']['vxlan_interface']['controller'] \
+          ['default'] = 'eth2'
         node.automatic['network']['interfaces']['eth1']['addresses'] = {}
       end
       it do
@@ -86,6 +88,45 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/
           .with_section_content(
             'vxlan',
             /^local_ip = 127.0.0.1$/
+          )
+      end
+    end
+    context 'Setting controller vxlan_interface to eth0 on compute' do
+      cached(:chef_run) { runner.converge(described_recipe) }
+      before do
+        node.set['osl-openstack']['node_type'] = 'compute'
+        node.automatic['network']['interfaces']['eth0']['addresses'] = {
+          '192.168.1.10' => {
+            'family' => 'inet'
+          }
+        }
+      end
+      it do
+        expect(chef_run).to render_config_file(file.name)
+          .with_section_content(
+            'vxlan',
+            /^local_ip = 192.168.1.10$/
+          )
+      end
+    end
+    context 'Setting controller vxlan_interface to eth8 on compute w/ fqdn' do
+      cached(:chef_run) { runner.converge(described_recipe) }
+      before do
+        node.set['osl-openstack']['node_type'] = 'compute'
+        node.set['osl-openstack']['vxlan_interface']['compute'] \
+          ['foo.example.org'] = 'eth8'
+        node.automatic['fqdn'] = 'foo.example.org'
+        node.automatic['network']['interfaces']['eth8']['addresses'] = {
+          '192.168.1.10' => {
+            'family' => 'inet'
+          }
+        }
+      end
+      it do
+        expect(chef_run).to render_config_file(file.name)
+          .with_section_content(
+            'vxlan',
+            /^local_ip = 192.168.1.10$/
           )
       end
     end
