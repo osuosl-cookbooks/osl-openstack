@@ -76,8 +76,10 @@ suites:
         physical_interface_mappings:
           -
            name: public
-           controller: eth1
-           compute: eth1
+           controller:
+            default: eth1
+           compute:
+            default: eth1
   - name: compute_controller
     run_list:
       - role[openstack_tk]

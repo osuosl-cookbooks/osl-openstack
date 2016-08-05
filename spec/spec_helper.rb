@@ -23,8 +23,12 @@ shared_context 'linuxbridge_stubs' do
     node.set['osl-openstack']['physical_interface_mappings'] =
       [
         name: 'public',
-        controller: 'eth2',
-        compute: 'eth1'
+        controller: {
+          default: 'eth2'
+        },
+        compute: {
+          default: 'eth1'
+        }
       ]
   end
 end
