@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.1.0 (2016-08-05)
+------------------
+- Add support for per-host interfaces for vxlan and provider networks.
+
 2.0.4 (2016-08-05)
 ------------------
 - Use RDO rabbitmq-server package
