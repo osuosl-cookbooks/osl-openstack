@@ -58,7 +58,7 @@ describe 'osl-openstack::image', image: true do
 
       [
         /^memcached_servers = 10.0.0.10:11211$/,
-        %r{^auth_url = http://10.0.0.10:5000/v2.0$}
+        %r{^auth_url = https://10.0.0.10:5000/v2.0$}
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name)

@@ -15,6 +15,11 @@
           "virt_type": "qemu"
         }
       },
+      "identity": {
+        "ssl": {
+          "cert_required": false
+        }
+      },
       "image": {
         "image_upload": true,
         "upload_image": {

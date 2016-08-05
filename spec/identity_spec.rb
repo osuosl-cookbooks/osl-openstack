@@ -25,8 +25,8 @@ describe 'osl-openstack::identity', identity: true do
   describe '/etc/keystone/keystone.conf' do
     let(:file) { chef_run.template('/etc/keystone/keystone.conf') }
     [
-      %r{^public_endpoint = http://10.0.0.10:5000/$},
-      %r{^admin_endpoint = http://10.0.0.10:35357/$}
+      %r{^public_endpoint = https://10.0.0.10:5000/$},
+      %r{^admin_endpoint = https://10.0.0.10:35357/$}
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
@@ -67,18 +67,28 @@ describe 'osl-openstack::identity', identity: true do
     let(:file) do
       chef_run.template('/etc/httpd/sites-available/keystone-admin.conf')
     end
-    it do
-      expect(chef_run).to render_config_file(file.name)
-        .with_content(/^<VirtualHost 0.0.0.0:35357>$/)
+    [/^<VirtualHost 0.0.0.0:35357>$/,
+     %r{SSLCertificateFile /etc/pki/tls/certs/wildcard.pem$},
+     %r{SSLCertificateKeyFile /etc/pki/tls/private/wildcard.key$},
+     %r{SSLCertificateChainFile /etc/pki/tls/certs/wildcard-bundle.crt$},
+     /SSLVerifyClient require$/].each do |line|
+      it do
+        expect(chef_run).to render_config_file(file.name).with_content(line)
+      end
     end
   end
   describe '/etc/httpd/sites-available/keystone-main.conf' do
     let(:file) do
       chef_run.template('/etc/httpd/sites-available/keystone-main.conf')
     end
-    it do
-      expect(chef_run).to render_config_file(file.name)
-        .with_content(/^<VirtualHost 0.0.0.0:5000>$/)
+    [/^<VirtualHost 0.0.0.0:5000>$/,
+     %r{SSLCertificateFile /etc/pki/tls/certs/wildcard.pem$},
+     %r{SSLCertificateKeyFile /etc/pki/tls/private/wildcard.key$},
+     %r{SSLCertificateChainFile /etc/pki/tls/certs/wildcard-bundle.crt$},
+     /SSLVerifyClient require$/].each do |line|
+      it do
+        expect(chef_run).to render_config_file(file.name).with_content(line)
+      end
     end
   end
 end
