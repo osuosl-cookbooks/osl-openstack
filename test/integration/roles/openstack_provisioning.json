@@ -42,8 +42,12 @@
       "physical_interface_mappings": [
         {
           "name": "public",
-          "controller": "eth0",
-          "compute": "eth0"
+          "controller": {
+            "default": "eth0"
+          },
+          "compute": {
+            "default": "eth0"
+          }
         }
       ]
     }

@@ -44,8 +44,12 @@
       "physical_interface_mappings": [
         {
           "name": "public",
-          "controller": "enp0s8",
-          "compute": "enp0s8"
+          "controller": {
+            "default": "enp0s8"
+          },
+          "compute": {
+            "default": "enp0s8"
+          }
         }
       ]
     }

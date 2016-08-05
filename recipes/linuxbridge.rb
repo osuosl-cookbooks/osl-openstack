@@ -22,7 +22,12 @@ include_recipe 'openstack-network'
 node_type = node['osl-openstack']['node_type']
 int_mappings = []
 node['osl-openstack']['physical_interface_mappings'].each do |int|
-  int_mappings.push("#{int['name']}:#{int[node_type]}")
+  interface = if int[node_type][node['fqdn']]
+                int[node_type][node['fqdn']]
+              else
+                int[node_type]['default']
+              end
+  int_mappings.push("#{int['name']}:#{interface}")
 end
 
 # Get the IP for the interface we're using VXLAN for

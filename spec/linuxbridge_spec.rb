@@ -184,18 +184,83 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/
           [
             {
               name: 'public',
-              controller: 'eth1',
-              compute: 'eth1'
+              controller: {
+                default: 'eth1'
+              },
+              compute: {
+                default: 'eth1'
+              }
             },
             {
               name: 'private',
-              controller: 'eth2',
-              compute: 'eth2'
+              controller: {
+                default: 'eth2'
+              },
+              compute: {
+                default: 'eth2'
+              }
             }
           ]
       end
       [
         /^physical_interface_mappings = public:eth1,private:eth2$/
+      ].each do |line|
+        it do
+          expect(chef_run).to render_config_file(file.name)
+            .with_section_content('linux_bridge', line)
+        end
+      end
+    end
+    context 'Create a public:eth3 w/ different nics' do
+      cached(:chef_run) { runner.converge(described_recipe) }
+      before do
+        node.automatic['fqdn'] = 'bar.example.org'
+        node.set['osl-openstack']['physical_interface_mappings'] =
+          [
+            {
+              name: 'public',
+              controller: {
+                'default' => 'eth1',
+                'foo.example.org' => 'eth2'
+              },
+              compute: {
+                'default' => 'eth1',
+                'bar.example.org' => 'eth3'
+              }
+            }
+          ]
+      end
+      [
+        /^physical_interface_mappings = public:eth3$/
+      ].each do |line|
+        it do
+          expect(chef_run).to render_config_file(file.name)
+            .with_section_content('linux_bridge', line)
+        end
+      end
+    end
+    context 'Create a public:eth2 w/ different nics on controller' do
+      cached(:chef_run) { runner.converge(described_recipe) }
+      before do
+        node.automatic['fqdn'] = 'foo.example.org'
+        node.set['osl-openstack']['node_type'] = 'controller'
+        node.set['osl-openstack']['physical_interface_mappings'] =
+          [
+            {
+              name: 'public',
+              controller: {
+                'default' => 'eth1',
+                'foo.example.org' => 'eth2'
+              },
+              compute: {
+                'default' => 'eth1',
+                'bar.example.org' => 'eth3'
+              }
+            }
+          ]
+      end
+      [
+        /^physical_interface_mappings = public:eth2$/
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name)
