@@ -21,15 +21,15 @@ include_recipe 'firewall::openstack'
 include_recipe 'firewall::vnc'
 include_recipe 'osl-openstack::default'
 
-modules 'tun'
+kernel_module 'tun'
 
 case node['kernel']['machine']
 when 'ppc64', 'ppc64le'
   include_recipe 'chef-sugar::default'
   if %w(openstack).include?(node.deep_fetch('cloud', 'provider'))
-    modules 'kvm_pr'
+    kernel_module 'kvm_pr'
   else
-    modules 'kvm_hv'
+    kernel_module 'kvm_hv'
   end
 
   # Turn off smt on boot (required for KVM support)

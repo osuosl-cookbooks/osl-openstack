@@ -34,7 +34,7 @@ describe 'osl-openstack::compute', compute: true do
   end
 
   it 'loads tun module' do
-    expect(chef_run).to save_modules('tun')
+    expect(chef_run).to load_kernel_module('tun')
   end
   %w(ppc64 ppc64le).each do |a|
     context "setting arch to #{a}" do
@@ -48,11 +48,11 @@ describe 'osl-openstack::compute', compute: true do
           node.automatic['cloud']['provider'] = 'openstack'
         end
         it 'loads kvm_pr module' do
-          expect(chef_run).to save_modules('kvm_pr')
+          expect(chef_run).to load_kernel_module('kvm_pr')
         end
       end
       it 'loads kvm_hv module' do
-        expect(chef_run).to save_modules('kvm_hv')
+        expect(chef_run).to load_kernel_module('kvm_hv')
       end
       it 'includes cookbook chef-sugar::default' do
         expect(chef_run).to include_recipe('chef-sugar::default')
