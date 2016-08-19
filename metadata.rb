@@ -13,7 +13,7 @@ version          '2.1.1'
   openstack-dashboard openstack-identity openstack-integration-test
   openstack-image openstack-network openstack-ops-database
   openstack-ops-messaging openstack-orchestration openstack-telemetry selinux
-  yum-qemu-ev}.each do |cb|
+  sudo yum-qemu-ev}.each do |cb|
   depends cb
 end
 

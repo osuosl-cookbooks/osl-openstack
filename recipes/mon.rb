@@ -27,3 +27,68 @@ if %w(ppc64 ppc64le).include?(node['kernel']['machine'])
 end
 
 include_recipe 'osl-nrpe'
+if node['osl-openstack']['node_type'] == 'controller'
+  include_recipe 'osl-openstack'
+  include_recipe 'base::oslrepo'
+  package 'nagios-plugins-openstack'
+  check_openstack = ::File.join(node['nrpe']['plugin_dir'], 'check_openstack')
+  mon = node['osl-openstack']['mon']
+
+  # Wrapper for using sudo to check openstack services
+  file check_openstack do
+    mode 0755
+    content <<-EOF
+#!/bin/bash
+
+source /root/openrc
+#{node['nrpe']['plugin_dir']}/${@}
+EOF
+  end
+
+  sudo 'nrpe-openstack' do
+    user '%nrpe'
+    nopasswd true
+    runas 'root'
+    commands [check_openstack]
+  end
+
+  nrpe_check 'check_nova_services' do
+    command '/bin/sudo ' + check_openstack + ' check_nova-services'
+    warning_condition mon['check_nova_services']['warning']
+    critical_condition mon['check_nova_services']['critical']
+  end
+
+  nrpe_check 'check_nova_hypervisors' do
+    command '/bin/sudo ' + check_openstack + ' check_nova-hypervisors'
+    parameters '--warn_memory_percent ' +
+               mon['check_nova_hypervisors']['warn_memory_percent'] +
+               ' --critical_memory_percent ' +
+               mon['check_nova_hypervisors']['critical_memory_percent'] +
+               ' --warn_vcpus_percent ' +
+               mon['check_nova_hypervisors']['warn_vcpus_percent'] +
+               ' --critical_vcpus_percent ' +
+               mon['check_nova_hypervisors']['critical_vcpus_percent']
+  end
+
+  nrpe_check 'check_nova_images' do
+    command '/bin/sudo ' + check_openstack + ' check_nova-images'
+    warning_condition mon['check_nova_images']['warning']
+    critical_condition mon['check_nova_images']['critical']
+  end
+
+  nrpe_check 'check_neutron_agents' do
+    command '/bin/sudo ' + check_openstack + ' check_neutron-agents'
+    warning_condition mon['check_neutron_agents']['warning']
+    critical_condition mon['check_neutron_agents']['critical']
+  end
+
+  nrpe_check 'check_cinder_services' do
+    command '/bin/sudo ' + check_openstack + ' check_cinder-services'
+    warning_condition mon['check_cinder_services']['warning']
+    critical_condition mon['check_cinder_services']['critical']
+  end
+
+  nrpe_check 'check_keystone_token' do
+    command '/bin/sudo ' + check_openstack + ' check_keystone-token'
+  end
+end

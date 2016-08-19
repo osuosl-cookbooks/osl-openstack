@@ -29,4 +29,82 @@ describe 'osl-openstack::mon' do
       end
     end
   end
+  context 'controller node' do
+    cached(:chef_run) do
+      ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
+        node.set['osl-openstack']['node_type'] = 'controller'
+      end.converge(described_recipe)
+    end
+    include_context 'identity_stubs'
+    plugin_dir = '/usr/lib64/nagios/plugins'
+    check_openstack = ::File.join(plugin_dir, 'check_openstack')
+    %w(osl-openstack base::oslrepo).each do |r|
+      it do
+        expect(chef_run).to include_recipe(r)
+      end
+    end
+    it do
+      expect(chef_run).to install_package('nagios-plugins-openstack')
+    end
+    it do
+      expect(chef_run).to create_file(check_openstack)
+    end
+    it do
+      expect(chef_run).to install_sudo('nrpe-openstack')
+        .with(
+          user: '%nrpe',
+          nopasswd: true,
+          runas: 'root',
+          commands: [check_openstack]
+        )
+    end
+    it do
+      expect(chef_run).to add_nrpe_check('check_nova_services')
+        .with(
+          command: '/bin/sudo ' + check_openstack + ' check_nova-services',
+          warning_condition: '5:',
+          critical_condition: '4:'
+        )
+    end
+    it do
+      expect(chef_run).to add_nrpe_check('check_nova_hypervisors')
+        .with(
+          command: '/bin/sudo ' + check_openstack + ' check_nova-hypervisors',
+          parameters: '--warn_memory_percent 0:80' \
+                      ' --critical_memory_percent 0:90' \
+                      ' --warn_vcpus_percent 0:80' \
+                      ' --critical_vcpus_percent 0:90'
+        )
+    end
+    it do
+      expect(chef_run).to add_nrpe_check('check_nova_images')
+        .with(
+          command: '/bin/sudo ' + check_openstack + ' check_nova-images',
+          warning_condition: 1,
+          critical_condition: 2
+        )
+    end
+    it do
+      expect(chef_run).to add_nrpe_check('check_neutron_agents')
+        .with(
+          command: '/bin/sudo ' + check_openstack + ' check_neutron-agents',
+          warning_condition: '5:',
+          critical_condition: '4:'
+        )
+    end
+    it do
+      expect(chef_run).to add_nrpe_check('check_cinder_services')
+        .with(
+          command: '/bin/sudo ' + check_openstack + ' check_cinder-services',
+          warning_condition: '3:',
+          critical_condition: '2:'
+        )
+    end
+    it do
+      expect(chef_run).to add_nrpe_check('check_keystone_token')
+        .with(
+          command: '/bin/sudo ' + check_openstack + ' check_keystone-token'
+        )
+    end
+  end
 end

@@ -42,6 +42,13 @@ suites:
     provisioner: chef_solo
     run_list:
       - recipe[osl-openstack::mon]
+  - name: mon_controller
+    provisioner: chef_solo
+    run_list:
+      - recipe[osl-openstack::mon]
+    attributes:
+      osl-openstack:
+        node_type: controller
   - name: ops_messaging
     run_list:
       - role[openstack_tk]

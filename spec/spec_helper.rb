@@ -1,5 +1,6 @@
 require 'chefspec'
 require 'chefspec/berkshelf'
+require_relative 'support/matchers'
 
 ChefSpec::Coverage.start! { add_filter 'osl-openstack' }
 
