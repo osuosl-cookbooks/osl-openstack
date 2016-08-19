@@ -28,6 +28,9 @@ node.default['rabbitmq']['use_distro_version'] = true
 node.default['openstack']['release'] = 'mitaka'
 node.default['openstack']['secret']['key_path'] =
   '/etc/chef/encrypted_data_bag_secret'
+node.default['openstack']['misc_openrc'] = [
+  'export OS_CACERT=""'
+]
 node.default['openstack']['yum']['uri'] = \
   'http://centos.osuosl.org/$releasever/cloud/x86_64/openstack-' +
   node['openstack']['release']
