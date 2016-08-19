@@ -51,7 +51,7 @@ end
 describe file('/etc/nagios/nrpe.d/check_cinder_services.cfg') do
   its(:content) do
     should match(%r{command\[check_cinder_services\]=/bin/sudo \
-/usr/lib64/nagios/plugins/check_openstack check_cinder-services -w 3: -c 2:})
+/usr/lib64/nagios/plugins/check_openstack check_cinder-services -w 2: -c 1:})
   end
 end
 
