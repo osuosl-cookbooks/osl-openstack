@@ -17,6 +17,6 @@ default['osl-openstack']['mon']['check_neutron_agents'] = {
   'critical' => '4:'
 }
 default['osl-openstack']['mon']['check_cinder_services'] = {
-  'warning' => '3:',
-  'critical' => '2:'
+  'warning' => '2:',
+  'critical' => '1:'
 }

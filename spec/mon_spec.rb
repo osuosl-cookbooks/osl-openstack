@@ -96,8 +96,8 @@ describe 'osl-openstack::mon' do
       expect(chef_run).to add_nrpe_check('check_cinder_services')
         .with(
           command: '/bin/sudo ' + check_openstack + ' check_cinder-services',
-          warning_condition: '3:',
-          critical_condition: '2:'
+          warning_condition: '2:',
+          critical_condition: '1:'
         )
     end
     it do
