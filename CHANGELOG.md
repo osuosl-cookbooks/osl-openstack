@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.1.2 (2016-08-19)
+------------------
+- OpenStack nagios service checks
+
 2.1.1 (2016-08-12)
 ------------------
 - Switch to using kernel-modules cookbook instead of modules cookbook
