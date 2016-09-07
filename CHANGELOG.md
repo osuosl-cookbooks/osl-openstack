@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.1.4 (2016-09-07)
+------------------
+- Fix cookbook dependencies
+
 2.1.3 (2016-08-19)
 ------------------
 - Adjust nagios check for cinder services
