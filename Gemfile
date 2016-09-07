@@ -1,6 +1,10 @@
 source 'https://rubygems.org'
 
 gem 'berkshelf'
+gem 'foodcritic'
+gem 'chefspec'
+gem 'rubocop'
+gem 'chef-sugar'
 
 # Uncomment these lines if you want to live on the Edge:
 #
