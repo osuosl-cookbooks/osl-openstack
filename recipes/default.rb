@@ -37,6 +37,14 @@ node.default['openstack']['yum']['uri'] = \
 node.default['openstack']['yum']['repo-key'] = 'https://github.com/' \
  "redhat-openstack/rdo-release/raw/#{node['openstack']['release']}/" \
  'RPM-GPG-KEY-CentOS-SIG-Cloud'
+node.default['openstack']['identity']['ssl'].tap do |conf|
+  conf['enabled'] = true
+  conf['cert_required'] = true
+  conf['basedir'] = '/etc/pki/tls'
+  conf['certfile'] = '/etc/pki/tls/certs/wildcard.pem'
+  conf['keyfile'] = '/etc/pki/tls/private/wildcard.key'
+  conf['chainfile'] = '/etc/pki/tls/certs/wildcard-bundle.crt'
+end
 node.default['openstack']['compute']['conf'].tap do |conf|
   conf['DEFAULT']['linuxnet_interface_driver'] = \
     'nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver'
@@ -247,7 +255,9 @@ end
 
 node.default['openstack']['endpoints'].tap do |conf|
   %w(admin public internal).each do |t|
-    conf[t]['compute-novnc']['scheme'] = 'https'
+    %w(compute-novnc identity).each do |s|
+      conf[t][s]['scheme'] = 'https'
+    end
   end
 end
 
