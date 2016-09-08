@@ -104,6 +104,7 @@ end
 
 node.default['openstack']['telemetry']['conf'].tap do |conf|
   conf['DEFAULT']['meter_dispatchers'] = 'database'
+  conf['api']['default_api_return_limit'] = 1_000_000_000_000
 end
 
 node.default['openstack']['block-storage']['conf'].tap do |conf|
