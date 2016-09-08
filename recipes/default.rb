@@ -39,7 +39,6 @@ node.default['openstack']['yum']['repo-key'] = 'https://github.com/' \
  'RPM-GPG-KEY-CentOS-SIG-Cloud'
 node.default['openstack']['identity']['ssl'].tap do |conf|
   conf['enabled'] = true
-  conf['cert_required'] = true
   conf['basedir'] = '/etc/pki/tls'
   conf['certfile'] = '/etc/pki/tls/certs/wildcard.pem'
   conf['keyfile'] = '/etc/pki/tls/private/wildcard.key'

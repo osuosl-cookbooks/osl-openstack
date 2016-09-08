@@ -12,11 +12,6 @@
       "mq": {
         "user": "admin"
       },
-      "identity": {
-        "ssl": {
-          "cert_required": false
-        }
-      },
       "compute": {
         "metering": true,
         "conf": {
