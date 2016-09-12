@@ -1,6 +1,7 @@
 {
   "env_run_lists": {},
   "run_list": [
+    "recipe[openstack_test::hosts]",
     "recipe[osl-openstack]"
   ],
   "chef_type": "role",

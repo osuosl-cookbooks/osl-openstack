@@ -13,7 +13,7 @@ describe file('/root/openrc') do
 export OS_USERNAME=admin
 export OS_PASSWORD=admin
 export OS_TENANT_NAME=admin
-export OS_AUTH_URL=http://.*:5000/v2.0
+export OS_AUTH_URL=https://controller.example.com:5000/v2.0
 export OS_REGION_NAME=RegionOne})
   end
 end

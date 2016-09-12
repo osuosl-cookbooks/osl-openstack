@@ -8,6 +8,8 @@
     "override_attributes": {},
     "run_list": [
       "recipe[osl-openstack::ops_database]",
+      "recipe[certificate::wildcard]",
+      "recipe[openstack_test::cacert]",
       "recipe[osl-openstack::identity]"
     ]
 }
