@@ -67,10 +67,11 @@ describe 'osl-openstack::identity', identity: true do
     let(:file) do
       chef_run.template('/etc/httpd/sites-available/keystone-admin.conf')
     end
-    [/^<VirtualHost 0.0.0.0:35357>$/,
-     %r{SSLCertificateFile /etc/pki/tls/certs/wildcard.pem$},
-     %r{SSLCertificateKeyFile /etc/pki/tls/private/wildcard.key$},
-     %r{SSLCertificateChainFile /etc/pki/tls/certs/wildcard-bundle.crt$}
+    [
+      /^<VirtualHost 0.0.0.0:35357>$/,
+      %r{SSLCertificateFile /etc/pki/tls/certs/wildcard.pem$},
+      %r{SSLCertificateKeyFile /etc/pki/tls/private/wildcard.key$},
+      %r{SSLCertificateChainFile /etc/pki/tls/certs/wildcard-bundle.crt$}
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_content(line)
@@ -81,10 +82,11 @@ describe 'osl-openstack::identity', identity: true do
     let(:file) do
       chef_run.template('/etc/httpd/sites-available/keystone-main.conf')
     end
-    [/^<VirtualHost 0.0.0.0:5000>$/,
-     %r{SSLCertificateFile /etc/pki/tls/certs/wildcard.pem$},
-     %r{SSLCertificateKeyFile /etc/pki/tls/private/wildcard.key$},
-     %r{SSLCertificateChainFile /etc/pki/tls/certs/wildcard-bundle.crt$}
+    [
+      /^<VirtualHost 0.0.0.0:5000>$/,
+      %r{SSLCertificateFile /etc/pki/tls/certs/wildcard.pem$},
+      %r{SSLCertificateKeyFile /etc/pki/tls/private/wildcard.key$},
+      %r{SSLCertificateChainFile /etc/pki/tls/certs/wildcard-bundle.crt$}
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_content(line)
