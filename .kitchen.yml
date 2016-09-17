@@ -10,9 +10,7 @@ provisioner:
     osl-openstack:
       database_suffix: x86
       databag_prefix: x86
-      vnc_bind_interface:
-        controller: eth0
-        compute: eth0
+      endpoint_hostname: controller.example.com
     openstack:
       secret:
         key_path: "/tmp/kitchen/encrypted_data_bag_secret"
@@ -58,25 +56,23 @@ suites:
       - role[openstack_tk]
       - recipe[osl-openstack::ops_database]
       - recipe[osl-openstack::identity]
+      - recipe[openstack_test::cacert]
   - name: image
     run_list:
       - role[openstack_tk]
-      - recipe[osl-openstack::ops_database]
-      - recipe[osl-openstack::identity]
+      - role[openstack_ops_identity]
       - recipe[openstack_test::gluster]
       - recipe[osl-openstack::image]
   - name: network
     run_list:
       - role[openstack_tk]
-      - recipe[osl-openstack::ops_database]
-      - recipe[osl-openstack::identity]
+      - role[openstack_ops_identity]
       - recipe[osl-openstack::network]
   - name: linuxbridge
     run_list:
       - role[openstack_tk]
       - recipe[openstack_test]
-      - recipe[osl-openstack::ops_database]
-      - recipe[osl-openstack::identity]
+      - role[openstack_ops_identity]
       - recipe[osl-openstack::linuxbridge]
     attributes:
       osl-openstack:
@@ -90,27 +86,23 @@ suites:
   - name: compute_controller
     run_list:
       - role[openstack_tk]
-      - recipe[osl-openstack::ops_database]
-      - recipe[osl-openstack::identity]
+      - role[openstack_ops_identity]
       - recipe[osl-openstack::compute_controller]
   - name: compute
     run_list:
       - role[openstack_tk]
-      - recipe[osl-openstack::ops_database]
-      - recipe[osl-openstack::identity]
+      - role[openstack_ops_identity]
       - recipe[osl-openstack::compute_controller]
       - recipe[osl-openstack::compute]
   - name: dashboard
     run_list:
       - role[openstack_tk]
-      - recipe[osl-openstack::ops_database]
-      - recipe[osl-openstack::identity]
+      - role[openstack_ops_identity]
       - recipe[osl-openstack::dashboard]
   - name: block_storage
     run_list:
       - role[openstack_tk]
-      - recipe[osl-openstack::ops_database]
-      - recipe[osl-openstack::identity]
+      - role[openstack_ops_identity]
       - recipe[osl-openstack::block_storage_controller]
       - recipe[openstack-block-storage::volume_driver_lvm]
       - recipe[osl-openstack::block_storage]
@@ -124,19 +116,17 @@ suites:
   - name: block_storage_controller
     run_list:
       - role[openstack_tk]
-      - recipe[osl-openstack::ops_database]
-      - recipe[osl-openstack::identity]
+      - role[openstack_ops_identity]
       - recipe[osl-openstack::block_storage_controller]
   - name: telemetry
     run_list:
       - role[openstack_tk]
-      - recipe[osl-openstack::ops_database]
-      - recipe[osl-openstack::identity]
+      - role[openstack_ops_identity]
       - recipe[osl-openstack::telemetry]
   - name: controller
     run_list:
       - role[openstack_tk]
-      - recipe[osl-openstack::ops_database]
+      - role[openstack_ops_identity]
       - recipe[openstack_test::gluster]
       - recipe[osl-openstack::controller]
       - recipe[openstack-integration-test::setup]
@@ -144,7 +134,7 @@ suites:
     run_list:
       - role[openstack_tk]
       - recipe[openstack_test]
-      - recipe[osl-openstack::ops_database]
+      - role[openstack_ops_identity]
       - recipe[openstack_test::gluster]
       - recipe[osl-openstack::controller]
       - recipe[osl-openstack::compute]

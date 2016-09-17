@@ -6,3 +6,5 @@ description      'Installs/Configures openstack_test'
 long_description ''
 version          '0.1.0'
 depends          'osl-openstack'
+
+depends          'hostsfile'
