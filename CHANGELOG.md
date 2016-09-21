@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.2.2 (2016-09-21)
+------------------
+- Bump default_api_return_limit to see more meters
+
 2.2.1 (2016-09-17)
 ------------------
 - Fix ssl verify and setup proper SSL certs for testing
