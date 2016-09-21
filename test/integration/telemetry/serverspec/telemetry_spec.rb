@@ -41,6 +41,15 @@ end
   end
 end
 
+[
+  /^host = (?:[0-9]{1,3}\.){3}[0-9]{1,3}$/,
+  /^default_api_return_limit = 1000000000000$/
+].each do |s|
+  describe file('/etc/ceilometer/ceilometer.conf') do
+    its(:content) { should contain(/#{s}/).after(/^\[api\]/) }
+  end
+end
+
 describe command('source /root/openrc && ceilometer meter-list') do
   its(:stdout) { should contain(/Project ID/) }
   its(:stdout) { should_not contain(/Gone (HTTP 410) /) }

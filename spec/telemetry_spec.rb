@@ -41,12 +41,14 @@ describe 'osl-openstack::telemetry', telemetry: true do
           %r{^auth_url = https://10.0.0.10:5000/v2.0$}
         )
     end
-    it do
-      expect(chef_run).to render_config_file(file.name)
-        .with_section_content(
-          'api',
-          /^host = 10.0.0.2$/
-        )
+    [
+      /^host = 10.0.0.2$/,
+      /^default_api_return_limit = 1000000000000$/
+    ].each do |line|
+      it do
+        expect(chef_run).to render_config_file(file.name)
+          .with_section_content('api', line)
+      end
     end
     it do
       expect(chef_run).to render_config_file(file.name)
