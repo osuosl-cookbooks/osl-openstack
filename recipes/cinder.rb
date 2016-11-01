@@ -27,7 +27,7 @@ unless iscsi_role.nil? && Chef::Config[:solo]
   end
 end
 
-node.override['firewall']['range']['iscsi'] = iscsi_hosts
+node.override['firewall']['range']['iscsi']['4'] = iscsi_hosts
 
 include_recipe 'firewall'
 include_recipe 'firewall::openstack'
