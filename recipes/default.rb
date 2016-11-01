@@ -35,7 +35,7 @@ node.default['openstack']['yum']['uri'] = \
   'http://centos.osuosl.org/$releasever/cloud/x86_64/openstack-' +
   node['openstack']['release']
 node.default['openstack']['yum']['repo-key'] = 'https://github.com/' \
- "redhat-openstack/rdo-release/raw/#{node['openstack']['release']}/" \
+ "rdo-infra/rdo-release/raw/#{node['openstack']['release']}-rdo/" \
  'RPM-GPG-KEY-CentOS-SIG-Cloud'
 node.default['openstack']['identity']['ssl'].tap do |conf|
   conf['enabled'] = true

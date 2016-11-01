@@ -31,7 +31,7 @@ describe 'osl-openstack::block_storage', block_storage: true do
   end
   it 'adds iscsi nodes ipaddresses' do
     # TODO: Add a test that actually works with the node search
-    expect(chef_run).to create_iptables_ng_rule('iscsi').with(
+    expect(chef_run).to create_iptables_ng_rule('iscsi_ipv4').with(
       rule:
         [
           '--protocol tcp --source 10.11.0.1 ' \
