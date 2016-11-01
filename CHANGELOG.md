@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.2.3 (2016-11-01)
+------------------
+- Fix iscsi firewall attributes to newer format
+
 2.2.2 (2016-09-21)
 ------------------
 - Bump default_api_return_limit to see more meters
