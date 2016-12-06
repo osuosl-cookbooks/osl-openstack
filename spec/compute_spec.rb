@@ -36,6 +36,39 @@ describe 'osl-openstack::compute', compute: true do
   it 'loads tun module' do
     expect(chef_run).to load_kernel_module('tun')
   end
+  it do
+    expect(chef_run).to create_user_account('nova')
+      .with(
+        system_user: true,
+        manage_home: false,
+        ssh_keygen: false,
+        ssh_keys: ['ssh public key']
+      )
+  end
+  it do
+    expect(chef_run).to create_file('/var/lib/nova/.ssh/id_rsa')
+      .with(
+        content: 'private ssh key',
+        sensitive: true,
+        user: 'nova',
+        group: 'nova',
+        mode: 0600
+      )
+  end
+  it do
+    expect(chef_run).to create_file('/var/lib/nova/.ssh/config')
+      .with(
+        user: 'nova',
+        group: 'nova',
+        mode: 0600,
+        content: <<-EOL
+Host *
+  StrictHostKeyChecking no
+  Ciphers arcfour
+  UserKnownHostsFile /dev/null
+        EOL
+      )
+  end
   %w(ppc64 ppc64le).each do |a|
     context "setting arch to #{a}" do
       cached(:chef_run) { runner.converge(described_recipe) }
