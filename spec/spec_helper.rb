@@ -165,6 +165,9 @@ end
 
 shared_context 'compute_stubs' do
   before do
+    node.set['osl-openstack']['nova_public_key'] = 'ssh public key'
+    stub_data_bag_item('_secrets', 'nova_migration_key')
+      .and_return(nova_migration_key: 'private ssh key')
     allow_any_instance_of(Chef::Recipe).to receive(:rabbit_servers)
       .and_return '1.1.1.1:5672,2.2.2.2:5672'
     allow_any_instance_of(Chef::Recipe).to receive(:address_for)

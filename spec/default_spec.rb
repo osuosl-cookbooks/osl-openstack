@@ -65,4 +65,7 @@ describe 'osl-openstack::default', default: true do
       expect(chef_run).to include_recipe(r)
     end
   end
+  it do
+    expect(chef_run).to upgrade_package('mariadb-libs')
+  end
 end

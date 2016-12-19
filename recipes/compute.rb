@@ -51,3 +51,41 @@ end
 include_recipe 'osl-openstack::linuxbridge'
 include_recipe 'openstack-compute::compute'
 include_recipe 'openstack-telemetry::agent-compute'
+
+# Setup ssh key for nova migrations between compute nodes
+user_account 'nova' do
+  system_user true
+  home '/var/lib/nova'
+  comment 'OpenStack Nova Daemons'
+  uid 162
+  gid 162
+  shell '/bin/sh'
+  manage_home false
+  ssh_keygen false
+  ssh_keys [node['osl-openstack']['nova_public_key']]
+end
+
+nova_key = data_bag_item(
+  "#{node['osl-openstack']['databag_prefix']}_secrets",
+  'nova_migration_key'
+)
+
+file '/var/lib/nova/.ssh/id_rsa' do
+  content nova_key['nova_migration_key']
+  sensitive true
+  user 'nova'
+  group 'nova'
+  mode 0600
+end
+
+file '/var/lib/nova/.ssh/config' do
+  content <<-EOL
+Host *
+  StrictHostKeyChecking no
+  Ciphers arcfour
+  UserKnownHostsFile /dev/null
+  EOL
+  user 'nova'
+  group 'nova'
+  mode 0600
+end

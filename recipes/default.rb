@@ -284,3 +284,8 @@ include_recipe 'openstack-common::sysctl'
 include_recipe 'openstack-identity::openrc'
 include_recipe 'openstack-common::client'
 include_recipe 'openstack-telemetry::client'
+
+# Upgrade mariadb-libs so we don't run into dep conflicts on CentOS 7.3
+package 'mariadb-libs' do
+  action :upgrade
+end
