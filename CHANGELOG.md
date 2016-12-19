@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.3.0 (2016-12-19)
+------------------
+- Setup ssh keys for nova user for migration
+
 2.2.3 (2016-11-01)
 ------------------
 - Fix iscsi firewall attributes to newer format
