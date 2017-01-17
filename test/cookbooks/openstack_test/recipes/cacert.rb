@@ -1,3 +1,5 @@
+include_recipe 'certificate::wildcard'
+
 execute 'copy self-signed ca-cert' do
   command <<-EOF
     cat /etc/pki/tls/certs/wildcard-bundle.crt >> \
