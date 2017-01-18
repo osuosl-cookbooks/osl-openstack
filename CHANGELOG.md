@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.3.1 (2017-01-18)
+------------------
+- Rubocop and other updates/fixes for TK
+
 2.3.0 (2016-12-19)
 ------------------
 - Setup ssh keys for nova user for migration
