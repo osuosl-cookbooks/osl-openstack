@@ -113,6 +113,8 @@ node.default['openstack']['block-storage']['conf'].tap do |conf|
   conf['DEFAULT']['volume_clear_size'] = 256
 end
 
+node.default['openstack']['block-storage']['platform']['cinder_volume_packages'] = %w(qemu-img-ev)
+
 # Dynamically find the hostname for the controller node, or use a pre-determined
 # DNS name
 if node['osl-openstack']['endpoint_hostname'].nil?
