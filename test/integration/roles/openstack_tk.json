@@ -2,6 +2,7 @@
   "env_run_lists": {},
   "run_list": [
     "recipe[openstack_test::hosts]",
+    "recipe[openstack_test::cacert]",
     "recipe[osl-openstack]"
   ],
   "chef_type": "role",
