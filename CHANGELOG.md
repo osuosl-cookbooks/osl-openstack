@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.3.2 (2017-01-19)
+------------------
+- Use the package qemu-img-ev as the preferred package name
+
 2.3.1 (2017-01-18)
 ------------------
 - Rubocop and other updates/fixes for TK
