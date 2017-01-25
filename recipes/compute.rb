@@ -20,6 +20,7 @@ include_recipe 'firewall'
 include_recipe 'firewall::openstack'
 include_recipe 'firewall::vnc'
 include_recipe 'osl-openstack::default'
+include_recipe 'ibm-power::default'
 
 kernel_module 'tun'
 

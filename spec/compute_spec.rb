@@ -27,6 +27,7 @@ describe 'osl-openstack::compute', compute: true do
     osl-openstack::linuxbridge
     openstack-compute::compute
     openstack-telemetry::agent-compute
+    ibm-power::default
   ).each do |r|
     it "includes cookbook #{r}" do
       expect(chef_run).to include_recipe(r)
