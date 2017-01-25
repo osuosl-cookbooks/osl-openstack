@@ -15,17 +15,14 @@ describe 'osl-openstack::mon' do
       cached(:chef_run) do
         ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
           node.automatic['kernel']['machine'] = a
-        end.converge(described_recipe)
+        end.converge('osl-nrpe', described_recipe)
       end
-      it 'sets check_load warning attributes correctly' do
+      it do
         total_cpu = chef_run.node['cpu']['total']
-        expect(chef_run.node['osl-nrpe']['check_load']['warning']).to \
-          eq("#{total_cpu * 4 + 10},#{total_cpu * 4 + 5},#{total_cpu * 4}")
-      end
-      it 'sets check_load critical attributes correctly' do
-        total_cpu = chef_run.node['cpu']['total']
-        expect(chef_run.node['osl-nrpe']['check_load']['critical']).to \
-          eq("#{total_cpu * 8 + 10},#{total_cpu * 8 + 5},#{total_cpu * 8}")
+        expect(chef_run).to add_nrpe_check('check_load').with(
+          warning_condition: "#{total_cpu * 4 + 10},#{total_cpu * 4 + 5},#{total_cpu * 4}",
+          critical_condition: "#{total_cpu * 8 + 10},#{total_cpu * 8 + 5},#{total_cpu * 8}"
+        )
       end
     end
   end
