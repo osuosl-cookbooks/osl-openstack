@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.3.3 (2017-01-25)
+------------------
+- Update the nrpe_check[check_load] resource instead of trying to override attrs
+
 2.3.2 (2017-01-19)
 ------------------
 - Use the package qemu-img-ev as the preferred package name
