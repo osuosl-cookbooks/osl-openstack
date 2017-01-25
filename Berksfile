@@ -11,6 +11,7 @@ cookbook 'resource_from_hash',
          git: 'git@github.com:osuosl-cookbooks/resource_from_hash'
 cookbook 'statsd', github: 'att-cloud/cookbook-statsd'
 cookbook 'yum-qemu-ev', git: 'git@github.com:osuosl-cookbooks/yum-qemu-ev.git'
+cookbook 'ibm-power', git: 'git@github.com:osuosl-cookbooks/ibm-power.git'
 
 # WIP patches
 # %w(
