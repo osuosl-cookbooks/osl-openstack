@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.3.5 (2017-01-26)
+------------------
+- diff package name for qemu-img-ev on ppc64le
+
 2.3.4 (2017-01-25)
 ------------------
 - Including ibm-power as a dependency
