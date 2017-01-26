@@ -29,9 +29,27 @@ describe 'osl-openstack::block_storage', block_storage: true do
     stub_search(:node, 'role:iscsi_role')
       .and_return([{ ipaddress: '10.10.0.1' }])
   end
-  it do
-    expect(chef_run).to upgrade_package('qemu-img-ev')
+
+  context 'setting arch to x86_64' do
+    before do
+      node.automatic['kernel']['machine'] = 'x86_64'
+    end
+    it 'uses the right package name for qemu-img-ev on x86_64 arch' do
+      expect(chef_run).to upgrade_package('qemu-img-ev')
+    end
   end
+  %w(ppc64 ppc64le).each do |a|
+    context "setting arch to #{a}" do
+      let(:chef_run) { runner.converge(described_recipe) }
+      before do
+        node.automatic['kernel']['machine'] = a
+      end
+      it 'uses the right package name for qemu-img-ev on #{a} arch' do
+        expect(chef_run).to upgrade_package('qemu-img-rhev')
+      end
+    end
+  end
+
   it 'adds iscsi nodes ipaddresses' do
     # TODO: Add a test that actually works with the node search
     expect(chef_run).to create_iptables_ng_rule('iscsi_ipv4').with(
