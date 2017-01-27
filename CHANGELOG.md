@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.3.6 (2017-01-27)
+------------------
+- Bump check-load warning threshold a little higher
+
 2.3.5 (2017-01-26)
 ------------------
 - diff package name for qemu-img-ev on ppc64le
