@@ -20,7 +20,7 @@ describe 'osl-openstack::mon' do
       it do
         total_cpu = chef_run.node['cpu']['total']
         expect(chef_run).to add_nrpe_check('check_load').with(
-          warning_condition: "#{total_cpu * 4 + 10},#{total_cpu * 4 + 5},#{total_cpu * 4}",
+          warning_condition: "#{total_cpu * 5 + 10},#{total_cpu * 5 + 5},#{total_cpu * 5}",
           critical_condition: "#{total_cpu * 8 + 10},#{total_cpu * 8 + 5},#{total_cpu * 8}"
         )
       end
