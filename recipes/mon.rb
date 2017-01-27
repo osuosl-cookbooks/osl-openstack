@@ -21,7 +21,7 @@
 if %w(ppc64 ppc64le).include?(node['kernel']['machine'])
   total_cpu = node['cpu']['total']
   r = resources(nrpe_check: 'check_load')
-  r.warning_condition = "#{total_cpu * 4 + 10},#{total_cpu * 4 + 5},#{total_cpu * 4}"
+  r.warning_condition = "#{total_cpu * 5 + 10},#{total_cpu * 5 + 5},#{total_cpu * 5}"
   r.critical_condition = "#{total_cpu * 8 + 10},#{total_cpu * 8 + 5},#{total_cpu * 8}"
 end
 
