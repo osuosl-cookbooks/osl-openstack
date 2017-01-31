@@ -269,4 +269,7 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/
       end
     end
   end
+  it do
+    expect(chef_run.service('neutron-plugin-linuxbridge-agent')).to subscribe_to('ruby_block[create_rules]')
+  end
 end

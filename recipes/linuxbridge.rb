@@ -54,3 +54,9 @@ node.default['openstack']['network']['plugins']['linuxbridge']['conf']
 end
 
 include_recipe 'openstack-network::ml2_linuxbridge'
+
+# When iptables-ng creates new rules, restart linuxbridge-agent so that it generates the iptables rules after iptables
+# is restarted.
+edit_resource(:service, 'neutron-plugin-linuxbridge-agent') do
+  subscribes :restart, 'ruby_block[create_rules]'
+end
