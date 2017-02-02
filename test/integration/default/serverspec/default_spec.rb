@@ -21,8 +21,3 @@ end
 describe file('/root/openrc') do
   its(:content) { should_not match(%r{OS_AUTH_URL=http://127.0.0.1/v2.0}) }
 end
-
-describe file('/etc/sysconfig/iptables-config') do
-  its(:content) { should match(/^IPTABLES_SAVE_ON_STOP="yes"$/) }
-  its(:content) { should match(/^IPTABLES_SAVE_ON_RESTART="yes"$/) }
-end
