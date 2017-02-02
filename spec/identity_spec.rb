@@ -93,4 +93,11 @@ describe 'osl-openstack::identity', identity: true do
       end
     end
   end
+  it do
+    expect(chef_run).to run_execute('Keystone apache restart')
+      .with(
+        command: "touch #{Chef::Config[:file_cache_path]}/keystone-apache-restarted",
+        creates: "#{Chef::Config[:file_cache_path]}/keystone-apache-restarted"
+      )
+  end
 end
