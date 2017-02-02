@@ -19,10 +19,6 @@
 
 node.default['authorization']['sudo']['include_sudoers_d'] = true
 node.default['apache']['contact'] = 'hostmaster@osuosl.org'
-node.default['firewall']['iptables-config'].tap do |conf|
-  conf['save_on_restart'] = 'yes'
-  conf['save_on_stop'] = 'yes'
-end
 node.default['yum']['qemu-ev-attr']['glusterfs_34'] = true
 node.default['rabbitmq']['use_distro_version'] = true
 node.default['openstack']['release'] = 'mitaka'
