@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.3.8 (2017-02-06)
+------------------
+- Only restart keystone apache on an initial install
+
 2.3.7 (2017-02-06)
 ------------------
 - Restart linuxbridge-agent when iptable rules are updated
