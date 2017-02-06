@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.3.7 (2017-02-06)
+------------------
+- Restart linuxbridge-agent when iptable rules are updated
+
 2.3.6 (2017-01-27)
 ------------------
 - Bump check-load warning threshold a little higher
