@@ -39,3 +39,7 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver/)
       .after(/^\[securitygroup\]/)
   end
 end
+
+describe command('systemctl list-dependencies --reverse neutron-linuxbridge-agent') do
+  its(:stdout) { should contain(/iptables/) }
+end

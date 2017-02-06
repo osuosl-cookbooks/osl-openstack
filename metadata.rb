@@ -13,7 +13,7 @@ version          '2.3.6'
   openstack-dashboard openstack-identity openstack-integration-test
   openstack-image openstack-network openstack-ops-database
   openstack-ops-messaging openstack-orchestration openstack-telemetry selinux
-  sudo yum-qemu-ev ibm-power}.each do |cb|
+  sudo systemd yum-qemu-ev ibm-power}.each do |cb|
   depends cb
 end
 
