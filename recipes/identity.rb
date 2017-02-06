@@ -22,3 +22,10 @@ include_recipe 'firewall::openstack'
 include_recipe 'certificate::wildcard'
 include_recipe 'openstack-identity::server-apache'
 include_recipe 'openstack-identity::registration'
+
+# Only restart Keystone apache during the initial install. This causes monitoring and service issues while the service
+# is restarted.
+edit_resource(:execute, 'Keystone apache restart') do
+  command "touch #{Chef::Config[:file_cache_path]}/keystone-apache-restarted"
+  creates "#{Chef::Config[:file_cache_path]}/keystone-apache-restarted"
+end
