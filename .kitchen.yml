@@ -124,6 +124,13 @@ suites:
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::telemetry]
+  - name: mellanox_neo
+    attributes:
+      osl-openstack:
+        mellanox_neo:
+          server_hostname: 'neo.osuosl.org'
+    run_list:
+      - recipe[osl-openstack::mellanox_neo]
   - name: controller
     run_list:
       - role[openstack_tk]

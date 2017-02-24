@@ -1,0 +1,30 @@
+ProxyRequests Off
+ProxyPreserveHost On
+RewriteEngine On
+
+<Proxy *>
+    Order deny,allow
+    Allow from all
+</Proxy>
+
+<Location />
+
+    ProxyPass http://127.0.0.1:5000
+    ProxyPassReverse http://127.0.0.1:5000
+
+    RequestHeader add X-Script-Name "/"
+    RequestHeader add X-Scheme 'http'
+    RequestHeader set X-Scheme 'https' env=HTTPS
+</Location>
+
+Redirect 307 /ufmvpi /
+
+<Directory "/opt/neo/controller/docs">
+    AllowOverride None
+    Options FollowSymLinks
+</Directory>
+
+<Location /neo-docs>
+</Location>
+
+alias "/neo-docs" "/opt/neo/controller/docs"
