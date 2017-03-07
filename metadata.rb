@@ -22,5 +22,6 @@ depends 'memcached', '= 3.0.0'
 depends 'user'
 depends 'yum', '= 3.5.4'
 depends 'yum-centos', '= 0.4.11'
+depends 'yum-epel', '= 0.6.5'
 
 supports         'centos', '~> 7.0'
