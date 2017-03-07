@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.3.9 (2017-03-07)
+------------------
+- Add lock for yum-epel
+
 2.3.8 (2017-02-06)
 ------------------
 - Only restart keystone apache on an initial install
