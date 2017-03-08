@@ -40,8 +40,21 @@ neo['packages'].each do |p|
   package p
 end
 
-neo['services'].each do |s|
-  service s do
+neo['services'].each do |service, options|
+  systemd_service service do
+    description service
+    after %w(network.target)
+    install do
+      wanted_by 'multi-user.target'
+    end
+    service do
+      environment 'PYTHONPATH' => options['python_path'].join(':')
+      exec_start_pre "/usr/bin/python -O #{neo['port_check_bin']} -f #{options['port_check_config']}"
+      exec_start '/bin/python -O ' + options['start_bin']
+      pid_file "/var/run/#{service}.pid"
+    end
+  end
+  service service do
     action [:enable, :start]
   end
 end
