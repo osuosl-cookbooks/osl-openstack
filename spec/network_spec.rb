@@ -13,6 +13,7 @@ describe 'osl-openstack::network', network: true do
   include_context 'common_stubs'
   include_context 'identity_stubs'
   include_context 'network_stubs'
+  include_context 'mellanox_stubs'
   %w(
     osl-openstack
     firewall::openstack
@@ -136,6 +137,30 @@ neutron.agent.linux.interface.BridgeInterfaceDriver$/,
     it do
       expect(chef_run).to render_config_file(file.name)
         .with_section_content('ml2_type_vxlan', /^vni_ranges = 1:1000$/)
+    end
+    context 'ml2_mlnx enabled' do
+      cached(:chef_run) do
+        ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
+          # Work around for base::ifconfig:47
+          node.automatic['virtualization']['system']
+          node.set['osl-openstack']['ml2_mlnx']['enabled'] = true
+        end.converge(described_recipe)
+      end
+      [
+        %r{^url = https://localhost/neo/$},
+        /^username = username/,
+        /^password = password/,
+        /^domain = cloudx$/
+      ].each do |line|
+        it do
+          expect(chef_run).to render_config_file(file.name)
+            .with_section_content('sdn', line)
+        end
+      end
+      it do
+        expect(chef_run).to render_config_file(file.name)
+          .with_section_content('ml2', /^mechanism_drivers = sdnmechdriver,linuxbridge,sriovnicswitch,l2population$/)
+      end
     end
   end
   describe '/etc/neutron/metadata_agent.ini' do

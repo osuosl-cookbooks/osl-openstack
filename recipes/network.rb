@@ -21,8 +21,11 @@ include_recipe 'firewall::openstack'
 include_recipe 'openstack-network::identity_registration'
 include_recipe 'openstack-network::ml2_core_plugin'
 include_recipe 'openstack-network'
-include_recipe 'osl-openstack::linuxbridge'
-include_recipe 'openstack-network::plugin_config'
+if node['osl-openstack']['ml2_mlnx']['enabled'] == true
+  include_recipe 'osl-openstack::ml2_mlnx'
+else
+  include_recipe 'osl-openstack::linuxbridge'
+end
 include_recipe 'openstack-network::server'
 include_recipe 'openstack-network::l3_agent'
 include_recipe 'openstack-network::dhcp_agent'

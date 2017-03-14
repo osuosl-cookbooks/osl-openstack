@@ -17,6 +17,11 @@
 # limitations under the License.
 #
 
+# Make Openstack object available in Chef::Recipe
+class ::Chef::Recipe
+  include ::Openstack
+end
+
 node.default['authorization']['sudo']['include_sudoers_d'] = true
 node.default['apache']['contact'] = 'hostmaster@osuosl.org'
 node.default['yum']['qemu-ev-attr']['glusterfs_34'] = true
@@ -75,22 +80,44 @@ node.override['openstack']['network']['plugins']['ml2']['conf'].tap do |conf|
   conf['ml2']['type_drivers'] = 'flat,vlan,vxlan'
   conf['ml2']['extension_drivers'] = 'port_security'
   conf['ml2']['tenant_network_types'] = 'vxlan'
-  conf['ml2']['mechanism_drivers'] = 'linuxbridge,l2population'
   conf['ml2_type_flat']['flat_networks'] = '*'
   conf['ml2_type_vlan']['network_vlan_ranges'] = nil
   conf['ml2_type_gre']['tunnel_id_ranges'] = '32769:34000'
   conf['ml2_type_vxlan']['vni_ranges'] = '1:1000'
+  if node['osl-openstack']['ml2_mlnx']['enabled']
+    ml2_mlnx_secrets = get_password 'token', 'ml2_mlnx_secrets'
+    conf['ml2']['mechanism_drivers'] = 'sdnmechdriver,linuxbridge,sriovnicswitch,l2population'
+    conf['sdn']['url'] = node['osl-openstack']['ml2_mlnx']['neo_url']
+    conf['sdn']['username'] = ml2_mlnx_secrets['username']
+    conf['sdn']['password'] = ml2_mlnx_secrets['password']
+    conf['sdn']['domain'] = 'cloudx'
+  else
+    conf['ml2']['mechanism_drivers'] = 'linuxbridge,l2population'
+  end
 end
-node.default['openstack']['network']['plugins']['linuxbridge']['conf']
-    .tap do |conf|
-  conf['vlans']['tenant_network_type'] = 'gre,vxlan'
-  conf['vlans']['network_vlan_ranges'] = nil
-  conf['vxlan']['enable_vxlan'] = true
-  conf['vxlan']['l2_population'] = true
-  conf['agent']['polling_interval'] = 2
-  conf['securitygroup']['enable_security_group'] = 'True'
-  conf['securitygroup']['firewall_driver'] =
-    'neutron.agent.linux.iptables_firewall.IptablesFirewallDriver'
+if node['osl-openstack']['ml2_mlnx']['enabled']
+  node.default['openstack']['network']['plugins']['mlnx']['conf'].tap do |conf|
+    conf['eswitch']['daemon_endpoint'] = 'tcp://127.0.0.1:60001'
+    conf['eswitch']['request_timeout'] = 3000
+    conf['eswitch']['retries'] = 3
+    conf['eswitch']['backoff_rate'] = 2
+    conf['agent']['polling_interval'] = 2
+  end
+  node.default['openstack']['network']['plugins']['eswitchd']['conf'].tap do |conf|
+    conf['DAEMON']['fabrics'] = 'default:ib0'
+  end
+else
+  node.default['openstack']['network']['plugins']['linuxbridge']['conf']
+      .tap do |conf|
+    conf['vlans']['tenant_network_type'] = 'gre,vxlan'
+    conf['vlans']['network_vlan_ranges'] = nil
+    conf['vxlan']['enable_vxlan'] = true
+    conf['vxlan']['l2_population'] = true
+    conf['agent']['polling_interval'] = 2
+    conf['securitygroup']['enable_security_group'] = 'True'
+    conf['securitygroup']['firewall_driver'] =
+      'neutron.agent.linux.iptables_firewall.IptablesFirewallDriver'
+  end
 end
 node.default['openstack']['dashboard'].tap do |conf|
   conf['ssl']['use_data_bag'] = false
@@ -223,10 +250,6 @@ end
   telemetry
 ).each do |i|
   node.default['openstack'][i]['conf'].tap do |conf|
-    # Make Openstack object available in Chef::Recipe
-    class ::Chef::Recipe
-      include ::Openstack
-    end
     user = node['openstack']['mq']['network']['rabbit']['userid']
     conf['oslo_messaging_notifications']['driver'] = 'messagingv2'
     conf['cache']['memcache_servers'] = memcached_servers

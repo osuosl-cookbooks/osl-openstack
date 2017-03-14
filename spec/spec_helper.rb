@@ -21,6 +21,17 @@ shared_context 'common_stubs' do
   end
 end
 
+shared_context 'mellanox_stubs' do
+  before do
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('token', 'ml2_mlnx_secrets')
+      .and_return(
+        'username' => 'username',
+        'password' => 'password'
+      )
+  end
+end
+
 shared_context 'linuxbridge_stubs' do
   before do
     node.set['osl-openstack']['physical_interface_mappings'] =
