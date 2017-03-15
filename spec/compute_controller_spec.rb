@@ -78,6 +78,16 @@ nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver$/,
     end
 
     [
+      /^virt_type = kvm$/,
+      /^disk_cachemodes = file=writeback,block=writeback$/
+    ].each do |line|
+      it do
+        expect(chef_run).to render_config_file(file.name)
+          .with_section_content('libvirt', line)
+      end
+    end
+
+    [
       /^service_metadata_proxy = true$/,
       %r{^url = http://10.0.0.10:9696$},
       %r{^auth_url = https://10.0.0.10:5000/v2.0$}
