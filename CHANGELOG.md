@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.4.1 (2017-03-16)
+------------------
+- Remove locks on yum-centos and yum-epel
+
 2.4.0 (2017-03-08)
 ------------------
 - Install and setup the Mellanox NEO service
