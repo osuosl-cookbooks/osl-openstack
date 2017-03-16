@@ -6,7 +6,7 @@ maintainer_email 'systems@osuosl.org'
 license          'Apache 2.0'
 description      'Installs/Configures osl-openstack'
 long_description 'Installs/Configures osl-openstack'
-version          '2.4.0'
+version          '2.4.1'
 
 %w{ base certificate chef-sugar memcached osl-apache osl-nrpe kernel-modules
   mysql openstack-block-storage openstack-common openstack-compute
@@ -21,7 +21,7 @@ depends 'firewall', '>= 2.2.0'
 depends 'memcached', '= 3.0.0'
 depends 'user'
 depends 'yum', '= 3.5.4'
-depends 'yum-centos', '= 0.4.11'
-depends 'yum-epel', '= 0.6.5'
+depends 'yum-centos'
+depends 'yum-epel'
 
 supports         'centos', '~> 7.0'
