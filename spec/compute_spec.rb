@@ -70,6 +70,7 @@ Host *
         EOL
       )
   end
+
   %w(ppc64 ppc64le).each do |a|
     context "setting arch to #{a}" do
       cached(:chef_run) { runner.converge(described_recipe) }
