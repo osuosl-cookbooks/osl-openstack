@@ -54,6 +54,9 @@ describe 'osl-openstack::default', default: true do
     end
   end
   it do
+    expect(chef_run).to install_package('python-memcached')
+  end
+  it do
     expect(chef_run).to upgrade_package('mariadb-libs')
   end
 end

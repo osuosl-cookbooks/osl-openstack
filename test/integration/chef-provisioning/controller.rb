@@ -1,6 +1,6 @@
 require 'chef/provisioning'
 
-controller_os = ENV['CONTROLLER_OS'] || 'bento/centos-7.2'
+controller_os = ENV['CONTROLLER_OS'] || 'bento/centos-7.3'
 controller_ssh_user = ENV['CONTROLLER_SSH_USER'] || 'centos'
 flavor_ref = ENV['FLAVOR'] || 4
 provision_role = 'openstack_provisioning'
@@ -25,7 +25,7 @@ machine 'controller' do
                   },
                   ssh_username: controller_ssh_user,
                   convergence_options: {
-                    chef_version: '12.10.24'
+                    chef_version: '12.18.31'
                   }
 
   ohai_hints 'openstack' => '{}'

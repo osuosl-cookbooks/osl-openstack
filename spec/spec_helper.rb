@@ -14,6 +14,7 @@ REDHAT_OPTS = {
 shared_context 'common_stubs' do
   before do
     node.set['osl-openstack']['endpoint_hostname'] = '10.0.0.10'
+    node.set['osl-openstack']['network_hostname'] = '10.0.0.11'
     node.set['osl-openstack']['db_hostname'] = '10.0.0.10'
     node.set['osl-openstack']['database_suffix'] = 'x86'
     node.set['osl-openstack']['databag_suffix'] = 'x86'

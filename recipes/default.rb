@@ -143,6 +143,33 @@ else
   endpoint_hostname = node['osl-openstack']['endpoint_hostname']
 end
 
+# Dynamically find the hostname for the network node, or use a pre-determined DNS name
+if node['osl-openstack']['network_hostname'].nil? && node['osl-openstack']['network_node']
+  if Chef::Config[:solo]
+    Chef::Log.warn('This recipe uses search which Chef Solo does not support')
+  else
+    network_node = search(:node, 'recipes:osl-openstack\:\:network').first
+    # Set the db address to the public ipv4 on openstack, otherwise just use the
+    # ipaddress.
+    network_address = unless network_node.nil?
+                        if network_node['cloud']['public_ipv4'].nil?
+                          network_node['ipaddress']
+                        else
+                          network_node['cloud']['public_ipv4']
+                        end
+                      end
+    network_hostname = if network_node.nil?
+                         node['ipaddress']
+                       else
+                         network_address
+                       end
+  end
+elsif node['osl-openstack']['network_node']
+  network_hostname = node['osl-openstack']['network_hostname']
+else
+  network_hostname = endpoint_hostname
+end
+
 # Dynamically find the hostname for the db node, or use a pre-determined DNS
 # name
 if node['osl-openstack']['db_hostname'].nil?
@@ -242,7 +269,6 @@ end
   compute-vnc-proxy
   compute-api
   compute-serial-proxy
-  network
   telemetry
   telemetry-metric
 ).each do |service|
@@ -254,6 +280,16 @@ end
     %w(admin public internal).each do |t|
       conf[t][service]['host'] = endpoint_hostname
     end
+  end
+end
+
+node.default['openstack']['bind_service']['all']['network']['host'] =
+  node['ipaddress']
+node.default['openstack']['endpoints'].tap do |conf|
+  conf['db']['host'] = db_hostname
+  conf['mq']['host'] = network_hostname
+  %w(admin public internal).each do |t|
+    conf[t]['network']['host'] = network_hostname
   end
 end
 
@@ -288,6 +324,9 @@ include_recipe 'openstack-common::sysctl'
 include_recipe 'openstack-identity::openrc'
 include_recipe 'openstack-common::client'
 include_recipe 'openstack-telemetry::client'
+
+# Needed for accessing neutron when running separate from controller node
+package 'python-memcached'
 
 # Upgrade mariadb-libs so we don't run into dep conflicts on CentOS 7.3
 package 'mariadb-libs' do

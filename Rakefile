@@ -49,6 +49,12 @@ task controller: [:create_key, :berks_vendor] do
     "#{PROV_PATH}/controller.rb")
 end
 
+desc 'Network nodes'
+task network: [:create_key, :berks_vendor] do
+  run_command("chef-client #{client_options} " \
+    "#{PROV_PATH}/network.rb")
+end
+
 desc 'Compute nodes'
 task compute: [:create_key, :berks_vendor] do
   run_command("chef-client #{client_options} " \
