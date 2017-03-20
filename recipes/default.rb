@@ -22,6 +22,15 @@ class ::Chef::Recipe
   include ::Openstack
 end
 
+# set data bag attributes with our prefix
+databag_prefix = node['osl-openstack']['databag_prefix']
+if databag_prefix
+  node['osl-openstack']['data_bags'].each do |d|
+    node.default['openstack']['secret']["#{d}_data_bag"] =
+      "#{databag_prefix}_#{d}"
+  end
+end
+
 node.default['authorization']['sudo']['include_sudoers_d'] = true
 node.default['apache']['contact'] = 'hostmaster@osuosl.org'
 node.default['yum']['qemu-ev-attr']['glusterfs_34'] = true
@@ -85,11 +94,10 @@ node.override['openstack']['network']['plugins']['ml2']['conf'].tap do |conf|
   conf['ml2_type_gre']['tunnel_id_ranges'] = '32769:34000'
   conf['ml2_type_vxlan']['vni_ranges'] = '1:1000'
   if node['osl-openstack']['ml2_mlnx']['enabled']
-    ml2_mlnx_secrets = get_password 'token', 'ml2_mlnx_secrets'
     conf['ml2']['mechanism_drivers'] = 'sdnmechdriver,linuxbridge,sriovnicswitch,l2population'
     conf['sdn']['url'] = node['osl-openstack']['ml2_mlnx']['neo_url']
-    conf['sdn']['username'] = ml2_mlnx_secrets['username']
-    conf['sdn']['password'] = ml2_mlnx_secrets['password']
+    conf['sdn']['username'] = node['osl-openstack']['ml2_mlnx']['neo_username']
+    conf['sdn']['password'] = get_password 'token', 'ml2_mlnx_sdn_password'
     conf['sdn']['domain'] = 'cloudx'
   else
     conf['ml2']['mechanism_drivers'] = 'linuxbridge,l2population'
@@ -104,7 +112,7 @@ if node['osl-openstack']['ml2_mlnx']['enabled']
     conf['agent']['polling_interval'] = 2
   end
   node.default['openstack']['network']['plugins']['eswitchd']['conf'].tap do |conf|
-    conf['DAEMON']['fabrics'] = 'default:ib0'
+    conf['DAEMON']['fabrics'] = 'default:autoeth'
   end
 else
   node.default['openstack']['network']['plugins']['linuxbridge']['conf']
@@ -226,15 +234,6 @@ end
 # Set memcache server to controller node
 memcached_servers = "#{endpoint_hostname}:11211"
 node.default['openstack']['memcached_servers'] = [memcached_servers]
-
-# set data bag attributes with our prefix
-databag_prefix = node['osl-openstack']['databag_prefix']
-if databag_prefix
-  node['osl-openstack']['data_bags'].each do |d|
-    node.default['openstack']['secret']["#{d}_data_bag"] =
-      "#{databag_prefix}_#{d}"
-  end
-end
 
 %w(
   compute

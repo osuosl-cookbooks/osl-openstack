@@ -148,7 +148,7 @@ neutron.agent.linux.interface.BridgeInterfaceDriver$/,
       end
       [
         %r{^url = https://localhost/neo/$},
-        /^username = username/,
+        /^username = admin/,
         /^password = password/,
         /^domain = cloudx$/
       ].each do |line|

@@ -10,4 +10,5 @@ end
 default['osl-openstack']['ml2_mlnx'].tap do |conf|
   conf['enabled'] = false
   conf['neo_url'] = 'https://localhost/neo/'
+  conf['neo_username'] = 'admin'
 end

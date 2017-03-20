@@ -20,8 +20,10 @@ describe 'osl-openstack::ml2_mlnx' do
       expect(chef_run).to include_recipe(r)
     end
   end
-  it do
-    expect(chef_run).to install_package('python-networking-mlnx')
+  %w(libvirt-python python-ethtool python-networking-mlnx).each do |p|
+    it do
+      expect(chef_run).to install_package(p)
+    end
   end
   it do
     expect(chef_run).to start_service('neutron-plugin-mlnx-agent')
@@ -81,7 +83,7 @@ describe 'osl-openstack::ml2_mlnx' do
     let(:file) { chef_run.template('/etc/neutron/plugins/ml2/eswitchd.conf') }
     it do
       expect(chef_run).to render_config_file(file.name)
-        .with_section_content('DAEMON', /^fabrics = default:ib0$/)
+        .with_section_content('DAEMON', /^fabrics = default:autoeth$/)
     end
   end
 end

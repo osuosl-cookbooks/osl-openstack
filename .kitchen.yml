@@ -89,6 +89,10 @@ suites:
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::ml2_mlnx]
+    attributes:
+      osl-openstack:
+        ml2_mlnx:
+          enabled: true
   - name: compute_controller
     run_list:
       - role[openstack_tk]

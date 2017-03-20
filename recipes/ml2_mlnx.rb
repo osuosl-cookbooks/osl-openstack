@@ -18,11 +18,18 @@
 node.default['osl-openstack']['ml2_mlnx']['enabled'] = true
 
 include_recipe 'osl-openstack'
-# include_recipe 'openstack-network::ml2_core_plugin'
+include_recipe 'openstack-network::ml2_core_plugin'
 include_recipe 'openstack-network'
 include_recipe 'base::oslrepo'
 
-package 'python-networking-mlnx'
+# Include missing package deps
+%w(
+  libvirt-python
+  python-ethtool
+  python-networking-mlnx
+).each do |p|
+  package p
+end
 
 include_recipe 'openstack-network::plugin_config'
 
