@@ -273,7 +273,7 @@ end
   telemetry-metric
 ).each do |service|
   node.default['openstack']['bind_service']['all'][service]['host'] =
-    node['ipaddress']
+    node['osl-openstack']['bind_service']
   node.default['openstack']['endpoints'].tap do |conf|
     conf['db']['host'] = db_hostname
     conf['mq']['host'] = endpoint_hostname
@@ -284,7 +284,7 @@ end
 end
 
 node.default['openstack']['bind_service']['all']['network']['host'] =
-  node['ipaddress']
+  node['osl-openstack']['bind_service']
 node.default['openstack']['endpoints'].tap do |conf|
   conf['db']['host'] = db_hostname
   conf['mq']['host'] = network_hostname

@@ -49,7 +49,7 @@
       "endpoint_hostname": "controller.example.com",
       "db_hostname": "controller.example.com",
       "network_hostname": "192.168.60.13",
-      "network_node": true,
+      "bind_service": "0.0.0.0",
       "physical_interface_mappings": [
         {
           "name": "public",
