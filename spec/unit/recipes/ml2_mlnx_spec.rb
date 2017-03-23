@@ -20,10 +20,35 @@ describe 'osl-openstack::ml2_mlnx' do
       expect(chef_run).to include_recipe(r)
     end
   end
-  %w(libvirt-python python-ethtool python-networking-mlnx).each do |p|
+  it do
+    expect(chef_run).to create_yum_repository('mellanox-ofed')
+      .with(
+        description: 'Mellanox OFED',
+        gpgkey: 'http://packages.osuosl.org/repositories/centos-$releasever/mellanox-ofed/RPM-GPG-KEY-Mellanox',
+        url: 'http://packages.osuosl.org/repositories/centos-$releasever/mellanox-ofed/$basearch'
+      )
+  end
+  %w(mlnx-ofed-hypervisor mlnx-fw-updater libvirt-python python-ethtool python-networking-mlnx).each do |p|
     it do
       expect(chef_run).to install_package(p)
     end
+  end
+  it do
+    expect(chef_run).to load_kernel_module('mlx4_core')
+      .with(
+        onboot: true,
+        reload: false,
+        options: %w(port_type_array=2 num_vfs=8 probe_vf=8 log_num_mgm_entry_size=-1 debug_level=1)
+      )
+  end
+  it do
+    expect(chef_run.kernel_module('mlx4_core')).to notify('service[openibd]').to(:restart)
+  end
+  it do
+    expect(chef_run).to enable_service('openibd')
+  end
+  it do
+    expect(chef_run).to start_service('openibd')
   end
   it do
     expect(chef_run).to start_service('neutron-plugin-mlnx-agent')

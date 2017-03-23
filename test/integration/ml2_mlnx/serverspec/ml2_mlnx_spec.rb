@@ -41,3 +41,29 @@ end
     its(:content) { should match(line) }
   end
 end
+
+describe kernel_module('mlx4_core') do
+  it { should be_loaded }
+end
+
+[
+  %w(port_type_array 2),
+  %w(num_vfs 8),
+  %w(probe_vf 8),
+  %w(log_num_mgm_entry_size -1),
+  %w(debug_level 1)
+].each do |opt, val|
+  describe file("/sys/module/mlx4_core/parameters/#{opt}") do
+    its(:content) { should match(val) }
+  end
+end
+
+describe yumrepo('mellanox-ofed') do
+  it { should exist }
+  it { should be_enabled }
+end
+
+describe service('openibd') do
+  it { should be_enabled }
+  it { should be_running }
+end

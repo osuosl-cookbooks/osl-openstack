@@ -22,13 +22,33 @@ include_recipe 'openstack-network::ml2_core_plugin'
 include_recipe 'openstack-network'
 include_recipe 'base::oslrepo'
 
+yum_repository 'mellanox-ofed' do
+  description 'Mellanox OFED'
+  gpgkey 'http://packages.osuosl.org/repositories/centos-$releasever/mellanox-ofed/RPM-GPG-KEY-Mellanox'
+  url "http://packages.osuosl.org/repositories/#{node['platform']}-$releasever/mellanox-ofed/$basearch"
+end
+
 # Include missing package deps
 %w(
+  mlnx-ofed-hypervisor
+  mlnx-fw-updater
   libvirt-python
   python-ethtool
   python-networking-mlnx
 ).each do |p|
   package p
+end
+
+kernel_module 'mlx4_core' do
+  onboot true
+  reload false
+  options %w(port_type_array=2 num_vfs=8 probe_vf=8 log_num_mgm_entry_size=-1 debug_level=1)
+  notifies :restart, 'service[openibd]'
+end
+
+service 'openibd' do
+  supports status: true, restart: true
+  action [:enable, :start]
 end
 
 include_recipe 'openstack-network::plugin_config'
