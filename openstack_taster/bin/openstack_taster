@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 
 require 'fog/openstack'
+require 'openstack_taster'
+require 'pp'
 
 FIXED_IP_ADDRESS = '140.211.168.64'.freeze
 OPENSTACK_CREDS = {
