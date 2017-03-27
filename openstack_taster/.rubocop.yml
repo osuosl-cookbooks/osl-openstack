@@ -1,0 +1,14 @@
+Metrics/LineLength:
+  Max: 120
+
+Style/IfUnlessModifier:
+  MaxLineLength: 120
+
+Style/WhileUntilModifier:
+  MaxLineLength: 120
+
+Metrics/MethodLength:
+  Enabled: false
+
+Style/Documentation:
+  Enabled: false

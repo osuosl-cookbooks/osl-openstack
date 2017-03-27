@@ -1,0 +1,15 @@
+#!/usr/bin/env ruby
+
+require 'fog/openstack'
+
+FIXED_IP_ADDRESS = '140.211.168.64'.freeze
+OPENSTACK_CREDS = {
+  openstack_auth_url: ENV['OS_AUTH_URL'],
+  openstack_username: ENV['OS_USERNAME'],
+  openstack_tenant:   ENV['OS_TENANT_NAME'],
+  openstack_api_key:  ENV['OS_PASSWORD']
+}.freeze
+
+openstack = Fog::Compute::OpenStack.new(OPENSTACK_CREDS)
+
+OpenStackTaster.new(openstack, FIXED_IP_ADDRESS).taste_all
