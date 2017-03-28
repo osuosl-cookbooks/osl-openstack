@@ -144,7 +144,7 @@ else
 end
 
 # Dynamically find the hostname for the network node, or use a pre-determined DNS name
-if node['osl-openstack']['network_hostname'].nil? && node['osl-openstack']['network_node']
+if node['osl-openstack']['network_hostname'].nil? && node['osl-openstack']['separate_network_node']
   if Chef::Config[:solo]
     Chef::Log.warn('This recipe uses search which Chef Solo does not support')
   else
@@ -164,7 +164,7 @@ if node['osl-openstack']['network_hostname'].nil? && node['osl-openstack']['netw
                          network_address
                        end
   end
-elsif node['osl-openstack']['network_node']
+elsif node['osl-openstack']['separate_network_node']
   network_hostname = node['osl-openstack']['network_hostname']
 else
   network_hostname = endpoint_hostname

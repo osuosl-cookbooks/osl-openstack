@@ -26,7 +26,7 @@ include_recipe 'osl-openstack::default'
 include_recipe 'memcached'
 include_recipe 'osl-openstack::identity'
 include_recipe 'osl-openstack::image'
-include_recipe 'osl-openstack::network' unless node['osl-openstack']['network_node']
+include_recipe 'osl-openstack::network' unless node['osl-openstack']['separate_network_node']
 include_recipe 'osl-openstack::compute_controller'
 include_recipe 'osl-openstack::block_storage_controller'
 include_recipe 'osl-openstack::telemetry'
