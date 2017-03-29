@@ -12,3 +12,9 @@ Metrics/MethodLength:
 
 Style/Documentation:
   Enabled: false
+
+Style/MultilineMethodCallIndentation:
+  EnforcedStyle: indented
+
+Style/FrozenStringLiteralComment:
+  EnforcedStyle: always

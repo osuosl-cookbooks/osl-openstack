@@ -1,7 +1,11 @@
 # frozen_string_literal: true
 
+require 'date'
+
 class OpenStackTaster
-  INSTANCE_FLAVOR = 'm1.tiny'
+  INSTANCE_FLAVOR_NAME = 'm1.tiny'
+  INSTANCE_NAME_PREFIX = 'taster'
+  TIME_SLUG_FORMAT = '%Y%m%d_%H%M%S'
 
   attr_accessor :images, :volumes
 
@@ -10,33 +14,39 @@ class OpenStackTaster
     @fixed_ip = fixed_ip
     @images = @openstack.images
     @volumes = @openstack.volumes.all
+    @instance_flavor = @openstack
+      .flavors
+      .select { |flavor| flavor.name = INSTANCE_FLAVOR_NAME }
+      .first
   end
 
   def taste_all
-    @images.each { |image| taste(image) }
+    # @images.each(&method(:taste))
+    taste(@images.first)
   end
 
   def taste(image)
-    puts "Tasting #{image.name}"
+    # truncate downcased name at first non-alpha char
+    distro_name = image.name.downcase.gsub(/[^a-z].*$/, '')
+    puts "\nTasting #{image.name} with username '#{distro_name}'"
 
-    username = image.name.downcase.gsub(/[^a-z].*$/, '')
-    puts "Username will be #{username}"
-
-    puts <<-CREATE
-instance = @openstack.servers.create(
-  name: 'test-instance',
-  flavor_ref: INSTANCE_FLAVOR,
-  image_ref: image.id
-)
-    CREATE
+    instance = @openstack.servers.create(
+      name: name_instance(distro_name),
+      flavor_ref: @instance_flavor.id,
+      image_ref: image.id
+    )
 
     failures = @volumes.any? do |volume|
       instance_volume_fails?(instance, volume)
     end
 
-    # shut down instance
+    instance.shelve
+    instance.destroy unless failures
+  end
 
-    puts 'instance.destroy unless failures'
+  def name_instance(distro)
+    time_slug = Time.new.strftime(TIME_SLUG_FORMAT)
+    "#{INSTANCE_NAME_PREFIX}-#{time_slug}-#{distro}"
   end
 
   def instance_volume_fails?(instance, volume)
