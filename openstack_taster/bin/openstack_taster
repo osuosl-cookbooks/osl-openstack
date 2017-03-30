@@ -4,7 +4,6 @@
 
 require 'fog/openstack'
 require 'openstack_taster'
-require 'pp'
 
 FIXED_IP_ADDRESS = '140.211.168.64'
 OPENSTACK_CREDS = {
@@ -14,6 +13,7 @@ OPENSTACK_CREDS = {
   openstack_api_key:  ENV['OS_PASSWORD']
 }.freeze
 
-openstack = Fog::Compute::OpenStack.new(OPENSTACK_CREDS)
+compute = Fog::Compute::OpenStack.new(OPENSTACK_CREDS)
+network = Fog::Network::OpenStack.new(OPENSTACK_CREDS)
 
-OpenStackTaster.new(openstack, FIXED_IP_ADDRESS).taste_all
+OpenStackTaster.new(compute, network, FIXED_IP_ADDRESS).taste_all
