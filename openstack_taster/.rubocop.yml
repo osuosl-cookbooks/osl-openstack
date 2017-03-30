@@ -1,14 +1,22 @@
+AllCops:
+  TargetRubyVersion: 2.3
+
+
 Metrics/LineLength:
   Max: 120
+
+Metrics/AbcSize:
+  Max: 20
+
+Metrics/MethodLength:
+  Enabled: false
+
 
 Style/IfUnlessModifier:
   MaxLineLength: 120
 
 Style/WhileUntilModifier:
   MaxLineLength: 120
-
-Metrics/MethodLength:
-  Enabled: false
 
 Style/Documentation:
   Enabled: false
