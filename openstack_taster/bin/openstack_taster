@@ -14,6 +14,11 @@ OPENSTACK_CREDS = {
 }.freeze
 
 compute = Fog::Compute::OpenStack.new(OPENSTACK_CREDS)
+volume  = Fog::Volume::OpenStack.new(OPENSTACK_CREDS)
+image   = Fog::Image::OpenStack.new(OPENSTACK_CREDS)
 network = Fog::Network::OpenStack.new(OPENSTACK_CREDS)
 
-OpenStackTaster.new(compute, network, FIXED_IP_ADDRESS).taste_all
+OpenStackTaster.new(
+  compute, volume, image, network,
+  FIXED_IP_ADDRESS
+).taste_all
