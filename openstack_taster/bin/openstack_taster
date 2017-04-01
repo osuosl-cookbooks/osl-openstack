@@ -11,7 +11,11 @@ OPENSTACK_CREDS = {
   openstack_username: ENV['OS_USERNAME'],
   openstack_tenant:   ENV['OS_TENANT_NAME'],
   openstack_api_key:  ENV['OS_PASSWORD']
-}.freeze
+}
+
+OPENSTACK_CREDS[:openstack_auth_url] += '/tokens' unless OPENSTACK_CREDS[:openstack_auth_url].end_with? 'tokens'
+OPENSTACK_CREDS.freeze
+
 SSH_KEYS = {
   keypair: ENV['OS_SSH_KEYPAIR'],
   private_key: ENV['OS_PRIVATE_SSH_KEY'],
