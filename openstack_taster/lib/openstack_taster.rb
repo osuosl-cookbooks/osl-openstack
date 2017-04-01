@@ -55,7 +55,6 @@ class OpenStackTaster
     )
 
     instance.wait_for { ready? }
-
     test_attach_volumes(instance)
   ensure
     puts 'Destroying instance.'
@@ -70,56 +69,61 @@ class OpenStackTaster
   def test_attach_volumes(instance)
     @volumes.each do |volume|
       puts "Testing volume '#{volume.name}'"
-      break unless volume_attach?(instance, volume)
+      next unless volume_attach?(instance, volume)
 
       unless volume_detach?(instance, volume)
         puts 'Creating image...'
         response = instance.create_image(instance.name)
-        @image_service
-          .images
-          .find_by_id(response.body['image']['id'])
-          .wait_for { status == 'active' }
-        break
+        image = @image_service.images.find_by_id(response.body['image']['id'])
+        image.wait_for { status == 'active' }
+        next
       end
       puts "Volume '#{volume.name}' successful."
     end
   end
 
   def volume_attach?(instance, volume)
-    puts 'Attaching...'
-    instance.attach_volume(volume.id, INSTANCE_VOLUME_DEVICE_NAME)
-    instance.wait_for do # FIXME
+    volume_attached = lambda do |_|
       volume_attachments.any? do |attachment|
         attachment['volumeId'] == volume.id
       end
     end
 
+    puts 'Attaching...'
+    instance.attach_volume(volume.id, INSTANCE_VOLUME_DEVICE_NAME)
+    instance.wait_for(&volume_attached)
+
     sleep 10
 
-    return true if instance.volume_attachments.any?
+    return true if instance.instance_eval(&volume_attached)
 
     puts 'Failed to attach volume'
-    File.open(instance.name, 'a') do |file|
-      file.puts('Volume mounted and immediately unmounted.')
-    end
+    error_log(instance, 'Volume mounted and immediately unmounted.')
     false
+
   rescue Excon::Error => e
     puts "Failed to attach '#{volume.name}'."
-    File.open(instance.name, 'a') { |file| file.puts(e.message) }
+    error_log(instance, e.message)
     false
+
   rescue Fog::Errors::TimeoutError
-    File.open(instance.name, 'a') do |file|
-      file.puts('Failed to attach volume: timed out')
-    end
+    error_log(instance, 'Failed to attach volume: timed out')
     false
   end
 
   def volume_detach?(instance, volume)
     puts 'Detaching...'
     instance.detach_volume(volume.id)
+
   rescue Excon::Error => e
     puts "Failed to detach '#{volume.name}'."
-    File.open(instance.name, 'a') { |file| file.puts(e.message) }
+    error_log(instance, e.message)
     false
+  end
+
+  def error_log(instance, message)
+    File.open(instance.name, 'a') do |file|
+      file.puts(message)
+    end
   end
 end
