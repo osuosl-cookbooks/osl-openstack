@@ -20,9 +20,11 @@ class OpenStackTaster
     @network_service = network_service
 
     @volumes = @volume_service.volumes
-    @images  = @image_service.images # FIXME
-    @images  = @compute_service.images # .select { |image| # FIXME
-    #  image.name.start_with?(IMAGE_NAME_PREFIX)
+    @images  = @compute_service.images
+
+    # FIXME: Aim to replace previous statement with
+    # @images = @image_service.images.select { |image|
+    #   image.name.start_with?(IMAGE_NAME_PREFIX)
     # }
 
     @fixed_ip = fixed_ip
@@ -33,17 +35,20 @@ class OpenStackTaster
   end
 
   def taste_all
-    # @images.each(&method(:taste))
     @images
       .select { |image| SAFE_IMAGE_NAMES.include?(image.name) }
       .tap { |images| raise 'No images found with safe names' if images.empty? }
       .each(&method(:taste))
+
+    # FIXME: Aim to replace previous statement with
+    # @images.each(&method(:taste))
   end
 
   def taste(image)
     # truncate downcased name at first non-alpha char
     distro_user_name = image.name.downcase.gsub(/[^a-z].*$/, '')
-    instance_name = name_instance(distro_user_name)
+    instance_name = "#{INSTANCE_NAME_PREFIX}-#{Time.new.strftime(TIME_SLUG_FORMAT)}-#{distro_user_name}"
+
     puts "\nTasting #{image.name} as '#{instance_name}' with username '#{distro_user_name}'"
 
     instance = @compute_service.servers.create(
@@ -55,31 +60,50 @@ class OpenStackTaster
     )
 
     instance.wait_for { ready? }
-    test_attach_volumes(instance)
+    test_volumes(instance)
+    puts 'Returned from test_volumes'
+
   ensure
     puts 'Destroying instance.'
     instance.destroy
   end
 
-  def name_instance(distro)
-    time_slug = Time.new.strftime(TIME_SLUG_FORMAT)
-    "#{INSTANCE_NAME_PREFIX}-#{time_slug}-#{distro}"
+  def error_log(instance, message)
+    File.open(instance.name, 'a') do |file|
+      file.puts(message)
+    end
   end
 
-  def test_attach_volumes(instance)
-    @volumes.each do |volume|
+  def test_volumes(instance)
+    puts "#{@volumes.count} volumes found."
+    failures = @volumes.reject do |volume|
       puts "Testing volume '#{volume.name}'"
-      next unless volume_attach?(instance, volume)
 
-      unless volume_detach?(instance, volume)
-        puts 'Creating image...'
-        response = instance.create_image(instance.name)
-        image = @image_service.images.find_by_id(response.body['image']['id'])
-        image.wait_for { status == 'active' }
+      unless volume_attach?(instance, volume)
+        puts 'Failed to attach.'
         next
       end
-      puts "Volume '#{volume.name}' successful."
+
+      unless volume_mount_unmount?(instance, username)
+        puts 'Failed to mount.'
+        next
+      end
+
+      unless volume_detach?(instance, volume)
+        puts 'Failed to detach.'
+        next
+      end
+
+      puts 'All tests passed.'
+      true
     end
+
+    return true if failures.empty?
+
+    puts 'Encountered failures; creating image...'
+    response = instance.create_image(instance.name)
+    image = @image_service.images.find_by_id(response.body['image']['id'])
+    image.wait_for { status == 'active' }
   end
 
   def volume_attach?(instance, volume)
@@ -89,7 +113,6 @@ class OpenStackTaster
       end
     end
 
-    puts 'Attaching...'
     instance.attach_volume(volume.id, INSTANCE_VOLUME_DEVICE_NAME)
     instance.wait_for(&volume_attached)
 
@@ -97,33 +120,28 @@ class OpenStackTaster
 
     return true if instance.instance_eval(&volume_attached)
 
-    puts 'Failed to attach volume'
-    error_log(instance, 'Volume mounted and immediately unmounted.')
+    error_log(instance, 'Failed to attach volume: Volume was unexpectedly detached.')
     false
 
   rescue Excon::Error => e
-    puts "Failed to attach '#{volume.name}'."
     error_log(instance, e.message)
     false
 
   rescue Fog::Errors::TimeoutError
-    error_log(instance, 'Failed to attach volume: timed out')
+    error_log(instance, 'Failed to attach volume: Operation timed out')
     false
+  end
+
+  # rubocop:disable UnusedMethodArgument
+  def volume_mount_unmount?(instance, username)
+    true
   end
 
   def volume_detach?(instance, volume)
-    puts 'Detaching...'
     instance.detach_volume(volume.id)
 
   rescue Excon::Error => e
-    puts "Failed to detach '#{volume.name}'."
     error_log(instance, e.message)
     false
-  end
-
-  def error_log(instance, message)
-    File.open(instance.name, 'a') do |file|
-      file.puts(message)
-    end
   end
 end
