@@ -2,34 +2,50 @@
 
 require 'date'
 require 'excon'
-require 'net-ssh'
+require 'net/ssh'
+require 'pry'
 
 class OpenStackTaster
   IMAGE_NAME_PREFIX = 'openstack-taster'
-  SAFE_IMAGE_NAMES = ['Fedora 23 BE', 'Ubuntu 16.04 LE'].freeze
-  INSTANCE_FLAVOR_NAME = 'm1.tiny'
+  INSTANCE_FLAVOR_NAME = 'm1.osltiny'
   INSTANCE_NETWORK_NAME = 'public'
   INSTANCE_NAME_PREFIX = 'taster'
-  INSTANCE_KEY_PAIR_NAME = 'unmanaged'
   INSTANCE_VOLUME_DEV = '/dev/vdz'
   INSTANCE_VOLUME_MOUNT_POINT = '/mnt/taster_volume'
+
   VOLUME_TEST_FILE_NAME = 'test' # FIXME
   VOLUME_TEST_FILE_CONTENTS = 'contents' # FIXME
+  TIMEOUT_INSTANCE_CREATE = 20
+  TIMEOUT_VOLUME_ATTACH = 10
+  TIMEOUT_VOLUME_PERSIST = 10
+
   TIME_SLUG_FORMAT = '%Y%m%d_%H%M%S'
 
-  def initialize(compute_service, volume_service, image_service, network_service, fixed_ip)
+  # rubocop:disable ParameterLists
+  def initialize(
+    compute_service,
+    volume_service,
+    image_service,
+    network_service,
+    ssh_keys,
+    fixed_ip
+  )
     @compute_service = compute_service
     @volume_service  = volume_service
     @image_service   = image_service
     @network_service = network_service
 
     @volumes = @volume_service.volumes
-    @images  = @compute_service.images
+    @images  = @compute_service.images # FIXME: Images over compute service is deprecated
+      .reject { |image| image.name.start_with?(INSTANCE_NAME_PREFIX) } # FIXME: Filter images by IMAGE_NAME_PREFIX
+    # @images = @image_service.images
+    #   .select { |image| image.name.start_with?(IMAGE_NAME_PREFIX) }
 
-    # FIXME: Aim to replace previous statement with
-    # @images = @image_service.images.select { |image|
-    #   image.name.start_with?(IMAGE_NAME_PREFIX)
-    # }
+    puts "Tasting with #{@images.count} images and #{@volumes.count} volumes."
+
+    @ssh_keypair     = ssh_keys[:keypair]
+    @ssh_private_key = ssh_keys[:private_key]
+    @ssh_public_key  = ssh_keys[:public_key] # REVIEW
 
     @fixed_ip = fixed_ip
     @instance_flavor = @compute_service.flavors
@@ -39,19 +55,17 @@ class OpenStackTaster
   end
 
   def taste_all
-    @images
-      .select { |image| SAFE_IMAGE_NAMES.include?(image.name) }
-      .tap { |images| raise 'No images found with safe names' if images.empty? }
-      .each(&method(:taste))
-
-    # FIXME: Aim to replace previous statement with
-    # @images.each(&method(:taste))
+    @images.each(&method(:taste))
   end
 
   def taste(image)
-    # truncate downcased name at first non-alpha char
-    distro_user_name = image.name.downcase.gsub(/[^a-z].*$/, '')
-    instance_name = "#{INSTANCE_NAME_PREFIX}-#{Time.new.strftime(TIME_SLUG_FORMAT)}-#{distro_user_name}"
+    distro_user_name = image.name.downcase.gsub(/[^a-z].*$/, '') # truncate downcased name at first non-alpha char
+    instance_name = format(
+      '%s-%s-%s',
+      INSTANCE_NAME_PREFIX,
+      Time.new.strftime(TIME_SLUG_FORMAT),
+      distro_user_name
+    )
 
     puts "\nTasting #{image.name} as '#{instance_name}' with username '#{distro_user_name}'"
 
@@ -61,28 +75,36 @@ class OpenStackTaster
       image_ref: image.id,
       fixed_ip: @fixed_ip, # FIXME
       networks: @instance_network.id, # REVIEW
-      key_name: INSTANCE_KEY_PAIR_NAME
+      key_name: @ssh_keypair
     )
 
-    instance.wait_for { ready? }
-    test_volumes(instance)
-    puts 'Returned from test_volumes'
+    if instance.nil?
+      puts 'Failed to create instance.'
+      error_log(instance_name, 'Failed to create instance.')
+      return
+    end
 
+    instance.wait_for(20) { ready? }
+    test_volumes(instance, distro_user_name)
+  rescue Fog::Errors::TimeoutError
+    puts 'Instance creation timed out.'
+    error_log(instance.name, "Instance fault: #{instance.fault}")
   ensure
-    puts 'Destroying instance.'
-    instance.destroy
+    if instance
+      puts 'Destroying instance.'
+      instance.destroy
+    end
   end
 
-  def error_log(instance, message)
-    File.open(instance.name, 'a') do |file|
+  def error_log(filename, message)
+    File.open(filename, 'a') do |file|
       file.puts(message)
     end
   end
 
-  def test_volumes(instance)
-    puts "#{@volumes.count} volumes found."
+  def test_volumes(instance, username)
     failures = @volumes.reject do |volume|
-      puts "Testing volume '#{volume.name}'"
+      print "Testing volume '#{volume.name}'... "
 
       unless volume_attach?(instance, volume)
         puts 'Failed to attach.'
@@ -99,7 +121,7 @@ class OpenStackTaster
         next
       end
 
-      puts 'All tests passed.'
+      puts 'Success.'
       true
     end
 
@@ -119,19 +141,19 @@ class OpenStackTaster
     end
 
     instance.attach_volume(volume.id, INSTANCE_VOLUME_DEV)
-    instance.wait_for(&volume_attached)
+    instance.wait_for(TIMEOUT_VOLUME_ATTACH, &volume_attached)
 
-    sleep 10
+    sleep TIMEOUT_VOLUME_PERSIST
 
     return true if instance.instance_eval(&volume_attached)
 
-    error_log(instance, 'Failed to attach volume: Volume was unexpectedly detached.')
+    error_log(instance.name, "Failed to attach volume'#{volume.name}': Volume was unexpectedly detached.")
     false
   rescue Excon::Error => e
-    error_log(instance, e.message)
+    error_log(instance.name, e.message)
     false
   rescue Fog::Errors::TimeoutError
-    error_log(instance, 'Failed to attach volume: Operation timed out')
+    error_log(instance.name, "Failed to attach volume '#{volume.name}': Operation timed out")
     false
   end
 
@@ -144,27 +166,27 @@ class OpenStackTaster
     ]
     Net::SSH.start(
       instance.addresses['public'].first['addr'],
-      username
-      # FIXME: ssh key
+      username,
+      keys: [@ssh_private_key]
     ) do |ssh|
       commands.each do |command, expected|
         result = ssh.exec!(command)
         if result != expected
-          error_log(instance, "Failure while running '#{command}': expected '#{expected}', got '#{result}'")
+          error_log(instance.name, "Failure while running '#{command}': expected '#{expected}', got '#{result}'")
           return false # returns from parent method
         end
       end
     end
     true
   rescue Net::SSH::AuthenticationFailed => e
-    error_log(instance, e.message)
+    error_log(instance.name, e.message)
     false
   end
 
   def volume_detach?(instance, volume)
     instance.detach_volume(volume.id)
   rescue Excon::Error => e
-    error_log(instance, e.message)
+    error_log(instance.name, e.message)
     false
   end
 end

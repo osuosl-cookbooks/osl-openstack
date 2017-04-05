@@ -12,6 +12,11 @@ OPENSTACK_CREDS = {
   openstack_tenant:   ENV['OS_TENANT_NAME'],
   openstack_api_key:  ENV['OS_PASSWORD']
 }.freeze
+SSH_KEYS = {
+  keypair: ENV['OS_SSH_KEYPAIR'],
+  private_key: ENV['OS_PRIVATE_SSH_KEY'],
+  public_key: ENV['OS_PUBLIC_SSH_KEY'] # REVIEW
+}.freeze
 
 compute = Fog::Compute::OpenStack.new(OPENSTACK_CREDS)
 volume  = Fog::Volume::OpenStack.new(OPENSTACK_CREDS)
@@ -20,5 +25,6 @@ network = Fog::Network::OpenStack.new(OPENSTACK_CREDS)
 
 OpenStackTaster.new(
   compute, volume, image, network,
+  SSH_KEYS,
   FIXED_IP_ADDRESS
 ).taste_all
