@@ -125,12 +125,18 @@ class OpenStackTaster
       true
     end
 
-    return true if failures.empty?
+    if failures.empty?
+      puts 'Encountered 0 failures. This is a perfect machine; creating image'
+    else
+      puts 'Encountered failures; creating image...'
+    end
 
-    puts 'Encountered failures; creating image...'
     response = instance.create_image(instance.name)
     image = @image_service.images.find_by_id(response.body['image']['id'])
     image.wait_for { status == 'active' }
+
+    return true if failures.empty?
+    false
   end
 
   def volume_attach?(instance, volume)
