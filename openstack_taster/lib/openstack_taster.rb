@@ -2,7 +2,7 @@
 
 require 'date'
 require 'excon'
-require 'pry'
+require 'net-ssh'
 
 class OpenStackTaster
   IMAGE_NAME_PREFIX = 'openstack-taster'
@@ -10,7 +10,11 @@ class OpenStackTaster
   INSTANCE_FLAVOR_NAME = 'm1.tiny'
   INSTANCE_NETWORK_NAME = 'public'
   INSTANCE_NAME_PREFIX = 'taster'
-  INSTANCE_VOLUME_DEVICE_NAME = '/dev/vdz'
+  INSTANCE_KEY_PAIR_NAME = 'unmanaged'
+  INSTANCE_VOLUME_DEV = '/dev/vdz'
+  INSTANCE_VOLUME_MOUNT_POINT = '/mnt/taster_volume'
+  VOLUME_TEST_FILE_NAME = 'test' # FIXME
+  VOLUME_TEST_FILE_CONTENTS = 'contents' # FIXME
   TIME_SLUG_FORMAT = '%Y%m%d_%H%M%S'
 
   def initialize(compute_service, volume_service, image_service, network_service, fixed_ip)
@@ -56,7 +60,8 @@ class OpenStackTaster
       flavor_ref: @instance_flavor.id,
       image_ref: image.id,
       fixed_ip: @fixed_ip, # FIXME
-      networks: @instance_network.id # REVIEW
+      networks: @instance_network.id, # REVIEW
+      key_name: INSTANCE_KEY_PAIR_NAME
     )
 
     instance.wait_for { ready? }
@@ -85,7 +90,7 @@ class OpenStackTaster
       end
 
       unless volume_mount_unmount?(instance, username)
-        puts 'Failed to mount.'
+        puts 'Failed to mount/unmount.'
         next
       end
 
@@ -113,7 +118,7 @@ class OpenStackTaster
       end
     end
 
-    instance.attach_volume(volume.id, INSTANCE_VOLUME_DEVICE_NAME)
+    instance.attach_volume(volume.id, INSTANCE_VOLUME_DEV)
     instance.wait_for(&volume_attached)
 
     sleep 10
@@ -122,24 +127,42 @@ class OpenStackTaster
 
     error_log(instance, 'Failed to attach volume: Volume was unexpectedly detached.')
     false
-
   rescue Excon::Error => e
     error_log(instance, e.message)
     false
-
   rescue Fog::Errors::TimeoutError
     error_log(instance, 'Failed to attach volume: Operation timed out')
     false
   end
 
-  # rubocop:disable UnusedMethodArgument
   def volume_mount_unmount?(instance, username)
+    commands = [
+      ["sudo mkdir #{INSTANCE_VOLUME_MOUNT_POINT}",                        ''],
+      ["sudo mount #{INSTANCE_VOLUME_DEV} #{INSTANCE_VOLUME_MOUNT_POINT}", ''],
+      ["sudo cat #{INSTANCE_VOLUME_MOUNT_POINT}/#{VOLUME_TEST_FILE_NAME}", VOLUME_TEST_FILE_CONTENTS],
+      ["sudo umount #{INSTANCE_VOLUME_MOUNT_POINT}",                       '']
+    ]
+    Net::SSH.start(
+      instance.addresses['public'].first['addr'],
+      username
+      # FIXME: ssh key
+    ) do |ssh|
+      commands.each do |command, expected|
+        result = ssh.exec!(command)
+        if result != expected
+          error_log(instance, "Failure while running '#{command}': expected '#{expected}', got '#{result}'")
+          return false # returns from parent method
+        end
+      end
+    end
     true
+  rescue Net::SSH::AuthenticationFailed => e
+    error_log(instance, e.message)
+    false
   end
 
   def volume_detach?(instance, volume)
     instance.detach_volume(volume.id)
-
   rescue Excon::Error => e
     error_log(instance, e.message)
     false
