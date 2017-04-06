@@ -20,7 +20,22 @@ class OpenStackTaster
   TIMEOUT_VOLUME_PERSIST = 20
 
   TIME_SLUG_FORMAT = '%Y%m%d_%H%M%S'
-
+  SAFE_IMAGE_NAMES = ["OpenSUSE Leap 42.2 LE", #FIXME: Remove hard coding
+                      "Ubuntu 14.04 BE",
+                      "Fedora 23 BE",
+                      "Fedora 23 LE",
+                      "Fedora 24 BE",
+                      "Fedora 24 LE",
+                      "Debian 8 LE",
+                      "Debian 8 BE",
+                      "CentOS 7.2 BE",
+                      "Ubuntu 14.04 LE",
+                      "Ubuntu 16.04 BE",
+                      "Ubuntu 16.04 LE",
+                      "Ubuntu 16.10 BE",
+                      "Ubuntu 16.10 LE",
+                      "CentOS 7.2 LE"
+                      ]
   # rubocop:disable ParameterLists
   def initialize(
     compute_service,
@@ -37,7 +52,8 @@ class OpenStackTaster
 
     @volumes = @volume_service.volumes
     @images  = @compute_service.images # FIXME: Images over compute service is deprecated
-      .reject { |image| image.name.start_with?(INSTANCE_NAME_PREFIX) } # FIXME: Filter images by IMAGE_NAME_PREFIX
+      .reject { |image| not SAFE_IMAGE_NAMES.include?(image.name) }
+
     # @images = @image_service.images
     #   .select { |image| image.name.start_with?(IMAGE_NAME_PREFIX) }
 
