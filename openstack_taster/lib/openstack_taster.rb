@@ -123,6 +123,11 @@ class OpenStackTaster
     failures = @volumes.reject do |volume|
       print "Testing volume '#{volume.name}'... "
 
+      if not volume.attachments.empty?
+        puts "Volume #{volume.name} is already in an attached state! Using next"
+        next
+      end
+
       unless volume_attach?(instance, volume)
         puts 'Failed to attach.'
         next
