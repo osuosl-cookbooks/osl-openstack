@@ -113,7 +113,7 @@ class OpenStackTaster
   end
 
   def error_log(filename, message)
-    File.open(filename, 'a') do |file|
+    File.open('logs/'+filename, 'a') do |file|
       file.puts(message)
     end
   end
