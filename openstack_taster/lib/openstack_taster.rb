@@ -143,13 +143,12 @@ class OpenStackTaster
 
     if failures.empty?
       puts 'Encountered 0 failures. This is a perfect machine; creating image'
+      response = instance.create_image(instance.name)
+      image = @image_service.images.find_by_id(response.body['image']['id'])
+      image.wait_for { status == 'active' }
     else
-      puts 'Encountered failures; creating image...'
+      puts 'Encountered failures; continuing on the path to greatness...'
     end
-
-    response = instance.create_image(instance.name)
-    image = @image_service.images.find_by_id(response.body['image']['id'])
-    image.wait_for { status == 'active' }
 
     return true if failures.empty?
     false
