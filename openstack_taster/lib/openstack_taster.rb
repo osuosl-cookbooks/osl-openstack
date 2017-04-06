@@ -113,7 +113,8 @@ class OpenStackTaster
   end
 
   def error_log(filename, message)
-    File.open('logs/'+filename, 'a') do |file|
+    error_log_suffix = OPENSTACK_CREDS[:openstack_auth_url].split(':')[1].delete '//'
+    File.open('logs/'+ filename + '.log-' + error_log_suffix , 'a') do |file|
       file.puts(message)
     end
   end
