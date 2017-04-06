@@ -6,7 +6,6 @@ require 'net/ssh'
 require 'pry'
 
 class OpenStackTaster
-  IMAGE_NAME_PREFIX = 'openstack-taster'
   INSTANCE_FLAVOR_NAME = 'm1.small'
   INSTANCE_NETWORK_NAME = 'public'
   INSTANCE_NAME_PREFIX = 'taster'
@@ -18,24 +17,27 @@ class OpenStackTaster
   TIMEOUT_INSTANCE_CREATE = 20
   TIMEOUT_VOLUME_ATTACH = 10
   TIMEOUT_VOLUME_PERSIST = 20
+  TIMEOUT_SSH_STARTUP = 10
 
   TIME_SLUG_FORMAT = '%Y%m%d_%H%M%S'
-  SAFE_IMAGE_NAMES = ["OpenSUSE Leap 42.2 LE", #FIXME: Remove hard coding
-                      "Ubuntu 14.04 BE",
-                      "Fedora 23 BE",
-                      "Fedora 23 LE",
-                      "Fedora 24 BE",
-                      "Fedora 24 LE",
-                      "Debian 8 LE",
-                      "Debian 8 BE",
-                      "CentOS 7.2 BE",
-                      "Ubuntu 14.04 LE",
-                      "Ubuntu 16.04 BE",
-                      "Ubuntu 16.04 LE",
-                      "Ubuntu 16.10 BE",
-                      "Ubuntu 16.10 LE",
-                      "CentOS 7.2 LE"
-                      ]
+  SAFE_IMAGE_NAMES = [ # FIXME: Remove hard coding
+    'OpenSUSE Leap 42.2 LE',
+    'Ubuntu 14.04 BE',
+    'Fedora 23 BE',
+    'Fedora 23 LE',
+    'Fedora 24 BE',
+    'Fedora 24 LE',
+    'Debian 8 LE',
+    'Debian 8 BE',
+    'CentOS 7.2 BE',
+    'Ubuntu 14.04 LE',
+    'Ubuntu 16.04 BE',
+    'Ubuntu 16.04 LE',
+    'Ubuntu 16.10 BE',
+    'Ubuntu 16.10 LE',
+    'CentOS 7.2 LE'
+  ].freeze
+
   # rubocop:disable ParameterLists
   def initialize(
     compute_service,
@@ -43,6 +45,7 @@ class OpenStackTaster
     image_service,
     network_service,
     ssh_keys,
+    log_dir,
     fixed_ip
   )
     @compute_service = compute_service
@@ -52,10 +55,7 @@ class OpenStackTaster
 
     @volumes = @volume_service.volumes
     @images  = @compute_service.images # FIXME: Images over compute service is deprecated
-      .reject { |image| not SAFE_IMAGE_NAMES.include?(image.name) }
-
-    # @images = @image_service.images
-    #   .select { |image| image.name.start_with?(IMAGE_NAME_PREFIX) }
+      .select { |image| SAFE_IMAGE_NAMES.include?(image.name) }
 
     puts "Tasting with #{@images.count} images and #{@volumes.count} volumes."
 
@@ -63,7 +63,9 @@ class OpenStackTaster
     @ssh_private_key = ssh_keys[:private_key]
     @ssh_public_key  = ssh_keys[:public_key] # REVIEW
 
-    @fixed_ip = fixed_ip
+    @log_dir         = log_dir
+    @fixed_ip        = fixed_ip
+
     @instance_flavor = @compute_service.flavors
       .select { |flavor|  flavor.name  == INSTANCE_FLAVOR_NAME  }.first
     @instance_network = @network_service.networks
@@ -113,20 +115,24 @@ class OpenStackTaster
   end
 
   def error_log(filename, message)
-    controller = OPENSTACK_CREDS[:openstack_auth_url].split(':')[1].delete '//'
-    Dir.mkdir("logs/#{controller}") unless Dir.exist?("logs/#{controller}")
-
-    File.open("logs/#{controller}/" + filename + '.log', 'a') do |file|
+    Dir.mkdir(@log_dir) unless Dir.exist?(@log_dir)
+    File.open("#{@log_dir}/#{filename}.log", 'a') do |file|
       file.puts(message)
     end
+  end
+
+  def create_image(instance)
+    response = instance.create_image(instance.name)
+    image = @image_service.images.find_by_id(response.body['image']['id'])
+    image.wait_for { status == 'active' }
   end
 
   def test_volumes(instance, username)
     failures = @volumes.reject do |volume|
       print "Testing volume '#{volume.name}'... "
 
-      if not volume.attachments.empty?
-        puts "Volume #{volume.name} is already in an attached state! Using next"
+      if volume.attachments.any?
+        puts "Volume '#{volume.name}' is already in an attached state; skipping volume."
         next
       end
 
@@ -151,15 +157,12 @@ class OpenStackTaster
 
     if failures.empty?
       error_log(instance.name, 'Encountered 0 failures. This is a perfect machine; creating image')
-      response = instance.create_image(instance.name)
-      image = @image_service.images.find_by_id(response.body['image']['id'])
-      image.wait_for { status == 'active' }
+      create_image(instance)
+      return true
     else
-      error_log(instance.name, 'Encountered failures; continuing on the path to greatness...')
+      error_log(instance.name, "Encountered #{failures.count} failures; continuing on the path to greatness...")
+      return false
     end
-
-    return true if failures.empty?
-    false
   end
 
   def volume_attach?(instance, volume)
@@ -182,15 +185,15 @@ class OpenStackTaster
     error_log(instance.name, e.message)
     false
   rescue Fog::Errors::TimeoutError
-    error_log(instance.name, "Failed to attach volume '#{volume.name}': Operation timed out")
+    error_log(instance.name, "Failed to attach volume '#{volume.name}': Operation timed out.")
     false
   end
 
   def volume_mount_unmount?(instance, username)
     # commands to record the state of the instance
     record_info_commands = [
-      "cat /proc/partitions",
-      "dmesg | tail -n 20"
+      'cat /proc/partitions',
+      'dmesg | tail -n 20'
     ]
     # commands to actually mount the volume
     commands = [
@@ -200,9 +203,9 @@ class OpenStackTaster
       ["sudo umount #{INSTANCE_VOLUME_MOUNT_POINT}",                       '']
     ]
 
-    puts "Mounting volume from inside the instance..."
-    sleep 10 # just in case the instance is not yet ready for accepting SSH
+    sleep TIMEOUT_SSH_STARTUP
 
+    puts 'Mounting volume from inside the instance...'
     Net::SSH.start(
       instance.addresses['public'].first['addr'],
       username,
@@ -212,13 +215,13 @@ class OpenStackTaster
 
       record_info_commands.each do |command|
         result = ssh.exec!(command)
-        error_log(instance.name, "Ran '#{command}' and got '#{result}'"
+        error_log(instance.name, "Ran '#{command}' and got '#{result}'")
       end
 
       commands.each do |command, expected|
         result = ssh.exec!(command)
         if result != expected
-          error_log(instance.name, "Failure while running '#{command}': expected '#{expected}', got '#{result}'")
+          error_log(instance.name, "Failure while running '#{command}': expected '#{expected}', got '#{result.chomp}'")
           return false # returns from parent method
         end
       end
@@ -228,7 +231,7 @@ class OpenStackTaster
     error_log(instance.name, e.message)
     false
   rescue Errno::ECONNREFUSED => e
-    error_log(instance.name, e)
+    error_log(instance.name, e.message)
     false
   end
 

@@ -5,22 +5,26 @@
 require 'fog/openstack'
 require 'openstack_taster'
 
-FIXED_IP_ADDRESS = '140.211.168.64'
+auth_url = ENV['OS_AUTH_URL']
+auth_url << '/tokens' unless auth_url.end_with?('tokens')
+
 OPENSTACK_CREDS = {
-  openstack_auth_url: ENV['OS_AUTH_URL'],
+  openstack_auth_url: auth_url,
   openstack_username: ENV['OS_USERNAME'],
   openstack_tenant:   ENV['OS_TENANT_NAME'],
   openstack_api_key:  ENV['OS_PASSWORD']
-}
+}.freeze
 
-OPENSTACK_CREDS[:openstack_auth_url] += '/tokens' unless OPENSTACK_CREDS[:openstack_auth_url].end_with? 'tokens'
-OPENSTACK_CREDS.freeze
+controller_host = auth_url.split(':')[1].delete('//')
+LOG_DIR = "logs/#{controller_host}"
 
 SSH_KEYS = {
   keypair: ENV['OS_SSH_KEYPAIR'],
   private_key: ENV['OS_PRIVATE_SSH_KEY'],
   public_key: ENV['OS_PUBLIC_SSH_KEY'] # REVIEW
 }.freeze
+
+FIXED_IP_ADDRESS = '140.211.168.64'
 
 compute = Fog::Compute::OpenStack.new(OPENSTACK_CREDS)
 volume  = Fog::Volume::OpenStack.new(OPENSTACK_CREDS)
@@ -29,6 +33,5 @@ network = Fog::Network::OpenStack.new(OPENSTACK_CREDS)
 
 OpenStackTaster.new(
   compute, volume, image, network,
-  SSH_KEYS,
-  FIXED_IP_ADDRESS
+  SSH_KEYS, LOG_DIR, FIXED_IP_ADDRESS
 ).taste_all
