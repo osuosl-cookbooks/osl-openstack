@@ -113,8 +113,10 @@ class OpenStackTaster
   end
 
   def error_log(filename, message)
-    error_log_suffix = OPENSTACK_CREDS[:openstack_auth_url].split(':')[1].delete '//'
-    File.open('logs/'+ filename + '.log-' + error_log_suffix , 'a') do |file|
+    controller = OPENSTACK_CREDS[:openstack_auth_url].split(':')[1].delete '//'
+    Dir.mkdir("logs/#{controller}") unless Dir.exist?("logs/#{controller}")
+
+    File.open("logs/#{controller}/" + filename + '.log', 'a') do |file|
       file.puts(message)
     end
   end
