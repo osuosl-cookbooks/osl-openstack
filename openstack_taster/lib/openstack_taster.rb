@@ -7,7 +7,7 @@ require 'pry'
 
 class OpenStackTaster
   IMAGE_NAME_PREFIX = 'openstack-taster'
-  INSTANCE_FLAVOR_NAME = 'm1.osltiny'
+  INSTANCE_FLAVOR_NAME = 'm1.small'
   INSTANCE_NETWORK_NAME = 'public'
   INSTANCE_NAME_PREFIX = 'taster'
   INSTANCE_VOLUME_DEV = '/dev/vdz'
