@@ -187,6 +187,12 @@ class OpenStackTaster
   end
 
   def volume_mount_unmount?(instance, username)
+    # commands to record the state of the instance
+    record_info_commands = [
+      "cat /proc/partitions",
+      "dmesg | tail -n 20"
+    ]
+    # commands to actually mount the volume
     commands = [
       ["sudo mkdir #{INSTANCE_VOLUME_MOUNT_POINT}",                        ''],
       ["sudo mount #{INSTANCE_VOLUME_DEV} #{INSTANCE_VOLUME_MOUNT_POINT}", ''],
@@ -203,6 +209,12 @@ class OpenStackTaster
       paranoid: false,
       keys: [@ssh_private_key]
     ) do |ssh|
+
+      record_info_commands.each do |command|
+        result = ssh.exec!(command)
+        error_log(instance.name, "Ran '#{command}' and got '#{result}'"
+      end
+
       commands.each do |command, expected|
         result = ssh.exec!(command)
         if result != expected
