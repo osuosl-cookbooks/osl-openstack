@@ -148,12 +148,12 @@ class OpenStackTaster
     end
 
     if failures.empty?
-      puts 'Encountered 0 failures. This is a perfect machine; creating image'
+      error_log(instance.name, 'Encountered 0 failures. This is a perfect machine; creating image')
       response = instance.create_image(instance.name)
       image = @image_service.images.find_by_id(response.body['image']['id'])
       image.wait_for { status == 'active' }
     else
-      puts 'Encountered failures; continuing on the path to greatness...'
+      error_log(instance.name, 'Encountered failures; continuing on the path to greatness...')
     end
 
     return true if failures.empty?
@@ -191,9 +191,14 @@ class OpenStackTaster
       ["sudo cat #{INSTANCE_VOLUME_MOUNT_POINT}/#{VOLUME_TEST_FILE_NAME}", VOLUME_TEST_FILE_CONTENTS],
       ["sudo umount #{INSTANCE_VOLUME_MOUNT_POINT}",                       '']
     ]
+
+    puts "Mounting volume from inside the instance..."
+    sleep 10 # just in case the instance is not yet ready for accepting SSH
+
     Net::SSH.start(
       instance.addresses['public'].first['addr'],
       username,
+      paranoid: false,
       keys: [@ssh_private_key]
     ) do |ssh|
       commands.each do |command, expected|
@@ -207,6 +212,9 @@ class OpenStackTaster
     true
   rescue Net::SSH::AuthenticationFailed => e
     error_log(instance.name, e.message)
+    false
+  rescue Errno::ECONNREFUSED => e
+    error_log(instance.name, e)
     false
   end
 
