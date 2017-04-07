@@ -17,7 +17,7 @@ class OpenStackTaster
   TIMEOUT_INSTANCE_CREATE = 20
   TIMEOUT_VOLUME_ATTACH = 10
   TIMEOUT_VOLUME_PERSIST = 20
-  TIMEOUT_SSH_STARTUP = 10
+  TIMEOUT_SSH_STARTUP = 30
 
   TIME_SLUG_FORMAT = '%Y%m%d_%H%M%S'
   SAFE_IMAGE_NAMES = [ # FIXME: Remove hard coding
@@ -78,11 +78,13 @@ class OpenStackTaster
 
   def taste(image)
     distro_user_name = image.name.downcase.gsub(/[^a-z].*$/, '') # truncate downcased name at first non-alpha char
+    distro_arch = image.name.downcase.slice(-2, 2)
     instance_name = format(
-      '%s-%s-%s',
+      '%s-%s-%s-%s',
       INSTANCE_NAME_PREFIX,
       Time.new.strftime(TIME_SLUG_FORMAT),
-      distro_user_name
+      distro_user_name,
+      distro_arch
     )
 
     puts "\nTasting #{image.name} as '#{instance_name}' with username '#{distro_user_name}'"
@@ -211,7 +213,9 @@ class OpenStackTaster
       ["sudo umount #{mount_point}",           '']
     ]
 
+    puts "Sleeping for #{TIMEOUT_SSH_STARTUP} seconds for the volume to be actually attached"
     sleep TIMEOUT_SSH_STARTUP
+
     @ssh_logger = Logger.new('logs/' + instance.name + '_ssh_log')
 
     puts 'Mounting volume from inside the instance...'
