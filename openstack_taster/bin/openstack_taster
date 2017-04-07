@@ -5,8 +5,9 @@
 require 'fog/openstack'
 require 'openstack_taster'
 
-auth_url = ENV['OS_AUTH_URL']
+auth_url = String.new(ENV['OS_AUTH_URL'])
 auth_url << '/tokens' unless auth_url.end_with?('tokens')
+auth_url.freeze
 
 OPENSTACK_CREDS = {
   openstack_auth_url: auth_url,
@@ -15,14 +16,14 @@ OPENSTACK_CREDS = {
   openstack_api_key:  ENV['OS_PASSWORD']
 }.freeze
 
-controller_host = auth_url.split(':')[1].delete('//')
-LOG_DIR = "logs/#{controller_host}"
-
 SSH_KEYS = {
   keypair: ENV['OS_SSH_KEYPAIR'],
   private_key: ENV['OS_PRIVATE_SSH_KEY'],
   public_key: ENV['OS_PUBLIC_SSH_KEY'] # REVIEW
 }.freeze
+
+controller_host = auth_url.split(':')[1].delete('//')
+LOG_DIR = "logs/#{controller_host}"
 
 FIXED_IP_ADDRESS = '140.211.168.64'
 
