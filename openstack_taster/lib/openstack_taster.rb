@@ -17,7 +17,7 @@ class OpenStackTaster
   TIMEOUT_INSTANCE_CREATE = 20
   TIMEOUT_VOLUME_ATTACH = 10
   TIMEOUT_VOLUME_PERSIST = 20
-  TIMEOUT_SSH_STARTUP = 10
+  TIMEOUT_SSH_STARTUP = 30
 
   TIME_SLUG_FORMAT = '%Y%m%d_%H%M%S'
   SAFE_IMAGE_NAMES = [ # FIXME: Remove hard coding
@@ -211,7 +211,9 @@ class OpenStackTaster
       ["sudo umount #{mount_point}",           '']
     ]
 
+    puts "Sleeping for #{TIMEOUT_SSH_STARTUP} seconds for the volume to be actually attached"
     sleep TIMEOUT_SSH_STARTUP
+
     @ssh_logger = Logger.new('logs/' + instance.name + '_ssh_log')
 
     puts 'Mounting volume from inside the instance...'
