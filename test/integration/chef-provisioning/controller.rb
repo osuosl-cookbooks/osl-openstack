@@ -1,29 +1,29 @@
 require 'chef/provisioning'
 
-controller_os = ENV['CONTROLLER_OS'] || 'bento/centos-7.3'
-controller_ssh_user = ENV['CONTROLLER_SSH_USER'] || 'centos'
-flavor_ref = ENV['FLAVOR'] || 4
+node_os = ENV['NODE_OS'] || 'bento/centos-7.3'
+node_ssh_user = ENV['NODE_SSH_USER'] || 'centos'
+flavor_ref = ENV['FLAVOR'] || 4 # m1.large
 provision_role = 'openstack_provisioning'
 
 unless ENV['CHEF_DRIVER'] == 'fog:OpenStack'
   require 'chef/provisioning/vagrant_driver'
-  vagrant_box controller_os
+  vagrant_box node_os
   provision_role = 'vagrant_provisioning'
   with_driver "vagrant:#{File.dirname(__FILE__)}/../../../vms"
 end
 
 machine 'controller' do
   machine_options vagrant_options: {
-    'vm.box' => controller_os
+    'vm.box' => node_os
   },
                   bootstrap_options: {
-                    image_ref: controller_os,
+                    image_ref: node_os,
                     flavor_ref: flavor_ref,
                     security_groups: 'no-firewall',
                     key_name: ENV['OS_SSH_KEYPAIR'],
                     floating_ip_pool: ENV['OS_FLOATING_IP_POOL']
                   },
-                  ssh_username: controller_ssh_user,
+                  ssh_username: node_ssh_user,
                   convergence_options: {
                     chef_version: '12.18.31'
                   }
