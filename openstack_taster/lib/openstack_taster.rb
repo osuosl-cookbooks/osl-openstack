@@ -204,15 +204,20 @@ class OpenStackTaster
     ]
 
     sleep TIMEOUT_SSH_STARTUP
+    @ssh_logger = Logger.new('logs/' + instance.name + '_ssh_log')
 
     puts 'Mounting volume from inside the instance...'
+    tries = 0
     Net::SSH.start(
       instance.addresses['public'].first['addr'],
       username,
+      verbose: :debug,
       paranoid: false,
+      logger: @ssh_logger,
       keys: [@ssh_private_key]
     ) do |ssh|
 
+      tries += 1
       record_info_commands.each do |command|
         result = ssh.exec!(command)
         error_log(instance.name, "Ran '#{command}' and got '#{result}'")
@@ -227,11 +232,18 @@ class OpenStackTaster
       end
     end
     true
-  rescue Net::SSH::AuthenticationFailed => e
+  rescue Net::SSH::AuthenticationFailed => e # This possibly means a problem with the key
+    puts "Encountered #{e.message} while connecting to the instance. Ir-recoverable"
+    error_log(instance.name, e.backtrace)
     error_log(instance.name, e.message)
     false
-  rescue Errno::ECONNREFUSED => e
+  rescue Errno::ECONNREFUSED => e # This generally occurs when the instance is booting up
+    print "Encountered #{e.message} while connecting to the instance."
+    error_log(instance.name, e.backtrace)
     error_log(instance.name, e.message)
+    puts "Trying SSH connection again for #{tries}+1 time"
+    retry unless tries >= 3
+    exit!
     false
   end
 
