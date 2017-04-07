@@ -86,7 +86,7 @@ class OpenStackTaster
     )
 
     puts "\nTasting #{image.name} as '#{instance_name}' with username '#{distro_user_name}'"
-
+    print 'Building... '
     instance = @compute_service.servers.create(
       name: instance_name,
       flavor_ref: @instance_flavor.id,
@@ -103,6 +103,8 @@ class OpenStackTaster
     end
 
     instance.wait_for(20) { ready? }
+    puts 'Done.'
+
     test_volumes(instance, distro_user_name)
   rescue Fog::Errors::TimeoutError
     puts 'Instance creation timed out.'
@@ -129,7 +131,7 @@ class OpenStackTaster
 
   def test_volumes(instance, username)
     failures = @volumes.reject do |volume|
-      print "Testing volume '#{volume.name}'... "
+      puts "Testing volume '#{volume.name}'... "
 
       if volume.attachments.any?
         puts "Volume '#{volume.name}' is already in an attached state; skipping volume."
@@ -244,7 +246,7 @@ class OpenStackTaster
     error_log(instance.name, e.message)
     false
   rescue Errno::ECONNREFUSED => e # This generally occurs when the instance is booting up
-    print "Encountered #{e.message} while connecting to the instance."
+    puts "Encountered #{e.message} while connecting to the instance."
     error_log(instance.name, e.backtrace)
     error_log(instance.name, e.message)
     puts "Trying SSH connection again for #{tries}+1 time"
