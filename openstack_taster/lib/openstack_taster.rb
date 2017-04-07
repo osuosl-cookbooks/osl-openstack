@@ -195,12 +195,18 @@ class OpenStackTaster
       'cat /proc/partitions',
       'dmesg | tail -n 20'
     ]
+
     # commands to actually mount the volume
+    dev = INSTANCE_VOLUME_DEV
+    mount_point = INSTANCE_VOLUME_MOUNT_POINT
+    file_name = VOLUME_TEST_FILE_NAME
+    file_contents = VOLUME_TEST_FILE_CONTENTS
+
     commands = [
-      ["sudo mkdir #{INSTANCE_VOLUME_MOUNT_POINT}",                        ''],
-      ["sudo mount #{INSTANCE_VOLUME_DEV} #{INSTANCE_VOLUME_MOUNT_POINT}", ''],
-      ["sudo cat #{INSTANCE_VOLUME_MOUNT_POINT}/#{VOLUME_TEST_FILE_NAME}", VOLUME_TEST_FILE_CONTENTS],
-      ["sudo umount #{INSTANCE_VOLUME_MOUNT_POINT}",                       '']
+      ["sudo mkdir #{mount_point}",            ''],
+      ["sudo mount #{dev} #{mount_point}",     ''],
+      ["sudo cat #{mount_point}/#{file_name}", file_contents],
+      ["sudo umount #{mount_point}",           '']
     ]
 
     sleep TIMEOUT_SSH_STARTUP
