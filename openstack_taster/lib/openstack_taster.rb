@@ -78,11 +78,13 @@ class OpenStackTaster
 
   def taste(image)
     distro_user_name = image.name.downcase.gsub(/[^a-z].*$/, '') # truncate downcased name at first non-alpha char
+    distro_arch = image.name.downcase.slice(-2, 2)
     instance_name = format(
-      '%s-%s-%s',
+      '%s-%s-%s-%s',
       INSTANCE_NAME_PREFIX,
       Time.new.strftime(TIME_SLUG_FORMAT),
-      distro_user_name
+      distro_user_name,
+      distro_arch
     )
 
     puts "\nTasting #{image.name} as '#{instance_name}' with username '#{distro_user_name}'"
