@@ -37,6 +37,7 @@ config.vm.provider "virtualbox" do |v|
 end
 EOF
   role provision_role
+  role 'separate_network_node' if ENV['SEPARATE_NETWORK_NODE']
   recipe 'osl-openstack::ops_database'
   recipe 'openstack_test::gluster'
   recipe 'osl-openstack::controller'
