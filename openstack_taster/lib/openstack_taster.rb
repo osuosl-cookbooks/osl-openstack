@@ -16,7 +16,7 @@ class OpenStackTaster
   VOLUME_TEST_FILE_CONTENTS = 'contents' # FIXME
   TIMEOUT_INSTANCE_CREATE = 20
   TIMEOUT_VOLUME_ATTACH = 10
-  TIMEOUT_VOLUME_PERSIST = 20
+  TIMEOUT_VOLUME_PERSIST = 30
   TIMEOUT_SSH_STARTUP = 30
 
   TIME_SLUG_FORMAT = '%Y%m%d_%H%M%S'
@@ -176,6 +176,8 @@ class OpenStackTaster
       end
     end
 
+    puts "Attaching volume #{volume.name}..."
+
     instance.attach_volume(volume.id, INSTANCE_VOLUME_DEV)
     instance.wait_for(TIMEOUT_VOLUME_ATTACH, &volume_attached)
 
@@ -223,7 +225,7 @@ class OpenStackTaster
     Net::SSH.start(
       instance.addresses['public'].first['addr'],
       username,
-      verbose: :debug,
+      verbose: :info,
       paranoid: false,
       logger: @ssh_logger,
       keys: [@ssh_private_key]
@@ -260,6 +262,7 @@ class OpenStackTaster
   end
 
   def volume_detach?(instance, volume)
+    puts "Detaching volume #{volume.name}..."
     instance.detach_volume(volume.id)
   rescue Excon::Error => e
     error_log(instance.name, e.message)
