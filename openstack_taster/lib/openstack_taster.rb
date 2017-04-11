@@ -16,7 +16,8 @@ class OpenStackTaster
   TIMEOUT_INSTANCE_CREATE = 20
   TIMEOUT_VOLUME_ATTACH = 10
   TIMEOUT_VOLUME_PERSIST = 20
-  TIMEOUT_SSH_STARTUP = 60
+  TIMEOUT_INSTANCE_STARTUP = 30
+  TIMEOUT_SSH_RETRY = 15
 
   TIME_SLUG_FORMAT = '%Y%m%d_%H%M%S'
   SAFE_IMAGE_NAMES = [ # FIXME: Remove hard coding
@@ -202,6 +203,32 @@ class OpenStackTaster
     false
   end
 
+  def with_ssh(instance, username, ssh_logger, &block)
+    tries = 0
+    begin
+      Net::SSH.start(
+        instance.addresses['public'].first['addr'],
+        username,
+        verbose: :info,
+        paranoid: false,
+        logger: ssh_logger,
+        keys: [@ssh_private_key],
+        &block
+      )
+    rescue Errno::ECONNREFUSED => e
+      puts "Encountered #{e.message} while connecting to the instance."
+      if tries < 3
+        tries += 1
+        puts "Initiating SSH attempt #{tries} in #{TIMEOUT_SSH_RETRY} seconds"
+        sleep TIMEOUT_SSH_RETRY
+        retry
+      end
+      error_log(instance.name, e.backtrace)
+      error_log(instance.name, e.message)
+      exit 1 # TODO: Don't crash when connection refused
+    end
+  end
+
   def volume_mount_unmount?(instance, vdev, username, ssh_logger)
     # commands to mount the volume
     mount = INSTANCE_VOLUME_MOUNT_POINT
@@ -217,41 +244,22 @@ class OpenStackTaster
       ["sudo umount #{mount}",                     '']
     ]
 
-    puts "Sleeping #{TIMEOUT_SSH_STARTUP}s for OS volume discovery..."
-    sleep TIMEOUT_SSH_STARTUP # REVIEW: Remove?
+    puts "Sleeping #{TIMEOUT_INSTANCE_STARTUP}s for OS startup..."
+    sleep TIMEOUT_INSTANCE_STARTUP
 
     puts 'Mounting from inside the instance...'
-    tries = 0
-    Net::SSH.start(
-      instance.addresses['public'].first['addr'],
-      username,
-      verbose: :info,
-      paranoid: false,
-      logger: ssh_logger,
-      keys: [@ssh_private_key]
-    ) do |ssh|
-      begin
-        tries += 1
-
-        commands.each do |command, expected|
-          result = ssh.exec!(command)
-          # rubocop:disable Style/Next
-          if result != expected
-            error_log(
-              instance.name,
-              "Failure while running '#{command}':\n\texpected '#{expected}'\n\tgot '#{result.chomp}'",
-              true
-            )
-            return false # returns from parent method
-          end
+    with_ssh(instance, username, ssh_logger) do |ssh|
+      commands.each do |command, expected|
+        result = ssh.exec!(command)
+        # rubocop:disable Style/Next
+        if result != expected
+          error_log(
+            instance.name,
+            "Failure while running '#{command}':\n\texpected '#{expected}'\n\tgot '#{result.chomp}'",
+            true
+          )
+          return false # returns from parent method
         end
-      rescue Errno::ECONNREFUSED => e # This generally occurs when the instance is booting up
-        puts "Encountered #{e.message} while connecting to the instance."
-        puts "Initiating SSH attempt #{tries + 1}"
-        retry unless tries >= 3
-        error_log(instance.name, e.backtrace)
-        error_log(instance.name, e.message)
-        exit 1
       end
     end
     true
@@ -265,28 +273,10 @@ class OpenStackTaster
       'dmesg | tail -n 20'
     ]
 
-    tries = 0
-    Net::SSH.start(
-      instance.addresses['public'].first['addr'],
-      username,
-      verbose: :debug,
-      paranoid: false,
-      logger: ssh_logger,
-      keys: [@ssh_private_key]
-    ) do |ssh|
-      begin
-        tries += 1
-        record_info_commands.each do |command|
-          result = ssh.exec!(command)
-          error_log(instance.name, "Ran '#{command}' and got '#{result}'")
-        end
-      rescue Errno::ECONNREFUSED => e # This generally occurs when the instance is booting up
-        puts "Encountered #{e.message} while connecting to the instance."
-        puts "Initiating SSH attempt #{tries + 1}"
-        retry unless tries >= 3
-        error_log(instance.name, e.backtrace)
-        error_log(instance.name, e.message)
-        exit 1
+    with_ssh(instance, username, ssh_logger) do |ssh|
+      record_info_commands.each do |command|
+        result = ssh.exec!(command)
+        error_log(instance.name, "Ran '#{command}' and got '#{result}'")
       end
     end
   end
