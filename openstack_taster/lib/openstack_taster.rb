@@ -16,7 +16,7 @@ class OpenStackTaster
   TIMEOUT_INSTANCE_CREATE = 20
   TIMEOUT_VOLUME_ATTACH = 10
   TIMEOUT_VOLUME_PERSIST = 20
-  TIMEOUT_SSH_STARTUP = 90
+  TIMEOUT_SSH_STARTUP = 60
 
   TIME_SLUG_FORMAT = '%Y%m%d_%H%M%S'
   SAFE_IMAGE_NAMES = [ # FIXME: Remove hard coding
@@ -130,9 +130,10 @@ class OpenStackTaster
   end
 
   def create_image(instance)
-    response = instance.create_image(instance.name)
-    image = @image_service.images.find_by_id(response.body['image']['id'])
-    image.wait_for { status == 'active' }
+    image_id = instance.create_image(instance.name).body['image']['id']
+    @image_service.images
+      .find_by_id(image_id)
+      .wait_for { status == 'active' }
   end
 
   def test_volumes(instance, username, ssh_logger)
@@ -140,7 +141,6 @@ class OpenStackTaster
       error_log(instance.name, "\n## Testing volume '#{volume.name}' ##", true)
 
       volume = @volume_service.volumes.find_by_id(volume.id)
-      success = true
 
       if volume.attachments.any?
         puts "Volume '#{volume.name}' is already in an attached state; skipping volume."
@@ -149,14 +149,19 @@ class OpenStackTaster
 
       next unless (vdev = volume_attach?(instance, volume))
 
-      success &= volume_mount_unmount?(instance, vdev, username, ssh_logger)
-
-      log_partitions(instance, username, ssh_logger)
+      begin
+        mount_success = volume_mount_unmount?(instance, vdev, username, ssh_logger)
+        log_partitions(instance, username, ssh_logger)
+      rescue Net::SSH::AuthenticationFailed => e
+        puts "Fatal: encountered #{e.message} while connecting to the instance."
+        error_log(instance.name, e.backtrace)
+        error_log(instance.name, e.message)
+      end
 
       next unless volume_detach?(instance, volume)
 
       puts 'Volume test completed.'
-      success
+      mount_success
     end
 
     if failures.empty?
@@ -202,16 +207,18 @@ class OpenStackTaster
     mount = INSTANCE_VOLUME_MOUNT_POINT
     file_name = VOLUME_TEST_FILE_NAME
     file_contents = VOLUME_TEST_FILE_CONTENTS
+    vdev += '1'
 
     commands = [
-      ["[ ! -d '#{mount}' ] && sudo mkdir #{mount}", ''],
-      ["sudo mount #{vdev} #{mount}",                ''],
-      ["sudo cat #{mount}/#{file_name}",             file_contents],
-      ["sudo umount #{mount}",                       '']
+      ['sudo partprobe',                           ''],
+      ["[ -d '#{mount}' ] || sudo mkdir #{mount}", ''],
+      ["sudo mount #{vdev} #{mount}",              ''],
+      ["sudo cat #{mount}/#{file_name}",           file_contents],
+      ["sudo umount #{mount}",                     '']
     ]
 
     puts "Sleeping #{TIMEOUT_SSH_STARTUP}s for OS volume discovery..."
-    sleep TIMEOUT_SSH_STARTUP
+    sleep TIMEOUT_SSH_STARTUP # REVIEW: Remove?
 
     puts 'Mounting from inside the instance...'
     tries = 0
@@ -223,40 +230,36 @@ class OpenStackTaster
       logger: ssh_logger,
       keys: [@ssh_private_key]
     ) do |ssh|
-      tries += 1
+      begin
+        tries += 1
 
-      commands.each do |command, expected|
-        result = ssh.exec!(command)
-        # rubocop:disable Style/Next
-        if result != expected
-          error_log(
-            instance.name,
-            "Failure while running '#{command}':\n\texpected '#{expected}'\n\tgot '#{result.chomp}'",
-            true
-          )
-          return false # returns from parent method
+        commands.each do |command, expected|
+          result = ssh.exec!(command)
+          # rubocop:disable Style/Next
+          if result != expected
+            error_log(
+              instance.name,
+              "Failure while running '#{command}':\n\texpected '#{expected}'\n\tgot '#{result.chomp}'",
+              true
+            )
+            return false # returns from parent method
+          end
         end
+      rescue Errno::ECONNREFUSED => e # This generally occurs when the instance is booting up
+        puts "Encountered #{e.message} while connecting to the instance."
+        puts "Initiating SSH attempt #{tries + 1}"
+        retry unless tries >= 3
+        error_log(instance.name, e.backtrace)
+        error_log(instance.name, e.message)
+        exit 1
       end
     end
     true
-  rescue Net::SSH::AuthenticationFailed => e # This possibly means a problem with the key
-    puts "Fatal: encountered #{e.message} while connecting to the instance."
-    error_log(instance.name, e.backtrace)
-    error_log(instance.name, e.message)
-    false
-  rescue Errno::ECONNREFUSED => e # This generally occurs when the instance is booting up
-    puts "Encountered #{e.message} while connecting to the instance."
-    error_log(instance.name, e.backtrace)
-    error_log(instance.name, e.message)
-    puts "Trying SSH connection again for #{tries}+1 time"
-    retry unless tries >= 3
-    exit!
-    false
   end
 
   def log_partitions(instance, username, ssh_logger)
     puts 'Logging partition list and dmesg...'
-    # commands to record the state of the instance
+
     record_info_commands = [
       'cat /proc/partitions',
       'dmesg | tail -n 20'
@@ -271,25 +274,21 @@ class OpenStackTaster
       logger: ssh_logger,
       keys: [@ssh_private_key]
     ) do |ssh|
-      tries += 1
-      record_info_commands.each do |command|
-        result = ssh.exec!(command)
-        error_log(instance.name, "Ran '#{command}' and got '#{result}'")
+      begin
+        tries += 1
+        record_info_commands.each do |command|
+          result = ssh.exec!(command)
+          error_log(instance.name, "Ran '#{command}' and got '#{result}'")
+        end
+      rescue Errno::ECONNREFUSED => e # This generally occurs when the instance is booting up
+        puts "Encountered #{e.message} while connecting to the instance."
+        puts "Initiating SSH attempt #{tries + 1}"
+        retry unless tries >= 3
+        error_log(instance.name, e.backtrace)
+        error_log(instance.name, e.message)
+        exit 1
       end
     end
-  rescue Net::SSH::AuthenticationFailed => e # This possibly means a problem with the key
-    puts "Fatal: encountered #{e.message} while connecting to the instance."
-    error_log(instance.name, e.backtrace)
-    error_log(instance.name, e.message)
-    false
-  rescue Errno::ECONNREFUSED => e # This generally occurs when the instance is booting up
-    puts "Encountered #{e.message} while connecting to the instance."
-    error_log(instance.name, e.backtrace)
-    error_log(instance.name, e.message)
-    puts "Trying SSH connection again for #{tries}+1 time"
-    retry unless tries >= 3
-    exit!
-    false
   end
 
   def volume_detach?(instance, volume)
