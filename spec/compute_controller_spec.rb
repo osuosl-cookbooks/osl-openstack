@@ -79,7 +79,7 @@ nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver$/,
 
     [
       /^virt_type = kvm$/,
-      /^disk_cachemodes = file=writeback,block=writeback$/
+      /^disk_cachemodes = file=writeback,block=none$/
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
