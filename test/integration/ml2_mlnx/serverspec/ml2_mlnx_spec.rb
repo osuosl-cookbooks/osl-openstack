@@ -7,11 +7,6 @@ describe service('neutron-mlnx-agent') do
   it { should be_running }
 end
 
-# It should be running however it will fail due to the lack of real Mellanox hardware in TK
-describe service('eswitchd') do
-  it { should be_enabled }
-end
-
 [
   %r{^url = https://localhost/neo/$},
   /^username = admin/,
@@ -30,14 +25,6 @@ end
   /^backoff_rate = 2$/
 ].each do |line|
   describe file('/etc/neutron/plugins/mlnx/mlnx_conf.ini') do
-    its(:content) { should match(line) }
-  end
-end
-
-[
-  /^fabrics = default:autoeth$/
-].each do |line|
-  describe file('/etc/neutron/plugins/ml2/eswitchd.conf') do
     its(:content) { should match(line) }
   end
 end

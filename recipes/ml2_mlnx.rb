@@ -60,11 +60,3 @@ service 'neutron-plugin-mlnx-agent' do
   subscribes :restart, ['template[/etc/neutron/neutron.conf]',
                         'template[/etc/neutron/plugins/mlnx/mlnx_conf.ini]']
 end
-
-service 'neutron-eswitchd' do
-  service_name 'eswitchd'
-  supports status: true, restart: true
-  action [:enable, :start]
-  subscribes :restart, ['template[/etc/neutron/neutron.conf]',
-                        'template[/etc/neutron/plugins/ml2/eswitchd.conf]']
-end

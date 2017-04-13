@@ -68,24 +68,6 @@ describe 'osl-openstack::ml2_mlnx' do
       expect(chef_run.service('neutron-plugin-mlnx-agent')).to subscribe_to(t)
     end
   end
-  it do
-    expect(chef_run).to start_service('neutron-eswitchd')
-      .with(
-        service_name: 'eswitchd',
-        supports: { status: true, restart: true }
-      )
-  end
-  it do
-    expect(chef_run).to enable_service('neutron-eswitchd')
-  end
-  [
-    'template[/etc/neutron/neutron.conf]',
-    'template[/etc/neutron/plugins/ml2/eswitchd.conf]'
-  ].each do |t|
-    it do
-      expect(chef_run.service('neutron-eswitchd')).to subscribe_to(t)
-    end
-  end
   context '/etc/neutron/plugins/mlnx/mlnx_conf.ini' do
     let(:file) { chef_run.template('/etc/neutron/plugins/mlnx/mlnx_conf.ini') }
     [
@@ -102,13 +84,6 @@ describe 'osl-openstack::ml2_mlnx' do
     it do
       expect(chef_run).to render_config_file(file.name)
         .with_section_content('agent', /^polling_interval = 2$/)
-    end
-  end
-  context '/etc/neutron/plugins/ml2/eswitchd.conf' do
-    let(:file) { chef_run.template('/etc/neutron/plugins/ml2/eswitchd.conf') }
-    it do
-      expect(chef_run).to render_config_file(file.name)
-        .with_section_content('DAEMON', /^fabrics = default:autoeth$/)
     end
   end
 end

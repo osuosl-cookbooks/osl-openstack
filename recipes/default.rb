@@ -111,9 +111,6 @@ if node['osl-openstack']['ml2_mlnx']['enabled']
     conf['eswitch']['backoff_rate'] = 2
     conf['agent']['polling_interval'] = 2
   end
-  node.default['openstack']['network']['plugins']['eswitchd']['conf'].tap do |conf|
-    conf['DAEMON']['fabrics'] = 'default:autoeth'
-  end
 else
   node.default['openstack']['network']['plugins']['linuxbridge']['conf']
       .tap do |conf|
