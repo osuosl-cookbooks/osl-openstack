@@ -254,6 +254,7 @@ class OpenStackTaster
     vdev << '1'
 
     commands = [
+      ["echo -e \"127.0.0.1\t$HOSTNAME\" | sudo tee -a /etc/hosts", nil], # to fix problems with sudo and DNS resolution
       ['sudo partprobe -s',                        nil],
       ["[ -d '#{mount}' ] || sudo mkdir #{mount}", ''],
       ["sudo mount #{vdev} #{mount}",              ''],
