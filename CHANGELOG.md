@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.5.0 (2017-04-13)
+------------------
+- Separate Network Node logic
+
 2.4.3 (2017-04-12)
 ------------------
 - Fixes the issue with volume not being attachable at all.
