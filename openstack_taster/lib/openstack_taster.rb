@@ -65,7 +65,8 @@ class OpenStackTaster
     @ssh_private_key = ssh_keys[:private_key]
     @ssh_public_key  = ssh_keys[:public_key] # REVIEW
 
-    @log_dir         = log_dir
+    @session_id      = self.object_id
+    @log_dir         = log_dir + "/#{@session_id}"
     @fixed_ip        = fixed_ip
 
     @instance_flavor = @compute_service.flavors
@@ -75,6 +76,7 @@ class OpenStackTaster
   end
 
   def taste_all
+    puts "Starting session id #{@session_id}...\n"
     @images.each(&method(:taste))
   end
 
@@ -120,10 +122,11 @@ class OpenStackTaster
     error_log(instance.name, "Instance fault: #{instance.fault}")
   rescue Interrupt
     puts "\nCaught interrupt"
+    puts "\nYou are exiting session #{@session_id}\n"
     raise SystemExit
   ensure
     if instance
-      puts 'Destroying instance.'
+      puts "Destroying instance for session #{@session_id}."
       instance.destroy
     end
   end
