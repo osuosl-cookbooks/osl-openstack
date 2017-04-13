@@ -11,8 +11,8 @@ class OpenStackTaster
   INSTANCE_NAME_PREFIX = 'taster'
   INSTANCE_VOLUME_MOUNT_POINT = '/mnt/taster_volume'
 
-  VOLUME_TEST_FILE_NAME = 'test' # FIXME
-  VOLUME_TEST_FILE_CONTENTS = 'contents' # FIXME
+  VOLUME_TEST_FILE_NAME = 'info'
+  VOLUME_TEST_FILE_CONTENTS = nil # Contents would be something like 'test-vol-1 on openpower8.osuosl.bak'
   TIMEOUT_INSTANCE_CREATE = 20
   TIMEOUT_VOLUME_ATTACH = 10
   TIMEOUT_VOLUME_PERSIST = 20
