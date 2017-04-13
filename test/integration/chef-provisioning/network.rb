@@ -12,7 +12,7 @@ unless ENV['CHEF_DRIVER'] == 'fog:OpenStack'
   with_driver "vagrant:#{File.dirname(__FILE__)}/../../../vms"
 end
 
-machine 'compute' do
+machine 'network' do
   machine_options vagrant_options: {
     'vm.box' => node_os
   },
@@ -30,15 +30,15 @@ machine 'compute' do
 
   ohai_hints 'openstack' => '{}'
   add_machine_options vagrant_config: <<-EOF
-config.vm.network "private_network", ip: "192.168.60.11"
+config.vm.network "private_network", ip: "192.168.60.13"
 config.vm.provider "virtualbox" do |v|
-  v.memory = 1024
+  v.memory = 4096
+  v.cpus = 2
 end
 EOF
   role provision_role
   role 'separate_network_node' if ENV['SEPARATE_NETWORK_NODE']
-  recipe 'osl-openstack::compute'
-  role 'openstack_cinder'
+  recipe 'osl-openstack::network'
   file('/etc/chef/encrypted_data_bag_secret',
        File.dirname(__FILE__) +
        '/../default/encrypted_data_bag_secret')

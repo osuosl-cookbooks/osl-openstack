@@ -23,6 +23,6 @@ describe file('/root/openrc') do
 end
 
 describe file('/etc/sysconfig/iptables-config') do
-  its(:content) { should match(/^IPTABLES_SAVE_ON_STOP="yes"$/) }
-  its(:content) { should match(/^IPTABLES_SAVE_ON_RESTART="yes"$/) }
+  its(:content) { should match(/^IPTABLES_SAVE_ON_STOP="no"$/) }
+  its(:content) { should match(/^IPTABLES_SAVE_ON_RESTART="no"$/) }
 end

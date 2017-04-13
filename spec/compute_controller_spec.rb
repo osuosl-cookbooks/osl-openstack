@@ -97,6 +97,16 @@ nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver$/,
           .with_section_content('neutron', line)
       end
     end
+    context 'Separate Network Node' do
+      cached(:chef_run) { runner.converge(described_recipe) }
+      before do
+        node.set['osl-openstack']['separate_network_node'] = true
+      end
+      it do
+        expect(chef_run).to render_config_file(file.name)
+          .with_section_content('neutron', %r{^url = http://10.0.0.11:9696$})
+      end
+    end
 
     [
       /^rabbit_host = 10.0.0.10$/,
