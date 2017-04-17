@@ -65,7 +65,7 @@ class OpenStackTaster
     @ssh_private_key = ssh_keys[:private_key]
     @ssh_public_key  = ssh_keys[:public_key] # REVIEW
 
-    @session_id      = self.object_id
+    @session_id      = object_id
     @log_dir         = log_dir + "/#{@session_id}"
     @fixed_ip        = fixed_ip
 
