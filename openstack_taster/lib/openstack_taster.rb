@@ -40,7 +40,6 @@ class OpenStackTaster
 
   class TasterError < RuntimeError; end
 
-  # rubocop:disable ParameterLists
   def initialize(
     compute_service,
     volume_service,

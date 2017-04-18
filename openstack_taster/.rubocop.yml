@@ -15,6 +15,9 @@ Metrics/ClassLength:
   Enabled: false
 
 
+Style/ParameterLists:
+  Enabled: false
+
 Style/IfUnlessModifier:
   MaxLineLength: 120
 
