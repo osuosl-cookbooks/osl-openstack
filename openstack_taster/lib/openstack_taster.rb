@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'fileutils'
 require 'date'
 require 'excon'
 require 'net/ssh'
@@ -46,8 +47,7 @@ class OpenStackTaster
     image_service,
     network_service,
     ssh_keys,
-    log_dir,
-    fixed_ip
+    log_dir
   )
     @compute_service = compute_service
     @volume_service  = volume_service
@@ -66,7 +66,6 @@ class OpenStackTaster
 
     @session_id      = object_id
     @log_dir         = log_dir + "/#{@session_id}"
-    @fixed_ip        = fixed_ip
 
     @instance_flavor = @compute_service.flavors
       .select { |flavor|  flavor.name  == INSTANCE_FLAVOR_NAME  }.first
@@ -100,8 +99,7 @@ class OpenStackTaster
       name: instance_name,
       flavor_ref: @instance_flavor.id,
       image_ref: image.id,
-      fixed_ip: @fixed_ip, # FIXME
-      networks: @instance_network.id, # REVIEW
+      networks: @instance_network.id,
       key_name: @ssh_keypair
     )
 
@@ -115,6 +113,7 @@ class OpenStackTaster
     error_log(instance.name, "\nTesting for instance '#{instance.id}'.", true)
 
     ssh_logger = Logger.new('logs/' + instance.name + '_ssh_log')
+
     test_volumes(instance, distro_user_name, ssh_logger)
   rescue Fog::Errors::TimeoutError
     puts 'Instance creation timed out.'
@@ -133,7 +132,7 @@ class OpenStackTaster
   def error_log(filename, message, dup_stdout = false)
     puts message if dup_stdout
 
-    Dir.mkdir(@log_dir) unless Dir.exist?(@log_dir)
+    FileUtils.mkdir_p(@log_dir) unless Dir.exist?(@log_dir)
     File.open("#{@log_dir}/#{filename}.log", 'a') do |file|
       file.puts(message)
     end
