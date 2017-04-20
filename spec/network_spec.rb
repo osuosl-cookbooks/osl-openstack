@@ -157,9 +157,14 @@ neutron.agent.linux.interface.BridgeInterfaceDriver$/,
             .with_section_content('sdn', line)
         end
       end
-      it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('ml2', /^mechanism_drivers = sdnmechdriver,linuxbridge,sriovnicswitch,l2population$/)
+      [
+        /^mechanism_drivers = sdnmechdriver,linuxbridge,sriovnicswitch,l2population$/,
+        /^supported_pci_vendor_devs = 15b3:1004$/
+      ].each do |line|
+        it do
+          expect(chef_run).to render_config_file(file.name)
+            .with_section_content('ml2', line)
+        end
       end
     end
   end

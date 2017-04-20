@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+require 'json'
 
 # Make Openstack object available in Chef::Recipe
 class ::Chef::Recipe
@@ -62,7 +63,23 @@ node.default['openstack']['compute']['conf'].tap do |conf|
   conf['DEFAULT']['instance_usage_audit_period'] = 'hour'
   conf['DEFAULT']['notify_on_state_change'] = 'vm_and_task_state'
   conf['DEFAULT']['disk_allocation_ratio'] = 1.5
+  conf['DEFAULT']['scheduler_available_filters'] = 'nova.scheduler.filters.all_filters'
+  conf['DEFAULT']['scheduler_default_filters'] = %w(
+    AvailabilityZoneFilter
+    ComputeCapabilitiesFilter
+    ComputeFilter
+    DiskFilter
+    ImagePropertiesFilter
+    RamFilter
+    RetryFilter
+    ServerGroupAffinityFilter
+    ServerGroupAntiAffinityFilter
+  ).join(',')
   conf['libvirt']['disk_cachemodes'] = 'file=writeback,block=none'
+  if node['osl-openstack']['ml2_mlnx']['enabled']
+    conf['DEFAULT']['scheduler_default_filters'] << ',PciPassthroughFilter'
+    conf['DEFAULT']['pci_passthrough_whitelist'] = node['osl-openstack']['nova']['pci_passthrough_whitelist'].to_json
+  end
 end
 node.default['openstack']['network'].tap do |conf|
   conf['conf']['DEFAULT']['service_plugins'] =
@@ -95,6 +112,7 @@ node.override['openstack']['network']['plugins']['ml2']['conf'].tap do |conf|
   conf['ml2_type_vxlan']['vni_ranges'] = '1:1000'
   if node['osl-openstack']['ml2_mlnx']['enabled']
     conf['ml2']['mechanism_drivers'] = 'sdnmechdriver,linuxbridge,sriovnicswitch,l2population'
+    conf['ml2']['supported_pci_vendor_devs'] = node['osl-openstack']['ml2_conf']['supported_pci_vendor_devs']
     conf['sdn']['url'] = node['osl-openstack']['ml2_mlnx']['neo_url']
     conf['sdn']['username'] = node['osl-openstack']['ml2_mlnx']['neo_username']
     conf['sdn']['password'] = get_password 'token', 'ml2_mlnx_sdn_password'
@@ -110,6 +128,15 @@ if node['osl-openstack']['ml2_mlnx']['enabled']
     conf['eswitch']['retries'] = 3
     conf['eswitch']['backoff_rate'] = 2
     conf['agent']['polling_interval'] = 2
+  end
+  node.default['openstack']['network']['plugins']['sriov_agent']['conf'].tap do |conf|
+    conf['securitygroup']['firewall_driver'] = 'neutron.agent.firewall.NoopFirewallDriver'
+    conf['sriov_nic']['exclude_devices'] = ''
+    device_mappings = []
+    node['osl-openstack']['sriov-agent']['physical_device_mappings'].each do |n|
+      device_mappings.push([n['physical_network'], n['network_device']].join(':'))
+    end
+    conf['sriov_nic']['physical_device_mappings'] = device_mappings.join(',')
   end
 else
   node.default['openstack']['network']['plugins']['linuxbridge']['conf']

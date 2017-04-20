@@ -33,6 +33,7 @@ end
   mlnx-ofed-hypervisor
   mlnx-fw-updater
   libvirt-python
+  openstack-neutron-sriov-nic-agent
   python-ethtool
   python-networking-mlnx
 ).each do |p|
@@ -52,6 +53,14 @@ service 'openibd' do
 end
 
 include_recipe 'openstack-network::plugin_config'
+
+service 'neutron-sriov-nic-agent' do
+  service_name 'neutron-sriov-nic-agent'
+  supports status: true, restart: true
+  action [:enable, :start]
+  subscribes :restart, ['template[/etc/neutron/neutron.conf]',
+                        'template[/etc/neutron/plugins/ml2/sriov_agent.ini]']
+end
 
 service 'neutron-plugin-mlnx-agent' do
   service_name 'neutron-mlnx-agent'
