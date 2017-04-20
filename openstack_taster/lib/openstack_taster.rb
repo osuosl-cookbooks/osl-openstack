@@ -99,7 +99,7 @@ class OpenStackTaster
       name: instance_name,
       flavor_ref: @instance_flavor.id,
       image_ref: image.id,
-      networks: @instance_network.id,
+      nics: [{ :net_id => @instance_network.id }],
       key_name: @ssh_keypair
     )
 
