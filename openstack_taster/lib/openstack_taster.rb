@@ -17,8 +17,12 @@ class OpenStackTaster
   TIMEOUT_INSTANCE_CREATE = 20
   TIMEOUT_VOLUME_ATTACH = 10
   TIMEOUT_VOLUME_PERSIST = 20
+  TIMEOUT_INSTANCE_TO_BE_CREATED = 20
   TIMEOUT_INSTANCE_STARTUP = 30
   TIMEOUT_SSH_RETRY = 15
+
+  SUCCESSFUL_IMAGES = []
+  FAILED_IMAGES = []
 
   TIME_SLUG_FORMAT = '%Y%m%d_%H%M%S'
   SAFE_IMAGE_NAMES = [ # FIXME: Remove hard coding
@@ -76,6 +80,14 @@ class OpenStackTaster
   def taste_all
     puts "Starting session id #{@session_id}...\n"
     @images.each(&method(:taste))
+    print_report
+  end
+
+  def print_report
+    puts "SUCCESS > "
+    puts SUCCESSFUL_IMAGES
+    puts "FAILURES > "
+    puts FAILED_IMAGES
   end
 
   def taste(image)
@@ -108,7 +120,10 @@ class OpenStackTaster
       return
     end
 
-    instance.wait_for(20) { ready? }
+    instance.wait_for(TIMEOUT_INSTANCE_TO_BE_CREATED) { ready? }
+
+    error_log(instance.name, "Sleeping #{TIMEOUT_INSTANCE_STARTUP} seconds for OS startup...", true)
+    sleep TIMEOUT_INSTANCE_STARTUP
 
     error_log(instance.name, "\nTesting for instance '#{instance.id}'.", true)
 
@@ -138,8 +153,13 @@ class OpenStackTaster
     end
   end
 
+  def get_image_name(instance)
+    (@image_service.get_image_by_id(instance.image['id'])).body['name']
+  end
+
   def create_image(instance)
-    image_id = instance.create_image(instance.name).body['image']['id']
+    instance_image_name = get_image_name(instance)
+    image_id = instance.create_image(instance.name + '_' + instance_image_name).body['image']['id']
     @image_service.images
       .find_by_id(image_id)
       .wait_for { status == 'active' }
@@ -161,25 +181,14 @@ class OpenStackTaster
       volume_mount_unmount?(instance, username, ssh_logger, volume)
     end
 
-    if mount_failures.any?
-      puts
-      log_partitions(instance, username, ssh_logger)
-      error_log(instance.name, 'Rebooting instance...', true)
-      instance.reboot
-      instance.wait_for { ready? }
-      mount_failures = @volumes.reject do |volume|
-        volume_mount_unmount?(instance, username, ssh_logger, volume)
-      end
-    end
-
     puts
     detach_failures = @volumes.reject do |volume|
       volume_detach?(instance, volume)
     end
 
     if mount_failures.empty? && detach_failures.empty?
-      error_log(instance.name, "\nEncountered 0 failures. Creating image...", true)
-      create_image(instance)
+      error_log(instance.name, "\nEncountered 0 failures. Not creating image...", true)
+      SUCCESSFUL_IMAGES << get_image_name(instance)
       true
     else
       error_log(
@@ -187,6 +196,9 @@ class OpenStackTaster
         "\nEncountered #{mount_failures.count} mount failures and #{detach_failures.count} detach failures.",
         true
       )
+      error_log(instance.name, "\nEncountered failures. Creating image...", true)
+      FAILED_IMAGES << get_image_name(instance)
+      create_image(instance)
       false
     end
   end
@@ -254,6 +266,8 @@ class OpenStackTaster
       .attachments.first['device']
     vdev << '1'
 
+    log_partitions(instance, username, ssh_logger)
+
     commands = [
       ["echo -e \"127.0.0.1\t$HOSTNAME\" | sudo tee -a /etc/hosts", nil], # to fix problems with sudo and DNS resolution
       ['sudo partprobe -s',                        nil],
@@ -263,8 +277,6 @@ class OpenStackTaster
       ["sudo umount #{mount}",                     '']
     ]
 
-    error_log(instance.name, "Sleeping #{TIMEOUT_INSTANCE_STARTUP} seconds for OS startup...", true)
-    sleep TIMEOUT_INSTANCE_STARTUP
 
     error_log(instance.name, "Mounting volume '#{volume.name}' (#{volume.id})...", true)
 
