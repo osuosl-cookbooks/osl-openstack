@@ -73,16 +73,23 @@ class OpenStackTaster
   end
 
   def taste_all
-    puts "Starting session id #{@session_id}...\n"
-    successes = @images.select(&method(:taste))
-    failures = @images.reject do |image|
-      successes.map(&:id).include?(image.id)
+    puts "Starting session #{@session_id}...\n\n"
+    successes = []
+    failures = []
+
+    @images.each do |image|
+      begin
+        (taste(image) ? successes : failures) << image
+      rescue Interrupt
+        break
+      end
     end
 
-    puts 'SUCCESS >'
-    successes.each { |image| puts '    ', image.name }
-    puts 'FAILURE >'
-    failures.each { |image| puts '    ', image.name }
+    puts 'SUCCESSES >'
+    successes.each { |image| puts "    #{image.name}" }
+    puts 'FAILURES >'
+    failures.each { |image| puts "    #{image.name}" }
+    puts
   end
 
   def taste(image)
@@ -131,11 +138,11 @@ class OpenStackTaster
     return false
   rescue Interrupt
     puts "\nCaught interrupt"
-    puts "\nYou are exiting session #{@session_id}\n"
-    raise SystemExit
+    puts "Exiting session #{@session_id}"
+    raise
   ensure
     if instance
-      puts "Destroying instance for session #{@session_id}."
+      puts "Destroying instance for session #{@session_id}.\n\n"
       instance.destroy
     end
   end
