@@ -21,9 +21,6 @@ class OpenStackTaster
   TIMEOUT_INSTANCE_STARTUP = 30
   TIMEOUT_SSH_RETRY = 15
 
-  SUCCESSFUL_IMAGES = []
-  FAILED_IMAGES = []
-
   TIME_SLUG_FORMAT = '%Y%m%d_%H%M%S'
   SAFE_IMAGE_NAMES = [ # FIXME: Remove hard coding
     'OpenSUSE Leap 42.2 LE',
@@ -42,8 +39,6 @@ class OpenStackTaster
     'Ubuntu 16.10 LE',
     'CentOS 7.2 LE'
   ].freeze
-
-  class TasterError < RuntimeError; end
 
   def initialize(
     compute_service,
@@ -79,15 +74,15 @@ class OpenStackTaster
 
   def taste_all
     puts "Starting session id #{@session_id}...\n"
-    @images.each(&method(:taste))
-    print_report
-  end
+    successes = @images.select(&method(:taste))
+    failures = @images.reject do |image|
+      successes.map(&:id).include?(image.id)
+    end
 
-  def print_report
-    puts "SUCCESS > "
-    puts SUCCESSFUL_IMAGES
-    puts "FAILURES > "
-    puts FAILED_IMAGES
+    puts 'SUCCESS >'
+    successes.each { |image| puts '    ', image.name }
+    puts 'FAILURE >'
+    failures.each { |image| puts '    ', image.name }
   end
 
   def taste(image)
@@ -111,13 +106,13 @@ class OpenStackTaster
       name: instance_name,
       flavor_ref: @instance_flavor.id,
       image_ref: image.id,
-      nics: [{ :net_id => @instance_network.id }],
+      nics: [{ net_id: @instance_network.id }],
       key_name: @ssh_keypair
     )
 
     if instance.nil?
       error_log(instance_name, 'Failed to create instance.', true)
-      return
+      return false
     end
 
     instance.wait_for(TIMEOUT_INSTANCE_TO_BE_CREATED) { ready? }
@@ -129,10 +124,11 @@ class OpenStackTaster
 
     ssh_logger = Logger.new('logs/' + instance.name + '_ssh_log')
 
-    test_volumes(instance, distro_user_name, ssh_logger)
+    return test_volumes(instance, distro_user_name, ssh_logger)
   rescue Fog::Errors::TimeoutError
     puts 'Instance creation timed out.'
     error_log(instance.name, "Instance fault: #{instance.fault}")
+    return false
   rescue Interrupt
     puts "\nCaught interrupt"
     puts "\nYou are exiting session #{@session_id}\n"
@@ -154,12 +150,20 @@ class OpenStackTaster
   end
 
   def get_image_name(instance)
-    (@image_service.get_image_by_id(instance.image['id'])).body['name']
+    @image_service
+      .get_image_by_id(instance.image['id'])
+      .body['name']
   end
 
   def create_image(instance)
-    instance_image_name = get_image_name(instance)
-    image_id = instance.create_image(instance.name + '_' + instance_image_name).body['image']['id']
+    image_name = [
+      instance.name,
+      get_image_name(instance)
+    ].join('_')
+
+    response = instance.create_image(image_name)
+    image_id = response.body['image']['id']
+
     @image_service.images
       .find_by_id(image_id)
       .wait_for { status == 'active' }
@@ -175,20 +179,18 @@ class OpenStackTaster
       unless volume_attach?(instance, volume)
         error_log("Volume '#{volume.name}' failed to attach. Creating image...", true)
         create_image(instance)
-        return false
+        return false # Returns from test_volumes
       end
 
       volume_mount_unmount?(instance, username, ssh_logger, volume)
     end
 
-    puts
     detach_failures = @volumes.reject do |volume|
       volume_detach?(instance, volume)
     end
 
     if mount_failures.empty? && detach_failures.empty?
       error_log(instance.name, "\nEncountered 0 failures. Not creating image...", true)
-      SUCCESSFUL_IMAGES << get_image_name(instance)
       true
     else
       error_log(
@@ -197,7 +199,6 @@ class OpenStackTaster
         true
       )
       error_log(instance.name, "\nEncountered failures. Creating image...", true)
-      FAILED_IMAGES << get_image_name(instance)
       create_image(instance)
       false
     end
@@ -237,15 +238,12 @@ class OpenStackTaster
     end
 
     error_log(instance.name, "Attaching volume '#{volume.name}' (#{volume.id})...", true)
-
-    response = @compute_service.attach_volume(volume.id, instance.id, nil)
-    vdev = response.body['volumeAttachment']['device']
     instance.wait_for(TIMEOUT_VOLUME_ATTACH, &volume_attached)
 
     error_log(instance.name, "Sleeping #{TIMEOUT_VOLUME_PERSIST} seconds for attachment persistance...", true)
     sleep TIMEOUT_VOLUME_PERSIST
 
-    return vdev if instance.instance_eval(&volume_attached)
+    return true if instance.instance_eval(&volume_attached)
 
     error_log(instance.name, "Failed to attach '#{volume.name}': Volume was unexpectedly detached.", true)
     false
@@ -277,7 +275,6 @@ class OpenStackTaster
       ["sudo umount #{mount}",                     '']
     ]
 
-
     error_log(instance.name, "Mounting volume '#{volume.name}' (#{volume.id})...", true)
 
     error_log(instance.name, 'Mounting from inside the instance...', true)
@@ -292,7 +289,7 @@ class OpenStackTaster
             "Failure while running '#{command}':\n\texpected '#{expected}'\n\tgot '#{result}'",
             true
           )
-          return false # returns from parent method
+          return false # returns from volume_mount_unmount?
         end
       end
     end
@@ -316,7 +313,7 @@ class OpenStackTaster
   end
 
   def volume_detach?(instance, volume)
-    error_log(instance.name, 'Detaching...', true)
+    error_log(instance.name, "Detaching #{volume.name}.", true)
     instance.detach_volume(volume.id)
   rescue Excon::Error => e
     puts 'Failed to detach. check log for details.'
