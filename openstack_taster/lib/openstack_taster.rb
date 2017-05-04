@@ -245,6 +245,8 @@ class OpenStackTaster
     end
 
     error_log(instance.name, "Attaching volume '#{volume.name}' (#{volume.id})...", true)
+
+    @compute_service.attach_volume(volume.id, instance.id, nil)
     instance.wait_for(TIMEOUT_VOLUME_ATTACH, &volume_attached)
 
     error_log(instance.name, "Sleeping #{TIMEOUT_VOLUME_PERSIST} seconds for attachment persistance...", true)
