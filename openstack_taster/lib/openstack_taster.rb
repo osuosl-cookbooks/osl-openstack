@@ -275,6 +275,8 @@ class OpenStackTaster
 
     log_partitions(instance, username, ssh_logger)
 
+    error_log(instance.name, 'Adding ppc64-diag to VM...', true)
+
     commands = [
       ["echo -e \"127.0.0.1\t$HOSTNAME\" | sudo tee -a /etc/hosts", nil], # to fix problems with sudo and DNS resolution
       ['sudo partprobe -s',                        nil],
@@ -285,6 +287,50 @@ class OpenStackTaster
     ]
 
     error_log(instance.name, "Mounting volume '#{volume.name}' (#{volume.id})...", true)
+
+    error_log(instance.name, 'Adding ppc64-diag package', true)
+    package = ''
+    if username == 'debian'
+      puts('debian')
+      pkg_commands = [
+        ['sudo apt-get update',              ''],
+        ['sudo apt-get install ppc64-diag', nil]
+      ]
+    elsif username == 'opensuse'
+      puts('opensuse')
+      pkg_commands = [
+        ['sudo zypper update',              ''],
+        ['sudo zypper install ppc64-diag', nil]
+      ]
+    elsif username == 'ubuntu'
+      puts('ubuntu')
+      pkg_commands = [
+        ['sudo apt-get update',              ''],
+        ['sudo apt-get install ppc64-diag', nil]
+      ]
+    else 
+      puts('else')
+      pkg_commands = [
+        ['sudo yum update',              ''],
+        ['sudo yum install ppc64-diag', nil]
+      ]
+    end
+
+    with_ssh(instance, username, ssh_logger) do |ssh|
+      pkg_commands.each do |command, expected|
+        result = ssh.exec!(command).chomp
+        if expected.nil?
+          error_log(instance.name, "#{pkg_command} yielded '#{result}'")
+        elsif result != expected
+          error_log(
+            instance.name,
+            "Failure while running '#{pkg_command}':\n\texpected '#{expected}'\n\tgot '#{result}'",
+            true
+          )
+          return false
+        end
+      end
+    end
 
     error_log(instance.name, 'Mounting from inside the instance...', true)
     with_ssh(instance, username, ssh_logger) do |ssh|
