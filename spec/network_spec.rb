@@ -44,6 +44,20 @@ neutron.services.l3_router.l3_router_plugin.L3RouterPlugin$/,
           .with_section_content('DEFAULT', line)
       end
     end
+    context 'Set bind_service' do
+      cached(:chef_run) do
+        ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
+          node.set['osl-openstack']['bind_service'] = '192.168.1.1'
+        end.converge(described_recipe)
+      end
+      it do
+        expect(chef_run).to render_config_file(file.name)
+          .with_section_content(
+            'DEFAULT',
+            /^bind_host = 192.168.1.1$/
+          )
+      end
+    end
     %w(keystone_authtoken nova).each do |s|
       it do
         expect(chef_run).to render_config_file(file.name)
