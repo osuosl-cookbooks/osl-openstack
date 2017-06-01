@@ -49,6 +49,12 @@ node.default['openstack']['compute']['conf'].tap do |conf|
   conf['DEFAULT']['notify_on_state_change'] = 'vm_and_task_state'
   conf['DEFAULT']['disk_allocation_ratio'] = 1.5
   conf['libvirt']['disk_cachemodes'] = 'file=writeback,block=none'
+  conf['DEFAULT']['allow_resize_to_same_host'] = 'True'
+  conf['DEFAULT']['scheduler_default_filters'] = 'RetryFilter,
+  AvailabilityZoneFilter, RamFilter, DiskFilter, ComputeFilter,
+  ComputeCapabilitiesFilter, ImagePropertiesFilter,
+  ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter,
+  AllHostsFilter'
 end
 node.default['openstack']['network'].tap do |conf|
   conf['conf']['DEFAULT']['service_plugins'] =
