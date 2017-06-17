@@ -22,7 +22,7 @@ node.default['apache']['contact'] = 'hostmaster@osuosl.org'
 node.default['osl-apache']['server_status_port'] = 80
 node.default['yum']['qemu-ev-attr']['glusterfs_34'] = true
 node.default['rabbitmq']['use_distro_version'] = true
-node.default['openstack']['release'] = 'mitaka'
+node.default['openstack']['release'] = 'newton'
 node.default['openstack']['secret']['key_path'] =
   '/etc/chef/encrypted_data_bag_secret'
 node.default['openstack']['misc_openrc'] = [
@@ -328,8 +328,12 @@ include_recipe 'openstack-common'
 include_recipe 'openstack-common::logging'
 include_recipe 'openstack-common::sysctl'
 include_recipe 'openstack-identity::openrc'
+include_recipe 'build-essential'
 include_recipe 'openstack-common::client'
-include_recipe 'openstack-telemetry::client'
+
+edit_resource(:python_runtime, '2') do
+  provider :system
+end
 
 # Needed for accessing neutron when running separate from controller node
 package 'python-memcached'

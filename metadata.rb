@@ -17,13 +17,11 @@ version          '2.5.13'
   depends cb
 end
 
+depends 'build-essential'
 depends 'firewall', '>= 2.2.0'
 depends 'osl-apache', '>= 2.8.5'
-depends 'memcached', '= 3.0.0'
 depends 'systemd', '< 3.0.0'
 depends 'user'
-depends 'yum', '= 3.5.4'
 depends 'yum-centos'
-depends 'yum-epel'
 
 supports         'centos', '~> 7.0'

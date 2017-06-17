@@ -17,10 +17,10 @@ describe 'osl-openstack::default' do
     it do
       expect(chef_run).to add_yum_repository('OSL-openpower-openstack')
         .with(
-          description: 'OSL Openpower OpenStack repo for centos-7/openstack-mitaka',
+          description: 'OSL Openpower OpenStack repo for centos-7/openstack-newton',
           gpgkey: 'http://ftp.osuosl.org/pub/osl/repos/yum/RPM-GPG-KEY-osuosl',
           gpgcheck: true,
-          baseurl: 'http://ftp.osuosl.org/pub/osl/repos/yum/openpower/centos-$releasever/$basearch/openstack-mitaka'
+          baseurl: 'http://ftp.osuosl.org/pub/osl/repos/yum/openpower/centos-$releasever/$basearch/openstack-newton'
         )
     end
   end
@@ -33,7 +33,6 @@ describe 'osl-openstack::default' do
     openstack-common::sysctl
     openstack-identity::openrc
     openstack-common::client
-    openstack-telemetry::client
   ).each do |r|
     it do
       expect(chef_run).to include_recipe(r)
