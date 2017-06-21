@@ -22,13 +22,9 @@ provisioner:
     openstack:
       secret:
         key_path: "/tmp/kitchen/encrypted_data_bag_secret"
-    mysql:
-      server_root_password: rootpass
-      server_debian_password: debpass
-      server_repl_password: replpass
-      allow_remote_root: true
-      root_network_acl:
-        - "%"
+    mariadb:
+      server_root_password: "rootpass"
+      forbid_remote_root: false
     yum:
       epel:
         baseurl: http://epel.osuosl.org/7/$basearch

@@ -70,7 +70,7 @@ end
 #   end
 # end
 
-describe command('source /root/openrc && openstack compute service list') do
+describe command('source /root/openrc && /usr/local/bin/openstack compute service list') do
   list_output = '\s*\|\scomputecontroll.+\s*\|\sinternal\s\|\senabled\s\|\sup' \
     '\s*\|\s[0-9]{4}-[0-9]{2}-[0-9]{2}'
   %w(conductor scheduler cert consoleauth).each do |s|
