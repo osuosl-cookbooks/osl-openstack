@@ -49,7 +49,7 @@ describe 'osl-openstack::block_storage_controller' do
       expect(chef_run).to render_config_file(file.name)
         .with_section_content(
           'keystone_authtoken',
-          %r{^auth_url = https://10.0.0.10:5000/v2.0$}
+          %r{^auth_url = https://10.0.0.10:5000/v3$}
         )
     end
     it do

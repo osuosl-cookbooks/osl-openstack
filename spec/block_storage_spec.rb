@@ -11,7 +11,6 @@ describe 'osl-openstack::block_storage' do
     firewall::iscsi
     osl-openstack
     openstack-block-storage::volume
-    openstack-block-storage::client
     openstack-block-storage::identity_registration
   ).each do |r|
     it "includes cookbook #{r}" do
