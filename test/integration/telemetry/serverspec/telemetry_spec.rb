@@ -3,7 +3,6 @@ require 'serverspec'
 set :backend, :exec
 
 %w(
-  openstack-ceilometer-api
   openstack-ceilometer-central
   openstack-ceilometer-collector
   openstack-ceilometer-notification
