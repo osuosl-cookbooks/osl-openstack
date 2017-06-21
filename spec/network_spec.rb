@@ -97,7 +97,7 @@ neutron.services.l3_router.l3_router_plugin.L3RouterPlugin$/,
         expect(chef_run).to render_config_file(file.name)
           .with_section_content(
             s,
-            %r{^auth_url = https://10.0.0.10:5000/v2.0$}
+            %r{^auth_url = https://10.0.0.10:5000/v3$}
           )
       end
     end
