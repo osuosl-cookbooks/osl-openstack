@@ -25,7 +25,7 @@ describe 'osl-openstack::dashboard', dashboard: true do
   %w(
     osl-openstack
     memcached
-    openstack-dashboard::server
+    openstack-dashboard::horizon
   ).each do |r|
     it "includes cookbook #{r}" do
       expect(chef_run).to include_recipe(r)
