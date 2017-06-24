@@ -162,3 +162,22 @@ suites:
         block-storage:
           volume:
             create_volume_group: true
+  - name: upgrade
+    driver:
+      image_ref: "openstack-mitaka-aio"
+    run_list:
+      - recipe[osl-openstack::upgrade]
+    attributes:
+      osl-openstack:
+        node_type: controller
+        endpoint_hostname: controller.example.com
+        db_hostname: controller.example.com
+        cinder:
+          iscsi_role: openstack_base
+          iscsi_ips:
+            - 127.0.2.1
+            - 127.0.3.1
+      openstack:
+        block-storage:
+          volume:
+            create_volume_group: true
