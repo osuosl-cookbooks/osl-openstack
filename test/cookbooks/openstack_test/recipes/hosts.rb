@@ -1,3 +1,4 @@
-hostsfile_entry node['ipaddress'] do
+hostsfile_entry node['osl-openstack']['bind_service'] do
   hostname 'controller.example.com'
+  action :append
 end

@@ -1,5 +1,9 @@
 include_recipe 'certificate::wildcard'
 
+package 'ca-certificates' do
+  action :upgrade
+end
+
 execute 'copy self-signed ca-cert' do
   command <<-EOF
     cat /etc/pki/tls/certs/wildcard-bundle.crt >> \
