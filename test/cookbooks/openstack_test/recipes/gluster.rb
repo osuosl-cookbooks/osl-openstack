@@ -11,12 +11,10 @@ directory '/data/openstack-glance' do
 end
 execute 'create gluster glance volume' do
   command <<-EOH
-    gluster volume create openstack-glance \
-      #{node['ipaddress']}:/data/openstack-glance force
+    gluster volume create openstack-glance #{node['openstack_test']['gluster_host']}:/data/openstack-glance force
     gluster volume start openstack-glance
   EOH
   not_if 'gluster volume status openstack-glance'
 end
 
-node.default['osl-openstack']['image']['glance_vol'] =
-  "#{node['ipaddress']}:/openstack-glance"
+node.default['osl-openstack']['image']['glance_vol'] = "#{node['openstack_test']['gluster_host']}:/openstack-glance"

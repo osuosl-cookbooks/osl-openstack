@@ -11,7 +11,14 @@ provisioner:
       database_suffix: x86
       databag_prefix: x86
       endpoint_hostname: controller.example.com
+      db_hostname: controller.example.com
+      bind_service: 127.0.0.1
+      vxlan_interface:
+        controller:
+          default: lo
       nova_public_key: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDYOuLkP1F/Sm/dCJAA7kme+ObO4J8x2HrZU40W8QqW4yFqRPKnW5HYLeUpRzIFzWen/LIn6R6lxTfSAnnD8qEEuKbFjH5WRqJYCJeAyaTBTRyU1FHlcTR/EQ/HVZ38TQwCztZgboFb5zmWqYc3/BYBHGA6XeYN5jRcHvZbyaGL+YA1/KPIjpbQfqIPXdHfodoSNX4qQQccYBq2c/rq3Puh7Q9oVph6a2lq0wWsqYyq0vTGHPKFYShVpwDl2Z3c8eB3P7yFRzOR2VNuezJlOgoHz6D/mBObLj1n+yi07bcGbpwAH/rLEyiy4gVdru2qQAcbDL9Yibk96lovim/IH4dV nova-migration
+    openstack_test:
+      gluster_host: controller.example.com
     openstack:
       secret:
         key_path: "/tmp/kitchen/encrypted_data_bag_secret"
@@ -25,7 +32,7 @@ provisioner:
     yum:
       epel:
         baseurl: http://epel.osuosl.org/7/$basearch
-        enable: true
+        enabled: true
         gpgkey: http://epel.osuosl.org/RPM-GPG-KEY-EPEL-7
     scl:
       packages:
@@ -146,11 +153,10 @@ suites:
       - recipe[openstack_test::gluster]
       - recipe[osl-openstack::controller]
       - recipe[osl-openstack::compute]
-      - recipe[osl-openstack::cinder]
+      - recipe[osl-openstack::block_storage]
       - recipe[openstack-integration-test::setup]
     attributes:
       osl-openstack:
-        endpoint_hostname: localhost
         cinder:
           iscsi_role: openstack_base
           iscsi_ips:
