@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.5.1 (2017-06-28)
+------------------
+- Use controller.example.com for all endpoints and port binding in test-kitchen
+
 2.5.0 (2017-04-13)
 ------------------
 - Separate Network Node logic
