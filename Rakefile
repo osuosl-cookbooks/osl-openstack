@@ -6,7 +6,7 @@ client_options = '--force-formatter -z ' \
 task default: ['test']
 
 desc 'Run all tests'
-task test: [:berks_update, :style, :lint, :unit]
+task test: [:style, :lint, :unit]
 
 def run_command(command)
   if File.exist?('Gemfile.lock')
@@ -87,11 +87,6 @@ desc 'Blow everything away'
 task clean: [:destroy_all]
 
 # CI tasks
-desc 'Update Berkshelf'
-task :berks_update do
-    run_command('berks update')
-end
-
 require 'rubocop/rake_task'
 desc 'Run RuboCop (style) tests'
 RuboCop::RakeTask.new(:style)
@@ -103,5 +98,6 @@ end
 
 desc 'Run RSpec (unit) tests'
 task :unit do
+    run_command('rm -f Berksfile.lock')
     run_command('rspec --format documentation --color')
 end
