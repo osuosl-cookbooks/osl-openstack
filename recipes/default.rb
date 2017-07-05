@@ -110,12 +110,7 @@ node.default['openstack']['block-storage']['conf'].tap do |conf|
   conf['DEFAULT']['volume_clear_size'] = 256
 end
 
-case node['kernel']['machine']
-when 'ppc64', 'ppc64le'
-  node.default['openstack']['block-storage']['platform']['cinder_volume_packages'] = %w(qemu-img-rhev)
-when 'x86_64'
-  node.default['openstack']['block-storage']['platform']['cinder_volume_packages'] = %w(qemu-img-ev)
-end
+node.default['openstack']['block-storage']['platform']['cinder_volume_packages'] = %w(qemu-img-ev)
 
 # Dynamically find the hostname for the controller node, or use a pre-determined
 # DNS name
