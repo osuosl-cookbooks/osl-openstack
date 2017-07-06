@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.5.2 (2017-07-06)
+------------------
+- Switch all archs to qemu-kvm-ev
+
 2.5.1 (2017-06-28)
 ------------------
 - Use controller.example.com for all endpoints and port binding in test-kitchen
