@@ -53,6 +53,9 @@ include_recipe 'osl-openstack::linuxbridge'
 include_recipe 'openstack-compute::compute'
 include_recipe 'openstack-telemetry::agent-compute'
 
+# Not needed on a compute node
+delete_resource(:directory, '/var/run/httpd/ceilometer')
+
 # Setup ssh key for nova migrations between compute nodes
 user_account 'nova' do
   system_user true
