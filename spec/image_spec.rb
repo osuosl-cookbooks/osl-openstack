@@ -29,12 +29,13 @@ describe 'osl-openstack::image', image: true do
     describe "/etc/glance/glance-#{f}.conf" do
       let(:file) { chef_run.template("/etc/glance/glance-#{f}.conf") }
 
-      it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content(
-            'DEFAULT',
-            /^bind_host = 10.0.0.2$/
-          )
+      [
+        /^bind_host = 10.0.0.2$/,
+        %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$}
+      ].each do |line|
+        it do
+          expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
+        end
       end
 
       context 'Set bind_service' do

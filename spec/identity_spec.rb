@@ -38,7 +38,8 @@ describe 'osl-openstack::identity', identity: true do
     let(:file) { chef_run.template('/etc/keystone/keystone.conf') }
     [
       %r{^public_endpoint = https://10.0.0.10:5000/$},
-      %r{^admin_endpoint = https://10.0.0.10:35357/$}
+      %r{^admin_endpoint = https://10.0.0.10:35357/$},
+      %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$}
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)

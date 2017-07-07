@@ -17,6 +17,11 @@
 # limitations under the License.
 #
 
+# Make Openstack object available in Chef::Recipe
+class ::Chef::Recipe
+  include ::Openstack
+end
+
 node.default['authorization']['sudo']['include_sudoers_d'] = true
 node.default['apache']['contact'] = 'hostmaster@osuosl.org'
 node.default['osl-apache']['server_status_port'] = 80
@@ -217,20 +222,21 @@ end
   network_metering
   telemetry
 ).each do |i|
+  rabbit_user = node['openstack']['mq']['network']['rabbit']['userid']
+  rabbit_pass = get_password 'user', rabbit_user
+  rabbit_port = node['openstack']['endpoints']['mq']['port']
   node.default['openstack'][i]['conf'].tap do |conf|
-    # Make Openstack object available in Chef::Recipe
-    class ::Chef::Recipe
-      include ::Openstack
-    end
-    user = node['openstack']['mq']['network']['rabbit']['userid']
     conf['oslo_messaging_notifications']['driver'] = 'messagingv2'
     conf['cache']['memcache_servers'] = memcached_servers
     conf['cache']['enabled'] = true
     conf['cache']['backend'] = 'oslo_cache.memcache_pool'
     conf['keystone_authtoken']['memcached_servers'] = memcached_servers
     conf['oslo_messaging_rabbit']['rabbit_host'] = endpoint_hostname
-    conf['oslo_messaging_rabbit']['rabbit_userid'] = user
-    conf['oslo_messaging_rabbit']['rabbit_password'] = get_password 'user', user
+    conf['oslo_messaging_rabbit']['rabbit_userid'] = rabbit_user
+    conf['oslo_messaging_rabbit']['rabbit_password'] = rabbit_pass
+  end
+  node.override['openstack'][i]['conf_secrets']['DEFAULT'].tap do |conf|
+    conf['transport_url'] = "rabbit://#{rabbit_user}:#{rabbit_pass}@#{endpoint_hostname}:#{rabbit_port}"
   end
 end
 
@@ -282,7 +288,7 @@ node.default['openstack']['bind_service']['all']['network']['host'] =
   node['osl-openstack']['bind_service']
 node.default['openstack']['endpoints'].tap do |conf|
   conf['db']['host'] = db_hostname
-  conf['mq']['host'] = network_hostname
+  conf['mq']['host'] = endpoint_hostname
   %w(admin public internal).each do |t|
     conf[t]['network']['host'] = network_hostname
   end

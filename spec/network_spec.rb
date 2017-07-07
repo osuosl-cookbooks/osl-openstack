@@ -71,7 +71,8 @@ EOL
 neutron.services.l3_router.l3_router_plugin.L3RouterPlugin$/,
       /^allow_overlapping_ips = True$/,
       /^router_distributed = False$/,
-      /^bind_host = 10.0.0.2$/
+      /^bind_host = 10.0.0.2$/,
+      %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$}
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
