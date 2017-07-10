@@ -39,7 +39,7 @@ cookbook 'ibm-power', git: 'git@github.com:osuosl-cookbooks/ibm-power.git'
 ).each do |cb|
   cookbook "openstack-#{cb}",
            github: "openstack/cookbook-openstack-#{cb}",
-           branch: 'stable/mitaka'
+           tag: 'mitaka-eol'
 end
 
 cookbook 'openstack_test', path: 'test/cookbooks/openstack_test'
