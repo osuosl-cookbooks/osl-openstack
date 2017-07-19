@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.5.3 (2017-07-19)
+------------------
+- Lock systemd cookbook to anything < 3.0.0
+
 2.5.2 (2017-07-06)
 ------------------
 - Switch all archs to qemu-kvm-ev
