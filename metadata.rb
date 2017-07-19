@@ -13,12 +13,13 @@ version          '2.5.2'
   openstack-dashboard openstack-identity openstack-integration-test
   openstack-image openstack-network openstack-ops-database
   openstack-ops-messaging openstack-orchestration openstack-telemetry selinux
-  sudo systemd yum-qemu-ev ibm-power apache2 yum-epel}.each do |cb|
+  sudo yum-qemu-ev ibm-power apache2 yum-epel}.each do |cb|
   depends cb
 end
 
 depends 'firewall', '>= 2.2.0'
 depends 'memcached', '= 3.0.0'
+depends 'systemd', '< 3.0.0'
 depends 'user'
 depends 'yum', '= 3.5.4'
 depends 'yum-centos'
