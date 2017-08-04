@@ -24,6 +24,10 @@ describe 'osl-openstack::block_storage' do
   end
 
   it do
+    expect(chef_run).to install_package('python2-crypto')
+  end
+
+  it do
     expect(chef_run).to upgrade_package('qemu-img-ev')
   end
 
