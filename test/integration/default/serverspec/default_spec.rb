@@ -8,7 +8,7 @@ describe yumrepo('RDO-newton') do
 end
 
 describe file('/etc/yum.repos.d/epel.repo') do
-  its(:content) { should match(/^exclude=python2-uritemplate python2-google-api-client$/) }
+  its(:content) { should match(/^exclude=zeromq\*$/) }
 end
 
 describe file('/root/openrc') do

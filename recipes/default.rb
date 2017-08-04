@@ -315,15 +315,11 @@ end
 
 include_recipe 'yum-epel'
 
-node['yum-epel']['repositories'].each do |repo|
+node['yum-epel']['repos'].each do |repo|
   next unless node['yum'][repo]['managed']
   r = resources(yum_repository: repo)
-  # If we already have excludes, include them and append these packages which are causing dependency issues.
-  r.exclude = [
-    r.exclude,
-    'python2-uritemplate',
-    'python2-google-api-client'
-  ].reject(&:nil?).join(' ')
+  # If we already have excludes, include them and append zeromq
+  r.exclude = [r.exclude, 'zeromq*'].reject(&:nil?).join(' ')
 end
 
 include_recipe 'base::ifconfig'

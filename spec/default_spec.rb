@@ -24,6 +24,9 @@ describe 'osl-openstack::default' do
         )
     end
   end
+  it do
+    expect(chef_run).to create_yum_repository('epel').with(exclude: 'zeromq*')
+  end
   %w(
     base::ifconfig
     selinux::permissive
@@ -37,9 +40,6 @@ describe 'osl-openstack::default' do
     it do
       expect(chef_run).to include_recipe(r)
     end
-  end
-  it do
-    expect(chef_run).to create_yum_repository('epel').with(exclude: 'python2-uritemplate python2-google-api-client')
   end
   it do
     expect(chef_run).to install_package('python-memcached')
