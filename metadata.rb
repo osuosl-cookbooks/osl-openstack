@@ -8,7 +8,7 @@ description      'Installs/Configures osl-openstack'
 long_description 'Installs/Configures osl-openstack'
 version          '2.5.3'
 
-%w{ base certificate chef-sugar memcached osl-apache osl-nrpe kernel-modules
+%w{ base certificate chef-sugar memcached osl-nrpe kernel-modules
   mysql openstack-block-storage openstack-common openstack-compute
   openstack-dashboard openstack-identity openstack-integration-test
   openstack-image openstack-network openstack-ops-database
@@ -18,6 +18,7 @@ version          '2.5.3'
 end
 
 depends 'firewall', '>= 2.2.0'
+depends 'osl-apache', '>= 2.8.5'
 depends 'memcached', '= 3.0.0'
 depends 'systemd', '< 3.0.0'
 depends 'user'
