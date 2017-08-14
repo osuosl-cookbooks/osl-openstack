@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.5.6 (2017-08-14)
+------------------
+- Use correct syntax for nagios plugin
+
 2.5.5 (2017-08-14)
 ------------------
 - Include warn/crit disabled tuning on the nova-services nrpe check
