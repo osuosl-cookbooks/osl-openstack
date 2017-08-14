@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.5.4 (2017-08-14)
+------------------
+- Set the server_status_port to port 80 so that munin works
+
 2.5.3 (2017-07-19)
 ------------------
 - Lock systemd cookbook to anything < 3.0.0
