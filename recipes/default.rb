@@ -19,6 +19,7 @@
 
 node.default['authorization']['sudo']['include_sudoers_d'] = true
 node.default['apache']['contact'] = 'hostmaster@osuosl.org'
+node.default['osl-apache']['server_status_port'] = 80
 node.default['yum']['qemu-ev-attr']['glusterfs_34'] = true
 node.default['rabbitmq']['use_distro_version'] = true
 node.default['openstack']['release'] = 'mitaka'
