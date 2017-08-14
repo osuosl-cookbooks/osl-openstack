@@ -2,7 +2,7 @@ default['osl-openstack']['mon']['check_nova_services'] = {
   'warning' => '5:',
   'critical' => '4:',
   'warn_disabled' => '@1:',
-  'critical_disabled' => '0'
+  'critical_disabled' => '@0:'
 }
 default['osl-openstack']['mon']['check_nova_hypervisors'] = {
   'warn_memory_percent' => '0:80',
