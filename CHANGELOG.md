@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.5.5 (2017-08-14)
+------------------
+- Include warn/crit disabled tuning on the nova-services nrpe check
+
 2.5.4 (2017-08-14)
 ------------------
 - Set the server_status_port to port 80 so that munin works
