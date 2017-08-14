@@ -21,7 +21,7 @@ end
 describe file('/etc/nagios/nrpe.d/check_nova_services.cfg') do
   its(:content) do
     should match(%r{command\[check_nova_services\]=/bin/sudo \
-/usr/lib64/nagios/plugins/check_openstack check_nova-services -w 5: -c 4: --warn_disabled @1: --critical_disabled @0:})
+/usr/lib64/nagios/plugins/check_openstack check_nova-services -w 5: -c 4: --warn_disabled @1: --critical_disabled @0})
   end
 end
 
