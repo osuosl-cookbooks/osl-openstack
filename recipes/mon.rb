@@ -55,6 +55,8 @@ EOF
     command '/bin/sudo ' + check_openstack + ' check_nova-services'
     warning_condition mon['check_nova_services']['warning']
     critical_condition mon['check_nova_services']['critical']
+    parameters '--warn_disabled ' + mon['check_nova_services']['warn_disabled'] +
+               ' --critical_disabled ' + mon['check_nova_services']['critical_disabled']
   end
 
   nrpe_check 'check_nova_hypervisors' do

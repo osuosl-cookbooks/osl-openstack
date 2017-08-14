@@ -60,7 +60,8 @@ describe 'osl-openstack::mon' do
         .with(
           command: '/bin/sudo ' + check_openstack + ' check_nova-services',
           warning_condition: '5:',
-          critical_condition: '4:'
+          critical_condition: '4:',
+          parameters: '--warn_disabled @1: --critical_disabled 0'
         )
     end
     it do
