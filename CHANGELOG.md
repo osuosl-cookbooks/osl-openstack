@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.5.8 (2017-08-14)
+------------------
+- Revert fixes
+
 2.5.7 (2017-08-14)
 ------------------
 - Remove semicolon so it works
