@@ -30,6 +30,40 @@ describe 'osl-openstack::network', network: true do
       expect(chef_run).to include_recipe(r)
     end
   end
+  context 'Set subnet and uuid in physical_interface_mappings' do
+    cached(:chef_run) do
+      ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
+        node.set['osl-openstack']['physical_interface_mappings'] =
+          [
+            {
+              name: 'public',
+              subnet: '10.0.0.0/24',
+              uuid: '4c948996-d603-4263-bcd8-fa5ade80bed8',
+              controller: { default: 'eth1' },
+              compute: { default: 'eth1' }
+            },
+            {
+              name: 'backend',
+              controller: { default: 'eth1' },
+              compute: { default: 'eth1' }
+            }
+          ]
+      end.converge(described_recipe)
+    end
+    before do
+      ip_cmd = 'ip netns exec qdhcp-4c948996-d603-4263-bcd8-fa5ade80bed8'
+      stub_command("#{ip_cmd} iptables -S | egrep \"10.0.0.0/24.*port 53.*DROP\"").and_return(false)
+    end
+    it do
+      expect(chef_run).to run_bash('block external dns on public')
+        .with(
+          code: <<-EOL
+ip netns exec qdhcp-4c948996-d603-4263-bcd8-fa5ade80bed8 iptables -A INPUT -p tcp --dport 53 ! -s 10.0.0.0/24 -j DROP
+ip netns exec qdhcp-4c948996-d603-4263-bcd8-fa5ade80bed8 iptables -A INPUT -p udp --dport 53 ! -s 10.0.0.0/24 -j DROP
+EOL
+        )
+    end
+  end
   describe '/etc/neutron/neutron.conf' do
     let(:file) { chef_run.template('/etc/neutron/neutron.conf') }
     [
