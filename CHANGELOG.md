@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.5.9 (2017-08-23)
+------------------
+- Add iptable rules to block external DNS traffic on public provider networks
+
 2.5.8 (2017-08-14)
 ------------------
 - Revert fixes
