@@ -79,9 +79,11 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/
       cached(:chef_run) { runner.converge(described_recipe) }
       before do
         node.set['osl-openstack']['node_type'] = 'controller'
-        node.set['osl-openstack']['vxlan_interface']['controller'] \
-          ['default'] = 'eth2'
-        node.automatic['network']['interfaces']['eth1']['addresses'] = {}
+        node.set['osl-openstack']['vxlan_interface']['controller']['default'] = 'eth2'
+        node.automatic['network']['interfaces']['eth2']['addresses'] = {
+          'AA:00:00:4A:A6:6E' => { 'family' => 'lladdr' },
+          'fe80::a800:ff:fe4a:a66e' => { 'family' => 'inet6', 'prefixlen' => '64', 'scope' => 'Link', 'tags' => [] }
+        }
       end
       it do
         expect(chef_run).to render_config_file(file.name)
