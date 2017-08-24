@@ -38,13 +38,18 @@ vxlan_interface = if vxlan[node_type][node['fqdn']]
                     vxlan[node_type]['default']
                   end
 vxlan_addrs = node['network']['interfaces'][vxlan_interface]
-vxlan_ip = if vxlan_addrs.nil?
+vxlan_ip = if vxlan_addrs.nil? || vxlan_addrs['addresses'].empty?
              # Fall back to localhost if the interface has no IP
              '127.0.0.1'
            else
-             vxlan_addrs['addresses'].find do |_, attrs|
+             address = vxlan_addrs['addresses'].find do |_, attrs|
                attrs['family'] == 'inet'
-             end[0]
+             end
+             if address.nil?
+               '127.0.0.1'
+             else
+               address[0]
+             end
            end
 
 node.default['openstack']['network']['plugins']['linuxbridge']['conf']
