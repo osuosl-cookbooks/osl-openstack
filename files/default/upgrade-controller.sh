@@ -7,6 +7,11 @@ set -ex
 # Disable Chef temporarily
 rm -f /etc/cron.d/chef-client
 
+# Stop and disable openstack-ceilometer-api.service as it will be served via
+# httpd now
+systemctl stop openstack-ceilometer-api
+systemctl disable openstack-ceilometer-api
+
 # Stop all OpenStack services
 systemctl snapshot openstack-services
 systemctl stop 'openstack-*'
