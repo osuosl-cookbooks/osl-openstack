@@ -12,6 +12,9 @@ systemctl snapshot openstack-services
 systemctl stop 'openstack-*'
 systemctl stop 'neutron-*'
 
+# Upgrade the packages
+yum -y upgrade
+
 set +ex
 
 echo
