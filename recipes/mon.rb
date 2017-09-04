@@ -18,7 +18,7 @@
 #
 
 # Increase load threshold on openpower nodes (double the default values)
-if %w(ppc64 ppc64le).include?(node['kernel']['machine'])
+if node['kernel']['machine'] == 'ppc64le'
   total_cpu = node['cpu']['total']
   r = resources(nrpe_check: 'check_load')
   r.warning_condition = "#{total_cpu * 5 + 10},#{total_cpu * 5 + 5},#{total_cpu * 5}"

@@ -298,15 +298,13 @@ node.default['openstack']['endpoints'].tap do |conf|
 end
 
 yum_repository 'OSL-openpower-openstack' do
-  description "OSL Openpower OpenStack repo for #{node['platform']}-" +
-              node['platform_version'].to_i.to_s +
+  description "OSL Openpower OpenStack repo for #{node['platform']}-#{node['platform_version'].to_i}" \
               "/openstack-#{node['openstack']['release']}"
   gpgkey node['osl-openstack']['openpower']['yum']['repo-key']
   gpgcheck true
-  baseurl node['osl-openstack']['openpower']['yum']['uri'] +
-          "/openstack-#{node['openstack']['release']}"
+  baseurl "#{node['osl-openstack']['openpower']['yum']['uri']}/openstack-#{node['openstack']['release']}"
   enabled true
-  only_if { %w(ppc64 ppc64le).include?(node['kernel']['machine']) }
+  only_if { node['kernel']['machine'] == 'ppc64le' }
   action :add
 end
 

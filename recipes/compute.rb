@@ -25,7 +25,7 @@ include_recipe 'ibm-power::default'
 kernel_module 'tun'
 
 case node['kernel']['machine']
-when 'ppc64', 'ppc64le'
+when 'ppc64le'
   include_recipe 'chef-sugar::default'
   if %w(openstack).include?(node.deep_fetch('cloud', 'provider'))
     kernel_module 'kvm_pr'

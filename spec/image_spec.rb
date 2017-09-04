@@ -120,7 +120,7 @@ describe 'osl-openstack::image', image: true do
     expect(chef_run).to_not enable_mount('/var/lib/glance/images')
   end
   context 'Set glance gluster volume' do
-    let(:chef_run) { runner.converge(described_recipe) }
+    cached(:chef_run) { runner.converge(described_recipe) }
     before do
       node.set['osl-openstack']['image']['glance_vol'] =
         'fs1.example.org:/glance'
