@@ -2,7 +2,9 @@ require_relative 'spec_helper'
 
 describe 'osl-openstack::default' do
   cached(:chef_run) do
-    ChefSpec::SoloRunner.new(REDHAT_OPTS).converge(described_recipe)
+    ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
+      node.automatic['filesystem2']['by_mountpoint']
+    end.converge(described_recipe)
   end
   include_context 'identity_stubs'
   it do
@@ -12,7 +14,13 @@ describe 'osl-openstack::default' do
     cached(:chef_run) do
       ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
         node.automatic['kernel']['machine'] = 'ppc64le'
+        node.automatic['filesystem2']['by_mountpoint']
       end.converge(described_recipe)
+    end
+    %w(libffi-devel openssl-devel).each do |pkg|
+      it do
+        expect(chef_run).to install_package(pkg)
+      end
     end
     it do
       expect(chef_run).to add_yum_repository('OSL-openpower-openstack')
@@ -24,11 +32,17 @@ describe 'osl-openstack::default' do
         )
     end
   end
+  %w(libffi-devel openssl-devel).each do |pkg|
+    it do
+      expect(chef_run).to_not install_package(pkg)
+    end
+  end
   it do
     expect(chef_run).to create_yum_repository('epel').with(exclude: 'zeromq*')
   end
   %w(
     base::ifconfig
+    base::packages
     selinux::permissive
     yum-qemu-ev
     openstack-common

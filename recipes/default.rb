@@ -313,6 +313,7 @@ yum_repository 'OSL-openpower-openstack' do
   action :add
 end
 
+include_recipe 'base::packages'
 include_recipe 'yum-epel'
 
 node['yum-epel']['repos'].each do |repo|
@@ -320,6 +321,15 @@ node['yum-epel']['repos'].each do |repo|
   r = resources(yum_repository: repo)
   # If we already have excludes, include them and append zeromq
   r.exclude = [r.exclude, 'zeromq*'].reject(&:nil?).join(' ')
+end
+
+%w(
+  libffi-devel
+  openssl-devel
+).each do |p|
+  package p do
+    only_if { node['kernel']['machine'] == 'ppc64le' }
+  end
 end
 
 include_recipe 'base::ifconfig'

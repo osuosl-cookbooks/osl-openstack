@@ -2,7 +2,9 @@ require_relative '../../spec_helper'
 
 describe 'osl-openstack::upgrade' do
   cached(:chef_run) do
-    ChefSpec::SoloRunner.new(REDHAT_OPTS).converge(described_recipe)
+    ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
+      node.automatic['filesystem2']['by_mountpoint']
+    end.converge(described_recipe)
   end
   include_context 'identity_stubs'
   it 'converges successfully' do
@@ -22,6 +24,7 @@ describe 'osl-openstack::upgrade' do
     cached(:chef_run) do
       ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
         node.set['osl-openstack']['node_type'] = 'controller'
+        node.automatic['filesystem2']['by_mountpoint']
       end.converge(described_recipe)
     end
     it do

@@ -48,6 +48,7 @@ describe 'osl-openstack::network', network: true do
               compute: { default: 'eth1' }
             }
           ]
+        node.automatic['filesystem2']['by_mountpoint']
       end.converge(described_recipe)
     end
     before do
@@ -83,6 +84,7 @@ neutron.services.l3_router.l3_router_plugin.L3RouterPlugin$/,
       cached(:chef_run) do
         ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
           node.set['osl-openstack']['bind_service'] = '192.168.1.1'
+          node.automatic['filesystem2']['by_mountpoint']
         end.converge(described_recipe)
       end
       it do

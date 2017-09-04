@@ -42,6 +42,7 @@ describe 'osl-openstack::image', image: true do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
             node.set['osl-openstack']['bind_service'] = '192.168.1.1'
+            node.automatic['filesystem2']['by_mountpoint']
           end.converge(described_recipe)
         end
         it do

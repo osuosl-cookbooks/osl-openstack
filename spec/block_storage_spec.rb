@@ -20,6 +20,7 @@ describe 'osl-openstack::block_storage' do
   before do
     node.set['osl-openstack']['cinder']['iscsi_role'] = 'iscsi_role'
     node.set['osl-openstack']['cinder']['iscsi_ips'] = %w(10.11.0.1)
+    node.automatic['filesystem2']['by_mountpoint']
     stub_search(:node, 'role:iscsi_role').and_return([{ ipaddress: '10.10.0.1' }])
   end
 
