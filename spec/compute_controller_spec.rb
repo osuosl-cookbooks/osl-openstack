@@ -1,13 +1,8 @@
 require_relative 'spec_helper'
 require 'chef/application'
 
-describe 'osl-openstack::compute_controller', compute_controller: true do
-  let(:runner) do
-    ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-      # Work around for base::ifconfig:47
-      node.automatic['virtualization']['system']
-    end
-  end
+describe 'osl-openstack::compute_controller' do
+  let(:runner) { ChefSpec::SoloRunner.new(REDHAT_OPTS) }
   let(:node) { runner.node }
   cached(:chef_run) { runner.converge(described_recipe) }
   include_context 'common_stubs'
@@ -45,8 +40,7 @@ nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver$/,
       /^metadata_listen = 10.0.0.2$/
     ].each do |line|
       it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('DEFAULT', line)
+        expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
       end
     end
     it do
@@ -62,8 +56,7 @@ nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver$/,
       /^memcache_servers = 10.0.0.10:11211$/
     ].each do |line|
       it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('cache', line)
+        expect(chef_run).to render_config_file(file.name).with_section_content('cache', line)
       end
     end
 
@@ -72,8 +65,7 @@ nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver$/,
       %r{^auth_url = https://10.0.0.10:5000/v2.0$}
     ].each do |line|
       it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('keystone_authtoken', line)
+        expect(chef_run).to render_config_file(file.name).with_section_content('keystone_authtoken', line)
       end
     end
 
@@ -82,8 +74,7 @@ nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver$/,
       /^disk_cachemodes = file=writeback,block=none$/
     ].each do |line|
       it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('libvirt', line)
+        expect(chef_run).to render_config_file(file.name).with_section_content('libvirt', line)
       end
     end
 
@@ -93,8 +84,7 @@ nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver$/,
       %r{^auth_url = https://10.0.0.10:5000/v2.0$}
     ].each do |line|
       it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('neutron', line)
+        expect(chef_run).to render_config_file(file.name).with_section_content('neutron', line)
       end
     end
     context 'Separate Network Node' do
@@ -114,8 +104,7 @@ nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver$/,
       /^rabbit_password = mq-pass$/
     ].each do |line|
       it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('oslo_messaging_rabbit', line)
+        expect(chef_run).to render_config_file(file.name).with_section_content('oslo_messaging_rabbit', line)
       end
     end
 
@@ -128,8 +117,7 @@ nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver$/,
       /^vncserver_proxyclient_address = 10.0.0.2$/
     ].each do |line|
       it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('vnc', line)
+        expect(chef_run).to render_config_file(file.name).with_section_content('vnc', line)
       end
     end
 
@@ -137,8 +125,7 @@ nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver$/,
       %r{^api_servers = http://10.0.0.10:9292$}
     ].each do |line|
       it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('glance', line)
+        expect(chef_run).to render_config_file(file.name).with_section_content('glance', line)
       end
     end
 
@@ -147,8 +134,7 @@ nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver$/,
       /^proxyclient_address = 127.0.0.1$/
     ].each do |line|
       it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('serial_console', line)
+        expect(chef_run).to render_config_file(file.name).with_section_content('serial_console', line)
       end
     end
 
@@ -156,8 +142,7 @@ nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver$/,
       expect(chef_run).to render_config_file(file.name)
         .with_section_content(
           'database',
-          %r{^connection = mysql://nova_x86:nova_db_pass@10.0.0.10:3306/\
-nova_x86\?charset=utf8$}
+          %r{^connection = mysql://nova_x86:nova_db_pass@10.0.0.10:3306/nova_x86\?charset=utf8$}
         )
     end
 
@@ -165,8 +150,7 @@ nova_x86\?charset=utf8$}
       expect(chef_run).to render_config_file(file.name)
         .with_section_content(
           'api_database',
-          %r{^connection = mysql://nova_api_x86:nova_api_db_pass@10.0.0.10:\
-3306/nova_api_x86\?charset=utf8$}
+          %r{^connection = mysql://nova_api_x86:nova_api_db_pass@10.0.0.10:3306/nova_api_x86\?charset=utf8$}
         )
     end
   end
@@ -180,8 +164,7 @@ nova_x86\?charset=utf8$}
   end
 
   it 'creates novncproxy sysconfig template' do
-    expect(chef_run).to \
-      create_template('/etc/sysconfig/openstack-nova-novncproxy')
+    expect(chef_run).to create_template('/etc/sysconfig/openstack-nova-novncproxy')
   end
 
   it 'novnc-proxy sysconfig file notifies openstack-nova-novncproxy service' do

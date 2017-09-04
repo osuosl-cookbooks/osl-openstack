@@ -10,20 +10,18 @@ describe 'osl-openstack::mon' do
   it 'includes osl-nrpe recipe' do
     expect(chef_run).to include_recipe('osl-nrpe::default')
   end
-  %w(ppc64 ppc64le).each do |a|
-    context "Setting arch to #{a}" do
-      cached(:chef_run) do
-        ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-          node.automatic['kernel']['machine'] = a
-        end.converge('osl-nrpe', described_recipe)
-      end
-      it do
-        total_cpu = chef_run.node['cpu']['total']
-        expect(chef_run).to add_nrpe_check('check_load').with(
-          warning_condition: "#{total_cpu * 5 + 10},#{total_cpu * 5 + 5},#{total_cpu * 5}",
-          critical_condition: "#{total_cpu * 8 + 10},#{total_cpu * 8 + 5},#{total_cpu * 8}"
-        )
-      end
+  context 'Setting arch to ppc64le' do
+    cached(:chef_run) do
+      ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
+        node.automatic['kernel']['machine'] = 'ppc64le'
+      end.converge('osl-nrpe', described_recipe)
+    end
+    it do
+      total_cpu = chef_run.node['cpu']['total']
+      expect(chef_run).to add_nrpe_check('check_load').with(
+        warning_condition: "#{total_cpu * 5 + 10},#{total_cpu * 5 + 5},#{total_cpu * 5}",
+        critical_condition: "#{total_cpu * 8 + 10},#{total_cpu * 8 + 5},#{total_cpu * 8}"
+      )
     end
   end
   context 'controller node' do

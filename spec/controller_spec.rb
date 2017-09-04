@@ -1,13 +1,8 @@
 require_relative 'spec_helper'
 require 'chef/application'
 
-describe 'osl-openstack::controller', controller: true do
-  let(:runner) do
-    ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-      # Work around for base::ifconfig:47
-      node.automatic['virtualization']['system']
-    end
-  end
+describe 'osl-openstack::controller' do
+  let(:runner) { ChefSpec::SoloRunner.new(REDHAT_OPTS) }
   let(:node) { runner.node }
   cached(:chef_run) { runner.converge(described_recipe) }
   %w(

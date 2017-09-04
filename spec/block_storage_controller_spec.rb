@@ -1,14 +1,8 @@
 require_relative 'spec_helper'
 require 'chef/application'
 
-describe 'osl-openstack::block_storage_controller',
-         block_storage_controller: true do
-  let(:runner) do
-    ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-      # Work around for base::ifconfig:47
-      node.automatic['virtualization']['system']
-    end
-  end
+describe 'osl-openstack::block_storage_controller' do
+  let(:runner) { ChefSpec::SoloRunner.new(REDHAT_OPTS) }
   let(:node) { runner.node }
   cached(:chef_run) { runner.converge(described_recipe) }
   include_context 'common_stubs'
@@ -26,8 +20,7 @@ describe 'osl-openstack::block_storage_controller',
     end
   end
   it 'Uses GlusterFS 3.4 yum-qemu-ev repo' do
-    expect(chef_run.node['yum']['qemu-ev-attr']['glusterfs_34']).to \
-      eq(true)
+    expect(chef_run.node['yum']['qemu-ev-attr']['glusterfs_34']).to eq(true)
     expect(chef_run).to create_yum_repository('qemu-ev')
       .with(baseurl: 'http://ftp.osuosl.org/pub/osl/repos/yum/$releasever/RHEV-glusterfs-34/$basearch')
   end
@@ -42,8 +35,7 @@ describe 'osl-openstack::block_storage_controller',
       /^volume_clear_size = 256$/
     ].each do |line|
       it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('DEFAULT', line)
+        expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
       end
     end
     it do
@@ -64,8 +56,7 @@ describe 'osl-openstack::block_storage_controller',
       expect(chef_run).to render_config_file(file.name)
         .with_section_content(
           'database',
-          %r{^connection = mysql://cinder_x86:cinder@10.0.0.10:3306/\
-cinder_x86\?charset=utf8}
+          %r{^connection = mysql://cinder_x86:cinder@10.0.0.10:3306/cinder_x86\?charset=utf8}
         )
     end
     it do
@@ -81,8 +72,7 @@ cinder_x86\?charset=utf8}
       /^memcache_servers = 10.0.0.10:11211$/
     ].each do |line|
       it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('cache', line)
+        expect(chef_run).to render_config_file(file.name).with_section_content('cache', line)
       end
     end
 
@@ -92,8 +82,7 @@ cinder_x86\?charset=utf8}
       /^rabbit_password = mq-pass$/
     ].each do |line|
       it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('oslo_messaging_rabbit', line)
+        expect(chef_run).to render_config_file(file.name).with_section_content('oslo_messaging_rabbit', line)
       end
     end
   end

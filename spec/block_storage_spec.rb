@@ -1,13 +1,8 @@
 require_relative 'spec_helper'
 require 'chef/application'
 
-describe 'osl-openstack::block_storage', block_storage: true do
-  let(:runner) do
-    ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-      # Work around for base::ifconfig:47
-      node.automatic['virtualization']['system']
-    end
-  end
+describe 'osl-openstack::block_storage' do
+  let(:runner) { ChefSpec::SoloRunner.new(REDHAT_OPTS) }
   let(:node) { runner.node }
   cached(:chef_run) { runner.converge(described_recipe) }
   include_context 'identity_stubs'
@@ -26,8 +21,7 @@ describe 'osl-openstack::block_storage', block_storage: true do
   before do
     node.set['osl-openstack']['cinder']['iscsi_role'] = 'iscsi_role'
     node.set['osl-openstack']['cinder']['iscsi_ips'] = %w(10.11.0.1)
-    stub_search(:node, 'role:iscsi_role')
-      .and_return([{ ipaddress: '10.10.0.1' }])
+    stub_search(:node, 'role:iscsi_role').and_return([{ ipaddress: '10.10.0.1' }])
   end
 
   it do
@@ -39,10 +33,8 @@ describe 'osl-openstack::block_storage', block_storage: true do
     expect(chef_run).to create_iptables_ng_rule('iscsi_ipv4').with(
       rule:
         [
-          '--protocol tcp --source 10.11.0.1 ' \
-          '--destination-port 3260 --jump ACCEPT',
-          '--protocol tcp --source 127.0.0.1 ' \
-          '--destination-port 3260 --jump ACCEPT'
+          '--protocol tcp --source 10.11.0.1 --destination-port 3260 --jump ACCEPT',
+          '--protocol tcp --source 127.0.0.1 --destination-port 3260 --jump ACCEPT'
         ],
       chain: 'iscsi'
     )
