@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.5.11 (2017-09-04)
+-------------------
+- Remove ppc64 as we only use ppc64le currently
+
 2.5.10 (2017-08-24)
 -------------------
 - Properly fix situations where the initial run has interfaces not setup
