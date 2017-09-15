@@ -16,19 +16,19 @@ cookbook 'yum-qemu-ev', git: 'git@github.com:osuosl-cookbooks/yum-qemu-ev.git'
 cookbook 'ibm-power', git: 'git@github.com:osuosl-cookbooks/ibm-power.git'
 
 # WIP patches
-# %w(
-# ).each do |cb|
-#   cookbook "openstack-#{cb}",
-#            github: "osuosl-cookbooks/cookbook-openstack-#{cb}",
-#            branch: 'stable/mitaka'
-# end
+%w(
+  dashboard
+).each do |cb|
+  cookbook "openstack-#{cb}",
+           github: "osuosl-cookbooks/cookbook-openstack-#{cb}",
+           branch: 'stable/mitaka'
+end
 
 # Openstack deps
 %w(
   block-storage
   common
   compute
-  dashboard
   identity
   image
   integration-test
