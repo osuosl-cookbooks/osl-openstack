@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.5.12 (2017-09-15)
+-------------------
+- Update RDO baseurl for Mitaka release
+
 2.5.11 (2017-09-04)
 -------------------
 - Remove ppc64 as we only use ppc64le currently
