@@ -37,7 +37,10 @@ nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver$/,
       /^instance_usage_audit_period = hour$/,
       /^notify_on_state_change = vm_and_task_state$/,
       /^osapi_compute_listen = 10.0.0.2$/,
-      /^metadata_listen = 10.0.0.2$/
+      /^metadata_listen = 10.0.0.2$/,
+      /^scheduler_available_filters = nova.scheduler.filters.all_filters$/,
+      /^scheduler_default_filters = AvailabilityZoneFilter,ComputeCapabilitiesFilter,ComputeFilter,DiskFilter,\
+ImagePropertiesFilter,RamFilter,RetryFilter,ServerGroupAffinityFilter,ServerGroupAntiAffinityFilter$/
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
@@ -95,6 +98,25 @@ nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver$/,
       it do
         expect(chef_run).to render_config_file(file.name)
           .with_section_content('neutron', %r{^url = http://10.0.0.11:9696$})
+      end
+    end
+
+    context 'ml2_mlnx enabled' do
+      include_context 'mellanox_stubs'
+      cached(:chef_run) { runner.converge(described_recipe) }
+      before do
+        node.set['osl-openstack']['ml2_mlnx']['enabled'] = true
+      end
+      [
+        /^scheduler_default_filters = AvailabilityZoneFilter,ComputeCapabilitiesFilter,ComputeFilter,DiskFilter,\
+ImagePropertiesFilter,RamFilter,RetryFilter,ServerGroupAffinityFilter,ServerGroupAntiAffinityFilter,\
+PciPassthroughFilter$/,
+        /^pci_passthrough_whitelist = {"vendor_id":"15b3","product_id":"1003"}$/
+      ].each do |line|
+        it do
+          expect(chef_run).to render_config_file(file.name)
+            .with_section_content('DEFAULT', line)
+        end
       end
     end
 
