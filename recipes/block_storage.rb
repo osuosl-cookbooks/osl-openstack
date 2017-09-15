@@ -27,8 +27,10 @@ end
 
 node.override['firewall']['range']['iscsi']['4'] = iscsi_hosts
 
+# Missing package dep
+package 'python2-crypto'
+
 include_recipe 'firewall::iscsi'
 include_recipe 'osl-openstack'
 include_recipe 'openstack-block-storage::volume'
-include_recipe 'openstack-block-storage::client'
 include_recipe 'openstack-block-storage::identity_registration'

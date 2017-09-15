@@ -17,19 +17,24 @@
 # limitations under the License.
 #
 
+# Make Openstack object available in Chef::Recipe
+class ::Chef::Recipe
+  include ::Openstack
+end
+
 node.default['authorization']['sudo']['include_sudoers_d'] = true
 node.default['apache']['contact'] = 'hostmaster@osuosl.org'
 node.default['osl-apache']['server_status_port'] = 80
 node.default['yum']['qemu-ev-attr']['glusterfs_34'] = true
 node.default['rabbitmq']['use_distro_version'] = true
-node.default['openstack']['release'] = 'mitaka'
+node.default['openstack']['release'] = 'newton'
 node.default['openstack']['secret']['key_path'] =
   '/etc/chef/encrypted_data_bag_secret'
 node.default['openstack']['misc_openrc'] = [
-  'export OS_CACERT=""'
+  'export OS_CACERT="/etc/ssl/certs/ca-bundle.crt"'
 ]
-node.default['openstack']['yum']['uri'] =
-  'http://centos.osuosl.org/7.3.1611/cloud/x86_64/openstack-' + node['openstack']['release']
+node.default['openstack']['yum']['uri'] = \
+  'http://centos.osuosl.org/$releasever/cloud/x86_64/openstack-' + node['openstack']['release']
 node.default['openstack']['yum']['repo-key'] = 'https://github.com/' \
  "rdo-infra/rdo-release/raw/#{node['openstack']['release']}-rdo/" \
  'RPM-GPG-KEY-CentOS-SIG-Cloud'
@@ -217,20 +222,21 @@ end
   network_metering
   telemetry
 ).each do |i|
+  rabbit_user = node['openstack']['mq']['network']['rabbit']['userid']
+  rabbit_pass = get_password 'user', rabbit_user
+  rabbit_port = node['openstack']['endpoints']['mq']['port']
   node.default['openstack'][i]['conf'].tap do |conf|
-    # Make Openstack object available in Chef::Recipe
-    class ::Chef::Recipe
-      include ::Openstack
-    end
-    user = node['openstack']['mq']['network']['rabbit']['userid']
     conf['oslo_messaging_notifications']['driver'] = 'messagingv2'
     conf['cache']['memcache_servers'] = memcached_servers
     conf['cache']['enabled'] = true
     conf['cache']['backend'] = 'oslo_cache.memcache_pool'
     conf['keystone_authtoken']['memcached_servers'] = memcached_servers
     conf['oslo_messaging_rabbit']['rabbit_host'] = endpoint_hostname
-    conf['oslo_messaging_rabbit']['rabbit_userid'] = user
-    conf['oslo_messaging_rabbit']['rabbit_password'] = get_password 'user', user
+    conf['oslo_messaging_rabbit']['rabbit_userid'] = rabbit_user
+    conf['oslo_messaging_rabbit']['rabbit_password'] = rabbit_pass
+  end
+  node.override['openstack'][i]['conf_secrets']['DEFAULT'].tap do |conf|
+    conf['transport_url'] = "rabbit://#{rabbit_user}:#{rabbit_pass}@#{endpoint_hostname}:#{rabbit_port}"
   end
 end
 
@@ -282,7 +288,7 @@ node.default['openstack']['bind_service']['all']['network']['host'] =
   node['osl-openstack']['bind_service']
 node.default['openstack']['endpoints'].tap do |conf|
   conf['db']['host'] = db_hostname
-  conf['mq']['host'] = network_hostname
+  conf['mq']['host'] = endpoint_hostname
   %w(admin public internal).each do |t|
     conf[t]['network']['host'] = network_hostname
   end
@@ -307,17 +313,23 @@ yum_repository 'OSL-openpower-openstack' do
   action :add
 end
 
+include_recipe 'base::packages'
 include_recipe 'yum-epel'
 
-node['yum-epel']['repositories'].each do |repo|
+node['yum-epel']['repos'].each do |repo|
   next unless node['yum'][repo]['managed']
   r = resources(yum_repository: repo)
-  # If we already have excludes, include them and append these packages which are causing dependency issues.
-  r.exclude = [
-    r.exclude,
-    'python2-uritemplate',
-    'python2-google-api-client'
-  ].reject(&:nil?).join(' ')
+  # If we already have excludes, include them and append zeromq
+  r.exclude = [r.exclude, 'zeromq*'].reject(&:nil?).join(' ')
+end
+
+%w(
+  libffi-devel
+  openssl-devel
+).each do |p|
+  package p do
+    only_if { node['kernel']['machine'] == 'ppc64le' }
+  end
 end
 
 include_recipe 'base::ifconfig'
@@ -328,8 +340,12 @@ include_recipe 'openstack-common'
 include_recipe 'openstack-common::logging'
 include_recipe 'openstack-common::sysctl'
 include_recipe 'openstack-identity::openrc'
+include_recipe 'build-essential'
 include_recipe 'openstack-common::client'
-include_recipe 'openstack-telemetry::client'
+
+edit_resource(:python_runtime, '2') do
+  provider :system
+end
 
 # Needed for accessing neutron when running separate from controller node
 package 'python-memcached'

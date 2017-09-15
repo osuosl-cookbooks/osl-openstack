@@ -2,22 +2,25 @@ require 'serverspec'
 
 set :backend, :exec
 
-describe yumrepo('RDO-mitaka') do
+describe yumrepo('RDO-newton') do
   it { should exist }
   it { should be_enabled }
 end
 
 describe file('/etc/yum.repos.d/epel.repo') do
-  its(:content) { should match(/^exclude=python2-uritemplate python2-google-api-client$/) }
+  its(:content) { should match(/^exclude=zeromq\*$/) }
 end
 
 describe file('/root/openrc') do
   its(:content) do
     should match(%r{
 export OS_USERNAME=admin
+export OS_USER_DOMAIN_NAME=default
 export OS_PASSWORD=admin
-export OS_TENANT_NAME=admin
-export OS_AUTH_URL=https://controller.example.com:5000/v2.0
+export OS_PROJECT_NAME=admin
+export OS_PROJECT_DOMAIN_NAME=default
+export OS_IDENTITY_API_VERSION=3
+export OS_AUTH_URL=https://controller.example.com:5000/v3
 export OS_REGION_NAME=RegionOne})
   end
 end

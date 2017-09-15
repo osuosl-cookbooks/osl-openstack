@@ -48,6 +48,7 @@ describe 'osl-openstack::network', network: true do
               compute: { default: 'eth1' }
             }
           ]
+        node.automatic['filesystem2']['by_mountpoint']
       end.converge(described_recipe)
     end
     before do
@@ -71,7 +72,8 @@ EOL
 neutron.services.l3_router.l3_router_plugin.L3RouterPlugin$/,
       /^allow_overlapping_ips = True$/,
       /^router_distributed = False$/,
-      /^bind_host = 10.0.0.2$/
+      /^bind_host = 10.0.0.2$/,
+      %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$}
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
@@ -82,6 +84,7 @@ neutron.services.l3_router.l3_router_plugin.L3RouterPlugin$/,
       cached(:chef_run) do
         ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
           node.set['osl-openstack']['bind_service'] = '192.168.1.1'
+          node.automatic['filesystem2']['by_mountpoint']
         end.converge(described_recipe)
       end
       it do
@@ -97,7 +100,7 @@ neutron.services.l3_router.l3_router_plugin.L3RouterPlugin$/,
         expect(chef_run).to render_config_file(file.name)
           .with_section_content(
             s,
-            %r{^auth_url = https://10.0.0.10:5000/v2.0$}
+            %r{^auth_url = https://10.0.0.10:5000/v3$}
           )
       end
     end

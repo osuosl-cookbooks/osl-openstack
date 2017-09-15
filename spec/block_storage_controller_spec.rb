@@ -32,7 +32,8 @@ describe 'osl-openstack::block_storage_controller' do
       %r{^glance_api_servers = http://10.0.0.10:9292},
       /^osapi_volume_listen = 10.0.0.2$/,
       /^volume_group = openstack$/,
-      /^volume_clear_size = 256$/
+      /^volume_clear_size = 256$/,
+      %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$}
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
@@ -49,7 +50,7 @@ describe 'osl-openstack::block_storage_controller' do
       expect(chef_run).to render_config_file(file.name)
         .with_section_content(
           'keystone_authtoken',
-          %r{^auth_url = https://10.0.0.10:5000/v2.0$}
+          %r{^auth_url = https://10.0.0.10:5000/v3$}
         )
     end
     it do

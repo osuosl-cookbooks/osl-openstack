@@ -21,9 +21,12 @@ machine 'controller' do
                     flavor_ref: flavor_ref,
                     security_groups: 'no-firewall',
                     key_name: ENV['OS_SSH_KEYPAIR'],
-                    floating_ip_pool: ENV['OS_FLOATING_IP_POOL']
+                    nics: [{ net_id: ENV['OS_NETWORK_UUID'] }]
                   },
                   ssh_username: node_ssh_user,
+                  ssh_options: {
+                    key_data: nil
+                  },
                   convergence_options: {
                     chef_version: '12.18.31'
                   }

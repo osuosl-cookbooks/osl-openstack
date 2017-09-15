@@ -29,18 +29,20 @@ describe 'osl-openstack::image', image: true do
     describe "/etc/glance/glance-#{f}.conf" do
       let(:file) { chef_run.template("/etc/glance/glance-#{f}.conf") }
 
-      it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content(
-            'DEFAULT',
-            /^bind_host = 10.0.0.2$/
-          )
+      [
+        /^bind_host = 10.0.0.2$/,
+        %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$}
+      ].each do |line|
+        it do
+          expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
+        end
       end
 
       context 'Set bind_service' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
             node.set['osl-openstack']['bind_service'] = '192.168.1.1'
+            node.automatic['filesystem2']['by_mountpoint']
           end.converge(described_recipe)
         end
         it do
@@ -73,7 +75,7 @@ describe 'osl-openstack::image', image: true do
 
       [
         /^memcached_servers = 10.0.0.10:11211$/,
-        %r{^auth_url = https://10.0.0.10:5000/v2.0$}
+        %r{^auth_url = https://10.0.0.10:5000/v3$}
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name)

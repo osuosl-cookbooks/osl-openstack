@@ -37,7 +37,8 @@ nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver$/,
       /^instance_usage_audit_period = hour$/,
       /^notify_on_state_change = vm_and_task_state$/,
       /^osapi_compute_listen = 10.0.0.2$/,
-      /^metadata_listen = 10.0.0.2$/
+      /^metadata_listen = 10.0.0.2$/,
+      %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$}
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
@@ -62,7 +63,7 @@ nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver$/,
 
     [
       /^memcached_servers = 10.0.0.10:11211$/,
-      %r{^auth_url = https://10.0.0.10:5000/v2.0$}
+      %r{^auth_url = https://10.0.0.10:5000/v3$}
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('keystone_authtoken', line)
@@ -81,7 +82,7 @@ nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver$/,
     [
       /^service_metadata_proxy = true$/,
       %r{^url = http://10.0.0.10:9696$},
-      %r{^auth_url = https://10.0.0.10:5000/v2.0$}
+      %r{^auth_url = https://10.0.0.10:5000/v3$}
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('neutron', line)

@@ -30,7 +30,7 @@ describe file('/etc/glance/glance-api.conf') do
   end
 end
 
-describe command('source /root/openrc && openstack image list') do
+describe command('source /root/openrc && /usr/local/bin/openstack image list') do
   its(:stdout) do
     should contain(/\|\s[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}\
 -[0-9a-f]{12}\s\|\scirros\s\|\sactive/)

@@ -14,6 +14,7 @@ describe 'osl-openstack::dashboard', dashboard: true do
     ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
       # Work around for base::ifconfig:47
       node.automatic['virtualization']['system']
+      node.automatic['filesystem2']['by_mountpoint']
     end
   end
   let(:node) { runner.node }
@@ -25,7 +26,7 @@ describe 'osl-openstack::dashboard', dashboard: true do
   %w(
     osl-openstack
     memcached
-    openstack-dashboard::server
+    openstack-dashboard::horizon
   ).each do |r|
     it "includes cookbook #{r}" do
       expect(chef_run).to include_recipe(r)

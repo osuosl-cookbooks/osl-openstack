@@ -18,6 +18,7 @@ shared_context 'common_stubs' do
     node.set['osl-openstack']['db_hostname'] = '10.0.0.10'
     node.set['osl-openstack']['database_suffix'] = 'x86'
     node.set['osl-openstack']['databag_suffix'] = 'x86'
+    node.automatic['filesystem2']['by_mountpoint']
   end
 end
 

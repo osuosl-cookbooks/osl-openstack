@@ -19,7 +19,7 @@
 include_recipe 'osl-openstack'
 include_recipe 'memcached'
 include_recipe 'certificate::wildcard'
-include_recipe 'openstack-dashboard::server'
+include_recipe 'openstack-dashboard::horizon'
 
 # Workaround for [1] which should be merged in the N release
 # [1] https://review.openstack.org/#/c/307859/

@@ -11,7 +11,6 @@ describe 'osl-openstack::block_storage' do
     firewall::iscsi
     osl-openstack
     openstack-block-storage::volume
-    openstack-block-storage::client
     openstack-block-storage::identity_registration
   ).each do |r|
     it "includes cookbook #{r}" do
@@ -21,7 +20,12 @@ describe 'osl-openstack::block_storage' do
   before do
     node.set['osl-openstack']['cinder']['iscsi_role'] = 'iscsi_role'
     node.set['osl-openstack']['cinder']['iscsi_ips'] = %w(10.11.0.1)
+    node.automatic['filesystem2']['by_mountpoint']
     stub_search(:node, 'role:iscsi_role').and_return([{ ipaddress: '10.10.0.1' }])
+  end
+
+  it do
+    expect(chef_run).to install_package('python2-crypto')
   end
 
   it do

@@ -30,6 +30,13 @@ describe 'osl-openstack::telemetry', telemetry: true do
     it do
       expect(chef_run).to render_config_file(file.name)
         .with_section_content(
+          'DEFAULT',
+          %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$}
+        )
+    end
+    it do
+      expect(chef_run).to render_config_file(file.name)
+        .with_section_content(
           'oslo_messaging_notifications',
           /^driver = messagingv2$/
         )
@@ -38,7 +45,7 @@ describe 'osl-openstack::telemetry', telemetry: true do
       expect(chef_run).to render_config_file(file.name)
         .with_section_content(
           'keystone_authtoken',
-          %r{^auth_url = https://10.0.0.10:5000/v2.0$}
+          %r{^auth_url = https://10.0.0.10:5000/v3$}
         )
     end
     [
