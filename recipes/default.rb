@@ -307,6 +307,19 @@ yum_repository 'OSL-openpower-openstack' do
   action :add
 end
 
+include_recipe 'yum-epel'
+
+node['yum-epel']['repositories'].each do |repo|
+  next unless node['yum'][repo]['managed']
+  r = resources(yum_repository: repo)
+  # If we already have excludes, include them and append these packages which are causing dependency issues.
+  r.exclude = [
+    r.exclude,
+    'python2-uritemplate',
+    'python2-google-api-client'
+  ].reject(&:nil?).join(' ')
+end
+
 include_recipe 'base::ifconfig'
 include_recipe 'firewall'
 include_recipe 'selinux::permissive'
