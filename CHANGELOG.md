@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.5.13 (2017-09-15)
+-------------------
+- Exclude python2-uritemplate python2-google-api-client from epel repo
+
 2.5.12 (2017-09-15)
 -------------------
 - Update RDO baseurl for Mitaka release
