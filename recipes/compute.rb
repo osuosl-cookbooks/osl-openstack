@@ -83,7 +83,6 @@ file '/var/lib/nova/.ssh/config' do
   content <<-EOL
 Host *
   StrictHostKeyChecking no
-  Ciphers arcfour
   UserKnownHostsFile /dev/null
   EOL
   user 'nova'

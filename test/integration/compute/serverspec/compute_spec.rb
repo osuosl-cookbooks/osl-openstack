@@ -69,7 +69,6 @@ describe file('/var/lib/nova/.ssh/config') do
   its(:content) do
     should match(%r{^Host \*
   StrictHostKeyChecking no
-  Ciphers arcfour
   UserKnownHostsFile /dev/null$})
   end
   it { should be_mode 600 }
