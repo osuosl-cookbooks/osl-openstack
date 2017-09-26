@@ -4,6 +4,11 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.5.14 (2017-09-26)
+-------------------
+- Increase DHCP lease from 120s to 10min
+- Arcfour cipher has been completely removed
+
 2.5.13 (2017-09-15)
 -------------------
 - Exclude python2-uritemplate python2-google-api-client from epel repo
