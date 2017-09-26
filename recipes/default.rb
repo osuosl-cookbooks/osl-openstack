@@ -66,7 +66,7 @@ node.default['openstack']['network_dhcp']['conf'].tap do |conf|
   conf['DEFAULT']['interface_driver'] =
     'neutron.agent.linux.interface.BridgeInterfaceDriver'
   conf['DEFAULT']['enable_isolated_metadata'] = 'True'
-  conf['DEFAULT']['dhcp_lease_duration'] = 120
+  conf['DEFAULT']['dhcp_lease_duration'] = 600
 end
 node.default['openstack']['network_metadata']['conf'].tap do |conf|
   conf['DEFAULT']['nova_metadata_ip'] = node['osl-openstack']['bind_service']

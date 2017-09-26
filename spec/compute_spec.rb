@@ -61,7 +61,6 @@ describe 'osl-openstack::compute' do
         content: <<-EOL
 Host *
   StrictHostKeyChecking no
-  Ciphers arcfour
   UserKnownHostsFile /dev/null
         EOL
       )
