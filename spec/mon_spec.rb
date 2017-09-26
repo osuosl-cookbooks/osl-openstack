@@ -40,7 +40,28 @@ describe 'osl-openstack::mon' do
       end
     end
     it do
-      expect(chef_run).to install_package('nagios-plugins-openstack')
+      expect(chef_run).to remove_package('nagios-plugins-openstack')
+    end
+    it do
+      expect(chef_run.python_execute('monitoring-for-openstack deps')).to do_nothing
+    end
+    it do
+      expect(chef_run.python_execute('monitoring-for-openstack install')).to do_nothing
+    end
+    it do
+      expect(chef_run).to sync_git('/var/chef/cache/osops-tools-monitoring')
+        .with(
+          revision: '62160d10683023c8c9d96f616223d8def88b870d',
+          repository: 'https://git.openstack.org/openstack/osops-tools-monitoring'
+        )
+    end
+    it do
+      expect(chef_run.git('/var/chef/cache/osops-tools-monitoring')).to \
+        notify('python_execute[monitoring-for-openstack deps]').immediately
+    end
+    it do
+      expect(chef_run.git('/var/chef/cache/osops-tools-monitoring')).to \
+        notify('python_execute[monitoring-for-openstack install]').immediately
     end
     it do
       expect(chef_run).to create_file(check_openstack)
@@ -54,54 +75,33 @@ describe 'osl-openstack::mon' do
           commands: [check_openstack]
         )
     end
-    it do
-      expect(chef_run).to add_nrpe_check('check_nova_services')
-        .with(
-          command: '/bin/sudo ' + check_openstack + ' check_nova-services',
-          warning_condition: '5:',
-          critical_condition: '4:',
-          parameters: '--warn_disabled @1: --critical_disabled 0'
-        )
+    %w(
+      check_nova_services
+      check_nova_hypervisors
+      check_nova_images
+      check_neutron_agents
+      check_cinder_services
+    ).each do |check|
+      it do
+        expect(chef_run).to remove_nrpe_check(check)
+      end
     end
-    it do
-      expect(chef_run).to add_nrpe_check('check_nova_hypervisors')
-        .with(
-          command: '/bin/sudo ' + check_openstack + ' check_nova-hypervisors',
-          parameters: '--warn_memory_percent 0:80' \
-                      ' --critical_memory_percent 0:90' \
-                      ' --warn_vcpus_percent 0:80' \
-                      ' --critical_vcpus_percent 0:90'
-        )
-    end
-    it do
-      expect(chef_run).to add_nrpe_check('check_nova_images')
-        .with(
-          command: '/bin/sudo ' + check_openstack + ' check_nova-images',
-          warning_condition: 1,
-          critical_condition: 2
-        )
-    end
-    it do
-      expect(chef_run).to add_nrpe_check('check_neutron_agents')
-        .with(
-          command: '/bin/sudo ' + check_openstack + ' check_neutron-agents',
-          warning_condition: '5:',
-          critical_condition: '4:'
-        )
-    end
-    it do
-      expect(chef_run).to add_nrpe_check('check_cinder_services')
-        .with(
-          command: '/bin/sudo ' + check_openstack + ' check_cinder-services',
-          warning_condition: '2:',
-          critical_condition: '1:'
-        )
-    end
-    it do
-      expect(chef_run).to add_nrpe_check('check_keystone_token')
-        .with(
-          command: '/bin/sudo ' + check_openstack + ' check_keystone-token'
-        )
+
+    %w(
+      check_cinder_api
+      check_glance_api
+      check_keystone_api
+      check_neutron_api
+      check_neutron_floating_ip
+      check_nova_api
+    ).each do |check|
+      it do
+        expect(chef_run.link(::File.join(plugin_dir, check))).to \
+          link_to("/usr/libexec/openstack-monitoring/checks/oschecks-#{check}")
+      end
+      it do
+        expect(chef_run).to add_nrpe_check(check).with(command: "/bin/sudo #{check_openstack} #{check}")
+      end
     end
   end
 end

@@ -29,9 +29,48 @@ include_recipe 'osl-nrpe'
 if node['osl-openstack']['node_type'] == 'controller'
   include_recipe 'osl-openstack'
   include_recipe 'base::oslrepo'
-  package 'nagios-plugins-openstack'
+  include_recipe 'git'
+
+  # Remove old openstack nagios plugins and their checks
+  package 'nagios-plugins-openstack' do
+    action :remove
+  end
+
+  %w(
+    check_nova_services
+    check_nova_hypervisors
+    check_nova_images
+    check_neutron_agents
+    check_cinder_services
+  ).each do |check|
+    nrpe_check check do
+      action :remove
+    end
+  end
+
   check_openstack = ::File.join(node['nrpe']['plugin_dir'], 'check_openstack')
-  mon = node['osl-openstack']['mon']
+  tools_dir = ::File.join(Chef::Config[:file_cache_path], 'osops-tools-monitoring')
+
+  python_execute 'monitoring-for-openstack deps' do
+    virtualenv '/opt/osc'
+    command '-m pip install -r requirements.txt'
+    cwd ::File.join(tools_dir, 'monitoring-for-openstack')
+    action :nothing
+  end
+
+  python_execute 'monitoring-for-openstack install' do
+    virtualenv '/opt/osc'
+    command 'setup.py install'
+    cwd ::File.join(tools_dir, 'monitoring-for-openstack')
+    action :nothing
+  end
+
+  git tools_dir do
+    revision '62160d10683023c8c9d96f616223d8def88b870d'
+    repository 'https://git.openstack.org/openstack/osops-tools-monitoring'
+    notifies :run, 'python_execute[monitoring-for-openstack deps]', :immediately
+    notifies :run, 'python_execute[monitoring-for-openstack install]', :immediately
+  end
 
   # Wrapper for using sudo to check openstack services
   file check_openstack do
@@ -51,45 +90,20 @@ EOF
     commands [check_openstack]
   end
 
-  nrpe_check 'check_nova_services' do
-    command '/bin/sudo ' + check_openstack + ' check_nova-services'
-    warning_condition mon['check_nova_services']['warning']
-    critical_condition mon['check_nova_services']['critical']
-    parameters '--warn_disabled ' + mon['check_nova_services']['warn_disabled'] +
-               ' --critical_disabled ' + mon['check_nova_services']['critical_disabled']
-  end
+  %w(
+    check_cinder_api
+    check_glance_api
+    check_keystone_api
+    check_neutron_api
+    check_neutron_floating_ip
+    check_nova_api
+  ).each do |check|
+    link "#{node['nrpe']['plugin_dir']}/#{check}" do
+      to "/usr/libexec/openstack-monitoring/checks/oschecks-#{check}"
+    end
 
-  nrpe_check 'check_nova_hypervisors' do
-    command '/bin/sudo ' + check_openstack + ' check_nova-hypervisors'
-    parameters '--warn_memory_percent ' +
-               mon['check_nova_hypervisors']['warn_memory_percent'] +
-               ' --critical_memory_percent ' +
-               mon['check_nova_hypervisors']['critical_memory_percent'] +
-               ' --warn_vcpus_percent ' +
-               mon['check_nova_hypervisors']['warn_vcpus_percent'] +
-               ' --critical_vcpus_percent ' +
-               mon['check_nova_hypervisors']['critical_vcpus_percent']
-  end
-
-  nrpe_check 'check_nova_images' do
-    command '/bin/sudo ' + check_openstack + ' check_nova-images'
-    warning_condition mon['check_nova_images']['warning']
-    critical_condition mon['check_nova_images']['critical']
-  end
-
-  nrpe_check 'check_neutron_agents' do
-    command '/bin/sudo ' + check_openstack + ' check_neutron-agents'
-    warning_condition mon['check_neutron_agents']['warning']
-    critical_condition mon['check_neutron_agents']['critical']
-  end
-
-  nrpe_check 'check_cinder_services' do
-    command '/bin/sudo ' + check_openstack + ' check_cinder-services'
-    warning_condition mon['check_cinder_services']['warning']
-    critical_condition mon['check_cinder_services']['critical']
-  end
-
-  nrpe_check 'check_keystone_token' do
-    command '/bin/sudo ' + check_openstack + ' check_keystone-token'
+    nrpe_check check do
+      command "/bin/sudo #{check_openstack} #{check}"
+    end
   end
 end
