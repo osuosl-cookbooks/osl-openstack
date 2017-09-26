@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+3.0.1 (2017-09-26)
+------------------
+- Increase DHCP lease from 120s to 10min
+
 3.0.0 (2017-09-15)
 ------------------
 - Newton Release
