@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+3.0.4 (2017-09-27)
+------------------
+- Nagios monitoring in Newton
+
 3.0.3 (2017-09-27)
 ------------------
 - Add AggregateInstanceExtraSpecsFilter to Nova Scheduler
