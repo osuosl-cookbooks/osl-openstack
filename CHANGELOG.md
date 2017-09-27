@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+2.5.15 (2017-09-27)
+-------------------
+- Add AggregateInstanceExtraSpecsFilter to Nova Scheduler
+
 2.5.14 (2017-09-26)
 -------------------
 - Increase DHCP lease from 120s to 10min
