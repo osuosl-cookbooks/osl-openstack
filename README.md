@@ -5,7 +5,7 @@ ppc64le compute nodes.
 
 ## Supported Platforms
 
-- OpenStack Mitaka release
+- OpenStack Newton release
 - CentOS 7
 
 # Multi-host test integration
