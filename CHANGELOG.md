@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+3.0.3 (2017-09-27)
+------------------
+- Add AggregateInstanceExtraSpecsFilter to Nova Scheduler
+
 3.0.2 (2017-09-26)
 ------------------
 - Arcfour cipher has been completely removed
