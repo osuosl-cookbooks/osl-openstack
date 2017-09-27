@@ -24,8 +24,9 @@ end
 end
 
 [
-  'linuxnet_interface_driver = ' \
-  'nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver',
+  'scheduler_default_filters = ' \
+  'AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter',
+  'linuxnet_interface_driver = nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver',
   'dns_server = 140.211.166.130 140.211.166.131',
   'disk_allocation_ratio = 1.5',
   'instance_usage_audit = True',
