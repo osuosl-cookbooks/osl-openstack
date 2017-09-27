@@ -8,7 +8,7 @@ description      'Installs/Configures osl-openstack'
 long_description 'Installs/Configures osl-openstack'
 version          '3.0.3'
 
-%w{ base certificate chef-sugar memcached osl-nrpe kernel-modules
+%w{ base certificate chef-sugar git memcached osl-nrpe kernel-modules
   mysql openstack-block-storage openstack-common openstack-compute
   openstack-dashboard openstack-identity openstack-integration-test
   openstack-image openstack-network openstack-ops-database

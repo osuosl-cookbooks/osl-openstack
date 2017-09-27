@@ -3,7 +3,7 @@ require 'serverspec'
 set :backend, :exec
 
 describe package('nagios-plugins-openstack') do
-  it { should be_installed }
+  it { should_not be_installed }
 end
 
 describe file('/usr/lib64/nagios/plugins/check_openstack') do
@@ -13,51 +13,33 @@ end
 
 describe file('/etc/sudoers.d/nrpe-openstack') do
   its(:content) do
-    should match(%r{%nrpe ALL=\(root\) \
-NOPASSWD:/usr/lib64/nagios/plugins/check_openstack})
+    should match(%r{%nrpe ALL=\(root\) NOPASSWD:/usr/lib64/nagios/plugins/check_openstack})
   end
 end
 
-describe file('/etc/nagios/nrpe.d/check_nova_services.cfg') do
-  its(:content) do
-    should match(%r{command\[check_nova_services\]=/bin/sudo \
-/usr/lib64/nagios/plugins/check_openstack check_nova-services -w 5: -c 4: --warn_disabled @1: --critical_disabled 0})
+%w(
+  check_nova_services
+  check_nova_hypervisors
+  check_nova_images
+  check_neutron_agents
+  check_cinder_services
+).each do |check|
+  describe file("/etc/nagios/nrpe.d/#{check}.cfg") do
+    it { should_not exist }
   end
 end
 
-describe file('/etc/nagios/nrpe.d/check_nova_hypervisors.cfg') do
-  its(:content) do
-    should match(%r{command\[check_nova_hypervisors\]=/bin/sudo \
-/usr/lib64/nagios/plugins/check_openstack check_nova-hypervisors \
---warn_memory_percent 0:80 --critical_memory_percent 0:90 \
---warn_vcpus_percent 0:80 --critical_vcpus_percent 0:90})
-  end
-end
-
-describe file('/etc/nagios/nrpe.d/check_nova_images.cfg') do
-  its(:content) do
-    should match(%r{command\[check_nova_images\]=/bin/sudo \
-/usr/lib64/nagios/plugins/check_openstack check_nova-images -w 1 -c 2})
-  end
-end
-
-describe file('/etc/nagios/nrpe.d/check_neutron_agents.cfg') do
-  its(:content) do
-    should match(%r{command\[check_neutron_agents\]=/bin/sudo \
-/usr/lib64/nagios/plugins/check_openstack check_neutron-agents -w 5: -c 4:})
-  end
-end
-
-describe file('/etc/nagios/nrpe.d/check_cinder_services.cfg') do
-  its(:content) do
-    should match(%r{command\[check_cinder_services\]=/bin/sudo \
-/usr/lib64/nagios/plugins/check_openstack check_cinder-services -w 2: -c 1:})
-  end
-end
-
-describe file('/etc/nagios/nrpe.d/check_keystone_token.cfg') do
-  its(:content) do
-    should match(%r{command\[check_keystone_token\]=/bin/sudo \
-/usr/lib64/nagios/plugins/check_openstack check_keystone-token})
+%w(
+  check_cinder_api
+  check_glance_api
+  check_keystone_api
+  check_neutron_api
+  check_neutron_floating_ip
+  check_nova_api
+).each do |check|
+  describe file("/etc/nagios/nrpe.d/#{check}.cfg") do
+    its(:content) do
+      should match(%r{command\[#{check}\]=/bin/sudo /usr/lib64/nagios/plugins/check_openstack #{check}})
+    end
   end
 end
