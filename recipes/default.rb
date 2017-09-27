@@ -41,8 +41,14 @@ node.default['openstack']['identity']['ssl'].tap do |conf|
   conf['chainfile'] = '/etc/pki/tls/certs/wildcard-bundle.crt'
 end
 node.default['openstack']['compute']['conf'].tap do |conf|
-  conf['DEFAULT']['linuxnet_interface_driver'] = \
-    'nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver'
+  conf['DEFAULT']['scheduler_default_filters'] =
+    %w(
+      AggregateInstanceExtraSpecsFilter
+      AvailabilityZoneFilter
+      RamFilter
+      ComputeFilter
+    ).join(',')
+  conf['DEFAULT']['linuxnet_interface_driver'] = 'nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver'
   conf['DEFAULT']['dns_server'] = '140.211.166.130 140.211.166.131'
   conf['DEFAULT']['instance_usage_audit'] = 'True'
   conf['DEFAULT']['instance_usage_audit_period'] = 'hour'
