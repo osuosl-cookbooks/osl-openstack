@@ -35,11 +35,17 @@ end
   check_keystone_api
   check_neutron_api
   check_neutron_floating_ip
-  check_nova_api
 ).each do |check|
   describe file("/etc/nagios/nrpe.d/#{check}.cfg") do
     its(:content) do
       should match(%r{command\[#{check}\]=/bin/sudo /usr/lib64/nagios/plugins/check_openstack #{check}})
     end
+  end
+end
+
+describe file('/etc/nagios/nrpe.d/check_nova_api.cfg') do
+  its(:content) do
+    should match(%r{command\[check_nova_api\]=/bin/sudo /usr/lib64/nagios/plugins/check_openstack check_nova_api \
+--os-compute-api-version 2})
   end
 end

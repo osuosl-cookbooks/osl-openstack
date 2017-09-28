@@ -93,7 +93,6 @@ describe 'osl-openstack::mon' do
       check_keystone_api
       check_neutron_api
       check_neutron_floating_ip
-      check_nova_api
     ).each do |check|
       it do
         expect(chef_run.link(::File.join(plugin_dir, check))).to \
@@ -102,6 +101,17 @@ describe 'osl-openstack::mon' do
       it do
         expect(chef_run).to add_nrpe_check(check).with(command: "/bin/sudo #{check_openstack} #{check}")
       end
+    end
+    it do
+      expect(chef_run.link(::File.join(plugin_dir, 'check_nova_api'))).to \
+        link_to('/usr/libexec/openstack-monitoring/checks/oschecks-check_nova_api')
+    end
+    it do
+      expect(chef_run).to add_nrpe_check('check_nova_api')
+        .with(
+          command: "/bin/sudo #{check_openstack} check_nova_api",
+          parameters: '--os-compute-api-version 2'
+        )
     end
   end
 end
