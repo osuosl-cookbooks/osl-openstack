@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+3.0.5 (2017-09-28)
+------------------
+- Set API version for check_nova_api
+
 3.0.4 (2017-09-27)
 ------------------
 - Nagios monitoring in Newton
