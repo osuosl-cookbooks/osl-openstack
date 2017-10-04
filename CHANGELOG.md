@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+3.0.6 (2017-10-04)
+------------------
+- Switch to using our fork of osops-tools-monitoring
+
 3.0.5 (2017-09-28)
 ------------------
 - Set API version for check_nova_api
