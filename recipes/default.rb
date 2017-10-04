@@ -108,6 +108,13 @@ node.default['openstack']['dashboard'].tap do |conf|
   conf['ssl']['key'] = 'wildcard.key'
   conf['ssl']['cert'] = 'wildcard.pem'
   conf['ssl']['chain'] = 'wildcard-bundle.crt'
+  conf['misc_local_settings'] = {
+    'LAUNCH_INSTANCE_DEFAULTS' => {
+      create_volume: false, # Not available until Pike
+      disable_volume: true,
+      disable_volume_snapshot: true
+    }
+  }
 end
 
 node.default['openstack']['telemetry']['conf'].tap do |conf|
