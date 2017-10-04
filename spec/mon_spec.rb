@@ -51,8 +51,8 @@ describe 'osl-openstack::mon' do
     it do
       expect(chef_run).to sync_git('/var/chef/cache/osops-tools-monitoring')
         .with(
-          revision: '62160d10683023c8c9d96f616223d8def88b870d',
-          repository: 'https://git.openstack.org/openstack/osops-tools-monitoring'
+          revision: 'osuosl',
+          repository: 'https://github.com/osuosl/osops-tools-monitoring.git'
         )
     end
     it do
