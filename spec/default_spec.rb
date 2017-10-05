@@ -26,10 +26,10 @@ describe 'osl-openstack::default' do
     it do
       expect(chef_run).to add_yum_repository('OSL-openpower-openstack')
         .with(
-          description: 'OSL Openpower OpenStack repo for centos-7/openstack-newton',
+          description: 'OSL Openpower OpenStack repo for centos-7/openstack-ocata',
           gpgkey: 'http://ftp.osuosl.org/pub/osl/repos/yum/RPM-GPG-KEY-osuosl',
           gpgcheck: true,
-          baseurl: 'http://ftp.osuosl.org/pub/osl/repos/yum/openpower/centos-$releasever/$basearch/openstack-newton'
+          baseurl: 'http://ftp.osuosl.org/pub/osl/repos/yum/openpower/centos-$releasever/$basearch/openstack-ocata'
         )
     end
   end
