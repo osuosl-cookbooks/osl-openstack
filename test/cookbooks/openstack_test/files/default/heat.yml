@@ -1,0 +1,11 @@
+heat_template_version: 2015-04-30
+
+description: Simple template to deploy a single compute instance
+
+resources:
+  my_instance:
+    type: OS::Nova::Server
+    properties:
+      key_name: heat_key
+      image: cirros
+      flavor: m1.small

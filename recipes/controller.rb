@@ -29,6 +29,7 @@ include_recipe 'osl-openstack::image'
 include_recipe 'osl-openstack::network' unless node['osl-openstack']['separate_network_node']
 include_recipe 'osl-openstack::compute_controller'
 include_recipe 'osl-openstack::block_storage_controller'
+include_recipe 'osl-openstack::orchestration'
 include_recipe 'osl-openstack::telemetry'
 include_recipe 'osl-openstack::dashboard'
 include_recipe 'osl-openstack::mon'

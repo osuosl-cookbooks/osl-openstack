@@ -129,6 +129,11 @@ suites:
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::telemetry]
+  - name: orchestration
+    run_list:
+      - role[openstack_tk]
+      - role[openstack_ops_identity]
+      - recipe[osl-openstack::orchestration]
   - name: mellanox_neo
     attributes:
       osl-openstack:
@@ -153,6 +158,7 @@ suites:
       - recipe[osl-openstack::compute]
       - recipe[osl-openstack::block_storage]
       - recipe[openstack-integration-test::setup]
+      - recipe[openstack_test::orchestration]
     attributes:
       osl-openstack:
         cinder:
