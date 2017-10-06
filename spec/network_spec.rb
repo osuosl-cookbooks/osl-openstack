@@ -68,7 +68,7 @@ neutron.services.l3_router.l3_router_plugin.L3RouterPlugin$/,
       /^allow_overlapping_ips = True$/,
       /^router_distributed = False$/,
       /^bind_host = 10.0.0.2$/,
-      %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$},
+      %r{^transport_url = rabbit://openstack:mq-pass@10.0.0.10:5672$},
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
@@ -113,8 +113,7 @@ neutron.services.l3_router.l3_router_plugin.L3RouterPlugin$/,
       expect(chef_run).to render_config_file(file.name)
         .with_section_content(
           'database',
-          %r{^connection = mysql://neutron_x86:neutron@10.0.0.10:3306/\
-neutron_x86\?charset=utf8}
+          %r{^connection = mysql\+pymysql://neutron_x86:neutron@10.0.0.10:3306/neutron_x86\?charset=utf8}
         )
     end
   end
