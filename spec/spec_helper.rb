@@ -117,6 +117,14 @@ shared_context 'identity_stubs' do
     allow_any_instance_of(Chef::Recipe).to receive(:get_password)
       .with('token', 'openstack_identity_bootstrap_token')
       .and_return('bootstrap-token')
+    allow_any_instance_of(Chef::Recipe).to receive(:secret)
+      .with('keystone', 'fernet_key0')
+      .and_return('thisisfernetkey0')
+    allow_any_instance_of(Chef::Recipe).to receive(:secret)
+      .with('keystone', 'fernet_key1')
+      .and_return('thisisfernetkey1')
+    stub_command("[ ! -e /etc/httpd/conf/httpd.conf ] && [ -e /etc/redhat-release ] && [ $(/sbin/sestatus | \
+grep -c '^Current mode:.*enforcing') -eq 1 ]").and_return(true)
     stub_command('/usr/sbin/httpd -t')
     allow_any_instance_of(Chef::Recipe).to receive(:search_for)
       .with('os-identity').and_return(

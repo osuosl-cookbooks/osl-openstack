@@ -35,7 +35,7 @@ describe 'osl-openstack::identity', identity: true do
     [
       %r{^public_endpoint = https://10.0.0.10:5000/$},
       %r{^admin_endpoint = https://10.0.0.10:35357/$},
-      %r{^transport_url = rabbit://guest:guest@10.0.0.10:5672$},
+      %r{^transport_url = rabbit://openstack:openstack@10.0.0.10:5672$},
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
@@ -56,8 +56,7 @@ describe 'osl-openstack::identity', identity: true do
       expect(chef_run).to render_config_file(file.name)
         .with_section_content(
           'database',
-          %r{^connection = mysql://keystone_x86:keystone_db_pass@10.0.0.10:\
-3306/keystone_x86\?charset=utf8$}
+          %r{^connection = mysql\+pymysql://keystone_x86:keystone_db_pass@10.0.0.10:3306/keystone_x86\?charset=utf8$}
         )
     end
     it do

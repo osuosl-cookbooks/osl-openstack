@@ -43,6 +43,7 @@ node.default['openstack']['identity']['ssl'].tap do |conf|
   conf['certfile'] = '/etc/pki/tls/certs/wildcard.pem'
   conf['keyfile'] = '/etc/pki/tls/private/wildcard.key'
   conf['chainfile'] = '/etc/pki/tls/certs/wildcard-bundle.crt'
+  conf['ca_certs_path'] = '/etc/pki/tls/certs'
 end
 
 # Remove deprecated settings from upstream
