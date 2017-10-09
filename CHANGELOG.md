@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+3.0.7 (2017-10-09)
+------------------
+- Disable volumes from instance launch window in Horizon
+
 3.0.6 (2017-10-04)
 ------------------
 - Switch to using our fork of osops-tools-monitoring
