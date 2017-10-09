@@ -42,6 +42,15 @@ describe 'osl-openstack::dashboard', dashboard: true do
     expect(chef_run.node['openstack']['dashboard']['ssl'] \
       ['chain']).to eq('wildcard-bundle.crt')
   end
+  it do
+    expect(chef_run).to render_file('/etc/openstack-dashboard/local_settings')
+      .with_content(/
+LAUNCH_INSTANCE_DEFAULTS = {
+  'create_volume': 'false',
+  'disable_volume': 'true',
+  'disable_volume_snapshot': 'true',
+}/)
+  end
   context 'Secret files already exist' do
     let(:chef_run) { runner.converge(described_recipe) }
     it 'Set secret key lock file permissions' do

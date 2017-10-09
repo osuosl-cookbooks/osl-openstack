@@ -16,6 +16,14 @@ MemcachedCache',/)
   its(:content) do
     should contain(/'LOCATION': \[\n\s*'.*:11211',/)
   end
+  its(:content) do
+    should match(/
+LAUNCH_INSTANCE_DEFAULTS = {
+  'create_volume': 'false',
+  'disable_volume': 'true',
+  'disable_volume_snapshot': 'true',
+}/)
+  end
 end
 
 # Simulate logging into horizon with curl and test the output to ensure the
