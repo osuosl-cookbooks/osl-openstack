@@ -1,0 +1,10 @@
+{
+  "id": "nova_cell0",
+  "nova_cell0": {
+    "encrypted_data": "6ojAGUmduvzm4Xp1hOYbppp4fsWNIppq3tYp2zKN4ts=\n",
+    "hmac": "e0pr7vhH07f14xRihSWJXxWJWLJdP+Qs+uwGaEiEdQQ=\n",
+    "iv": "GyW38hdNeOT3lEoiqsy/0Q==\n",
+    "version": 2,
+    "cipher": "aes-256-cbc"
+  }
+}

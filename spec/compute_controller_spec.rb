@@ -16,7 +16,7 @@ describe 'osl-openstack::compute_controller' do
     openstack-compute::scheduler
     openstack-compute::api-os-compute
     openstack-compute::api-metadata
-    openstack-compute::nova-cert
+    openstack-compute::placement_api
     openstack-compute::vncproxy
     openstack-compute::identity_registration
   ).each do |r|
@@ -41,7 +41,7 @@ AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter
       /^metadata_listen = 10.0.0.2$/,
       /^resume_guests_state_on_host_boot = True$/,
       /^block_device_allocate_retries = 120$/,
-      %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$},
+      %r{^transport_url = rabbit://openstack:mq-pass@10.0.0.10:5672$},
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
@@ -137,7 +137,7 @@ AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter
       expect(chef_run).to render_config_file(file.name)
         .with_section_content(
           'database',
-          %r{^connection = mysql://nova_x86:nova_db_pass@10.0.0.10:3306/nova_x86\?charset=utf8$}
+          %r{^connection = mysql\+pymysql://nova_x86:nova_db_pass@10.0.0.10:3306/nova_x86\?charset=utf8$}
         )
     end
 
@@ -145,7 +145,7 @@ AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter
       expect(chef_run).to render_config_file(file.name)
         .with_section_content(
           'api_database',
-          %r{^connection = mysql://nova_api_x86:nova_api_db_pass@10.0.0.10:3306/nova_api_x86\?charset=utf8$}
+          %r{^connection = mysql\+pymysql://nova_api_x86:nova_api_db_pass@10.0.0.10:3306/nova_api_x86\?charset=utf8$}
         )
     end
     context 'Set ceph' do

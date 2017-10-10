@@ -124,3 +124,9 @@ end
 describe package('libguestfs-tools') do
   it { should be_installed }
 end
+
+openstack = 'source /root/openrc && /usr/local/bin/openstack'
+
+describe command("#{openstack} compute service list -f value -c Binary -c Status -c State") do
+  its(:stdout) { should contain(/nova-compute enabled up/) }
+end

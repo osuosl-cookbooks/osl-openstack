@@ -277,6 +277,9 @@ shared_context 'compute_stubs' do
       .with('db', 'nova_api')
       .and_return('nova_api_db_pass')
     allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('db', 'nova_cell0')
+      .and_return('nova_cell0_db_pass')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
       .with('user', 'openstack')
       .and_return('mq-pass')
     allow_any_instance_of(Chef::Recipe).to receive(:get_password)
@@ -289,6 +292,9 @@ shared_context 'compute_stubs' do
       .with('service', 'openstack-network')
       .and_return('neutron-pass')
     allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('service', 'openstack-placement')
+      .and_return('placement-pass')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
       .with('service', 'rbd_block_storage')
       .and_return 'cinder-rbd-pass'
     allow_any_instance_of(Chef::Recipe).to receive(:memcached_servers)
@@ -297,6 +303,17 @@ shared_context 'compute_stubs' do
     allow(SecureRandom).to receive(:hex)
       .and_return('ad3313264ea51d8c6a3d1c5b140b9883')
     stub_command('virsh net-list | grep -q default').and_return(true)
+    stub_command('virsh secret-set-value --secret 00000000-0000-0000-0000-000000000000 --base64 $(ceph-authtool \
+-p -n client.cinder /etc/ceph/ceph.client.cinder.keyring)').and_return(false)
+    stub_command('virsh secret-get-value 00000000-0000-0000-0000-000000000000 | grep $(ceph-authtool -p -n \
+client.cinder /etc/ceph/ceph.client.cinder.keyring)').and_return(false)
+    stub_command('nova-manage api_db sync').and_return(true)
+    stub_command('nova-manage cell_v2 map_cell0 --database_connection mysql+pymysql://nova_cell0:mypass@127.0.0.1/\
+nova_cell0?charset=utf8').and_return(true)
+    stub_command('nova-manage cell_v2 create_cell --verbose --name cell1').and_return(true)
+    stub_command('nova-manage cell_v2 list_cells | grep -q cell0').and_return(false)
+    stub_command('nova-manage cell_v2 list_cells | grep -q cell1').and_return(false)
+    stub_command('nova-manage cell_v2 discover_hosts').and_return(true)
     stub_command("/sbin/ppc64_cpu --smt 2>&1 | grep -E 'SMT is off|Machine is" \
       " not SMT capable'").and_return(false)
     allow_any_instance_of(Chef::Recipe).to receive(:rabbit_transport_url)

@@ -4,7 +4,6 @@ set :backend, :exec
 
 %w(
   openstack-nova-api
-  openstack-nova-cert
   openstack-nova-conductor
   openstack-nova-consoleauth
   openstack-nova-metadata-api
@@ -73,14 +72,27 @@ end
 #   end
 # end
 
-describe command('source /root/openrc && /usr/local/bin/openstack compute service list') do
-  list_output = '\s*\|\s(compute-controll|controller|allinone).+\s*\|\sinternal\s\|\senabled\s\|\sup' \
-    '\s*\|\s[0-9]{4}-[0-9]{2}-[0-9]{2}'
-  %w(conductor scheduler cert consoleauth).each do |s|
-    its(:stdout) do
-      should contain(/nova-#{s}#{list_output}/)
-    end
+openstack = 'source /root/openrc && /usr/local/bin/openstack'
+
+describe command("#{openstack} compute service list -f value -c Binary -c Status -c State") do
+  %w(conductor scheduler consoleauth).each do |s|
+    its(:stdout) { should contain(/nova-#{s} enabled up/) }
   end
+end
+
+describe command("#{openstack} catalog list -f value") do
+  its(:stdout) do
+    should match(%r{^nova-placement placement RegionOne
+  internal: http://127.0.0.1:8778
+RegionOne
+  public: http://127.0.0.1:8778})
+  end
+end
+
+describe command('source /root/openrc && /bin/nova-status upgrade check') do
+  its(:stdout) { should match(/Check: Cells v2.*\n.*Result: Success/) }
+  its(:stdout) { should match(/Check: Placement API.*\n.*Result: Success/) }
+  its(:stdout) { should match(/Check: Resource Providers.*\n.*Result: Success/) }
 end
 
 describe command('curl -k -v https://controller.example.com:6080 2>&1') do

@@ -74,6 +74,9 @@ when 'x86_64'
   end
 end
 
+# Missing package dep for telemetry
+package 'python2-wsme'
+
 include_recipe 'osl-openstack::linuxbridge'
 include_recipe 'openstack-compute::compute'
 include_recipe 'openstack-telemetry::agent-compute'

@@ -18,14 +18,14 @@
 #
 include_recipe 'osl-openstack'
 include_recipe 'firewall::openstack'
-include_recipe 'openstack-compute::api-os-compute'
 include_recipe 'openstack-compute::nova-setup'
-include_recipe 'openstack-compute::identity_registration'
 include_recipe 'openstack-compute::conductor'
-include_recipe 'openstack-compute::scheduler'
+include_recipe 'openstack-compute::api-os-compute'
 include_recipe 'openstack-compute::api-metadata'
-include_recipe 'openstack-compute::nova-cert'
+include_recipe 'openstack-compute::placement_api'
 include_recipe 'openstack-compute::vncproxy'
+include_recipe 'openstack-compute::scheduler'
+include_recipe 'openstack-compute::identity_registration'
 
 platform_options = node['openstack']['compute']['platform']
 proxy_service = "service[#{platform_options['compute_vncproxy_service']}]"
