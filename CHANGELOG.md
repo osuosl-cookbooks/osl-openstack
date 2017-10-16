@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+3.1.0 (2017-10-16)
+------------------
+- Enable OpenStack Orchestration service (heat)
+
 3.0.7 (2017-10-09)
 ------------------
 - Disable volumes from instance launch window in Horizon
