@@ -14,6 +14,7 @@ describe 'osl-openstack::controller' do
     block_storage_stubs
     dashboard_stubs
     telemetry_stubs
+    orchestration_stubs
   ).each do |s|
     include_context s
   end

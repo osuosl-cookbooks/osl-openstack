@@ -73,6 +73,9 @@ shared_context 'identity_stubs' do
     allow_any_instance_of(Chef::Recipe).to receive(:get_password)
       .with('user', 'admin')
       .and_return('admin')
+    allow_any_instance_of(Chef::Recipe).to receive(:rabbit_transport_url)
+      .with('identity')
+      .and_return('rabbit://openstack:openstack@controller.example.org:5672')
   end
 end
 
@@ -106,6 +109,9 @@ shared_context 'image_stubs' do
     allow_any_instance_of(Chef::Recipe).to receive(:get_password)
       .with('user', 'admin')
       .and_return('admin-pass')
+    allow_any_instance_of(Chef::Recipe).to receive(:rabbit_transport_url)
+      .with('image')
+      .and_return('rabbit://openstack:openstack@controller.example.org:5672')
   end
 end
 
@@ -130,6 +136,9 @@ shared_context 'network_stubs' do
     allow_any_instance_of(Chef::Recipe).to receive(:get_password)
       .with('service', 'openstack-compute')
       .and_return('nova-pass')
+    allow_any_instance_of(Chef::Recipe).to receive(:rabbit_transport_url)
+      .with('network')
+      .and_return('rabbit://openstack:openstack@controller.example.org:5672')
   end
   shared_examples 'custom template banner displayer' do
     it 'shows the custom banner' do
@@ -222,6 +231,9 @@ shared_context 'compute_stubs' do
     stub_command('virsh net-list | grep -q default').and_return(true)
     stub_command("/sbin/ppc64_cpu --smt 2>&1 | grep -E 'SMT is off|Machine is" \
       " not SMT capable'").and_return(false)
+    allow_any_instance_of(Chef::Recipe).to receive(:rabbit_transport_url)
+      .with('compute')
+      .and_return('rabbit://openstack:openstack@controller.example.org:5672')
   end
 end
 
@@ -263,6 +275,9 @@ shared_context 'block_storage_stubs' do
       .with('user', 'ibmnas_admin')
       .and_return('test_pass')
     allow(Chef::Application).to receive(:fatal!)
+    allow_any_instance_of(Chef::Recipe).to receive(:rabbit_transport_url)
+      .with('block-storage')
+      .and_return('rabbit://openstack:openstack@controller.example.org:5672')
   end
 end
 
@@ -314,6 +329,45 @@ shared_context 'telemetry_stubs' do
     allow_any_instance_of(Chef::Recipe).to receive(:get_password)
       .with('token', 'openstack_identity_bootstrap_token')
       .and_return('bootstrap-token')
+    allow(Chef::Application).to receive(:fatal!)
+    allow_any_instance_of(Chef::Recipe).to receive(:rabbit_transport_url)
+      .with('telemetry')
+      .and_return('rabbit://openstack:openstack@controller.example.org:5672')
+  end
+end
+
+shared_context 'orchestration_stubs' do
+  before do
+    allow_any_instance_of(Chef::Recipe).to receive(:rabbit_servers)
+      .and_return '1.1.1.1:5672,2.2.2.2:5672'
+    allow_any_instance_of(Chef::Recipe).to receive(:address_for)
+      .with('lo')
+      .and_return '127.0.1.1'
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('token', 'openstack_identity_bootstrap_token')
+      .and_return 'bootstrap-token'
+
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('db', 'heat')
+      .and_return 'heat'
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('user', 'guest')
+      .and_return 'mq-pass'
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('user', 'admin-user')
+      .and_return 'admin-pass'
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('service', 'openstack-orchestration')
+      .and_return 'heat-pass'
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('user', 'admin')
+      .and_return 'admin-pass'
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('token', 'orchestration_auth_encryption_key')
+      .and_return 'auth_encryption_key_secret'
+    allow_any_instance_of(Chef::Recipe).to receive(:rabbit_transport_url)
+      .with('orchestration')
+      .and_return('rabbit://openstack:openstack@controller.example.org:5672')
     allow(Chef::Application).to receive(:fatal!)
   end
 end

@@ -233,6 +233,7 @@ end
   network_l3
   network_metadata
   network_metering
+  orchestration
   telemetry
 ).each do |i|
   rabbit_user = node['openstack']['mq']['network']['rabbit']['userid']
@@ -283,6 +284,9 @@ end
   compute-vnc-proxy
   compute-api
   compute-serial-proxy
+  orchestration-api
+  orchestration-api-cfn
+  orchestration-api-cloudwatch
   telemetry
   telemetry-metric
 ).each do |service|
