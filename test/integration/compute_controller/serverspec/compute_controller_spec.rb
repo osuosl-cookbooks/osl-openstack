@@ -31,7 +31,8 @@ end
   'disk_allocation_ratio = 1.5',
   'instance_usage_audit = True',
   'instance_usage_audit_period = hour',
-  'notify_on_state_change = vm_and_task_state'
+  'notify_on_state_change = vm_and_task_state',
+  'resume_guests_state_on_host_boot = True'
 ].each do |s|
   describe file('/etc/nova/nova.conf') do
     its(:content) do

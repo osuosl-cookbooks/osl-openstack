@@ -53,6 +53,15 @@ include_recipe 'osl-openstack::linuxbridge'
 include_recipe 'openstack-compute::compute'
 include_recipe 'openstack-telemetry::agent-compute'
 
+template '/etc/sysconfig/libvirt-guests' do
+  variables(libvirt_guests: node['osl-openstack']['libvirt_guests'])
+  notifies :restart, 'service[libvirt-guests]'
+end
+
+service 'libvirt-guests' do
+  action [:enable, :start]
+end
+
 # Not needed on a compute node
 delete_resource(:directory, '/var/run/httpd/ceilometer')
 

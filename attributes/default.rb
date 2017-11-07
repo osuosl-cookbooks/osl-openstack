@@ -41,6 +41,11 @@ default['osl-openstack']['vxlan_interface'] = {
 }
 default['osl-openstack']['node_type'] = 'compute'
 default['osl-openstack']['nova_ssl_dir'] = '/etc/nova/pki'
+default['osl-openstack']['libvirt_guests'] = {
+  'on_boot' => 'ignore',
+  'on_shutdown' => 'shutdown',
+  'parallel_shutdown' => '25'
+}
 default['osl-openstack']['novnc'] = {
   'use_ssl' => true,
   'cert_file' => 'novnc.pem',
