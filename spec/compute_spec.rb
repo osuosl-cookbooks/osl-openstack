@@ -51,10 +51,6 @@ describe 'osl-openstack::compute' do
     end
   end
   it do
-    expect(chef_run.template('/etc/sysconfig/libvirt-guests')).to \
-      notify('service[libvirt-guests]')
-  end
-  it do
     expect(chef_run).to enable_service('libvirt-guests')
   end
   it do
