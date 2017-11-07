@@ -5,6 +5,7 @@ set :backend, :exec
 %w(
   openstack-nova-compute
   openstack-ceilometer-compute
+  libvirt-guests
 ).each do |s|
   describe service(s) do
     it { should be_enabled }
@@ -14,6 +15,12 @@ end
 
 describe kernel_module('tun') do
   it { should be_loaded }
+end
+
+describe file('/etc/sysconfig/libvirt-guests') do
+  its(:content) { should match(/^ON_BOOT=ignore$/) }
+  its(:content) { should match(/^ON_SHUTDOWN=shutdown$/) }
+  its(:content) { should match(/^PARALLEL_SHUTDOWN=25$/) }
 end
 
 describe file('/var/lib/nova/.ssh/authorized_keys') do

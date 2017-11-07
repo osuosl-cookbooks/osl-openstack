@@ -34,6 +34,33 @@ describe 'osl-openstack::compute' do
     expect(chef_run).to load_kernel_module('tun')
   end
   it do
+    expect(chef_run).to create_template('/etc/sysconfig/libvirt-guests')
+      .with(
+        variables: {
+          libvirt_guests: { 'on_boot' => 'ignore', 'on_shutdown' => 'shutdown', 'parallel_shutdown' => '25' }
+        }
+      )
+  end
+  [
+    /^ON_BOOT=ignore$/,
+    /^ON_SHUTDOWN=shutdown$/,
+    /^PARALLEL_SHUTDOWN=25$/
+  ].each do |line|
+    it do
+      expect(chef_run).to render_file('/etc/sysconfig/libvirt-guests').with_content(line)
+    end
+  end
+  it do
+    expect(chef_run.template('/etc/sysconfig/libvirt-guests')).to \
+      notify('service[libvirt-guests]')
+  end
+  it do
+    expect(chef_run).to enable_service('libvirt-guests')
+  end
+  it do
+    expect(chef_run).to start_service('libvirt-guests')
+  end
+  it do
     expect(chef_run).to create_user_account('nova')
       .with(
         system_user: true,

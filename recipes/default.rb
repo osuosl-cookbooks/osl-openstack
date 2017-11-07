@@ -59,6 +59,7 @@ node.default['openstack']['compute']['conf'].tap do |conf|
   conf['DEFAULT']['instance_usage_audit_period'] = 'hour'
   conf['DEFAULT']['notify_on_state_change'] = 'vm_and_task_state'
   conf['DEFAULT']['disk_allocation_ratio'] = 1.5
+  conf['DEFAULT']['resume_guests_state_on_host_boot'] = 'True'
   conf['libvirt']['disk_cachemodes'] = 'file=writeback,block=none'
 end
 node.default['openstack']['network'].tap do |conf|
