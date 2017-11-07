@@ -56,8 +56,9 @@ systemctl start openstack-ceilometer-central \
 crudini --set /etc/nova/nova.conf upgrade_levels compute mitaka
 systemctl stop '*nova*'
 yum -d1 -y upgrade \*nova\*
-su -s /bin/sh -c "nova-manage api_db sync" nova
 su -s /bin/sh -c "nova-manage db sync" nova
+su -s /bin/sh -c "nova-manage api_db sync" nova
+su -s /bin/sh -c "nova-manage db online_data_migrations" nova
 crudini --del /etc/nova/nova.conf upgrade_levels compute
 systemctl start openstack-nova-api \
   openstack-nova-conductor \
