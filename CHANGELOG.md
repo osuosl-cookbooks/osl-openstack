@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+3.1.1 (2017-11-07)
+------------------
+- Safely shutdown and start instances on hypervisor reboots
+
 3.1.0 (2017-10-16)
 ------------------
 - Enable OpenStack Orchestration service (heat)
