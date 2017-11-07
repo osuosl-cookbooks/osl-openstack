@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+3.1.2 (2017-11-07)
+------------------
+- Don't restart this service when the config file updates
+
 3.1.1 (2017-11-07)
 ------------------
 - Safely shutdown and start instances on hypervisor reboots
