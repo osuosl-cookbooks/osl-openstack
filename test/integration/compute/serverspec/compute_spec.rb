@@ -82,3 +82,7 @@ describe file('/var/lib/nova/.ssh/config') do
   it { should be_owned_by 'nova' }
   it { should be_grouped_into 'nova' }
 end
+
+describe package('libguestfs-tools') do
+  it { should be_installed }
+end
