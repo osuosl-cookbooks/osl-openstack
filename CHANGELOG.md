@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+3.1.4 (2017-12-01)
+------------------
+- Install libguestfs-tools
+
 3.1.3 (2017-11-08)
 ------------------
 - Add 'nova-manage db online_data_migrations' to upgrade script
