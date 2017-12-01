@@ -131,5 +131,8 @@ Host *
         expect(chef_run).to run_execute('ppc64_cpu_smt_off')
       end
     end
+    it do
+      expect(chef_run).to install_package('libguestfs-tools')
+    end
   end
 end

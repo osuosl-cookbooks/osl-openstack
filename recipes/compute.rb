@@ -100,3 +100,5 @@ Host *
   group 'nova'
   mode 0600
 end
+
+package 'libguestfs-tools'
