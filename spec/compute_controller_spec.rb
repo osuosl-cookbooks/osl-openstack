@@ -40,6 +40,7 @@ AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter
       /^osapi_compute_listen = 10.0.0.2$/,
       /^metadata_listen = 10.0.0.2$/,
       /^resume_guests_state_on_host_boot = True$/,
+      /^block_device_allocate_retries = 120$/,
       %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$}
     ].each do |line|
       it do
