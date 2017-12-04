@@ -60,6 +60,7 @@ node.default['openstack']['compute']['conf'].tap do |conf|
   conf['DEFAULT']['notify_on_state_change'] = 'vm_and_task_state'
   conf['DEFAULT']['disk_allocation_ratio'] = 1.5
   conf['DEFAULT']['resume_guests_state_on_host_boot'] = 'True'
+  conf['DEFAULT']['block_device_allocate_retries'] = 120
   conf['libvirt']['disk_cachemodes'] = 'file=writeback,block=none'
 end
 node.default['openstack']['network'].tap do |conf|
