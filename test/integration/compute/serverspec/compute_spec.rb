@@ -21,6 +21,7 @@ describe file('/etc/sysconfig/libvirt-guests') do
   its(:content) { should match(/^ON_BOOT=ignore$/) }
   its(:content) { should match(/^ON_SHUTDOWN=shutdown$/) }
   its(:content) { should match(/^PARALLEL_SHUTDOWN=25$/) }
+  its(:content) { should match(/^SHUTDOWN_TIMEOUT=120$/) }
 end
 
 describe file('/var/lib/nova/.ssh/authorized_keys') do
