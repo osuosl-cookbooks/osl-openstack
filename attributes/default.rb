@@ -44,7 +44,8 @@ default['osl-openstack']['nova_ssl_dir'] = '/etc/nova/pki'
 default['osl-openstack']['libvirt_guests'] = {
   'on_boot' => 'ignore',
   'on_shutdown' => 'shutdown',
-  'parallel_shutdown' => '25'
+  'parallel_shutdown' => '25',
+  'shutdown_timeout' => '120'
 }
 default['osl-openstack']['novnc'] = {
   'use_ssl' => true,

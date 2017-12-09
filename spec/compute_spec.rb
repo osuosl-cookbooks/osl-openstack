@@ -37,14 +37,21 @@ describe 'osl-openstack::compute' do
     expect(chef_run).to create_template('/etc/sysconfig/libvirt-guests')
       .with(
         variables: {
-          libvirt_guests: { 'on_boot' => 'ignore', 'on_shutdown' => 'shutdown', 'parallel_shutdown' => '25' }
+          libvirt_guests: {
+            'on_boot' => 'ignore',
+            'on_shutdown' =>
+            'shutdown',
+            'parallel_shutdown' => '25',
+            'shutdown_timeout' => '120'
+          }
         }
       )
   end
   [
     /^ON_BOOT=ignore$/,
     /^ON_SHUTDOWN=shutdown$/,
-    /^PARALLEL_SHUTDOWN=25$/
+    /^PARALLEL_SHUTDOWN=25$/,
+    /^SHUTDOWN_TIMEOUT=120$/
   ].each do |line|
     it do
       expect(chef_run).to render_file('/etc/sysconfig/libvirt-guests').with_content(line)
