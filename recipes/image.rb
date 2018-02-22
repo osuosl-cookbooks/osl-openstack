@@ -23,6 +23,30 @@ include_recipe 'openstack-image::api'
 include_recipe 'openstack-image::registry'
 include_recipe 'openstack-image::identity_registration'
 
+if node['osl-openstack']['ceph']
+  secrets = openstack_credential_secrets
+
+  group 'ceph' do
+    append true
+    members %w(glance)
+    action :modify
+    notifies :restart, 'service[glance-api]', :immediately
+  end
+
+  template "/etc/ceph/ceph.client.#{node['osl-openstack']['image']['rbd_store_user']}.keyring" do
+    source 'ceph.client.keyring.erb'
+    owner node['ceph']['owner']
+    group node['ceph']['group']
+    sensitive true
+    variables(
+      ceph_user: node['osl-openstack']['image']['rbd_store_user'],
+      ceph_token: secrets['ceph']['image_token']
+    )
+    not_if { secrets['ceph']['image_token'].nil? }
+    notifies :restart, 'service[glance-api]'
+  end
+end
+
 mount '/var/lib/glance/images' do
   device node['osl-openstack']['image']['glance_vol']
   fstype 'glusterfs'

@@ -16,6 +16,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+node.default['ceph']['config-sections'].tap do |conf|
+  conf['client']['admin socket'] = '/var/run/ceph/guests/$cluster-$type.$id.$pid.$cctid.asok'
+  conf['client']['rbd concurrent management ops'] = 20
+  conf['client']['rbd cache'] = 'true'
+  conf['client']['rbd cache writethrough until flush'] = 'true'
+  conf['client']['log file'] = '/var/log/ceph/qemu-guest-$pid.log'
+end
+
 include_recipe 'firewall'
 include_recipe 'firewall::openstack'
 include_recipe 'firewall::vnc'
@@ -58,6 +66,62 @@ end
 include_recipe 'osl-openstack::linuxbridge'
 include_recipe 'openstack-compute::compute'
 include_recipe 'openstack-telemetry::agent-compute'
+
+if node['osl-openstack']['ceph']
+  %w(
+    /var/run/ceph/guests
+    /var/log/ceph
+  ).each do |d|
+    directory d do
+      owner 'qemu'
+      group 'libvirt'
+    end
+  end
+
+  include_recipe 'osl-openstack::_block_ceph'
+
+  group 'ceph' do
+    append true
+    members %w(nova)
+    action :modify
+    notifies :restart, 'service[nova-compute]', :immediately
+  end
+
+  secrets = openstack_credential_secrets
+  secret_uuid = node['ceph']['fsid-secret']
+  ceph_user = node['osl-openstack']['block']['rbd_store_user']
+  secret_file = ::File.join(Chef::Config[:file_cache_path], 'secret.xml')
+
+  template secret_file do
+    source 'secret.xml.erb'
+    user 'root'
+    group 'root'
+    mode '00600'
+    variables(
+      uuid: secret_uuid,
+      client_name: ceph_user
+    )
+    not_if "virsh secret-list | grep #{secret_uuid}"
+    not_if { secret_uuid.nil? }
+  end
+
+  execute "virsh secret-define --file #{secret_file}" do
+    not_if "virsh secret-list | grep #{secret_uuid}"
+    not_if { secret_uuid.nil? }
+  end
+
+  # this will update the key if necessary
+  execute 'update virsh ceph secret' do
+    command "virsh secret-set-value --secret #{secret_uuid} --base64 #{secrets['ceph']['block_token']}"
+    sensitive true
+    not_if "virsh secret-get-value #{secret_uuid} | grep #{secrets['ceph']['block_token']}"
+    not_if { secret_uuid.nil? || secrets['ceph']['block_token'].nil? }
+  end
+
+  file secret_file do
+    action :delete
+  end
+end
 
 template '/etc/sysconfig/libvirt-guests' do
   variables(libvirt_guests: node['osl-openstack']['libvirt_guests'])

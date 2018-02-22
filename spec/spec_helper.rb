@@ -18,7 +18,65 @@ shared_context 'common_stubs' do
     node.set['osl-openstack']['db_hostname'] = '10.0.0.10'
     node.set['osl-openstack']['database_suffix'] = 'x86'
     node.set['osl-openstack']['databag_suffix'] = 'x86'
+    node.set['osl-openstack']['credentials']['ceph']['image_token'] = 'image_token'
+    node.set['osl-openstack']['credentials']['ceph']['block_token'] = 'block_token'
+    node.set['osl-openstack']['credentials']['ceph']['block_backup_token'] = 'block_backup_token'
+    node.set['ceph']['fsid-secret'] = '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8'
     node.automatic['filesystem2']['by_mountpoint']
+  end
+end
+
+shared_context 'ceph_stubs' do
+  before do
+    stub_command('test -s /etc/yum.repos.d/ceph.repo')
+    stub_command('test -s /lib/lsb/init-functions')
+    stub_command('getenforce | grep \'Permissive|Disabled\'')
+    stub_command('test -f /etc/ceph')
+    stub_command('test -s /etc/ceph/ceph.mon.keyring')
+    stub_command('test -s /etc/ceph/ceph.client.admin.keyring')
+    stub_command('grep \'admin\' /etc/ceph/ceph.mon.keyring')
+    stub_command('test -s /var/lib/ceph/mon/ceph-Fauxhai/keyring')
+    stub_command('test -f /var/lib/ceph/mon/ceph-Fauxhai/done')
+    stub_command('test -d /var/lib/ceph/mgr/ceph-Fauxhai')
+    stub_command('test -s /var/lib/ceph/mgr/ceph-Fauxhai/keyring')
+    stub_command('test -d /etc/ceph/scripts')
+    stub_command('test -f /etc/ceph/scripts/ceph_journal.sh')
+    stub_command('test -s /var/lib/ceph/bootstrap-osd/ceph.keyring')
+    stub_search('node', 'tags:ceph-mon').and_return(
+      [
+        {
+          fqdn: 'ceph-mon.example.org',
+          roles: 'search-ceph-mon',
+          ceph: {
+            'fsid-secret' => '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8'
+          },
+          network: {
+            interfaces: {
+              eth0: {
+                addresses: {
+                  '10.121.1.1' => {
+                    family: 'inet',
+                    broadcast: '255.255.255.0'
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    )
+    stub_search('node', 'tags:ceph-rgw').and_return([{}])
+    stub_search('node', 'tags:ceph-rbd').and_return([{}])
+    stub_search('node', 'tags:ceph-admin').and_return([{}])
+    stub_search('node', 'tags:ceph-osd').and_return([{}])
+    stub_search('node', 'tags:ceph-mds').and_return([{}])
+    stub_search('node', 'tags:ceph-restapi').and_return([{}])
+    allow(Chef::EncryptedDataBagItem).to receive(:load)
+      .with('ceph', 'openstack')
+      .and_raise(Net::HTTPServerException.new(
+                   'ceph databag not found',
+                   Net::HTTPResponse.new('1.1', '404', '')
+      ))
   end
 end
 

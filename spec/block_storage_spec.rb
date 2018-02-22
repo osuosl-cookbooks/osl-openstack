@@ -43,4 +43,62 @@ describe 'osl-openstack::block_storage' do
       chain: 'iscsi'
     )
   end
+  context 'Set ceph' do
+    let(:runner) do
+      ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
+        node.set['osl-openstack']['ceph'] = true
+        node.automatic['filesystem2']['by_mountpoint']
+      end
+    end
+    let(:node) { runner.node }
+    cached(:chef_run) { runner.converge(described_recipe) }
+    include_context 'common_stubs'
+    include_context 'ceph_stubs'
+    it do
+      expect(chef_run).to include_recipe('osl-openstack::_block_ceph')
+    end
+    it do
+      expect(chef_run).to install_package('openstack-cinder')
+    end
+    it do
+      expect(chef_run).to modify_group('ceph')
+        .with(
+          append: true,
+          members: %w(cinder)
+        )
+    end
+    it do
+      expect(chef_run.group('ceph')).to notify('service[cinder-volume]').to(:restart).immediately
+    end
+    it do
+      expect(chef_run.template('/etc/ceph/ceph.client.cinder.keyring')).to notify('service[cinder-volume]')
+        .to(:restart).immediately
+    end
+    it do
+      expect(chef_run).to create_template('/etc/ceph/ceph.client.cinder.keyring')
+        .with(
+          source: 'ceph.client.keyring.erb',
+          owner: 'ceph',
+          group: 'ceph',
+          sensitive: true,
+          variables: {
+            ceph_user: 'cinder',
+            ceph_token: 'block_token'
+          }
+        )
+    end
+    it do
+      expect(chef_run).to create_template('/etc/ceph/ceph.client.cinder-backup.keyring')
+        .with(
+          source: 'ceph.client.keyring.erb',
+          owner: 'ceph',
+          group: 'ceph',
+          sensitive: true,
+          variables: {
+            ceph_user: 'cinder-backup',
+            ceph_token: 'block_backup_token'
+          }
+        )
+    end
+  end
 end
