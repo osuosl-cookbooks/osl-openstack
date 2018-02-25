@@ -77,7 +77,8 @@ describe 'osl-openstack::image', image: true do
             notify('service[glance-api]').to(:restart)
         end
         [
-          /^show_image_direct_url = true$/
+          /^show_image_direct_url = true$/,
+          /^show_multiple_locations = true$/
         ].each do |line|
           it do
             expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)

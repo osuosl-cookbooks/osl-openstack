@@ -39,6 +39,7 @@ end
 
 describe command('source /root/openrc && /usr/local/bin/openstack image show cirros -c properties -f value') do
   its(:stdout) { should match(/direct_url='rbd:/) }
+  its(:stdout) { should match(/locations=/) }
 end
 
 describe command('rbd ls images') do

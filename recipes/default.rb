@@ -48,6 +48,7 @@ end
 node.default['openstack']['image_api']['conf'].tap do |conf|
   if node['osl-openstack']['ceph']
     conf['DEFAULT']['show_image_direct_url'] = true
+    conf['DEFAULT']['show_multiple_locations'] = true
     conf['paste_deploy']['flavor'] = 'keystone'
     conf['glance_store']['stores'] = 'rbd,file,http'
     conf['glance_store']['default_store'] = 'rbd'
