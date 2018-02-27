@@ -154,10 +154,11 @@ end
 
 node.default['openstack']['block-storage']['conf'].tap do |conf|
   conf['oslo_messaging_notifications']['driver'] = 'messagingv2'
-  conf['DEFAULT']['volume_group'] = 'openstack'
-  conf['DEFAULT']['volume_clear_size'] = 256
+  conf['lvm']['volume_driver'] = 'cinder.volume.drivers.lvm.LVMVolumeDriver'
+  conf['lvm']['volume_group'] = 'openstack'
+  conf['lvm']['volume_clear_size'] = 256
   if node['osl-openstack']['ceph']
-    conf['DEFAULT']['enabled_backends'] = 'ceph'
+    conf['DEFAULT']['enabled_backends'] = 'ceph,lvm'
     conf['DEFAULT']['backup_driver'] = 'cinder.backup.drivers.ceph'
     conf['DEFAULT']['backup_ceph_conf'] = '/etc/ceph/ceph.conf'
     conf['DEFAULT']['backup_ceph_user'] = node['osl-openstack']['block_backup']['rbd_store_user']
