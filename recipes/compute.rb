@@ -82,7 +82,7 @@ if node['osl-openstack']['ceph']
 
   group 'ceph' do
     append true
-    members %w(nova)
+    members %w(nova qemu)
     action :modify
     notifies :restart, 'service[nova-compute]', :immediately
   end

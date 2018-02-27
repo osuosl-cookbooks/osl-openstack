@@ -131,7 +131,7 @@ Host *
       expect(chef_run).to modify_group('ceph')
         .with(
           append: true,
-          members: %w(nova)
+          members: %w(nova qemu)
         )
     end
     it do

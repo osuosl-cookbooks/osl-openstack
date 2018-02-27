@@ -25,12 +25,10 @@ end
   end
 end
 
-describe user('nova') do
-  it { should belong_to_group 'ceph' }
-end
-
-describe user('cinder') do
-  it { should belong_to_group 'ceph' }
+%w(nova cinder qemu).each do |u|
+  describe user(u) do
+    it { should belong_to_group 'ceph' }
+  end
 end
 
 %w(cinder cinder-backup).each do |key|
