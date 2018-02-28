@@ -19,11 +19,11 @@ end
 describe file('/etc/cinder/cinder.conf') do
   its(:content) do
     should contain(/^volume_clear_size = 256$/)
-      .from(/^\[lvm\]$/).to(/^\[/)
+      .from(/^\[DEFAULT\]$/).to(/^\[/)
   end
   its(:content) do
     should contain(/^volume_group = openstack$/)
-      .from(/^\[lvm\]$/).to(/^\[/)
+      .from(/^\[DEFAULT\]$/).to(/^\[/)
   end
   its(:content) do
     should contain(/memcached_servers = .*:11211/)

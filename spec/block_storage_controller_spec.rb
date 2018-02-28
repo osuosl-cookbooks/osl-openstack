@@ -31,19 +31,12 @@ describe 'osl-openstack::block_storage_controller' do
       /^my_ip = 10.0.0.2$/,
       %r{^glance_api_servers = http://10.0.0.10:9292},
       /^osapi_volume_listen = 10.0.0.2$/,
+      /^volume_group = openstack$/,
+      /^volume_clear_size = 256$/,
       %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$}
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
-      end
-    end
-    [
-      /^volume_group = openstack$/,
-      /^volume_clear_size = 256$/,
-      /^volume_driver = cinder.volume.drivers.lvm.LVMVolumeDriver$/
-    ].each do |line|
-      it do
-        expect(chef_run).to render_config_file(file.name).with_section_content('lvm', line)
       end
     end
     it do
@@ -105,7 +98,7 @@ describe 'osl-openstack::block_storage_controller' do
       include_context 'common_stubs'
       include_context 'ceph_stubs'
       [
-        /^enabled_backends = ceph,lvm$/,
+        /^enabled_backends = ceph$/,
         /^backup_driver = cinder.backup.drivers.ceph$/,
         %r{^backup_ceph_conf = /etc/ceph/ceph.conf$},
         /^backup_ceph_user = cinder-backup$/,
