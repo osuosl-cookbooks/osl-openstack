@@ -8,12 +8,12 @@ description      'Installs/Configures osl-openstack'
 long_description 'Installs/Configures osl-openstack'
 version          '3.1.6'
 
-%w{ base certificate chef-sugar git memcached osl-nrpe kernel-modules
+%w{ base certificate chef-sugar git memcached osl-nrpe osl-munin kernel-modules
   mysql openstack-block-storage openstack-common openstack-compute
   openstack-dashboard openstack-identity openstack-integration-test
   openstack-image openstack-network openstack-ops-database
   openstack-ops-messaging openstack-orchestration openstack-telemetry selinux
-  sudo yum-qemu-ev ibm-power apache2 yum-epel}.each do |cb|
+  sudo yum-qemu-ev ibm-power apache2 yum-epel yum-kernel-osuosl}.each do |cb|
   depends cb
 end
 

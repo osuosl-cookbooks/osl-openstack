@@ -26,7 +26,13 @@ kernel_module 'tun'
 
 case node['kernel']['machine']
 when 'ppc64le'
+  node.default['base']['grub']['cmdline'] << %w(kvm_cma_resv_ratio=10)
   include_recipe 'chef-sugar::default'
+  include_recipe 'yum-kernel-osuosl'
+  include_recipe 'base::grub'
+
+  package 'kernel-osuosl'
+
   if %w(openstack).include?(node.deep_fetch('cloud', 'provider'))
     kernel_module 'kvm_pr'
   else
