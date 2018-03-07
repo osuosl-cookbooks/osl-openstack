@@ -15,6 +15,7 @@ cookbook 'osl-rsync', git: 'git@github.com:osuosl-cookbooks/osl-rsync'
 cookbook 'resource_from_hash',
          git: 'git@github.com:osuosl-cookbooks/resource_from_hash'
 cookbook 'statsd', github: 'att-cloud/cookbook-statsd'
+cookbook 'yum-kernel-osuosl', git: 'git@github.com:osuosl-cookbooks/yum-kernel-osuosl.git'
 cookbook 'yum-qemu-ev', git: 'git@github.com:osuosl-cookbooks/yum-qemu-ev.git'
 cookbook 'ibm-power', git: 'git@github.com:osuosl-cookbooks/ibm-power.git'
 cookbook 'openstackclient', github: 'cloudbau/cookbook-openstackclient'

@@ -17,6 +17,9 @@
 # limitations under the License.
 #
 
+include_recipe 'osl-nrpe'
+include_recipe 'osl-munin::client'
+
 # Increase load threshold on openpower nodes (double the default values)
 if node['kernel']['machine'] == 'ppc64le'
   total_cpu = node['cpu']['total']
@@ -25,7 +28,18 @@ if node['kernel']['machine'] == 'ppc64le'
   r.critical_condition = "#{total_cpu * 8 + 10},#{total_cpu * 8 + 5},#{total_cpu * 8}"
 end
 
-include_recipe 'osl-nrpe'
+# We only want the semver for the kernel release
+kernel_version = node['kernel']['release'].split('-').first
+
+# Only enable the cma graph if this is a compute node and has a 4.14 or newer kernel which exposes the information we
+# need in /proc
+if node['osl-openstack']['node_type'] == 'compute' && # ~FC023 only_if does not work with definitions :(
+   Gem::Version.new(kernel_version) >= Gem::Version.new('4.14.0')
+  munin_plugin 'cma' do
+    plugin_dir ::File.join(node['osl-munin']['contrib_path'], 'plugins', 'osuosl')
+  end
+end
+
 if node['osl-openstack']['node_type'] == 'controller'
   include_recipe 'osl-openstack'
   include_recipe 'base::oslrepo'
