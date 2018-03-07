@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+3.1.7 (2018-03-07)
+------------------
+- Install 4.14 kernel and set kvm_cma_resv_ratio=10 on ppc64le
+
 3.1.6 (2017-12-09)
 ------------------
 - The default shutdown timeout is 300s (5m), lower to 120s (1.5m)
