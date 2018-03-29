@@ -11,28 +11,37 @@
   execute "rbd pool init #{p}"
 end
 
-execute 'client.glance' do
-  command 'ceph auth get-or-create client.glance mon \'profile rbd\' osd \'profile rbd pool=images\' ' \
-          '> /etc/ceph/ceph.client.glance.keyring'
-  creates '/etc/ceph/ceph.client.glance.keyring'
+secrets = openstack_credential_secrets
+
+ceph_chef_client 'glance' do
+  caps(
+    mon: 'profile rbd',
+    osd: 'profile rbd pool=images'
+  )
+  group 'ceph'
+  key secrets['ceph']['image_token']
+  keyname 'client.glance'
+  filename '/etc/ceph/ceph.client.glance.keyring'
 end
 
-execute 'client.cinder' do
-  command 'ceph auth get-or-create client.cinder mon \'profile rbd\' osd \'profile rbd pool=volumes, ' \
-          'profile rbd pool=vms, profile rbd pool=images\' > /etc/ceph/ceph.client.cinder.keyring'
-  creates '/etc/ceph/ceph.client.cinder.keyring'
+ceph_chef_client 'cinder' do
+  caps(
+    mon: 'profile rbd',
+    osd: 'profile rbd pool=volumes, profile rbd pool=vms, profile rbd pool=images'
+  )
+  group 'ceph'
+  key secrets['ceph']['block_token']
+  keyname 'client.cinder'
+  filename '/etc/ceph/ceph.client.cinder.keyring'
 end
 
-execute 'client.cinder-backup' do
-  command 'ceph auth get-or-create client.cinder-backup mon \'profile rbd\' osd \'profile rbd pool=backups\' ' \
-          '> /etc/ceph/ceph.client.cinder-backup.keyring'
-  creates '/etc/ceph/ceph.client.cinder-backup.keyring'
-end
-
-ruby_block 'set demo keys' do
-  block do
-    node.normal['osl-openstack']['credentials']['ceph']['image_token'] = ceph_demo_glance_key
-    node.normal['osl-openstack']['credentials']['ceph']['block_token'] = ceph_demo_cinder_key
-    node.normal['osl-openstack']['credentials']['ceph']['block_backup_token'] = ceph_demo_cinder_backup_key
-  end
+ceph_chef_client 'cinder-backup' do
+  caps(
+    mon: 'profile rbd',
+    osd: 'profile rbd pool=backups'
+  )
+  group 'ceph'
+  key secrets['ceph']['block_backup_token']
+  keyname 'client.cinder-backup'
+  filename '/etc/ceph/ceph.client.cinder-backup.keyring'
 end
