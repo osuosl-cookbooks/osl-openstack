@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+3.2.0 (2018-04-02)
+------------------
+- Ceph integration
+
 3.1.7 (2018-03-07)
 ------------------
 - Install 4.14 kernel and set kvm_cma_resv_ratio=10 on ppc64le
