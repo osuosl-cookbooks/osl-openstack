@@ -38,11 +38,9 @@ config.vm.provider "virtualbox" do |v|
   v.memory = 1024
 end
 EOF
+  recipe 'openstack_test::ceph_compute'
   role provision_role
   role 'separate_network_node' if ENV['SEPARATE_NETWORK_NODE']
-  attribute %w(osl-openstack credentials image_token), ENV['IMAGE_TOKEN']
-  attribute %w(osl-openstack credentials block_token), ENV['BLOCK_TOKEN']
-  attribute %w(osl-openstack credentials block_backup_token), ENV['BLOCK_BACKUP_TOKEN']
   recipe 'osl-openstack::compute'
   role 'openstack_cinder'
   file('/etc/chef/encrypted_data_bag_secret',
