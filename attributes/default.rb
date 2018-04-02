@@ -20,11 +20,22 @@ default['osl-openstack']['data_bags'] = %w(
   service_passwords
   user_passwords
 )
+default['osl-openstack']['credentials']['ceph'] = {}
+default['osl-openstack']['ceph'] = false
+default['osl-openstack']['ceph_databag'] = 'ceph'
+default['osl-openstack']['ceph_item'] = 'openstack'
 default['osl-openstack']['database_suffix'] = nil
 default['osl-openstack']['databag_prefix'] = nil
+default['osl-openstack']['compute']['rbd_store_pool'] = 'vms'
 default['osl-openstack']['cinder']['iscsi_role'] = nil
 default['osl-openstack']['cinder']['iscsi_ips'] = []
+default['osl-openstack']['block']['rbd_store_pool'] = 'volumes'
+default['osl-openstack']['block']['rbd_store_user'] = 'cinder'
+default['osl-openstack']['block_backup']['rbd_store_pool'] = 'backups'
+default['osl-openstack']['block_backup']['rbd_store_user'] = 'cinder-backup'
 default['osl-openstack']['image']['glance_vol'] = nil
+default['osl-openstack']['image']['rbd_store_pool'] = 'images'
+default['osl-openstack']['image']['rbd_store_user'] = 'glance'
 default['osl-openstack']['endpoint_hostname'] = nil
 default['osl-openstack']['network_hostname'] = nil
 default['osl-openstack']['db_hostname'] = nil

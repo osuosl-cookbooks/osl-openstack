@@ -39,8 +39,10 @@ config.vm.provider "virtualbox" do |v|
   v.cpus = 2
 end
 EOF
+  recipe 'openstack_test::ceph_setup'
   role provision_role
   role 'separate_network_node' if ENV['SEPARATE_NETWORK_NODE']
+  recipe 'openstack_test::ceph'
   recipe 'osl-openstack::ops_database'
   recipe 'openstack_test::gluster'
   recipe 'osl-openstack::controller'

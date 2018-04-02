@@ -30,6 +30,10 @@ describe 'osl-openstack::compute' do
     end
   end
 
+  it do
+    expect(chef_run).to_not include_recipe('osl-openstack::_block_ceph')
+  end
+
   it 'loads tun module' do
     expect(chef_run).to load_kernel_module('tun')
   end
@@ -94,6 +98,115 @@ Host *
   UserKnownHostsFile /dev/null
         EOL
       )
+  end
+
+  context 'Set ceph' do
+    let(:runner) do
+      ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
+        node.set['osl-openstack']['ceph'] = true
+        node.automatic['filesystem2']['by_mountpoint']
+      end
+    end
+    let(:node) { runner.node }
+    cached(:chef_run) { runner.converge(described_recipe) }
+    include_context 'common_stubs'
+    include_context 'ceph_stubs'
+    before do
+      stub_command('virsh secret-list | grep 8102bb29-f48b-4f6e-81d7-4c59d80ec6b8').and_return(false)
+      stub_command('virsh secret-get-value 8102bb29-f48b-4f6e-81d7-4c59d80ec6b8 | grep block_token')
+        .and_return(false)
+    end
+    %w(
+      /var/run/ceph/guests
+      /var/log/ceph
+    ).each do |d|
+      it do
+        expect(chef_run).to create_directory(d).with(owner: 'qemu', group: 'libvirt')
+      end
+    end
+    it do
+      expect(chef_run).to include_recipe('osl-openstack::_block_ceph')
+    end
+    it do
+      expect(chef_run).to modify_group('ceph')
+        .with(
+          append: true,
+          members: %w(nova qemu)
+        )
+    end
+    it do
+      expect(chef_run.group('ceph')).to notify('service[nova-compute]').to(:restart).immediately
+    end
+    it do
+      expect(chef_run.group('ceph')).to_not notify('service[cinder-volume]').to(:restart).immediately
+    end
+    it do
+      expect(chef_run.template('/etc/ceph/ceph.client.cinder.keyring')).to_not notify('service[cinder-volume]')
+        .to(:restart).immediately
+    end
+    it do
+      expect(chef_run).to create_template('/var/chef/cache/secret.xml')
+        .with(
+          source: 'secret.xml.erb',
+          user: 'root',
+          group: 'root',
+          mode: '00600',
+          variables: {
+            uuid: '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8',
+            client_name: 'cinder'
+          }
+        )
+    end
+    it do
+      expect(chef_run).to run_execute('virsh secret-define --file /var/chef/cache/secret.xml')
+    end
+    it do
+      expect(chef_run).to run_execute('update virsh ceph secret')
+        .with(
+          command: 'virsh secret-set-value --secret 8102bb29-f48b-4f6e-81d7-4c59d80ec6b8 --base64 block_token',
+          sensitive: true
+        )
+    end
+    it do
+      expect(chef_run).to delete_file('/var/chef/cache/secret.xml')
+    end
+    [
+      %r{^admin socket = /var/run/ceph/guests/\$cluster-\$type.\$id.\$pid.\$cctid.asok$},
+      /^rbd concurrent management ops = 20$/,
+      /^rbd cache = true$/,
+      /^rbd cache writethrough until flush = true$/,
+      %r{log file = /var/log/ceph/qemu-guest-\$pid.log$}
+    ].each do |line|
+      it do
+        expect(chef_run).to render_config_file('/etc/ceph/ceph.conf').with_section_content('client', line)
+      end
+    end
+    context 'virsh secret exists' do
+      let(:runner) do
+        ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
+          node.set['osl-openstack']['ceph'] = true
+          node.automatic['filesystem2']['by_mountpoint']
+        end
+      end
+      let(:node) { runner.node }
+      cached(:chef_run) { runner.converge(described_recipe) }
+      include_context 'common_stubs'
+      include_context 'ceph_stubs'
+      before do
+        stub_command('virsh secret-list | grep 8102bb29-f48b-4f6e-81d7-4c59d80ec6b8').and_return(true)
+        stub_command('virsh secret-get-value 8102bb29-f48b-4f6e-81d7-4c59d80ec6b8 | grep block_token')
+          .and_return(true)
+      end
+      it do
+        expect(chef_run).to_not create_template('/var/chef/cache/secret.xml')
+      end
+      it do
+        expect(chef_run).to_not run_execute('virsh secret-define --file /var/chef/cache/secret.xml')
+      end
+      it do
+        expect(chef_run).to_not run_execute('update virsh ceph secret')
+      end
+    end
   end
 
   context 'setting arch to ppc64le' do

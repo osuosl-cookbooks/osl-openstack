@@ -157,6 +157,44 @@ AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter
           %r{^connection = mysql://nova_api_x86:nova_api_db_pass@10.0.0.10:3306/nova_api_x86\?charset=utf8$}
         )
     end
+    context 'Set ceph' do
+      let(:runner) do
+        ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
+          node.set['osl-openstack']['ceph'] = true
+          node.automatic['filesystem2']['by_mountpoint']
+        end
+      end
+      let(:node) { runner.node }
+      cached(:chef_run) { runner.converge(described_recipe) }
+      include_context 'common_stubs'
+      include_context 'ceph_stubs'
+      migrate_flags =
+        %w(
+          VIR_MIGRATE_UNDEFINE_SOURCE
+          VIR_MIGRATE_PEER2PEER
+          VIR_MIGRATE_LIVE
+          VIR_MIGRATE_PERSIST_DEST
+          VIR_MIGRATE_TUNNELLED
+        )
+      [
+        /^disk_cachemodes = network=writeback$/,
+        /^force_raw_images = true$/,
+        /^hw_disk_discard = unmap$/,
+        %r{images_rbd_ceph_conf = /etc/ceph/ceph.conf$},
+        /^images_rbd_pool = vms$/,
+        /^images_type = rbd$/,
+        /^inject_key = false$/,
+        /^inject_partition = -2$/,
+        /^inject_password = false$/,
+        /^live_migration_flag = #{migrate_flags.join(',')}$/,
+        /^rbd_secret_uuid = 8102bb29-f48b-4f6e-81d7-4c59d80ec6b8$/,
+        /^rbd_user = cinder$/
+      ].each do |line|
+        it do
+          expect(chef_run).to render_config_file(file.name).with_section_content('libvirt', line)
+        end
+      end
+    end
   end
 
   it 'creates /etc/nova/pki directory' do

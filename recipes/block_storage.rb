@@ -34,3 +34,4 @@ include_recipe 'firewall::iscsi'
 include_recipe 'osl-openstack'
 include_recipe 'openstack-block-storage::volume'
 include_recipe 'openstack-block-storage::identity_registration'
+include_recipe 'osl-openstack::_block_ceph' if node['osl-openstack']['ceph']

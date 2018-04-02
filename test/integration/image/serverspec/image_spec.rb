@@ -37,6 +37,25 @@ describe command('source /root/openrc && /usr/local/bin/openstack image list') d
   end
 end
 
+describe command('source /root/openrc && /usr/local/bin/openstack image show cirros -c properties -f value') do
+  its(:stdout) { should match(/direct_url='rbd:/) }
+  its(:stdout) { should match(/locations=/) }
+end
+
+describe command('rbd ls images') do
+  its(:stdout) { should match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/) }
+end
+
+describe user('glance') do
+  it { should belong_to_group 'ceph' }
+end
+
+describe file('/etc/ceph/ceph.client.glance.keyring') do
+  its(:content) { should match(%r{key = [A-Za-z0-9+/].*==$}) }
+  it { should be_owned_by 'ceph' }
+  it { should be_grouped_into 'ceph' }
+end
+
 describe file('/var/lib/glance/images') do
   it { should be_mounted.with(type: 'fuse.glusterfs') }
 end

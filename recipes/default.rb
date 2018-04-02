@@ -45,6 +45,19 @@ node.default['openstack']['identity']['ssl'].tap do |conf|
   conf['keyfile'] = '/etc/pki/tls/private/wildcard.key'
   conf['chainfile'] = '/etc/pki/tls/certs/wildcard-bundle.crt'
 end
+node.default['openstack']['image_api']['conf'].tap do |conf|
+  if node['osl-openstack']['ceph']
+    conf['DEFAULT']['show_image_direct_url'] = true
+    conf['DEFAULT']['show_multiple_locations'] = true
+    conf['paste_deploy']['flavor'] = 'keystone'
+    conf['glance_store']['stores'] = 'rbd,file,http'
+    conf['glance_store']['default_store'] = 'rbd'
+    conf['glance_store']['rbd_store_pool'] = node['osl-openstack']['image']['rbd_store_pool']
+    conf['glance_store']['rbd_store_user'] = node['osl-openstack']['image']['rbd_store_user']
+    conf['glance_store']['rbd_store_ceph_conf'] = '/etc/ceph/ceph.conf'
+    conf['glance_store']['rbd_store_chunk_size'] = 8
+  end
+end
 node.default['openstack']['compute']['conf'].tap do |conf|
   conf['DEFAULT']['scheduler_default_filters'] =
     %w(
@@ -61,7 +74,29 @@ node.default['openstack']['compute']['conf'].tap do |conf|
   conf['DEFAULT']['disk_allocation_ratio'] = 1.5
   conf['DEFAULT']['resume_guests_state_on_host_boot'] = 'True'
   conf['DEFAULT']['block_device_allocate_retries'] = 120
-  conf['libvirt']['disk_cachemodes'] = 'file=writeback,block=none'
+  if node['osl-openstack']['ceph']
+    conf['libvirt']['disk_cachemodes'] = 'network=writeback'
+    conf['libvirt']['force_raw_images'] = true
+    conf['libvirt']['hw_disk_discard'] = 'unmap'
+    conf['libvirt']['images_rbd_ceph_conf'] = '/etc/ceph/ceph.conf'
+    conf['libvirt']['images_rbd_pool'] = node['osl-openstack']['compute']['rbd_store_pool']
+    conf['libvirt']['images_type'] = 'rbd'
+    conf['libvirt']['inject_key'] = false
+    conf['libvirt']['inject_partition'] = '-2'
+    conf['libvirt']['inject_password'] = false
+    conf['libvirt']['live_migration_flag'] =
+      %w(
+        VIR_MIGRATE_UNDEFINE_SOURCE
+        VIR_MIGRATE_PEER2PEER
+        VIR_MIGRATE_LIVE
+        VIR_MIGRATE_PERSIST_DEST
+        VIR_MIGRATE_TUNNELLED
+      ).join(',')
+    conf['libvirt']['rbd_secret_uuid'] = node['ceph']['fsid-secret']
+    conf['libvirt']['rbd_user'] = node['osl-openstack']['block']['rbd_store_user']
+  else
+    conf['libvirt']['disk_cachemodes'] = 'file=writeback,block=none'
+  end
 end
 node.default['openstack']['network'].tap do |conf|
   conf['conf']['DEFAULT']['service_plugins'] =
@@ -110,13 +145,6 @@ node.default['openstack']['dashboard'].tap do |conf|
   conf['ssl']['key'] = 'wildcard.key'
   conf['ssl']['cert'] = 'wildcard.pem'
   conf['ssl']['chain'] = 'wildcard-bundle.crt'
-  conf['misc_local_settings'] = {
-    'LAUNCH_INSTANCE_DEFAULTS' => {
-      create_volume: false, # Not available until Pike
-      disable_volume: true,
-      disable_volume_snapshot: true
-    }
-  }
 end
 
 node.default['openstack']['telemetry']['conf'].tap do |conf|
@@ -128,6 +156,29 @@ node.default['openstack']['block-storage']['conf'].tap do |conf|
   conf['oslo_messaging_notifications']['driver'] = 'messagingv2'
   conf['DEFAULT']['volume_group'] = 'openstack'
   conf['DEFAULT']['volume_clear_size'] = 256
+  if node['osl-openstack']['ceph']
+    conf['DEFAULT']['enabled_backends'] = 'ceph'
+    conf['DEFAULT']['backup_driver'] = 'cinder.backup.drivers.ceph'
+    conf['DEFAULT']['backup_ceph_conf'] = '/etc/ceph/ceph.conf'
+    conf['DEFAULT']['backup_ceph_user'] = node['osl-openstack']['block_backup']['rbd_store_user']
+    conf['DEFAULT']['backup_ceph_chunk_size'] = 134_217_728
+    conf['DEFAULT']['backup_ceph_pool'] = node['osl-openstack']['block_backup']['rbd_store_pool']
+    conf['DEFAULT']['backup_ceph_stripe_unit'] = 0
+    conf['DEFAULT']['backup_ceph_stripe_count'] = 0
+    conf['DEFAULT']['restore_discard_excess_bytes'] = true
+    conf['ceph']['volume_driver'] = 'cinder.volume.drivers.rbd.RBDDriver'
+    conf['ceph']['volume_backend_name'] = 'ceph'
+    conf['ceph']['rbd_pool'] = node['osl-openstack']['block']['rbd_store_pool']
+    conf['ceph']['rbd_ceph_conf'] = '/etc/ceph/ceph.conf'
+    conf['ceph']['rbd_flatten_volume_from_snapshot'] = false
+    conf['ceph']['rbd_max_clone_depth'] = 5
+    conf['ceph']['rbd_store_chunk_size'] = 4
+    conf['ceph']['rados_connect_timeout'] = -1
+    conf['ceph']['rbd_user'] = node['osl-openstack']['block']['rbd_store_user']
+    conf['ceph']['rbd_secret_uuid'] = node['ceph']['fsid-secret']
+    conf['libvirt']['rbd_user'] = node['osl-openstack']['block']['rbd_store_user']
+    conf['libvirt']['rbd_secret_uuid'] = node['ceph']['fsid-secret']
+  end
 end
 
 node.default['openstack']['block-storage']['platform']['cinder_volume_packages'] = %w(qemu-img-ev)
@@ -361,6 +412,7 @@ include_recipe 'openstack-common::sysctl'
 include_recipe 'openstack-identity::openrc'
 include_recipe 'build-essential'
 include_recipe 'openstack-common::client'
+include_recipe 'osl-ceph' if node['osl-openstack']['ceph']
 
 edit_resource(:python_runtime, '2') do
   provider :system

@@ -5,8 +5,11 @@ solver :ruby, :required
 # OSL Base deps
 cookbook 'aliases', git: 'git@github.com:osuosl-cookbooks/aliases'
 cookbook 'base', git: 'git@github.com:osuosl-cookbooks/base'
+cookbook 'ceph-chef', github: 'osuosl-cookbooks/ceph-chef'
 cookbook 'firewall', git: 'git@github.com:osuosl-cookbooks/firewall'
 cookbook 'munin', git: 'git@github.com:osuosl-cookbooks/munin'
+cookbook 'osl-ceph', git: 'git@github.com:osuosl-cookbooks/osl-ceph'
+cookbook 'osl-docker', git: 'git@github.com:osuosl-cookbooks/osl-docker'
 cookbook 'osl-nrpe', git: 'git@github.com:osuosl-cookbooks/osl-nrpe'
 cookbook 'osl-apache', git: 'git@github.com:osuosl-cookbooks/osl-apache'
 cookbook 'osl-munin', git: 'git@github.com:osuosl-cookbooks/osl-munin'
@@ -21,18 +24,18 @@ cookbook 'ibm-power', git: 'git@github.com:osuosl-cookbooks/ibm-power.git'
 cookbook 'openstackclient', github: 'cloudbau/cookbook-openstackclient'
 
 # WIP patches
-# %w(
-# ).each do |cb|
-#   cookbook "openstack-#{cb}",
-#            github: "osuosl-cookbooks/cookbook-openstack-#{cb}",
-#            branch: 'stable/newton'
-# end
+%w(
+  compute
+).each do |cb|
+  cookbook "openstack-#{cb}",
+           github: "osuosl-cookbooks/cookbook-openstack-#{cb}",
+           branch: 'stable/newton'
+end
 
 # Openstack deps
 %w(
   block-storage
   common
-  compute
   dashboard
   identity
   image

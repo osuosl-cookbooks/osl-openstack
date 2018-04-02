@@ -17,6 +17,43 @@ describe kernel_module('tun') do
   it { should be_loaded }
 end
 
+%w(/var/run/ceph/guests /var/log/ceph).each do |d|
+  describe file(d) do
+    it { should be_owned_by 'qemu' }
+    it { should be_grouped_into 'libvirt' }
+    it { should be_directory }
+  end
+end
+
+%w(nova cinder qemu).each do |u|
+  describe user(u) do
+    it { should belong_to_group 'ceph' }
+  end
+end
+
+%w(cinder cinder-backup).each do |key|
+  describe file("/etc/ceph/ceph.client.#{key}.keyring") do
+    it { should be_owned_by 'ceph' }
+    it { should be_grouped_into 'ceph' }
+    its(:content) { should match(%r{key = [A-Za-z0-9+/].*==$}) }
+  end
+end
+
+describe command('virsh secret-list') do
+  its(:stdout) do
+    should match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\s.+\
+ceph client.cinder secret/)
+  end
+end
+
+describe command('virsh secret-list | grep client.cinder | awk \'{print $1}\' | xargs -n 1 virsh secret-get-value') do
+  its(:stdout) { should match(%r{^[A-Za-z0-9+/].*==$}) }
+end
+
+describe file('/tmp/kitchen/cache/secret.xml') do
+  it { should_not exist }
+end
+
 describe file('/etc/sysconfig/libvirt-guests') do
   its(:content) { should match(/^ON_BOOT=ignore$/) }
   its(:content) { should match(/^ON_SHUTDOWN=shutdown$/) }

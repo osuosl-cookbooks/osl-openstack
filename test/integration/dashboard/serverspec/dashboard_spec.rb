@@ -17,7 +17,7 @@ MemcachedCache',/)
     should contain(/'LOCATION': \[\n\s*'.*:11211',/)
   end
   its(:content) do
-    should match(/
+    should_not match(/
 LAUNCH_INSTANCE_DEFAULTS = {
   'create_volume': 'false',
   'disable_volume': 'true',

@@ -86,5 +86,56 @@ describe 'osl-openstack::block_storage_controller' do
         expect(chef_run).to render_config_file(file.name).with_section_content('oslo_messaging_rabbit', line)
       end
     end
+    context 'Set ceph' do
+      let(:runner) do
+        ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
+          node.set['osl-openstack']['ceph'] = true
+          node.automatic['filesystem2']['by_mountpoint']
+        end
+      end
+      let(:node) { runner.node }
+      cached(:chef_run) { runner.converge(described_recipe) }
+      include_context 'common_stubs'
+      include_context 'ceph_stubs'
+      [
+        /^enabled_backends = ceph$/,
+        /^backup_driver = cinder.backup.drivers.ceph$/,
+        %r{^backup_ceph_conf = /etc/ceph/ceph.conf$},
+        /^backup_ceph_user = cinder-backup$/,
+        /^backup_ceph_chunk_size = 134217728$/,
+        /^backup_ceph_pool = backups$/,
+        /^backup_ceph_stripe_unit = 0$/,
+        /^backup_ceph_stripe_count = 0$/,
+        /^restore_discard_excess_bytes = true$/
+      ].each do |line|
+        it do
+          expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
+        end
+      end
+      [
+        /^volume_driver = cinder.volume.drivers.rbd.RBDDriver$/,
+        /^volume_backend_name = ceph$/,
+        /^rbd_pool = volumes$/,
+        %r{rbd_ceph_conf = /etc/ceph/ceph.conf$},
+        /^rbd_flatten_volume_from_snapshot = false$/,
+        /^rbd_max_clone_depth = 5$/,
+        /^rbd_store_chunk_size = 4$/,
+        /^rados_connect_timeout = -1$/,
+        /^rbd_user = cinder$/,
+        /^rbd_secret_uuid = 8102bb29-f48b-4f6e-81d7-4c59d80ec6b8$/
+      ].each do |line|
+        it do
+          expect(chef_run).to render_config_file(file.name).with_section_content('ceph', line)
+        end
+      end
+      [
+        /^rbd_user = cinder$/,
+        /^rbd_secret_uuid = 8102bb29-f48b-4f6e-81d7-4c59d80ec6b8$/
+      ].each do |line|
+        it do
+          expect(chef_run).to render_config_file(file.name).with_section_content('libvirt', line)
+        end
+      end
+    end
   end
 end
