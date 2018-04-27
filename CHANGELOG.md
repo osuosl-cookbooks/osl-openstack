@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+3.2.1 (2018-04-27)
+------------------
+- Lock pip version to < 10.0.0
+
 3.2.0 (2018-04-02)
 ------------------
 - Ceph integration
