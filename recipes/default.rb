@@ -416,6 +416,7 @@ include_recipe 'osl-ceph' if node['osl-openstack']['ceph']
 
 edit_resource(:python_runtime, '2') do
   provider :system
+  pip_version '9.0.3'
 end
 
 # Needed for accessing neutron when running separate from controller node
