@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+3.2.2 (2018-05-07)
+------------------
+- Increase CMA ratio on ppc64le nodes to 20%
+
 3.2.1 (2018-04-27)
 ------------------
 - Lock pip version to < 10.0.0
