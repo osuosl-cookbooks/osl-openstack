@@ -235,7 +235,7 @@ Host *
       expect(chef_run).to install_package('kernel-osuosl')
     end
     it do
-      expect(chef_run).to render_file('/etc/default/grub').with_content(/^GRUB_CMDLINE_LINUX=.*kvm_cma_resv_ratio=20/)
+      expect(chef_run).to render_file('/etc/default/grub').with_content(/^GRUB_CMDLINE_LINUX=.*kvm_cma_resv_ratio=15/)
     end
     it 'creates /etc/rc.d/rc.local' do
       expect(chef_run).to create_cookbook_file('/etc/rc.d/rc.local')
