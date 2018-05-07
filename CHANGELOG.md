@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+3.2.3 (2018-05-07)
+------------------
+- Adjust CMA ratio down to 15 from 20
+
 3.2.2 (2018-05-07)
 ------------------
 - Increase CMA ratio on ppc64le nodes to 20%
