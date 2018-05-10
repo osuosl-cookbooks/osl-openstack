@@ -34,7 +34,7 @@ node.default['openstack']['misc_openrc'] = [
   'export OS_CACERT="/etc/ssl/certs/ca-bundle.crt"'
 ]
 node.default['openstack']['yum']['uri'] = \
-  'http://centos.osuosl.org/$releasever/cloud/x86_64/openstack-' + node['openstack']['release']
+  'http://centos.osuosl.org/7.4.1708/cloud/x86_64/openstack-' + node['openstack']['release']
 node.default['openstack']['yum']['repo-key'] = 'https://github.com/' \
  "rdo-infra/rdo-release/raw/#{node['openstack']['release']}-rdo/" \
  'RPM-GPG-KEY-CentOS-SIG-Cloud'
