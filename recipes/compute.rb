@@ -61,6 +61,21 @@ when 'ppc64le'
     not_if '/sbin/ppc64_cpu --smt 2>&1 | ' \
       'grep -E \'SMT is off|Machine is not SMT capable\''
   end
+when 'x86_64'
+  kernel_module 'kvm_intel' do
+    onboot true
+    reload false
+    options %w(nested=1)
+    check_availability true
+    only_if { node.deep_fetch('dmi', 'processor', 'manufacturer') == 'Intel(R) Corporation' }
+  end
+  kernel_module 'kvm_amd' do
+    onboot true
+    reload false
+    options %w(nested=1)
+    check_availability true
+    only_if { node.deep_fetch('dmi', 'processor', 'manufacturer') == 'AMD' }
+  end
 end
 
 include_recipe 'osl-openstack::linuxbridge'
