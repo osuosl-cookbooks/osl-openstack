@@ -44,7 +44,6 @@ EOF
   role 'separate_network_node' if ENV['SEPARATE_NETWORK_NODE']
   recipe 'openstack_test::ceph'
   recipe 'osl-openstack::ops_database'
-  recipe 'openstack_test::gluster'
   recipe 'osl-openstack::controller'
   file('/etc/chef/encrypted_data_bag_secret',
        File.dirname(__FILE__) +

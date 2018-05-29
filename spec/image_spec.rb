@@ -15,7 +15,6 @@ describe 'osl-openstack::image', image: true do
   %w(
     osl-openstack
     firewall::openstack
-    base::glusterfs
     openstack-image::api
     openstack-image::registry
     openstack-image::identity_registration
@@ -201,29 +200,6 @@ describe 'osl-openstack::image', image: true do
         expect(chef_run).to render_config_file(file.name)
           .with_section_content('DEFAULT', line)
       end
-    end
-  end
-  it 'does not mount gluster volume by default' do
-    expect(chef_run).to_not mount_mount('/var/lib/glance/images')
-    expect(chef_run).to_not enable_mount('/var/lib/glance/images')
-  end
-  context 'Set glance gluster volume' do
-    cached(:chef_run) { runner.converge(described_recipe) }
-    before do
-      node.set['osl-openstack']['image']['glance_vol'] =
-        'fs1.example.org:/glance'
-    end
-    it 'does mount gluster volume' do
-      expect(chef_run).to mount_mount('/var/lib/glance/images')
-        .with(
-          device: 'fs1.example.org:/glance',
-          fstype: 'glusterfs'
-        )
-      expect(chef_run).to enable_mount('/var/lib/glance/images')
-        .with(
-          device: 'fs1.example.org:/glance',
-          fstype: 'glusterfs'
-        )
     end
   end
 end
