@@ -55,7 +55,3 @@ describe file('/etc/ceph/ceph.client.glance.keyring') do
   it { should be_owned_by 'ceph' }
   it { should be_grouped_into 'ceph' }
 end
-
-describe file('/var/lib/glance/images') do
-  it { should be_mounted.with(type: 'fuse.glusterfs') }
-end
