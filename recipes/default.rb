@@ -225,7 +225,7 @@ node.default['openstack']['telemetry']['conf'].tap do |conf|
   conf['api']['default_api_return_limit'] = 1_000_000_000_000
 end
 
-node.default['openstack']['block-storage']['conf'].tap do |conf|
+node.override['openstack']['block-storage']['conf'].tap do |conf|
   conf['oslo_messaging_notifications']['driver'] = 'messagingv2'
   conf['DEFAULT']['volume_group'] = 'openstack'
   conf['DEFAULT']['volume_clear_size'] = 256
