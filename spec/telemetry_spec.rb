@@ -26,7 +26,7 @@ describe 'osl-openstack::telemetry', telemetry: true do
       expect(chef_run).to render_config_file(file.name)
         .with_section_content(
           'DEFAULT',
-          %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$}
+          %r{^transport_url = rabbit://openstack:mq-pass@10.0.0.10:5672$}
         )
     end
     it do
@@ -64,8 +64,8 @@ describe 'osl-openstack::telemetry', telemetry: true do
       expect(chef_run).to render_config_file(file.name)
         .with_section_content(
           'database',
-          %r{^connection = mysql://ceilometer_x86:ceilometer-dbpass@10.0.0.10:\
-3306/ceilometer_x86\?charset=utf8}
+          %r{^connection = mysql\+pymysql://ceilometer_x86:ceilometer-dbpass@10.0.0.10:3306/\
+ceilometer_x86\?charset=utf8}
         )
     end
     it do
