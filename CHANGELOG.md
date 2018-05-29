@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+3.2.6 (2018-05-29)
+------------------
+- Remove glusterfs since we no longer use it
+
 3.2.5 (2018-05-29)
 ------------------
 - Newton repo removed from public mirrors so point back to vault mirror…
