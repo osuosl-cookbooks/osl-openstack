@@ -173,13 +173,6 @@ suites:
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::orchestration]
-  - name: mellanox_neo
-    attributes:
-      osl-openstack:
-        mellanox_neo:
-          server_hostname: 'neo.osuosl.org'
-    run_list:
-      - recipe[osl-openstack::mellanox_neo]
   - name: controller
     driver_config:
         server_name: "controller-<%= ENV['USER'] %>"
