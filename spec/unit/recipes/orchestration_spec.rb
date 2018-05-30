@@ -19,7 +19,7 @@ describe 'osl-openstack::orchestration' do
       %r{^heat_metadata_server_url = http://10.0.0.10:8000$},
       %r{^heat_waitcondition_server_url = http://10.0.0.10:8000/v1/waitcondition$},
       %r{^heat_watch_server_url = http://10.0.0.10:8003$},
-      %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$},
+      %r{^transport_url = rabbit://openstack:openstack@10.0.0.10:5672$},
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
@@ -90,7 +90,7 @@ describe 'osl-openstack::orchestration' do
     end
 
     [
-      %r{^connection = mysql://heat_x86:heat@10.0.0.10:3306/heat_x86\?charset=utf8$},
+      %r{^connection = mysql\+pymysql://heat_x86:heat@10.0.0.10:3306/heat_x86\?charset=utf8$},
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
