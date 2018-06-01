@@ -488,6 +488,7 @@ end
 %w(
   libffi-devel
   openssl-devel
+  crudini
 ).each do |p|
   package p do
     only_if { node['kernel']['machine'] == 'ppc64le' }

@@ -221,7 +221,7 @@ suites:
     driver_config:
         server_name: "upgrade-<%= ENV['USER'] %>"
     driver:
-      image_ref: "openstack-mitaka-aio"
+      image_ref: "openstack-newton-aio"
     run_list:
       - recipe[osl-openstack::upgrade]
     attributes:
