@@ -67,14 +67,14 @@ when 'x86_64'
     reload false
     options %w(nested=1)
     check_availability true
-    only_if { node.deep_fetch('dmi', 'processor', 'manufacturer') == 'Intel(R) Corporation' }
+    only_if { node.deep_fetch('dmi', 'processor', 'Manufacturer') == 'Intel(R) Corporation' }
   end
   kernel_module 'kvm_amd' do
     onboot true
     reload false
     options %w(nested=1)
     check_availability true
-    only_if { node.deep_fetch('dmi', 'processor', 'manufacturer') == 'AMD' }
+    only_if { node.deep_fetch('dmi', 'processor', 'Manufacturer') == 'AMD' }
   end
 end
 
