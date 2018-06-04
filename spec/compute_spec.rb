@@ -231,6 +231,12 @@ Host *
         expect(chef_run).to include_recipe(r)
       end
     end
+    it "doesn't load kvm_intel module" do
+      expect(chef_run).to_not load_kernel_module('kvm_intel')
+    end
+    it "doesn't load kvm_amd module" do
+      expect(chef_run).to_not load_kernel_module('kvm_amd')
+    end
     it do
       expect(chef_run).to install_package('kernel-osuosl')
     end
@@ -261,6 +267,42 @@ Host *
     end
     it do
       expect(chef_run).to install_package('libguestfs-tools')
+    end
+  end
+  context 'setting arch to x86_64, processor to intel' do
+    cached(:chef_run) { runner.converge(described_recipe) }
+    before do
+      node.automatic['kernel']['machine'] = 'x86_64'
+      node.automatic['dmi']['processor']['manufacturer'] = 'Intel(R) Corporation'
+    end
+    it 'loads kvm_intel module with nested option' do
+      expect(chef_run).to load_kernel_module('kvm_intel').with(
+        onboot: true,
+        reload: false,
+        options: %w(nested=1),
+        check_availability: true
+      )
+    end
+    it "doesn't load kvm_amd module" do
+      expect(chef_run).to_not load_kernel_module('kvm_amd')
+    end
+  end
+  context 'setting arch to x86_64, processor to amd' do
+    cached(:chef_run) { runner.converge(described_recipe) }
+    before do
+      node.automatic['kernel']['machine'] = 'x86_64'
+      node.automatic['dmi']['processor']['manufacturer'] = 'AMD'
+    end
+    it 'loads kvm_amd module with nested option' do
+      expect(chef_run).to load_kernel_module('kvm_amd').with(
+        onboot: true,
+        reload: false,
+        options: %w(nested=1),
+        check_availability: true
+      )
+    end
+    it "doesn't load kvm_intel module" do
+      expect(chef_run).to_not load_kernel_module('kvm_intel')
     end
   end
 end
