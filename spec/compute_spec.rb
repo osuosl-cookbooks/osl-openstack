@@ -273,7 +273,7 @@ Host *
     cached(:chef_run) { runner.converge(described_recipe) }
     before do
       node.automatic['kernel']['machine'] = 'x86_64'
-      node.automatic['dmi']['processor']['manufacturer'] = 'Intel(R) Corporation'
+      node.automatic['dmi']['processor']['Manufacturer'] = 'Intel(R) Corporation'
     end
     it 'loads kvm_intel module with nested option' do
       expect(chef_run).to load_kernel_module('kvm_intel').with(
@@ -291,7 +291,7 @@ Host *
     cached(:chef_run) { runner.converge(described_recipe) }
     before do
       node.automatic['kernel']['machine'] = 'x86_64'
-      node.automatic['dmi']['processor']['manufacturer'] = 'AMD'
+      node.automatic['dmi']['processor']['Manufacturer'] = 'AMD'
     end
     it 'loads kvm_amd module with nested option' do
       expect(chef_run).to load_kernel_module('kvm_amd').with(
