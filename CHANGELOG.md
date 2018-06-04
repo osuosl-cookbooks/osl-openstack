@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+3.2.7 (2018-06-04)
+------------------
+- Initial support of nested KVM in x86 cluster
+
 3.2.6 (2018-05-29)
 ------------------
 - Remove glusterfs since we no longer use it
