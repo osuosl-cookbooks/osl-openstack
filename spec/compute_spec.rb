@@ -231,11 +231,11 @@ Host *
         expect(chef_run).to include_recipe(r)
       end
     end
-    it "doesn't load kvm_intel module" do
-      expect(chef_run).to_not load_kernel_module('kvm_intel')
+    it "doesn't load kvm-intel module" do
+      expect(chef_run).to_not load_kernel_module('kvm-intel')
     end
-    it "doesn't load kvm_amd module" do
-      expect(chef_run).to_not load_kernel_module('kvm_amd')
+    it "doesn't load kvm-amd module" do
+      expect(chef_run).to_not load_kernel_module('kvm-amd')
     end
     it do
       expect(chef_run).to install_package('kernel-osuosl')
@@ -273,36 +273,34 @@ Host *
     cached(:chef_run) { runner.converge(described_recipe) }
     before do
       node.automatic['kernel']['machine'] = 'x86_64'
-      node.automatic['dmi']['processor']['Manufacturer'] = 'Intel(R) Corporation'
+      node.automatic['dmi']['processor']['manufacturer'] = 'Intel(R) Corporation'
     end
-    it 'loads kvm_intel module with nested option' do
-      expect(chef_run).to load_kernel_module('kvm_intel').with(
+    it 'loads kvm-intel module with nested option' do
+      expect(chef_run).to load_kernel_module('kvm-intel').with(
         onboot: true,
         reload: false,
-        options: %w(nested=1),
-        check_availability: true
+        options: %w(nested=1)
       )
     end
-    it "doesn't load kvm_amd module" do
-      expect(chef_run).to_not load_kernel_module('kvm_amd')
+    it "doesn't load kvm-amd module" do
+      expect(chef_run).to_not load_kernel_module('kvm-amd')
     end
   end
   context 'setting arch to x86_64, processor to amd' do
     cached(:chef_run) { runner.converge(described_recipe) }
     before do
       node.automatic['kernel']['machine'] = 'x86_64'
-      node.automatic['dmi']['processor']['Manufacturer'] = 'AMD'
+      node.automatic['dmi']['processor']['manufacturer'] = 'AMD'
     end
-    it 'loads kvm_amd module with nested option' do
-      expect(chef_run).to load_kernel_module('kvm_amd').with(
+    it 'loads kvm-amd module with nested option' do
+      expect(chef_run).to load_kernel_module('kvm-amd').with(
         onboot: true,
         reload: false,
-        options: %w(nested=1),
-        check_availability: true
+        options: %w(nested=1)
       )
     end
-    it "doesn't load kvm_intel module" do
-      expect(chef_run).to_not load_kernel_module('kvm_intel')
+    it "doesn't load kvm-intel module" do
+      expect(chef_run).to_not load_kernel_module('kvm-intel')
     end
   end
 end

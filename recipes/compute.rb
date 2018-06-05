@@ -62,19 +62,17 @@ when 'ppc64le'
       'grep -E \'SMT is off|Machine is not SMT capable\''
   end
 when 'x86_64'
-  kernel_module 'kvm_intel' do
+  kernel_module 'kvm-intel' do
     onboot true
     reload false
     options %w(nested=1)
-    check_availability true
-    only_if { node.deep_fetch('dmi', 'processor', 'Manufacturer') == 'Intel(R) Corporation' }
+    only_if { node.deep_fetch('dmi', 'processor', 'manufacturer') == 'Intel(R) Corporation' }
   end
-  kernel_module 'kvm_amd' do
+  kernel_module 'kvm-amd' do
     onboot true
     reload false
     options %w(nested=1)
-    check_availability true
-    only_if { node.deep_fetch('dmi', 'processor', 'Manufacturer') == 'AMD' }
+    only_if { node.deep_fetch('dmi', 'processor', 'manufacturer') == 'AMD' }
   end
 end
 
