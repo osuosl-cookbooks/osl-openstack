@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+3.2.9 (2018-06-14)
+------------------
+- Remove `check_availability` statement and other syntax fixes
+
 3.2.8 (2018-06-04)
 ------------------
 - Account for case sensitivity when loading KVM in x86 cluster
