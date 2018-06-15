@@ -128,17 +128,18 @@ Host *
       expect(chef_run).to include_recipe('osl-openstack::_block_ceph')
     end
     it do
-      expect(chef_run).to modify_group('ceph')
+      expect(chef_run).to modify_group('ceph-compute')
         .with(
+          group_name: 'ceph',
           append: true,
           members: %w(nova qemu)
         )
     end
     it do
-      expect(chef_run.group('ceph')).to notify('service[nova-compute]').to(:restart).immediately
+      expect(chef_run.group('ceph-compute')).to notify('service[nova-compute]').to(:restart).immediately
     end
     it do
-      expect(chef_run.group('ceph')).to_not notify('service[cinder-volume]').to(:restart).immediately
+      expect(chef_run.group('ceph-compute')).to_not notify('service[cinder-volume]').to(:restart).immediately
     end
     it do
       expect(chef_run.template('/etc/ceph/ceph.client.cinder.keyring')).to_not notify('service[cinder-volume]')

@@ -2,7 +2,8 @@ secrets = openstack_credential_secrets
 
 package 'openstack-cinder'
 
-group 'ceph' do
+group 'ceph-block' do
+  group_name 'ceph'
   append true
   members %w(cinder)
   action :modify

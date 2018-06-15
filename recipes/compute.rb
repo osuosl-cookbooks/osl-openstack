@@ -93,7 +93,8 @@ if node['osl-openstack']['ceph']
 
   include_recipe 'osl-openstack::_block_ceph'
 
-  group 'ceph' do
+  group 'ceph-compute' do
+    group_name 'ceph'
     append true
     members %w(nova qemu)
     action :modify
