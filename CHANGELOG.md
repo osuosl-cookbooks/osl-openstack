@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+3.2.10 (2018-06-19)
+-------------------
+- Fix duplicated resources for group[ceph]
+
 3.2.9 (2018-06-14)
 ------------------
 - Remove `check_availability` statement and other syntax fixes
