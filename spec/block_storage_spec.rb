@@ -61,14 +61,15 @@ describe 'osl-openstack::block_storage' do
       expect(chef_run).to install_package('openstack-cinder')
     end
     it do
-      expect(chef_run).to modify_group('ceph')
+      expect(chef_run).to modify_group('ceph-block')
         .with(
+          group_name: 'ceph',
           append: true,
           members: %w(cinder)
         )
     end
     it do
-      expect(chef_run.group('ceph')).to notify('service[cinder-volume]').to(:restart).immediately
+      expect(chef_run.group('ceph-block')).to notify('service[cinder-volume]').to(:restart).immediately
     end
     it do
       expect(chef_run.template('/etc/ceph/ceph.client.cinder.keyring')).to notify('service[cinder-volume]')

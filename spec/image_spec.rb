@@ -49,14 +49,15 @@ describe 'osl-openstack::image', image: true do
         include_context 'common_stubs'
         include_context 'ceph_stubs'
         it do
-          expect(chef_run).to modify_group('ceph')
+          expect(chef_run).to modify_group('ceph-image')
             .with(
+              group_name: 'ceph',
               append: true,
               members: %w(glance)
             )
         end
         it do
-          expect(chef_run.group('ceph')).to notify('service[glance-api]').to(:restart).immediately
+          expect(chef_run.group('ceph-image')).to notify('service[glance-api]').to(:restart).immediately
         end
         it do
           expect(chef_run).to create_template('/etc/ceph/ceph.client.glance.keyring')

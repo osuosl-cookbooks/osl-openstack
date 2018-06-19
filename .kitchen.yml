@@ -165,6 +165,7 @@ suites:
       - recipe[openstack-block-storage::volume_driver_lvm]
       - recipe[osl-openstack::block_storage]
       - recipe[openstack-integration-test::setup]
+      - recipe[openstack_test::tempest]
       - recipe[openstack_test::orchestration]
     attributes:
       osl-openstack:

@@ -25,7 +25,8 @@ include_recipe 'openstack-image::identity_registration'
 if node['osl-openstack']['ceph']
   secrets = openstack_credential_secrets
 
-  group 'ceph' do
+  group 'ceph-image' do
+    group_name 'ceph'
     append true
     members %w(glance)
     action :modify
