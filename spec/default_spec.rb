@@ -49,11 +49,37 @@ describe 'osl-openstack::default' do
     openstack-common::logging
     openstack-common::sysctl
     openstack-identity::openrc
-    openstack-common::client
   ).each do |r|
     it do
       expect(chef_run).to include_recipe(r)
     end
+  end
+  it do
+    expect(chef_run).to install_python_runtime('2')
+      .with(
+        provider: PoisePython::PythonProviders::System,
+        pip_version: '9.0.3'
+      )
+  end
+  it do
+    expect(chef_run).to create_python_virtualenv('/opt/osc').with(system_site_packages: true)
+  end
+  it do
+    expect(chef_run).to install_python_package('cliff')
+      .with(
+        version: '2.9.0',
+        # virtualenv: '/opt/osc'
+      )
+  end
+  it do
+    expect(chef_run).to install_python_package('python-openstackclient')
+      .with(
+        version: '3.11.0',
+        # virtualenv: '/opt/osc'
+      )
+  end
+  it do
+    expect(chef_run.link('/usr/local/bin/openstack')).to link_to('/opt/osc/bin/openstack')
   end
   it do
     expect(chef_run).to install_package('python-memcached')
