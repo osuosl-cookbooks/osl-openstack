@@ -33,3 +33,7 @@ describe file('/etc/sysconfig/iptables-config') do
   its(:content) { should match(/^IPTABLES_SAVE_ON_STOP="no"$/) }
   its(:content) { should match(/^IPTABLES_SAVE_ON_RESTART="no"$/) }
 end
+
+describe command('/usr/local/bin/openstack -h') do
+  its(:exit_status) { should eq 0 }
+end

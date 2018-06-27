@@ -410,13 +410,32 @@ include_recipe 'openstack-common::logging'
 include_recipe 'openstack-common::sysctl'
 include_recipe 'openstack-identity::openrc'
 include_recipe 'build-essential'
-include_recipe 'openstack-common::client'
-include_recipe 'osl-ceph' if node['osl-openstack']['ceph']
 
-edit_resource(:python_runtime, '2') do
+# TODO: Replace this with openstack-common::client when switching to Pike
+python_runtime '2' do
   provider :system
   pip_version '9.0.3'
 end
+
+python_virtualenv '/opt/osc' do
+  system_site_packages true
+end
+
+python_package 'cliff' do
+  version '2.9.0'
+  virtualenv '/opt/osc'
+end
+
+python_package 'python-openstackclient' do
+  version node['openstack']['common']['client_version']
+  virtualenv '/opt/osc'
+end
+
+link '/usr/local/bin/openstack' do
+  to '/opt/osc/bin/openstack'
+end
+
+include_recipe 'osl-ceph' if node['osl-openstack']['ceph']
 
 # Needed for accessing neutron when running separate from controller node
 package 'python-memcached'
