@@ -227,7 +227,7 @@ Host *
     it 'loads kvm_hv module' do
       expect(chef_run).to load_kernel_module('kvm_hv')
     end
-    %w(chef-sugar::default yum-kernel-osuosl base::grub).each do |r|
+    %w(chef-sugar::default yum-kernel-osuosl::install base::grub).each do |r|
       it do
         expect(chef_run).to include_recipe(r)
       end
@@ -237,9 +237,6 @@ Host *
     end
     it "doesn't load kvm-amd module" do
       expect(chef_run).to_not load_kernel_module('kvm-amd')
-    end
-    it do
-      expect(chef_run).to install_package('kernel-osuosl')
     end
     it do
       expect(chef_run).to render_file('/etc/default/grub').with_content(/^GRUB_CMDLINE_LINUX=.*kvm_cma_resv_ratio=15/)
