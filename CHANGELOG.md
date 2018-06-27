@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+3.2.12 (2018-06-27)
+-------------------
+- Switch to using yum-kernel-osuosl::install on ppc64
+
 3.2.11 (2018-06-27)
 -------------------
 - Install older version of cliff python package
