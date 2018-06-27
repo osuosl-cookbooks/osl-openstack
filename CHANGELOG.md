@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+3.2.11 (2018-06-27)
+-------------------
+- Install older version of cliff python package
+
 3.2.10 (2018-06-19)
 -------------------
 - Fix duplicated resources for group[ceph]
