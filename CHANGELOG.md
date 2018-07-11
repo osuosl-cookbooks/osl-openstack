@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+3.2.13 (2018-07-11)
+-------------------
+- Remove base::ifconfig from default recipe
+
 3.2.12 (2018-06-27)
 -------------------
 - Switch to using yum-kernel-osuosl::install on ppc64
