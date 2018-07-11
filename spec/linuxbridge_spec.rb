@@ -4,8 +4,6 @@ require 'chef/application'
 describe 'osl-openstack::linuxbridge', linuxbridge: true do
   let(:runner) do
     ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-      # Work around for base::ifconfig:47
-      node.automatic['virtualization']['system']
       node.automatic['filesystem2']['by_mountpoint']
     end
   end
