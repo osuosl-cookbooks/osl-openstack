@@ -401,7 +401,6 @@ end
   end
 end
 
-include_recipe 'base::ifconfig'
 include_recipe 'firewall'
 include_recipe 'selinux::permissive'
 include_recipe 'yum-qemu-ev'

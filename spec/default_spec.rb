@@ -41,7 +41,6 @@ describe 'osl-openstack::default' do
     expect(chef_run).to create_yum_repository('epel').with(exclude: 'zeromq*')
   end
   %w(
-    base::ifconfig
     base::packages
     selinux::permissive
     yum-qemu-ev

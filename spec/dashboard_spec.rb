@@ -12,8 +12,6 @@ describe 'osl-openstack::dashboard', dashboard: true do
                 'openstack_dashboard', 'local', '.secret_key_store')
   let(:runner) do
     ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-      # Work around for base::ifconfig:47
-      node.automatic['virtualization']['system']
       node.automatic['filesystem2']['by_mountpoint']
     end
   end
