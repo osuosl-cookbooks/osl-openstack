@@ -19,7 +19,7 @@ end
 
 depends 'build-essential'
 depends 'firewall', '>= 2.2.0'
-depends 'osl-apache', '>= 2.8.5'
+depends 'osl-apache', '< 3.0.0'
 depends 'systemd', '< 3.0.0'
 depends 'user'
 depends 'yum-centos'
