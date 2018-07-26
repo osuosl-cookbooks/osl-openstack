@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+3.2.14 (2018-07-26)
+-------------------
+- Don't use upcoming newer osl-apache (yet)
+
 3.2.13 (2018-07-11)
 -------------------
 - Remove base::ifconfig from default recipe
