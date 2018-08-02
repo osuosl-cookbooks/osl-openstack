@@ -485,15 +485,11 @@ node['yum-epel']['repos'].each do |repo|
   r.exclude = [r.exclude, 'zeromq*'].reject(&:nil?).join(' ')
 end
 
-%w(
+package %w(
   libffi-devel
   openssl-devel
   crudini
-).each do |p|
-  package p do
-    only_if { node['kernel']['machine'] == 'ppc64le' }
-  end
-end
+)
 
 include_recipe 'firewall'
 include_recipe 'selinux::permissive'

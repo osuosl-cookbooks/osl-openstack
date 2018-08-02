@@ -223,7 +223,17 @@ suites:
     driver:
       image_ref: "openstack-newton-aio"
     run_list:
+      - role[openstack_tk]
       - recipe[osl-openstack::upgrade]
+      - recipe[openstack_test]
+      - role[openstack_ops_identity]
+      - recipe[osl-openstack::controller]
+      - recipe[osl-openstack::compute]
+      - recipe[openstack-block-storage::volume_driver_lvm]
+      - recipe[osl-openstack::block_storage]
+      - recipe[openstack-integration-test::setup]
+      - recipe[openstack_test::tempest]
+      - recipe[openstack_test::orchestration]
     attributes:
       osl-openstack:
         node_type: controller
