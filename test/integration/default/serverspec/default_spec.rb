@@ -37,3 +37,7 @@ end
 describe command('/usr/local/bin/openstack -h') do
   its(:exit_status) { should eq 0 }
 end
+
+describe command("/opt/chef/embedded/bin/gem list -i -v '>= 0.2.0' fog-openstack") do
+  its(:stdout) { should match(/^false$/) }
+end

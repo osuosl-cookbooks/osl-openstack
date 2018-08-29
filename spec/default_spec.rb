@@ -54,6 +54,24 @@ describe 'osl-openstack::default' do
     end
   end
   it do
+    expect(chef_run).to_not run_execute('uninstall >= fog-openstack-0.2.0')
+      .with(command: "/opt/chef/embedded/bin/gem uninstall -v '>= 0.2.0' fog-openstack --no-user-install")
+  end
+  context 'newer fog-openstack installed' do
+    cached(:chef_run) do
+      ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
+        node.automatic['filesystem2']['by_mountpoint']
+      end.converge(described_recipe)
+    end
+    before do
+      stub_command("/opt/chef/embedded/bin/gem list -i -v '>= 0.2.0' fog-openstack").and_return(true)
+    end
+    it do
+      expect(chef_run).to run_execute('uninstall >= fog-openstack-0.2.0')
+        .with(command: "/opt/chef/embedded/bin/gem uninstall -v '>= 0.2.0' fog-openstack --no-user-install")
+    end
+  end
+  it do
     expect(chef_run).to install_python_runtime('2')
       .with(
         provider: PoisePython::PythonProviders::System,

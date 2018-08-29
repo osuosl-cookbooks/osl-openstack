@@ -31,3 +31,11 @@ end
 describe file('/etc/httpd/sites-enabled/keystone-main.conf') do
   its(:content) { should contain(/<VirtualHost 0.0.0.0:5000>/) }
 end
+
+describe command("/opt/chef/embedded/bin/gem list -i -v '>= 0.2.0' fog-openstack") do
+  its(:stdout) { should match(/^false$/) }
+end
+
+describe command("/opt/chef/embedded/bin/gem list -i -v '< 0.2.0' fog-openstack") do
+  its(:stdout) { should match(/^true$/) }
+end
