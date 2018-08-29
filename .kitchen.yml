@@ -223,7 +223,9 @@ suites:
     driver:
       image_ref: "openstack-newton-aio"
     run_list:
+      - recipe[openstack_test::hostname]
       - role[openstack_tk]
+      - recipe[openstack_test::upgrade]
       - recipe[osl-openstack::upgrade]
       - recipe[openstack_test]
       - role[openstack_ops_identity]
@@ -235,6 +237,8 @@ suites:
       - recipe[openstack_test::tempest]
       - recipe[openstack_test::orchestration]
     attributes:
+      openstack_test:
+        fqdn: localhost.localdomain
       osl-openstack:
         node_type: controller
         endpoint_hostname: controller.example.com

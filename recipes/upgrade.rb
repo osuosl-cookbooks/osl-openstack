@@ -30,4 +30,5 @@ ruby_block 'raise_upgrade_exeception' do
   block do
     raise 'Upgrade recipe enabled, stopping futher chef resources from running'
   end
+  not_if { ::File.exist?('/root/ocata-upgrade-done') }
 end
