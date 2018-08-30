@@ -410,6 +410,11 @@ include_recipe 'openstack-common::sysctl'
 include_recipe 'openstack-identity::openrc'
 include_recipe 'build-essential'
 
+execute 'uninstall >= fog-openstack-0.2.0' do
+  command "/opt/chef/embedded/bin/gem uninstall -v '>= 0.2.0' fog-openstack --no-user-install"
+  only_if "/opt/chef/embedded/bin/gem list -i -v '>= 0.2.0' fog-openstack"
+end
+
 # TODO: Replace this with openstack-common::client when switching to Pike
 python_runtime '2' do
   provider :system

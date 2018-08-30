@@ -134,6 +134,7 @@ shared_context 'identity_stubs' do
     allow_any_instance_of(Chef::Recipe).to receive(:rabbit_transport_url)
       .with('identity')
       .and_return('rabbit://openstack:openstack@controller.example.org:5672')
+    stub_command("/opt/chef/embedded/bin/gem list -i -v '>= 0.2.0' fog-openstack")
   end
 end
 

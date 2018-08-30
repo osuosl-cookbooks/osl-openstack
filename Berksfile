@@ -21,7 +21,9 @@ cookbook 'statsd', github: 'att-cloud/cookbook-statsd'
 cookbook 'yum-kernel-osuosl', git: 'git@github.com:osuosl-cookbooks/yum-kernel-osuosl.git'
 cookbook 'yum-qemu-ev', git: 'git@github.com:osuosl-cookbooks/yum-qemu-ev.git'
 cookbook 'ibm-power', git: 'git@github.com:osuosl-cookbooks/ibm-power.git'
-cookbook 'openstackclient', github: 'cloudbau/cookbook-openstackclient'
+cookbook 'openstackclient',
+         git: 'git@github.com:osuosl-cookbooks/cookbook-openstackclient',
+         branch: 'lock-fog-openstack'
 
 # WIP patches
 %w(
