@@ -28,26 +28,26 @@ cookbook 'openstackclient',
 
 # WIP patches
 %w(
-  compute
-).each do |cb|
-  cookbook "openstack-#{cb}",
-           github: "osuosl-cookbooks/cookbook-openstack-#{cb}",
-           branch: 'stable/newton'
-end
-
-# Openstack deps
-%w(
   block-storage
-  common
+  compute
   dashboard
   identity
   image
-  integration-test
   network
   ops-database
   ops-messaging
   orchestration
   telemetry
+).each do |cb|
+  cookbook "openstack-#{cb}",
+           github: "osuosl-cookbooks/cookbook-openstack-#{cb}",
+           branch: 'stable/newton-chef13'
+end
+
+# Openstack deps
+%w(
+  common
+  integration-test
 ).each do |cb|
   cookbook "openstack-#{cb}",
            github: "openstack/cookbook-openstack-#{cb}",

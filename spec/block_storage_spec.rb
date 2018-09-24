@@ -37,8 +37,9 @@ describe 'osl-openstack::block_storage' do
     expect(chef_run).to create_iptables_ng_rule('iscsi_ipv4').with(
       rule:
         [
+          '--protocol tcp --source 10.10.0.1 --destination-port 3260 --jump ACCEPT',
           '--protocol tcp --source 10.11.0.1 --destination-port 3260 --jump ACCEPT',
-          '--protocol tcp --source 127.0.0.1 --destination-port 3260 --jump ACCEPT'
+          '--protocol tcp --source 127.0.0.1 --destination-port 3260 --jump ACCEPT',
         ],
       chain: 'iscsi'
     )
@@ -84,7 +85,7 @@ describe 'osl-openstack::block_storage' do
           sensitive: true,
           variables: {
             ceph_user: 'cinder',
-            ceph_token: 'block_token'
+            ceph_token: 'block_token',
           }
         )
     end
@@ -97,7 +98,7 @@ describe 'osl-openstack::block_storage' do
           sensitive: true,
           variables: {
             ceph_user: 'cinder-backup',
-            ceph_token: 'block_backup_token'
+            ceph_token: 'block_backup_token',
           }
         )
     end

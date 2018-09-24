@@ -27,7 +27,7 @@ describe 'osl-openstack::linuxbridge', linuxbridge: true do
     end
     [
       /^tenant_network_type = gre,vxlan$/,
-      /^network_vlan_ranges = $/
+      /^network_vlan_ranges = $/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
@@ -37,7 +37,7 @@ describe 'osl-openstack::linuxbridge', linuxbridge: true do
     [
       /^enable_security_group = True$/,
       /^firewall_driver = \
-neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/
+neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
@@ -47,7 +47,7 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/
     [
       /^enable_vxlan = true$/,
       /^l2_population = true$/,
-      /^local_ip = (?:[0-9]{1,3}\.){3}[0-9]{1,3}$/
+      /^local_ip = (?:[0-9]{1,3}\.){3}[0-9]{1,3}$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
@@ -62,8 +62,8 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/
           ['default'] = 'eth0'
         node.automatic['network']['interfaces']['eth0']['addresses'] = {
           '192.168.1.10' => {
-            'family' => 'inet'
-          }
+            'family' => 'inet',
+          },
         }
       end
       it do
@@ -81,7 +81,7 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/
         node.set['osl-openstack']['vxlan_interface']['controller']['default'] = 'eth2'
         node.automatic['network']['interfaces']['eth2']['addresses'] = {
           'AA:00:00:4A:A6:6E' => { 'family' => 'lladdr' },
-          'fe80::a800:ff:fe4a:a66e' => { 'family' => 'inet6', 'prefixlen' => '64', 'scope' => 'Link', 'tags' => [] }
+          'fe80::a800:ff:fe4a:a66e' => { 'family' => 'inet6', 'prefixlen' => '64', 'scope' => 'Link', 'tags' => [] },
         }
       end
       it do
@@ -98,8 +98,8 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/
         node.set['osl-openstack']['node_type'] = 'compute'
         node.automatic['network']['interfaces']['eth0']['addresses'] = {
           '192.168.1.10' => {
-            'family' => 'inet'
-          }
+            'family' => 'inet',
+          },
         }
       end
       it do
@@ -119,8 +119,8 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/
         node.automatic['fqdn'] = 'foo.example.org'
         node.automatic['network']['interfaces']['eth8']['addresses'] = {
           '192.168.1.10' => {
-            'family' => 'inet'
-          }
+            'family' => 'inet',
+          },
         }
       end
       it do
@@ -132,7 +132,7 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/
       end
     end
     [
-      /^polling_interval = 2$/
+      /^polling_interval = 2$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
@@ -142,7 +142,7 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/
     context 'physical_interface_mappings is empty by default' do
       cached(:chef_run) { runner.converge(described_recipe) }
       [
-        /^physical_interface_mappings = $/
+        /^physical_interface_mappings = $/,
       ].each do |line|
         before do
           node.set['osl-openstack']['physical_interface_mappings'] = []
@@ -156,7 +156,7 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/
     context 'Create a public:eth1' do
       cached(:chef_run) { runner.converge(described_recipe) }
       [
-        /^physical_interface_mappings = public:eth1$/
+        /^physical_interface_mappings = public:eth1$/,
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name)
@@ -170,7 +170,7 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/
         node.set['osl-openstack']['node_type'] = 'controller'
       end
       [
-        /^physical_interface_mappings = public:eth2$/
+        /^physical_interface_mappings = public:eth2$/,
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name)
@@ -186,25 +186,25 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/
             {
               name: 'public',
               controller: {
-                default: 'eth1'
+                default: 'eth1',
               },
               compute: {
-                default: 'eth1'
-              }
+                default: 'eth1',
+              },
             },
             {
               name: 'private',
               controller: {
-                default: 'eth2'
+                default: 'eth2',
               },
               compute: {
-                default: 'eth2'
-              }
-            }
+                default: 'eth2',
+              },
+            },
           ]
       end
       [
-        /^physical_interface_mappings = public:eth1,private:eth2$/
+        /^physical_interface_mappings = public:eth1,private:eth2$/,
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name)
@@ -222,17 +222,17 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/
               name: 'public',
               controller: {
                 'default' => 'eth1',
-                'foo.example.org' => 'eth2'
+                'foo.example.org' => 'eth2',
               },
               compute: {
                 'default' => 'eth1',
-                'bar.example.org' => 'eth3'
-              }
-            }
+                'bar.example.org' => 'eth3',
+              },
+            },
           ]
       end
       [
-        /^physical_interface_mappings = public:eth3$/
+        /^physical_interface_mappings = public:eth3$/,
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name)
@@ -251,17 +251,17 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/
               name: 'public',
               controller: {
                 'default' => 'eth1',
-                'foo.example.org' => 'eth2'
+                'foo.example.org' => 'eth2',
               },
               compute: {
                 'default' => 'eth1',
-                'bar.example.org' => 'eth3'
-              }
-            }
+                'bar.example.org' => 'eth3',
+              },
+            },
           ]
       end
       [
-        /^physical_interface_mappings = public:eth2$/
+        /^physical_interface_mappings = public:eth2$/,
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name)

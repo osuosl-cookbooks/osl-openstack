@@ -14,21 +14,21 @@ end
 
 machine 'controller' do
   machine_options vagrant_options: {
-    'vm.box' => node_os
+    'vm.box' => node_os,
   },
                   bootstrap_options: {
                     image_ref: node_os,
                     flavor_ref: flavor_ref,
                     security_groups: 'no-firewall',
                     key_name: ENV['OS_SSH_KEYPAIR'],
-                    nics: [{ net_id: ENV['OS_NETWORK_UUID'] }]
+                    nics: [{ net_id: ENV['OS_NETWORK_UUID'] }],
                   },
                   ssh_username: node_ssh_user,
                   ssh_options: {
-                    key_data: nil
+                    key_data: nil,
                   },
                   convergence_options: {
-                    chef_version: '12.18.31'
+                    chef_version: '12.18.31',
                   }
 
   ohai_hints 'openstack' => '{}'

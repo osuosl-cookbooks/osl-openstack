@@ -32,7 +32,7 @@ docker_container 'ceph' do
     "MON_IP=#{ceph_ip}",
     "CEPH_PUBLIC_NETWORK=#{ceph_network}",
     'RGW_CIVETWEB_PORT=8000',
-    'RESTAPI_PORT=8001'
+    'RESTAPI_PORT=8001',
   ]
   action :run
 end

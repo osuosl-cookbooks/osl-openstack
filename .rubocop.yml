@@ -5,6 +5,7 @@ AllCops:
   Exclude:
     - 'metadata.rb'
     - 'cookbooks/**/*'
+    - 'vms/*'
     - 'test/chef-config/knife.rb'
 Metrics/BlockNesting:
   Max: 4

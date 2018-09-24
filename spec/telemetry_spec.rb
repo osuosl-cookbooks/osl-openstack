@@ -45,7 +45,7 @@ describe 'osl-openstack::telemetry', telemetry: true do
     end
     [
       /^host = 10.0.0.2$/,
-      /^default_api_return_limit = 1000000000000$/
+      /^default_api_return_limit = 1000000000000$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
@@ -78,7 +78,7 @@ describe 'osl-openstack::telemetry', telemetry: true do
     [
       /^backend = oslo_cache.memcache_pool$/,
       /^enabled = true$/,
-      /^memcache_servers = 10.0.0.10:11211$/
+      /^memcache_servers = 10.0.0.10:11211$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
@@ -89,7 +89,7 @@ describe 'osl-openstack::telemetry', telemetry: true do
     [
       /^rabbit_host = 10.0.0.10$/,
       /^rabbit_userid = guest$/,
-      /^rabbit_password = mq-pass$/
+      /^rabbit_password = mq-pass$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)

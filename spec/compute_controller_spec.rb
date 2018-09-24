@@ -41,7 +41,7 @@ AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter
       /^metadata_listen = 10.0.0.2$/,
       /^resume_guests_state_on_host_boot = True$/,
       /^block_device_allocate_retries = 120$/,
-      %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$}
+      %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$},
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
@@ -57,7 +57,7 @@ AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter
     [
       /^backend = oslo_cache.memcache_pool$/,
       /^enabled = true$/,
-      /^memcache_servers = 10.0.0.10:11211$/
+      /^memcache_servers = 10.0.0.10:11211$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('cache', line)
@@ -66,7 +66,7 @@ AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter
 
     [
       /^memcached_servers = 10.0.0.10:11211$/,
-      %r{^auth_url = https://10.0.0.10:5000/v3$}
+      %r{^auth_url = https://10.0.0.10:5000/v3$},
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('keystone_authtoken', line)
@@ -75,7 +75,7 @@ AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter
 
     [
       /^virt_type = kvm$/,
-      /^disk_cachemodes = file=writeback,block=none$/
+      /^disk_cachemodes = file=writeback,block=none$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('libvirt', line)
@@ -85,7 +85,7 @@ AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter
     [
       /^service_metadata_proxy = true$/,
       %r{^url = http://10.0.0.10:9696$},
-      %r{^auth_url = https://10.0.0.10:5000/v3$}
+      %r{^auth_url = https://10.0.0.10:5000/v3$},
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('neutron', line)
@@ -105,7 +105,7 @@ AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter
     [
       /^rabbit_host = 10.0.0.10$/,
       /^rabbit_userid = guest$/,
-      /^rabbit_password = mq-pass$/
+      /^rabbit_password = mq-pass$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('oslo_messaging_rabbit', line)
@@ -118,7 +118,7 @@ AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter
       /^xvpvncproxy_host = 10.0.0.2$/,
       /^novncproxy_host = 10.0.0.2$/,
       /^vncserver_listen = 10.0.0.2$/,
-      /^vncserver_proxyclient_address = 10.0.0.2$/
+      /^vncserver_proxyclient_address = 10.0.0.2$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('vnc', line)
@@ -126,7 +126,7 @@ AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter
     end
 
     [
-      %r{^api_servers = http://10.0.0.10:9292$}
+      %r{^api_servers = http://10.0.0.10:9292$},
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('glance', line)
@@ -135,7 +135,7 @@ AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter
 
     [
       %r{^base_url = ws://10.0.0.10:6083$},
-      /^proxyclient_address = 127.0.0.1$/
+      /^proxyclient_address = 127.0.0.1$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('serial_console', line)
@@ -188,7 +188,7 @@ AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter
         /^inject_password = false$/,
         /^live_migration_flag = #{migrate_flags.join(',')}$/,
         /^rbd_secret_uuid = 8102bb29-f48b-4f6e-81d7-4c59d80ec6b8$/,
-        /^rbd_user = cinder$/
+        /^rbd_user = cinder$/,
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name).with_section_content('libvirt', line)

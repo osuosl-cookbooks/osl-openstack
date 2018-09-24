@@ -1,9 +1,9 @@
 {
   "id": "openstack",
   "ceph": {
-    "encrypted_data": "mxrjuedPidGxweiRWfvkc6nJBphv27pDbqjTCi1iYHS1aCxuJNpa5G+GHQxe\n2N0Bx0UAf1a2txuZpe+jhKiLwRYCD8F+7rpRG0sAMO5z6am1/qS2UvSqTfwL\nMYYStN18Hv+zOGqqLmNKfdMgeOIFXGMEX7jm5iWO/LIewdJGgWkLgvG4Ou7D\neenfnSTLbpsmBSJbqaqo24N0qexukwfTaFjFPEXjQe8iPyKtpHa0wkXvsBv5\nr83iY8jtWAx0GQYuv60EoovAMesdhBIe36vA7A==\n",
-    "hmac": "5ThRZsLqSl+siFE2pyUM46SYeGL/usm4fza3wbkEahY=\n",
-    "iv": "mOEgwcWRJVEBJIybOy1QeA==\n",
+    "encrypted_data": "zphCZ+lSE62il4FW/FGOQsAVwtr8ECXiodn1sKvbU89o5koWUdJPSiELRerU\nIDjrNWNsDppM+YCDJJMwf8qbj2kuWFjucjPoCsBRvx7lc8Z+8mT/cfleUWBe\nG5fUKCg/BuYU+VKHTL+krKd36TZXez0nHaM5CnnWn/Zgs4korLtGGDiJNtVM\nGkSi5DtslQogqZpm8YNgHbHim1YPT87Q36q61weFxYJpeCjWnotyCLT3cEjL\njUuk6vUMLym6PqFeuYbQj5msHdpPNdLD8MTN+Q==\n",
+    "hmac": "XhPIfoIBiDHzBSdCIlWgmjR+2e8lTDgMS5lQoMosfes=\n",
+    "iv": "rOWnl5H87abmIuhXDylYTw==\n",
     "version": 2,
     "cipher": "aes-256-cbc"
   }

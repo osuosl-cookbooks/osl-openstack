@@ -8,7 +8,7 @@ REDHAT_OPTS = {
   platform: 'centos',
   version: '7.2.1511',
   file_cache_path: '/var/chef/cache',
-  log_level: :fatal
+  log_level: :fatal,
 }.freeze
 
 shared_context 'common_stubs' do
@@ -48,7 +48,7 @@ shared_context 'ceph_stubs' do
           fqdn: 'ceph-mon.example.org',
           roles: 'search-ceph-mon',
           ceph: {
-            'fsid-secret' => '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8'
+            'fsid-secret' => '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8',
           },
           network: {
             interfaces: {
@@ -56,13 +56,13 @@ shared_context 'ceph_stubs' do
                 addresses: {
                   '10.121.1.1' => {
                     family: 'inet',
-                    broadcast: '255.255.255.0'
-                  }
-                }
-              }
-            }
-          }
-        }
+                    broadcast: '255.255.255.0',
+                  },
+                },
+              },
+            },
+          },
+        },
       ]
     )
     stub_search('node', 'tags:ceph-rgw').and_return([{}])
@@ -86,11 +86,11 @@ shared_context 'linuxbridge_stubs' do
       [
         name: 'public',
         controller: {
-          default: 'eth2'
+          default: 'eth2',
         },
         compute: {
-          default: 'eth1'
-        }
+          default: 'eth1',
+        },
       ]
   end
 end
@@ -123,9 +123,9 @@ shared_context 'identity_stubs' do
           'openstack' => {
             'identity' => {
               'admin_tenant_name' => 'admin',
-              'admin_user' => 'admin'
-            }
-          }
+              'admin_user' => 'admin',
+            },
+          },
         }]
       )
     allow_any_instance_of(Chef::Recipe).to receive(:get_password)
@@ -250,9 +250,9 @@ shared_context 'compute_stubs' do
           'openstack' => {
             'identity' => {
               'admin_tenant_name' => 'admin',
-              'admin_user' => 'admin'
-            }
-          }
+              'admin_user' => 'admin',
+            },
+          },
         }]
       )
     allow_any_instance_of(Chef::Recipe).to receive(:get_password)

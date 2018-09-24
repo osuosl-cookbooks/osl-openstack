@@ -12,7 +12,7 @@ default['osl-openstack']['databases'] = {
   'network' => 'neutron',
   'object-storage' => 'swift',
   'orchestration' => 'heat',
-  'telemetry' => 'ceilometer'
+  'telemetry' => 'ceilometer',
 }
 default['osl-openstack']['data_bags'] = %w(
   db_passwords
@@ -44,11 +44,11 @@ default['osl-openstack']['seperate_network_node'] = false
 default['osl-openstack']['physical_interface_mappings'] = []
 default['osl-openstack']['vxlan_interface'] = {
   'controller' => {
-    'default' => 'eth0'
+    'default' => 'eth0',
   },
   'compute' => {
-    'default' => 'eth0'
-  }
+    'default' => 'eth0',
+  },
 }
 default['osl-openstack']['node_type'] = 'compute'
 default['osl-openstack']['nova_ssl_dir'] = '/etc/nova/pki'
@@ -56,12 +56,12 @@ default['osl-openstack']['libvirt_guests'] = {
   'on_boot' => 'ignore',
   'on_shutdown' => 'shutdown',
   'parallel_shutdown' => '25',
-  'shutdown_timeout' => '120'
+  'shutdown_timeout' => '120',
 }
 default['osl-openstack']['novnc'] = {
   'use_ssl' => true,
   'cert_file' => 'novnc.pem',
-  'key_file' => 'novnc.key'
+  'key_file' => 'novnc.key',
 }
 default['osl-openstack']['openpower']['yum']['repo-key'] = 'http://ftp.osuosl.org/pub/osl/repos/yum/RPM-GPG-KEY-osuosl'
 default['osl-openstack']['openpower']['yum']['uri'] =

@@ -1,10 +1,11 @@
-# rubocop:disable Metrics/AbcSize
-# rubocop:disable Metrics/MethodLength
+
 def openstack_credential_secrets
-  Chef::EncryptedDataBagItem.load(
+  data_bag_item(
     node['osl-openstack']['ceph_databag'],
     node['osl-openstack']['ceph_item']
   )
+rescue ChefSpec::Error::DataBagItemNotStubbed
+  node['osl-openstack']['credentials']
 rescue Net::HTTPServerException => e
   databag = "#{node['osl-openstack']['ceph_databag']}:#{node['osl-openstack']['ceph_item']}"
   if e.response.code == '404'
