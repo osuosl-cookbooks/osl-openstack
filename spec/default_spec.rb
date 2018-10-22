@@ -89,6 +89,27 @@ describe 'osl-openstack::default' do
       )
   end
   it do
+    expect(chef_run).to install_python_package('os_client_config')
+      .with(
+        version: '1.28.0',
+        # virtualenv: '/opt/osc'
+      )
+  end
+  it do
+    expect(chef_run).to install_python_package('osc_lib')
+      .with(
+        version: '1.7.0',
+        # virtualenv: '/opt/osc'
+      )
+  end
+  it do
+    expect(chef_run).to install_python_package('openstacksdk')
+      .with(
+        version: '0.9.18',
+        # virtualenv: '/opt/osc'
+      )
+  end
+  it do
     expect(chef_run).to install_python_package('python-openstackclient')
       .with(
         version: '3.11.0',

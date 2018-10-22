@@ -430,6 +430,21 @@ python_package 'cliff' do
   virtualenv '/opt/osc'
 end
 
+python_package 'os_client_config' do
+  version '1.28.0'
+  virtualenv '/opt/osc'
+end
+
+python_package 'osc_lib' do
+  version '1.7.0'
+  virtualenv '/opt/osc'
+end
+
+python_package 'openstacksdk' do
+  version '0.9.18'
+  virtualenv '/opt/osc'
+end
+
 python_package 'python-openstackclient' do
   version node['openstack']['common']['client_version']
   virtualenv '/opt/osc'
