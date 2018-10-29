@@ -1,12 +1,13 @@
 {
   "env_run_lists": {},
   "run_list": [
-    "recipe[osl-ceph::mon]"
+    "recipe[openstack_test::ceph_setup]",
+    "recipe[openstack_test::ceph]"
   ],
   "chef_type": "role",
   "override_attributes": {},
   "default_attributes": {},
   "json_class": "Chef::Role",
-  "description": "Ceph Mon Role",
-  "name": "ceph_mon"
+  "description": "Ceph Role",
+  "name": "ceph"
 }

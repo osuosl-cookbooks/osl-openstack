@@ -24,13 +24,8 @@ provisioner:
       secret:
         key_path: "/tmp/kitchen/encrypted_data_bag_secret"
     ceph:
-      network:
-        public:
-          cidr:
-            - '10.1.100.0/24'
-        cluster:
-          cidr:
-            - '10.1.100.0/24'
+      keyring:
+        mon: '/etc/ceph/$cluster.mon.keyring'
     mariadb:
       server_root_password: "rootpass"
       forbid_remote_root: false
@@ -48,9 +43,7 @@ provisioner:
 suites:
   - name: default
     run_list:
-      - recipe[openstack_test::ceph_setup]
       - recipe[osl-openstack::default]
-      - recipe[openstack_test::ceph]
   - name: mon
     provisioner: chef_solo
     run_list:
@@ -74,6 +67,11 @@ suites:
       - recipe[openstack_test::cacert]
   - name: image
     run_list:
+      - role[ceph]
+      - role[ceph_mon]
+      - role[ceph_mgr]
+      - role[ceph_osd]
+      - role[ceph_setup]
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::image]
@@ -104,6 +102,11 @@ suites:
       - recipe[osl-openstack::compute_controller]
   - name: compute
     run_list:
+      - role[ceph]
+      - role[ceph_mon]
+      - role[ceph_mgr]
+      - role[ceph_osd]
+      - role[ceph_setup]
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::compute_controller]
@@ -115,6 +118,11 @@ suites:
       - recipe[osl-openstack::dashboard]
   - name: block_storage
     run_list:
+      - role[ceph]
+      - role[ceph_mon]
+      - role[ceph_mgr]
+      - role[ceph_osd]
+      - role[ceph_setup]
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::block_storage_controller]
@@ -151,12 +159,23 @@ suites:
       - recipe[osl-openstack::mellanox_neo]
   - name: controller
     run_list:
+      - role[ceph]
+      - role[ceph_mon]
+      - role[ceph_mgr]
+      - role[ceph_osd]
+      - role[ceph_setup]
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::controller]
       - recipe[openstack-integration-test::setup]
+      - recipe[openstack_test::tempest]
   - name: allinone
     run_list:
+      - role[ceph]
+      - role[ceph_mon]
+      - role[ceph_mgr]
+      - role[ceph_osd]
+      - role[ceph_setup]
       - role[openstack_tk]
       - recipe[openstack_test]
       - role[openstack_ops_identity]

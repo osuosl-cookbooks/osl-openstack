@@ -1,6 +1,6 @@
 require 'chef/provisioning'
 
-node_os = ENV['NODE_OS'] || 'bento/centos-7.3'
+node_os = ENV['NODE_OS'] || 'bento/centos-7'
 node_ssh_user = ENV['NODE_SSH_USER'] || 'centos'
 flavor_ref = ENV['FLAVOR'] || 4 # m1.large
 provision_role = 'openstack_provisioning'
@@ -28,7 +28,7 @@ machine 'controller' do
                     key_data: nil,
                   },
                   convergence_options: {
-                    chef_version: '12.18.31',
+                    chef_version: '13.8.5',
                   }
 
   ohai_hints 'openstack' => '{}'
@@ -39,10 +39,13 @@ config.vm.provider "virtualbox" do |v|
   v.cpus = 2
 end
 EOF
-  recipe 'openstack_test::ceph_setup'
+  role 'ceph'
+  role 'ceph_mon'
+  role 'ceph_mgr'
+  role 'ceph_osd'
+  role 'ceph_setup'
   role provision_role
   role 'separate_network_node' if ENV['SEPARATE_NETWORK_NODE']
-  recipe 'openstack_test::ceph'
   recipe 'osl-openstack::ops_database'
   recipe 'osl-openstack::controller'
   file('/etc/chef/encrypted_data_bag_secret',

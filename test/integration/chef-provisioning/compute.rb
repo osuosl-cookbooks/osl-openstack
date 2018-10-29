@@ -1,6 +1,6 @@
 require 'chef/provisioning'
 
-node_os = ENV['NODE_OS'] || 'bento/centos-7.3'
+node_os = ENV['NODE_OS'] || 'bento/centos-7'
 node_ssh_user = ENV['NODE_SSH_USER'] || 'centos'
 flavor_ref = ENV['FLAVOR'] || 4 # m1.large
 provision_role = 'openstack_provisioning'
@@ -28,7 +28,7 @@ machine 'compute' do
                     key_data: nil,
                   },
                   convergence_options: {
-                    chef_version: '12.18.31',
+                    chef_version: '13.8.5',
                   }
 
   ohai_hints 'openstack' => '{}'

@@ -19,7 +19,6 @@
     },
     "run_list": [
       "recipe[osl-openstack]",
-      "recipe[openstack-block-storage::cinder-common]",
       "recipe[openstack-block-storage::volume_driver_lvm]",
       "recipe[osl-openstack::block_storage]"
     ]

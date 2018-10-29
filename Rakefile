@@ -1,6 +1,6 @@
 current_dir = File.dirname(__FILE__)
 client_cfg = "#{current_dir}/test/chef-config"
-client_options = '--force-formatter -z ' \
+client_options = '--force-formatter -z --local-mode --listen ' \
     "--config #{client_cfg}/knife.rb"
 
 task default: ['test']
