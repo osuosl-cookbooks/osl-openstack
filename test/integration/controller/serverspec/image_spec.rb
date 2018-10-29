@@ -1,0 +1,1 @@
+../../image/serverspec/image_spec.rb
