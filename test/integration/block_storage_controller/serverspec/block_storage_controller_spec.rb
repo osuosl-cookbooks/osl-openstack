@@ -39,8 +39,8 @@ describe file('/etc/cinder/cinder.conf') do
   end
 end
 
-describe command('source /root/openrc && sleep 60 && cinder service-list') do
-  list_output = '\s*\|\sblockstoragecon.+\s*\|\snova\s\|\senabled\s\|\s*up' \
+describe command('source /root/openrc && cinder service-list') do
+  list_output = '\s*\|\s(block-storage-con|controller|allinone).+\s*\|\snova\s\|\senabled\s\|\s*up' \
     '\s*\|\s[0-9]{4}-[0-9]{2}-[0-9]{2}'
   its(:stdout) do
     should contain(/cinder-scheduler#{list_output}/)

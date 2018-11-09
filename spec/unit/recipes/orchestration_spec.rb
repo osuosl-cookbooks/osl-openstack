@@ -19,7 +19,7 @@ describe 'osl-openstack::orchestration' do
       %r{^heat_metadata_server_url = http://10.0.0.10:8000$},
       %r{^heat_waitcondition_server_url = http://10.0.0.10:8000/v1/waitcondition$},
       %r{^heat_watch_server_url = http://10.0.0.10:8003$},
-      %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$}
+      %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$},
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
@@ -64,7 +64,7 @@ describe 'osl-openstack::orchestration' do
     [
       /^backend = oslo_cache.memcache_pool$/,
       /^enabled = true$/,
-      /^memcache_servers = 10.0.0.10:11211$/
+      /^memcache_servers = 10.0.0.10:11211$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
@@ -74,7 +74,7 @@ describe 'osl-openstack::orchestration' do
 
     [
       /^memcached_servers = 10.0.0.10:11211$/,
-      %r{^auth_url = https://10.0.0.10:5000/v3$}
+      %r{^auth_url = https://10.0.0.10:5000/v3$},
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
@@ -85,7 +85,7 @@ describe 'osl-openstack::orchestration' do
     [
       /^rabbit_host = 10.0.0.10$/,
       /^rabbit_userid = guest$/,
-      /^rabbit_password = mq-pass$/
+      /^rabbit_password = mq-pass$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
@@ -94,7 +94,7 @@ describe 'osl-openstack::orchestration' do
     end
 
     [
-      %r{^connection = mysql://heat_x86:heat@10.0.0.10:3306/heat_x86\?charset=utf8$}
+      %r{^connection = mysql://heat_x86:heat@10.0.0.10:3306/heat_x86\?charset=utf8$},
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)

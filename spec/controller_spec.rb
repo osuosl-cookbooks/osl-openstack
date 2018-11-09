@@ -43,7 +43,7 @@ describe 'osl-openstack::controller' do
     [
       /^backend = oslo_cache.memcache_pool$/,
       /^enabled = true$/,
-      /^memcache_servers = 10.0.0.10:11211$/
+      /^memcache_servers = 10.0.0.10:11211$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)

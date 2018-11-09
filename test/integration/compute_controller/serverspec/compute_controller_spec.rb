@@ -33,7 +33,7 @@ end
   'instance_usage_audit_period = hour',
   'notify_on_state_change = vm_and_task_state',
   'resume_guests_state_on_host_boot = True',
-  'block_device_allocate_retries = 120'
+  'block_device_allocate_retries = 120',
 ].each do |s|
   describe file('/etc/nova/nova.conf') do
     its(:content) do
@@ -74,7 +74,7 @@ end
 # end
 
 describe command('source /root/openrc && /usr/local/bin/openstack compute service list') do
-  list_output = '\s*\|\scomputecontroll.+\s*\|\sinternal\s\|\senabled\s\|\sup' \
+  list_output = '\s*\|\s(compute-controll|controller|allinone).+\s*\|\sinternal\s\|\senabled\s\|\sup' \
     '\s*\|\s[0-9]{4}-[0-9]{2}-[0-9]{2}'
   %w(conductor scheduler cert consoleauth).each do |s|
     its(:stdout) do

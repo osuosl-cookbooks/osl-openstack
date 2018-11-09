@@ -25,7 +25,7 @@ describe 'osl-openstack::image', image: true do
 
       [
         /^bind_host = 10.0.0.2$/,
-        %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$}
+        %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$},
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
@@ -63,7 +63,7 @@ describe 'osl-openstack::image', image: true do
               sensitive: true,
               variables: {
                 ceph_user: 'glance',
-                ceph_token: 'image_token'
+                ceph_token: 'image_token',
               }
             )
         end
@@ -73,14 +73,14 @@ describe 'osl-openstack::image', image: true do
         end
         [
           /^show_image_direct_url = true$/,
-          /^show_multiple_locations = true$/
+          /^show_multiple_locations = true$/,
         ].each do |line|
           it do
             expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
           end
         end
         [
-          /^flavor = keystone$/
+          /^flavor = keystone$/,
         ].each do |line|
           it do
             expect(chef_run).to render_config_file(file.name).with_section_content('paste_deploy', line)
@@ -92,7 +92,7 @@ describe 'osl-openstack::image', image: true do
           /^rbd_store_pool = images$/,
           /^rbd_store_user = glance$/,
           %r{^rbd_store_ceph_conf = /etc/ceph/ceph.conf$},
-          /^rbd_store_chunk_size = 8$/
+          /^rbd_store_chunk_size = 8$/,
         ].each do |line|
           it do
             expect(chef_run).to render_config_file(file.name).with_section_content('glance_store', line)
@@ -146,7 +146,7 @@ describe 'osl-openstack::image', image: true do
       [
         /^backend = oslo_cache.memcache_pool$/,
         /^enabled = true$/,
-        /^memcache_servers = 10.0.0.10:11211$/
+        /^memcache_servers = 10.0.0.10:11211$/,
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name)
@@ -156,7 +156,7 @@ describe 'osl-openstack::image', image: true do
 
       [
         /^memcached_servers = 10.0.0.10:11211$/,
-        %r{^auth_url = https://10.0.0.10:5000/v3$}
+        %r{^auth_url = https://10.0.0.10:5000/v3$},
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name)
@@ -167,7 +167,7 @@ describe 'osl-openstack::image', image: true do
       [
         /^rabbit_host = 10.0.0.10$/,
         /^rabbit_userid = guest$/,
-        /^rabbit_password = mq-pass$/
+        /^rabbit_password = mq-pass$/,
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name)
@@ -177,7 +177,7 @@ describe 'osl-openstack::image', image: true do
 
       [
         %r{^connection = mysql://glance_x86:db-pass@10.0.0.10:3306/glance_x86\
-\?charset=utf8$}
+\?charset=utf8$},
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name)
@@ -190,7 +190,7 @@ describe 'osl-openstack::image', image: true do
     let(:file) { chef_run.template('/etc/glance/glance-api.conf') }
 
     [
-      /^registry_host = 10.0.0.10$/
+      /^registry_host = 10.0.0.10$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)

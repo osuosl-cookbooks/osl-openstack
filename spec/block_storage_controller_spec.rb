@@ -28,7 +28,7 @@ describe 'osl-openstack::block_storage_controller' do
       /^osapi_volume_listen = 10.0.0.2$/,
       /^volume_group = openstack$/,
       /^volume_clear_size = 256$/,
-      %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$}
+      %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$},
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
@@ -65,7 +65,7 @@ describe 'osl-openstack::block_storage_controller' do
     [
       /^backend = oslo_cache.memcache_pool$/,
       /^enabled = true$/,
-      /^memcache_servers = 10.0.0.10:11211$/
+      /^memcache_servers = 10.0.0.10:11211$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('cache', line)
@@ -75,7 +75,7 @@ describe 'osl-openstack::block_storage_controller' do
     [
       /^rabbit_host = 10.0.0.10$/,
       /^rabbit_userid = guest$/,
-      /^rabbit_password = mq-pass$/
+      /^rabbit_password = mq-pass$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('oslo_messaging_rabbit', line)
@@ -101,7 +101,7 @@ describe 'osl-openstack::block_storage_controller' do
         /^backup_ceph_pool = backups$/,
         /^backup_ceph_stripe_unit = 0$/,
         /^backup_ceph_stripe_count = 0$/,
-        /^restore_discard_excess_bytes = true$/
+        /^restore_discard_excess_bytes = true$/,
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
@@ -117,7 +117,7 @@ describe 'osl-openstack::block_storage_controller' do
         /^rbd_store_chunk_size = 4$/,
         /^rados_connect_timeout = -1$/,
         /^rbd_user = cinder$/,
-        /^rbd_secret_uuid = 8102bb29-f48b-4f6e-81d7-4c59d80ec6b8$/
+        /^rbd_secret_uuid = 8102bb29-f48b-4f6e-81d7-4c59d80ec6b8$/,
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name).with_section_content('ceph', line)
@@ -125,7 +125,7 @@ describe 'osl-openstack::block_storage_controller' do
       end
       [
         /^rbd_user = cinder$/,
-        /^rbd_secret_uuid = 8102bb29-f48b-4f6e-81d7-4c59d80ec6b8$/
+        /^rbd_secret_uuid = 8102bb29-f48b-4f6e-81d7-4c59d80ec6b8$/,
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name).with_section_content('libvirt', line)

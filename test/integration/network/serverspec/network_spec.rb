@@ -22,7 +22,7 @@ end
   'service_plugins = ' \
   'neutron.services.l3_router.l3_router_plugin.L3RouterPlugin',
   'allow_overlapping_ips = True',
-  'router_distributed = False'
+  'router_distributed = False',
 ].each do |s|
   describe file('/etc/neutron/neutron.conf') do
     its(:content) { should contain(/#{s}/).after(/^\[DEFAULT\]/) }
@@ -52,7 +52,7 @@ end
 
 [
   'interface_driver = neutron.agent.linux.interface.BridgeInterfaceDriver',
-  'external_network_bridge = $'
+  'external_network_bridge = $',
 ].each do |s|
   describe file('/etc/neutron/l3_agent.ini') do
     its(:content) { should contain(/#{s}/).after(/^\[DEFAULT\]/) }
@@ -62,7 +62,7 @@ end
 [
   'interface_driver = neutron.agent.linux.interface.BridgeInterfaceDriver',
   'enable_isolated_metadata = True',
-  'dhcp_lease_duration = 600'
+  'dhcp_lease_duration = 600',
 ].each do |s|
   describe file('/etc/neutron/dhcp_agent.ini') do
     its(:content) { should contain(/#{s}/).after(/^\[DEFAULT\]/) }
@@ -73,7 +73,7 @@ end
   'type_drivers = flat,vlan,vxlan',
   'extension_drivers = port_security',
   'tenant_network_types = vxlan',
-  'mechanism_drivers = linuxbridge,l2population'
+  'mechanism_drivers = linuxbridge,l2population',
 ].each do |s|
   describe file('/etc/neutron/plugin.ini') do
     its(:content) { should contain(/#{s}/).after(/^\[ml2\]/) }

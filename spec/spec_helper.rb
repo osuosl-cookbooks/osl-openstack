@@ -8,20 +8,21 @@ REDHAT_OPTS = {
   platform: 'centos',
   version: '7.2.1511',
   file_cache_path: '/var/chef/cache',
-  log_level: :fatal
+  log_level: :fatal,
 }.freeze
 
 shared_context 'common_stubs' do
   before do
-    node.set['osl-openstack']['endpoint_hostname'] = '10.0.0.10'
-    node.set['osl-openstack']['network_hostname'] = '10.0.0.11'
-    node.set['osl-openstack']['db_hostname'] = '10.0.0.10'
-    node.set['osl-openstack']['database_suffix'] = 'x86'
-    node.set['osl-openstack']['databag_suffix'] = 'x86'
-    node.set['osl-openstack']['credentials']['ceph']['image_token'] = 'image_token'
-    node.set['osl-openstack']['credentials']['ceph']['block_token'] = 'block_token'
-    node.set['osl-openstack']['credentials']['ceph']['block_backup_token'] = 'block_backup_token'
-    node.set['ceph']['fsid-secret'] = '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8'
+    node.normal['osl-openstack']['endpoint_hostname'] = '10.0.0.10'
+    node.normal['osl-openstack']['network_hostname'] = '10.0.0.11'
+    node.normal['osl-openstack']['db_hostname'] = '10.0.0.10'
+    node.normal['osl-openstack']['database_suffix'] = 'x86'
+    node.normal['osl-openstack']['databag_suffix'] = 'x86'
+    node.normal['osl-openstack']['credentials']['ceph']['image_token'] = 'image_token'
+    node.normal['osl-openstack']['credentials']['ceph']['block_token'] = 'block_token'
+    node.normal['osl-openstack']['credentials']['ceph']['block_backup_token'] = 'block_backup_token'
+    node.normal['ibm_power']['cpu']['cpu_model'] = nil
+    node.normal['ceph']['fsid-secret'] = '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8'
     node.automatic['filesystem2']['by_mountpoint']
   end
 end
@@ -48,7 +49,7 @@ shared_context 'ceph_stubs' do
           fqdn: 'ceph-mon.example.org',
           roles: 'search-ceph-mon',
           ceph: {
-            'fsid-secret' => '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8'
+            'fsid-secret' => '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8',
           },
           network: {
             interfaces: {
@@ -56,13 +57,13 @@ shared_context 'ceph_stubs' do
                 addresses: {
                   '10.121.1.1' => {
                     family: 'inet',
-                    broadcast: '255.255.255.0'
-                  }
-                }
-              }
-            }
-          }
-        }
+                    broadcast: '255.255.255.0',
+                  },
+                },
+              },
+            },
+          },
+        },
       ]
     )
     stub_search('node', 'tags:ceph-rgw').and_return([{}])
@@ -82,15 +83,15 @@ end
 
 shared_context 'linuxbridge_stubs' do
   before do
-    node.set['osl-openstack']['physical_interface_mappings'] =
+    node.normal['osl-openstack']['physical_interface_mappings'] =
       [
         name: 'public',
         controller: {
-          default: 'eth2'
+          default: 'eth2',
         },
         compute: {
-          default: 'eth1'
-        }
+          default: 'eth1',
+        },
       ]
   end
 end
@@ -123,9 +124,9 @@ shared_context 'identity_stubs' do
           'openstack' => {
             'identity' => {
               'admin_tenant_name' => 'admin',
-              'admin_user' => 'admin'
-            }
-          }
+              'admin_user' => 'admin',
+            },
+          },
         }]
       )
     allow_any_instance_of(Chef::Recipe).to receive(:get_password)
@@ -201,7 +202,7 @@ shared_context 'network_stubs' do
   end
   shared_examples 'custom template banner displayer' do
     it 'shows the custom banner' do
-      node.set['openstack']['network']['custom_template_banner'] =
+      node.normal['openstack']['network']['custom_template_banner'] =
         'custom_template_banner_value'
       expect(chef_run).to render_file(file_name)
         .with_content(/^custom_template_banner_value$/)
@@ -209,7 +210,7 @@ shared_context 'network_stubs' do
   end
   shared_examples 'common network attributes displayer' do |plugin|
     it 'displays the interface_driver common attribute' do
-      node.set['openstack']["network_#{plugin}"]['conf']['DEFAULT'] \
+      node.normal['openstack']["network_#{plugin}"]['conf']['DEFAULT'] \
         ['interface_driver'] = 'network_interface_driver_value'
       expect(chef_run).to render_file(file_name)
         .with_content(/^interface_driver = network_interface_driver_value$/)
@@ -225,7 +226,7 @@ shared_context 'network_stubs' do
        enable_metadata_network dnsmasq_lease_max
        dhcp_delete_namespaces).each do |attr|
       it "displays the #{attr} dhcp attribute" do
-        node.set['openstack']['network_dhcp']['conf']['DEFAULT'][attr] =
+        node.normal['openstack']['network_dhcp']['conf']['DEFAULT'][attr] =
           "network_dhcp_#{attr}_value"
         expect(chef_run).to render_file(file_name)
           .with_content(/^#{attr} = network_dhcp_#{attr}_value$/)
@@ -236,7 +237,7 @@ end
 
 shared_context 'compute_stubs' do
   before do
-    node.set['osl-openstack']['nova_public_key'] = 'ssh public key'
+    node.normal['osl-openstack']['nova_public_key'] = 'ssh public key'
     stub_data_bag_item('_secrets', 'nova_migration_key')
       .and_return(nova_migration_key: 'private ssh key')
     allow_any_instance_of(Chef::Recipe).to receive(:rabbit_servers)
@@ -250,9 +251,9 @@ shared_context 'compute_stubs' do
           'openstack' => {
             'identity' => {
               'admin_tenant_name' => 'admin',
-              'admin_user' => 'admin'
-            }
-          }
+              'admin_user' => 'admin',
+            },
+          },
         }]
       )
     allow_any_instance_of(Chef::Recipe).to receive(:get_password)

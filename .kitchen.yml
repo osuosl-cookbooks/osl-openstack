@@ -20,17 +20,19 @@ provisioner:
         controller:
           default: lo
       nova_public_key: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDYOuLkP1F/Sm/dCJAA7kme+ObO4J8x2HrZU40W8QqW4yFqRPKnW5HYLeUpRzIFzWen/LIn6R6lxTfSAnnD8qEEuKbFjH5WRqJYCJeAyaTBTRyU1FHlcTR/EQ/HVZ38TQwCztZgboFb5zmWqYc3/BYBHGA6XeYN5jRcHvZbyaGL+YA1/KPIjpbQfqIPXdHfodoSNX4qQQccYBq2c/rq3Puh7Q9oVph6a2lq0wWsqYyq0vTGHPKFYShVpwDl2Z3c8eB3P7yFRzOR2VNuezJlOgoHz6D/mBObLj1n+yi07bcGbpwAH/rLEyiy4gVdru2qQAcbDL9Yibk96lovim/IH4dV nova-migration
+      physical_interface_mappings:
+        -
+         name: public
+         controller:
+          default: eth1
+         compute:
+          default: eth1
     openstack:
       secret:
         key_path: "/tmp/kitchen/encrypted_data_bag_secret"
     ceph:
-      network:
-        public:
-          cidr:
-            - '10.1.100.0/24'
-        cluster:
-          cidr:
-            - '10.1.100.0/24'
+      keyring:
+        mon: '/etc/ceph/$cluster.mon.keyring'
     mariadb:
       server_root_password: "rootpass"
       forbid_remote_root: false
@@ -48,9 +50,7 @@ provisioner:
 suites:
   - name: default
     run_list:
-      - recipe[openstack_test::ceph_setup]
       - recipe[osl-openstack::default]
-      - recipe[openstack_test::ceph]
   - name: mon
     provisioner: chef_solo
     run_list:
@@ -63,58 +63,82 @@ suites:
       osl-openstack:
         node_type: controller
   - name: ops_messaging
+    driver_config:
+        server_name: "ops-messaging-<%= ENV['USER'] %>"
     run_list:
       - role[openstack_tk]
       - recipe[osl-openstack::ops_messaging]
   - name: identity
+    driver_config:
+        server_name: "identity-<%= ENV['USER'] %>"
     run_list:
       - role[openstack_tk]
       - recipe[osl-openstack::ops_database]
       - recipe[osl-openstack::identity]
       - recipe[openstack_test::cacert]
   - name: image
+    driver_config:
+        server_name: "image-<%= ENV['USER'] %>"
     run_list:
+      - role[ceph]
+      - role[ceph_mon]
+      - role[ceph_mgr]
+      - role[ceph_osd]
+      - role[ceph_setup]
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::image]
   - name: network
+    driver_config:
+        server_name: "network-<%= ENV['USER'] %>"
     run_list:
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::network]
   - name: linuxbridge
+    driver_config:
+        server_name: "linuxbridge-<%= ENV['USER'] %>"
     run_list:
       - role[openstack_tk]
       - recipe[openstack_test]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::linuxbridge]
-    attributes:
-      osl-openstack:
-        physical_interface_mappings:
-          -
-           name: public
-           controller:
-            default: eth1
-           compute:
-            default: eth1
   - name: compute_controller
+    driver_config:
+        server_name: "compute-controller-<%= ENV['USER'] %>"
     run_list:
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::compute_controller]
   - name: compute
+    driver_config:
+        server_name: "compute-<%= ENV['USER'] %>"
     run_list:
+      - role[ceph]
+      - role[ceph_mon]
+      - role[ceph_mgr]
+      - role[ceph_osd]
+      - role[ceph_setup]
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::compute_controller]
       - recipe[osl-openstack::compute]
   - name: dashboard
+    driver_config:
+        server_name: "dashboard-<%= ENV['USER'] %>"
     run_list:
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::dashboard]
   - name: block_storage
+    driver_config:
+        server_name: "block-storage-<%= ENV['USER'] %>"
     run_list:
+      - role[ceph]
+      - role[ceph_mon]
+      - role[ceph_mgr]
+      - role[ceph_osd]
+      - role[ceph_setup]
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::block_storage_controller]
@@ -128,16 +152,22 @@ suites:
             - 127.0.2.1
             - 127.0.3.1
   - name: block_storage_controller
+    driver_config:
+        server_name: "block-storage-controller-<%= ENV['USER'] %>"
     run_list:
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::block_storage_controller]
   - name: telemetry
+    driver_config:
+        server_name: "telemetry-<%= ENV['USER'] %>"
     run_list:
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::telemetry]
   - name: orchestration
+    driver_config:
+        server_name: "orchestration-<%= ENV['USER'] %>"
     run_list:
       - role[openstack_tk]
       - role[openstack_ops_identity]
@@ -150,19 +180,34 @@ suites:
     run_list:
       - recipe[osl-openstack::mellanox_neo]
   - name: controller
+    driver_config:
+        server_name: "controller-<%= ENV['USER'] %>"
     run_list:
+      - role[ceph]
+      - role[ceph_mon]
+      - role[ceph_mgr]
+      - role[ceph_osd]
+      - role[ceph_setup]
       - role[openstack_tk]
+      - recipe[openstack_test]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::controller]
       - recipe[openstack-integration-test::setup]
+      - recipe[openstack_test::tempest]
   - name: allinone
+    driver_config:
+        server_name: "allinone-<%= ENV['USER'] %>"
     run_list:
+      - role[ceph]
+      - role[ceph_mon]
+      - role[ceph_mgr]
+      - role[ceph_osd]
+      - role[ceph_setup]
       - role[openstack_tk]
       - recipe[openstack_test]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::controller]
       - recipe[osl-openstack::compute]
-      - recipe[openstack-block-storage::volume_driver_lvm]
       - recipe[osl-openstack::block_storage]
       - recipe[openstack-integration-test::setup]
       - recipe[openstack_test::tempest]
@@ -179,6 +224,8 @@ suites:
           volume:
             create_volume_group: true
   - name: upgrade
+    driver_config:
+        server_name: "upgrade-<%= ENV['USER'] %>"
     driver:
       image_ref: "openstack-mitaka-aio"
     run_list:

@@ -1,26 +1,12 @@
 {
   "env_run_lists": {},
   "run_list": [
-    "recipe[osl-openstack]",
     "recipe[openstack_test::hosts_provisioning]",
-    "recipe[openstack_test::cacert]"
+    "recipe[openstack_test::cacert]",
+    "recipe[osl-openstack]"
   ],
   "chef_type": "role",
-  "override_attributes": {
-    "ceph": {
-      "network": {
-        "public": {
-          "cidr": [
-            "10.1.100.0/23"
-          ]
-        },
-        "cluster": {
-          "cidr": [
-            "10.1.100.0/23"
-          ]
-        }
-      }
-    },
+  "override_attributes": {},
     "openstack": {
       "mq": {
         "user": "admin"

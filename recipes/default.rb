@@ -30,7 +30,7 @@ node.default['openstack']['release'] = 'newton'
 node.default['openstack']['secret']['key_path'] =
   '/etc/chef/encrypted_data_bag_secret'
 node.default['openstack']['misc_openrc'] = [
-  'export OS_CACERT="/etc/ssl/certs/ca-bundle.crt"'
+  'export OS_CACERT="/etc/ssl/certs/ca-bundle.crt"',
 ]
 node.default['openstack']['yum']['uri'] = \
   'http://vault.centos.org/7.4.1708/cloud/x86_64/openstack-' + node['openstack']['release']
@@ -427,6 +427,21 @@ end
 
 python_package 'cliff' do
   version '2.9.0'
+  virtualenv '/opt/osc'
+end
+
+python_package 'os_client_config' do
+  version '1.28.0'
+  virtualenv '/opt/osc'
+end
+
+python_package 'osc_lib' do
+  version '1.7.0'
+  virtualenv '/opt/osc'
+end
+
+python_package 'openstacksdk' do
+  version '0.9.18'
   virtualenv '/opt/osc'
 end
 

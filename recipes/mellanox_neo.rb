@@ -63,7 +63,7 @@ apache_app neo['server_hostname'] do
   directory '/opt/neo/controller/docs'
   directive_http [
     'RewriteCond %{HTTPS} !=on',
-    'RewriteRule ^/?(.*) https://%{SERVER_NAME}/$1 [R,L]'
+    'RewriteRule ^/?(.*) https://%{SERVER_NAME}/$1 [R,L]',
   ]
   ssl_enable true
   cert_chain '/etc/pki/tls/certs/wildcard-bundle.crt'

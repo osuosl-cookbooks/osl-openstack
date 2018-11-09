@@ -1,6 +1,6 @@
 current_dir = File.dirname(__FILE__)
 client_cfg = "#{current_dir}/test/chef-config"
-client_options = '--force-formatter -z ' \
+client_options = '--force-formatter -z --local-mode --listen ' \
     "--config #{client_cfg}/knife.rb"
 
 task default: ['test']
@@ -16,7 +16,7 @@ def run_command(command)
   end
 end
 
-PROV_PATH = 'test/integration/chef-provisioning'
+PROV_PATH = 'test/integration/chef-provisioning'.freeze
 
 task :destroy_all do
   Rake::Task[:destroy_machines].invoke
@@ -87,17 +87,18 @@ desc 'Blow everything away'
 task clean: [:destroy_all]
 
 # CI tasks
-require 'rubocop/rake_task'
-desc 'Run RuboCop (style) tests'
-RuboCop::RakeTask.new(:style)
+desc 'Run RuboCop (cookstyle) tests'
+task :style do
+  run_command('cookstyle')
+end
 
 desc 'Run FoodCritic (lint) tests'
 task :lint do
-    run_command('foodcritic --epic-fail any .')
+  run_command('foodcritic --epic-fail any .')
 end
 
 desc 'Run RSpec (unit) tests'
 task :unit do
-    run_command('rm -f Berksfile.lock')
-    run_command('rspec --format documentation --color')
+  run_command('rm -f Berksfile.lock')
+  run_command('rspec --format documentation --color')
 end

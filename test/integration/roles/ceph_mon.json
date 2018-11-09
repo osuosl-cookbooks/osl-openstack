@@ -5,13 +5,7 @@
   ],
   "chef_type": "role",
   "override_attributes": {},
-  "default_attributes": {
-    "ceph": {
-      "mon": {
-        "role": "ceph_mon"
-      }
-		}
-  },
+  "default_attributes": {},
   "json_class": "Chef::Role",
   "description": "Ceph Mon Role",
   "name": "ceph_mon"

@@ -46,8 +46,8 @@ describe 'osl-openstack::compute' do
             'on_shutdown' =>
             'shutdown',
             'parallel_shutdown' => '25',
-            'shutdown_timeout' => '120'
-          }
+            'shutdown_timeout' => '120',
+          },
         }
       )
   end
@@ -55,7 +55,7 @@ describe 'osl-openstack::compute' do
     /^ON_BOOT=ignore$/,
     /^ON_SHUTDOWN=shutdown$/,
     /^PARALLEL_SHUTDOWN=25$/,
-    /^SHUTDOWN_TIMEOUT=120$/
+    /^SHUTDOWN_TIMEOUT=120$/,
   ].each do |line|
     it do
       expect(chef_run).to render_file('/etc/sysconfig/libvirt-guests').with_content(line)
@@ -154,7 +154,7 @@ Host *
           mode: '00600',
           variables: {
             uuid: '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8',
-            client_name: 'cinder'
+            client_name: 'cinder',
           }
         )
     end
@@ -176,7 +176,7 @@ Host *
       /^rbd concurrent management ops = 20$/,
       /^rbd cache = true$/,
       /^rbd cache writethrough until flush = true$/,
-      %r{log file = /var/log/ceph/qemu-guest-\$pid.log$}
+      %r{log file = /var/log/ceph/qemu-guest-\$pid.log$},
     ].each do |line|
       it do
         expect(chef_run).to render_config_file('/etc/ceph/ceph.conf').with_section_content('client', line)

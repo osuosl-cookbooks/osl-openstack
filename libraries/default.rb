@@ -1,7 +1,6 @@
-# rubocop:disable Metrics/AbcSize
-# rubocop:disable Metrics/MethodLength
+
 def openstack_credential_secrets
-  Chef::EncryptedDataBagItem.load(
+  data_bag_item(
     node['osl-openstack']['ceph_databag'],
     node['osl-openstack']['ceph_item']
   )
@@ -14,4 +13,6 @@ rescue Net::HTTPServerException => e
     Chef::Log.fatal("Unable to load databag '#{databag}'; exiting. Please fix the databag and try again.")
     raise
   end
+rescue ChefSpec::Error::DataBagItemNotStubbed
+  node['osl-openstack']['credentials']
 end

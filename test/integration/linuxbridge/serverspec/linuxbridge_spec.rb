@@ -9,7 +9,7 @@ end
 
 [
   'tenant_network_type = gre,vxlan',
-  'network_vlan_ranges = $'
+  'network_vlan_ranges = $',
 ].each do |s|
   describe file('/etc/neutron/plugins/ml2/linuxbridge_agent.ini') do
     its(:content) { should contain(/#{s}/).after(/^\[vlans\]/) }
@@ -18,7 +18,7 @@ end
 [
   'enable_vxlan = true',
   'l2_population = true',
-  'local_ip = (?:[0-9]{1,3}\.){3}[0-9]{1,3}'
+  'local_ip = (?:[0-9]{1,3}\.){3}[0-9]{1,3}',
 ].each do |s|
   describe file('/etc/neutron/plugins/ml2/linuxbridge_agent.ini') do
     its(:content) { should contain(/#{s}/).after(/^\[vxlan\]/) }

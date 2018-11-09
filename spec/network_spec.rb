@@ -35,13 +35,13 @@ describe 'osl-openstack::network', network: true do
               subnet: '10.0.0.0/24',
               uuid: '4c948996-d603-4263-bcd8-fa5ade80bed8',
               controller: { default: 'eth1' },
-              compute: { default: 'eth1' }
+              compute: { default: 'eth1' },
             },
             {
               name: 'backend',
               controller: { default: 'eth1' },
-              compute: { default: 'eth1' }
-            }
+              compute: { default: 'eth1' },
+            },
           ]
         node.automatic['filesystem2']['by_mountpoint']
       end.converge(described_recipe)
@@ -68,7 +68,7 @@ neutron.services.l3_router.l3_router_plugin.L3RouterPlugin$/,
       /^allow_overlapping_ips = True$/,
       /^router_distributed = False$/,
       /^bind_host = 10.0.0.2$/,
-      %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$}
+      %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$},
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
@@ -114,7 +114,7 @@ neutron_x86\?charset=utf8}
     [
       /^interface_driver = \
 neutron.agent.linux.interface.BridgeInterfaceDriver$/,
-      /^external_network_bridge = $/
+      /^external_network_bridge = $/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
@@ -129,7 +129,7 @@ neutron.agent.linux.interface.BridgeInterfaceDriver$/,
       /^interface_driver = \
 neutron.agent.linux.interface.BridgeInterfaceDriver$/,
       /^enable_isolated_metadata = True/,
-      /^dhcp_lease_duration = 600/
+      /^dhcp_lease_duration = 600/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
@@ -143,7 +143,7 @@ neutron.agent.linux.interface.BridgeInterfaceDriver$/,
       /^type_drivers = flat,vlan,vxlan$/,
       /^extension_drivers = port_security$/,
       /^tenant_network_types = vxlan$/,
-      /^mechanism_drivers = linuxbridge,l2population$/
+      /^mechanism_drivers = linuxbridge,l2population$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
@@ -204,7 +204,7 @@ neutron.agent.linux.interface.BridgeInterfaceDriver$/,
       [
         /^backend = oslo_cache.memcache_pool$/,
         /^enabled = true$/,
-        /^memcache_servers = 10.0.0.10:11211$/
+        /^memcache_servers = 10.0.0.10:11211$/,
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name)
@@ -215,7 +215,7 @@ neutron.agent.linux.interface.BridgeInterfaceDriver$/,
       [
         /^rabbit_host = 10.0.0.10$/,
         /^rabbit_userid = guest$/,
-        /^rabbit_password = mq-pass$/
+        /^rabbit_password = mq-pass$/,
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name)
