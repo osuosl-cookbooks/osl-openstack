@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+4.0.0 (2018-11-09)
+------------------
+- Chef 13 fixes
+
 3.2.15 (2018-08-30)
 -------------------
 - Uninstall newer version of fog-openstack which breaks upstream openstack cb

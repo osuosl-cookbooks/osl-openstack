@@ -7,7 +7,7 @@ license          'Apache-2.0'
 chef_version     '>= 12.18' if respond_to?(:chef_version)
 description      'Installs/Configures osl-openstack'
 long_description 'Installs/Configures osl-openstack'
-version          '3.2.15'
+version          '4.0.0'
 
 %w{ base certificate chef-sugar git memcached osl-nrpe osl-munin kernel-modules
   mysql openstack-block-storage openstack-common openstack-compute
