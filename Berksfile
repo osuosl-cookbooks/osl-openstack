@@ -28,7 +28,6 @@ cookbook 'openstackclient',
 # WIP patches
 %w(
   block-storage
-  common
   compute
   dashboard
   identity
@@ -46,6 +45,7 @@ end
 
 # Openstack deps
 %w(
+  common
   integration-test
 ).each do |cb|
   cookbook "openstack-#{cb}",
