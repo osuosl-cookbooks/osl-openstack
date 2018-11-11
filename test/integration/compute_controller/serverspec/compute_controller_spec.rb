@@ -83,9 +83,9 @@ end
 describe command("#{openstack} catalog list -f value") do
   its(:stdout) do
     should match(%r{^nova-placement placement RegionOne
-  internal: http://127.0.0.1:8778
+  public: http://127.0.0.1:8778
 RegionOne
-  public: http://127.0.0.1:8778})
+  internal: http://127.0.0.1:8778})
   end
 end
 

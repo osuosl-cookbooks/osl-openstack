@@ -412,6 +412,7 @@ end
   orchestration-api
   orchestration-api-cfn
   orchestration-api-cloudwatch
+  placement-api
   telemetry
   telemetry-metric
 ).each do |service|

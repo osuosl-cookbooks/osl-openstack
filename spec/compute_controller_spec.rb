@@ -188,6 +188,19 @@ AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter
     end
   end
 
+  describe '/etc/httpd/sites-available/nova-placement-api.conf' do
+    let(:file) { chef_run.template('/etc/httpd/sites-available/nova-placement-api.conf') }
+
+    [
+      /^Listen 10.0.0.2:8778$/,
+      /^<VirtualHost 10.0.0.2:8778>$/,
+    ].each do |line|
+      it do
+        expect(chef_run).to render_file(file.name).with_content(line)
+      end
+    end
+  end
+
   it 'creates /etc/nova/pki directory' do
     expect(chef_run).to create_directory('/etc/nova/pki')
   end
