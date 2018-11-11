@@ -3,7 +3,6 @@ require 'serverspec'
 set :backend, :exec
 
 %w(
-  openstack-cinder-api
   openstack-cinder-scheduler
 ).each do |s|
   describe service(s) do
