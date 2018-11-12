@@ -42,7 +42,7 @@ systemctl stop '*aodh*'
 systemctl stop '*gnocchi*'
 yum -d1 -y upgrade \*ceilometer\* \*aodh\* \*gnocchi\* python2-cotyledon
 set +e
-ceilometer-upgrade
+ceilometer-upgrade --skip-gnocchi-resource-types --config-file /etc/ceilometer/ceilometer.conf
 set -e
 
 # Upgrade nova
