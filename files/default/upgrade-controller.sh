@@ -48,6 +48,11 @@ set -e
 # Upgrade nova
 crudini --set /etc/nova/nova.conf upgrade_levels compute newton
 systemctl stop '*nova*'
+systemctl disable openstack-nova-cert
+source /root/openrc
+nova_cert_id="$(openstack compute service list -f value -c ID -c Binary | grep nova-cert | awk '{print $1}')"
+openstack compute service delete $nova_cert
+yum remove -y openstack-nova-cert
 yum -d1 -y upgrade \*nova\*
 su -s /bin/sh -c "nova-manage db sync" nova
 su -s /bin/sh -c "nova-manage api_db sync" nova
