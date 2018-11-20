@@ -1,6 +1,8 @@
 ---
 driver:
+  name: openstack
   flavor_ref: 'm1.large'
+  user_data: userdata.txt
 provisioner:
   name: chef_zero
   roles_path: test/integration/roles
@@ -223,7 +225,11 @@ suites:
     driver:
       image_ref: "openstack-newton-aio"
     run_list:
-      - recipe[openstack_test::hostname]
+      - role[ceph]
+      - role[ceph_mon]
+      - role[ceph_mgr]
+      - role[ceph_osd]
+      - role[ceph_setup]
       - role[openstack_tk]
       - recipe[openstack_test::upgrade]
       - recipe[osl-openstack::upgrade]
@@ -237,8 +243,6 @@ suites:
       - recipe[openstack_test::tempest]
       - recipe[openstack_test::orchestration]
     attributes:
-      openstack_test:
-        fqdn: localhost.localdomain
       osl-openstack:
         node_type: controller
         endpoint_hostname: controller.example.com

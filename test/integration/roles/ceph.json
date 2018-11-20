@@ -4,8 +4,8 @@
     "recipe[osl-ceph]"
   ],
   "chef_type": "role",
-  "override_attributes": {},
-  "default_attributes": {
+  "default_attributes": {},
+  "override_attributes": {
     "ceph": {
       "fsid-secret": "ae3f1d03-bacd-4a90-b869-1a4fabb107f2",
       "mon": {
