@@ -297,9 +297,6 @@ end
     conf['cache']['enabled'] = true
     conf['cache']['backend'] = 'oslo_cache.memcache_pool'
     conf['keystone_authtoken']['memcached_servers'] = memcached_servers
-    conf['oslo_messaging_rabbit']['rabbit_host'] = endpoint_hostname
-    conf['oslo_messaging_rabbit']['rabbit_userid'] = rabbit_user
-    conf['oslo_messaging_rabbit']['rabbit_password'] = rabbit_pass
   end
   node.override['openstack'][i]['conf_secrets']['DEFAULT'].tap do |conf|
     conf['transport_url'] = "rabbit://#{rabbit_user}:#{rabbit_pass}@#{endpoint_hostname}:#{rabbit_port}"

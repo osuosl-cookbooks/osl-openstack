@@ -85,16 +85,5 @@ describe 'osl-openstack::telemetry', telemetry: true do
           .with_section_content('cache', line)
       end
     end
-
-    [
-      /^rabbit_host = 10.0.0.10$/,
-      /^rabbit_userid = guest$/,
-      /^rabbit_password = mq-pass$/,
-    ].each do |line|
-      it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('oslo_messaging_rabbit', line)
-      end
-    end
   end
 end

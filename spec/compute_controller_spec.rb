@@ -103,16 +103,6 @@ AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter
     end
 
     [
-      /^rabbit_host = 10.0.0.10$/,
-      /^rabbit_userid = guest$/,
-      /^rabbit_password = mq-pass$/,
-    ].each do |line|
-      it do
-        expect(chef_run).to render_config_file(file.name).with_section_content('oslo_messaging_rabbit', line)
-      end
-    end
-
-    [
       %r{^novncproxy_base_url = https://10.0.0.10:6080/vnc_auto.html$},
       %r{^xvpvncproxy_base_url = http://10.0.0.10:6081/console$},
       /^xvpvncproxy_host = 10.0.0.2$/,

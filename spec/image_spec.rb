@@ -165,19 +165,7 @@ describe 'osl-openstack::image', image: true do
       end
 
       [
-        /^rabbit_host = 10.0.0.10$/,
-        /^rabbit_userid = guest$/,
-        /^rabbit_password = mq-pass$/,
-      ].each do |line|
-        it do
-          expect(chef_run).to render_config_file(file.name)
-            .with_section_content('oslo_messaging_rabbit', line)
-        end
-      end
-
-      [
-        %r{^connection = mysql://glance_x86:db-pass@10.0.0.10:3306/glance_x86\
-\?charset=utf8$},
+        %r{^connection = mysql://glance_x86:db-pass@10.0.0.10:3306/glance_x86\?charset=utf8$},
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name)

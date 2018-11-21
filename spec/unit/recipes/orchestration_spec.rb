@@ -83,17 +83,6 @@ describe 'osl-openstack::orchestration' do
     end
 
     [
-      /^rabbit_host = 10.0.0.10$/,
-      /^rabbit_userid = guest$/,
-      /^rabbit_password = mq-pass$/,
-    ].each do |line|
-      it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('oslo_messaging_rabbit', line)
-      end
-    end
-
-    [
       %r{^connection = mysql://heat_x86:heat@10.0.0.10:3306/heat_x86\?charset=utf8$},
     ].each do |line|
       it do
