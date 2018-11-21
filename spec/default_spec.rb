@@ -18,11 +18,6 @@ describe 'osl-openstack::default' do
         node.normal['ibm_power']['cpu']['cpu_model'] = nil
       end.converge(described_recipe)
     end
-    %w(libffi-devel openssl-devel).each do |pkg|
-      it do
-        expect(chef_run).to install_package(pkg)
-      end
-    end
     it do
       expect(chef_run).to add_yum_repository('OSL-openpower-openstack')
         .with(
@@ -33,10 +28,8 @@ describe 'osl-openstack::default' do
         )
     end
   end
-  %w(libffi-devel openssl-devel).each do |pkg|
-    it do
-      expect(chef_run).to_not install_package(pkg)
-    end
+  it do
+    expect(chef_run).to install_package(%w(libffi-devel openssl-devel crudini))
   end
   it do
     expect(chef_run).to create_yum_repository('epel').with(exclude: 'zeromq*')
@@ -113,7 +106,7 @@ describe 'osl-openstack::default' do
   it do
     expect(chef_run).to install_python_package('python-openstackclient')
       .with(
-        version: '3.11.0',
+        version: '3.14.0',
         # virtualenv: '/opt/osc'
       )
   end

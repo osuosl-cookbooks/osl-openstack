@@ -99,7 +99,11 @@ Host *
         EOL
       )
   end
-
+  %w(libguestfs-tools python2-wsme).each do |p|
+    it do
+      expect(chef_run).to install_package(p)
+    end
+  end
   context 'Set ceph' do
     let(:runner) do
       ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
@@ -262,9 +266,6 @@ Host *
       it 'Runs ppc64_cpu_smt_off' do
         expect(chef_run).to run_execute('ppc64_cpu_smt_off')
       end
-    end
-    it do
-      expect(chef_run).to install_package('libguestfs-tools')
     end
   end
   context 'setting arch to x86_64, processor to intel' do

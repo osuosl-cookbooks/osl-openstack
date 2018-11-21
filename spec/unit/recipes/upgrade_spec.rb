@@ -11,7 +11,7 @@ describe 'osl-openstack::upgrade' do
     expect { chef_run }.to_not raise_error
   end
   it do
-    expect(chef_run).to delete_yum_repository('RDO-mitaka')
+    expect(chef_run).to delete_yum_repository('RDO-newton')
   end
   it do
     expect(chef_run).to create_cookbook_file('/root/upgrade.sh')
