@@ -39,3 +39,7 @@ end
 describe command("/opt/chef/embedded/bin/gem list -i -v '< 0.2.0' fog-openstack") do
   its(:stdout) { should match(/^true$/) }
 end
+
+describe command('grep -q deprecation /var/log/keystone/keystone.log') do
+  its(:exit_status) { should eq 1 }
+end
