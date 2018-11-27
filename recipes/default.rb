@@ -44,6 +44,68 @@ node.default['openstack']['identity']['ssl'].tap do |conf|
   conf['keyfile'] = '/etc/pki/tls/private/wildcard.key'
   conf['chainfile'] = '/etc/pki/tls/certs/wildcard-bundle.crt'
 end
+
+# Remove deprecated settings from upstream
+node.default['openstack']['identity']['conf'].delete('catalog')
+node.default['openstack']['identity']['conf'].delete('policy')
+node.default['openstack']['identity']['conf']['auth'].delete('external')
+node.default['openstack']['identity']['conf']['assignment']['driver'] = 'sql'
+node.default['openstack']['identity']['misc_paste'] =
+  [
+    '[filter:cors]',
+    'use = egg:oslo.middleware#cors',
+    'oslo_config_project = keystone',
+    '',
+    '[filter:osprofiler]',
+    'use = egg:osprofiler#osprofiler',
+    '',
+    '[filter:http_proxy_to_wsgi]',
+    'use = egg:oslo.middleware#http_proxy_to_wsgi',
+  ]
+node.default['openstack']['identity']['pipeline']['public_api'] =
+  %w(
+    cors
+    sizelimit
+    http_proxy_to_wsgi
+    osprofiler
+    url_normalize
+    request_id
+    build_auth_context
+    token_auth
+    json_body
+    ec2_extension
+    public_service
+  ).join(' ')
+node.default['openstack']['identity']['pipeline']['admin_api'] =
+  %w(
+    cors
+    sizelimit
+    http_proxy_to_wsgi
+    osprofiler
+    url_normalize
+    request_id
+    build_auth_context
+    token_auth
+    json_body
+    ec2_extension
+    s3_extension
+    admin_service
+  ).join(' ')
+node.default['openstack']['identity']['pipeline']['api_v3'] =
+  %w(
+    cors
+    sizelimit
+    http_proxy_to_wsgi
+    osprofiler
+    url_normalize
+    request_id
+    build_auth_context
+    token_auth
+    json_body
+    ec2_extension_v3
+    s3_extension
+    service_v3
+  ).join(' ')
 node.default['openstack']['image_api']['conf'].tap do |conf|
   if node['osl-openstack']['ceph']
     conf['DEFAULT']['show_image_direct_url'] = true
