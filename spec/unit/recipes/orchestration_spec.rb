@@ -25,6 +25,12 @@ describe 'osl-openstack::orchestration' do
         expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
       end
     end
+    it do
+      expect(chef_run).to render_config_file(file.name).with_section_content('trustee', /^auth_type = v3password$/)
+    end
+    it do
+      expect(chef_run).to_not render_config_file(file.name).with_section_content('trustee', /^auth_plugin =/)
+    end
     %w(heat_api heat_api_cfn heat_api_cloudwatch).each do |service|
       it do
         expect(chef_run).to render_config_file(file.name)

@@ -207,6 +207,10 @@ node.default['openstack']['network']['plugins']['linuxbridge']['conf']
   conf['securitygroup']['firewall_driver'] =
     'neutron.agent.linux.iptables_firewall.IptablesFirewallDriver'
 end
+node.default['openstack']['orchestration']['conf'].tap do |conf|
+  conf['trustee'].delete('auth_plugin')
+  conf['trustee']['auth_type'] = 'v3password'
+end
 node.default['openstack']['dashboard'].tap do |conf|
   conf['ssl']['use_data_bag'] = false
   conf['ssl']['key'] = 'wildcard.key'

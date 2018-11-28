@@ -34,6 +34,12 @@ describe file('/etc/heat/heat.conf') do
   its(:content) do
     should contain(/driver = messagingv2/).from(/^\[oslo_messaging_notifications\]$/).to(/^\[/)
   end
+  its(:content) do
+    should contain(/auth_type = v3password/).from(/^\[trustee\]$/).to(/^\[/)
+  end
+  its(:content) do
+    should_not contain(/auth_plugin = v3password/).from(/^\[trustee\]$/).to(/^\[/)
+  end
 end
 
 describe command(
