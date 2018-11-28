@@ -175,7 +175,7 @@ end
 node.default['openstack']['network_l3']['conf'].tap do |conf|
   conf['DEFAULT']['interface_driver'] =
     'neutron.agent.linux.interface.BridgeInterfaceDriver'
-  conf['DEFAULT']['external_network_bridge'] = nil
+  conf['DEFAULT'].delete('external_network_bridge')
 end
 node.default['openstack']['network_dhcp']['conf'].tap do |conf|
   conf['DEFAULT']['interface_driver'] =

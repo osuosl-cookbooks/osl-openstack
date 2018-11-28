@@ -121,15 +121,15 @@ neutron_x86\?charset=utf8}
 
   describe '/etc/neutron/l3_agent.ini' do
     let(:file) { chef_run.template('/etc/neutron/l3_agent.ini') }
-    [
-      /^interface_driver = \
-neutron.agent.linux.interface.BridgeInterfaceDriver$/,
-      /^external_network_bridge = $/,
-    ].each do |line|
-      it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('DEFAULT', line)
-      end
+    it do
+      expect(chef_run).to render_config_file(file.name)
+        .with_section_content(
+          'DEFAULT',
+          /^interface_driver = neutron.agent.linux.interface.BridgeInterfaceDriver$/
+        )
+    end
+    it do
+      expect(chef_run).to_not render_config_file(file.name).with_section_content('DEFAULT', /^external_network_bridge/)
     end
   end
 

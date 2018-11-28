@@ -92,6 +92,7 @@ suites:
     driver_config:
         server_name: "network-<%= ENV['USER'] %>"
     run_list:
+      - recipe[openstack_test]
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::network]
