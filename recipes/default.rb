@@ -436,6 +436,26 @@ node.default['openstack']['endpoints'].tap do |conf|
   end
 end
 
+%w(
+  compute
+  block-storage
+  image_registry
+  image_api
+  network
+  network_dhcp
+  network_l3
+  network_metadata
+  network_metering
+  orchestration
+  telemetry
+).each do |i|
+  identity_endpoint = public_endpoint 'identity'
+  auth_url = auth_uri_transform identity_endpoint.to_s, node['openstack']['api']['auth']['version']
+  node.default['openstack'][i]['conf'].tap do |conf|
+    conf['keystone_authtoken']['auth_uri'] = auth_url
+  end
+end
+
 yum_repository 'OSL-openpower-openstack' do
   description "OSL Openpower OpenStack repo for #{node['platform']}-#{node['platform_version'].to_i}" \
               "/openstack-#{node['openstack']['release']}"

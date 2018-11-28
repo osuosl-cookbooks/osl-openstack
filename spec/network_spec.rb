@@ -98,6 +98,16 @@ neutron.services.l3_router.l3_router_plugin.L3RouterPlugin$/,
             %r{^auth_url = https://10.0.0.10:5000/v3$}
           )
       end
+      case s
+      when 'keystone_authtoken'
+        it do
+          expect(chef_run).to render_config_file(file.name)
+            .with_section_content(
+              s,
+              %r{^auth_uri = https://10.0.0.10:5000/v3$}
+            )
+        end
+      end
     end
     it do
       expect(chef_run).to render_config_file(file.name)
