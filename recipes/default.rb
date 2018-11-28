@@ -108,8 +108,7 @@ node.default['openstack']['identity']['pipeline']['api_v3'] =
     service_v3
   ).join(' ')
 node.default['openstack']['image_api']['conf'].tap do |conf|
-  # enable_v1_api needs to be enabled for heat in Newton
-  # conf['DEFAULT']['enable_v1_api'] = false
+  conf['DEFAULT']['enable_v1_api'] = false
   conf['DEFAULT']['enable_v2_api'] = true
   if node['osl-openstack']['ceph']
     conf['DEFAULT']['show_image_direct_url'] = true
