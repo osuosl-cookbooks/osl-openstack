@@ -107,8 +107,14 @@ node.default['openstack']['identity']['pipeline']['api_v3'] =
     service_v3
   ).join(' ')
 node.default['openstack']['image_api']['conf'].tap do |conf|
+  conf['DEFAULT']['enable_v1_api'] = false
+  conf['DEFAULT']['enable_v2_api'] = true
   if node['osl-openstack']['ceph']
     conf['DEFAULT']['show_image_direct_url'] = true
+    # show_multiple_locations will be deprecated soon [1][2][3]
+    # [1] https://docs.openstack.org/releasenotes/glance/newton.html#relnotes-13-0-0-origin-stable-newton
+    # [2] https://docs.openstack.org/releasenotes/glance/ocata.html#relnotes-14-0-0-origin-stable-ocata-other-notes
+    # [3] https://wiki.openstack.org/wiki/OSSN/OSSN-0065
     conf['DEFAULT']['show_multiple_locations'] = true
     conf['paste_deploy']['flavor'] = 'keystone'
     conf['glance_store']['stores'] = 'rbd,file,http'

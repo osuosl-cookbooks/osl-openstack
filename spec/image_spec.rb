@@ -31,6 +31,17 @@ describe 'osl-openstack::image', image: true do
           expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
         end
       end
+      case f
+      when 'api'
+        [
+          /^enable_v1_api = false$/,
+          /^enable_v2_api = true$/,
+        ].each do |line|
+          it do
+            expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
+          end
+        end
+      end
       context 'Set ceph' do
         next unless f == 'api'
         let(:runner) do
