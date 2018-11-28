@@ -23,14 +23,11 @@ end
 end
 
 [
-  'scheduler_default_filters = ' \
-  'AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter',
   'linuxnet_interface_driver = nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver',
   'dns_server = 140.211.166.130 140.211.166.131',
   'disk_allocation_ratio = 1.5',
   'instance_usage_audit = True',
   'instance_usage_audit_period = hour',
-  'notify_on_state_change = vm_and_task_state',
   'resume_guests_state_on_host_boot = True',
   'block_device_allocate_retries = 120',
 ].each do |s|
@@ -42,6 +39,18 @@ end
 end
 
 describe file('/etc/nova/nova.conf') do
+  its(:content) do
+    should contain(/^enabled_filters = AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter$/)
+      .from(/^\[filter_scheduler\]/).to(/^\[/)
+  end
+  its(:content) do
+    should_not contain(/^use_neutron =/)
+      .from(/^\[DEFAULT\]/).to(/^\[/)
+  end
+  its(:content) do
+    should contain(/^notify_on_state_change = vm_and_task_state$/)
+      .from(/^\[notifications\]/).to(/^\[/)
+  end
   its(:content) do
     should contain(/memcached_servers = .*:11211/)
       .from(/^\[keystone_authtoken\]/).to(/^\[/)

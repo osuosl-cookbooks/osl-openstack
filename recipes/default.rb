@@ -127,21 +127,22 @@ node.default['openstack']['image_api']['conf'].tap do |conf|
   end
 end
 node.default['openstack']['compute']['conf'].tap do |conf|
-  conf['DEFAULT']['scheduler_default_filters'] =
+  conf['filter_scheduler']['enabled_filters'] =
     %w(
       AggregateInstanceExtraSpecsFilter
       AvailabilityZoneFilter
       RamFilter
       ComputeFilter
     ).join(',')
+  conf['DEFAULT'].delete('use_neutron')
   conf['DEFAULT']['linuxnet_interface_driver'] = 'nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver'
   conf['DEFAULT']['dns_server'] = '140.211.166.130 140.211.166.131'
   conf['DEFAULT']['instance_usage_audit'] = 'True'
   conf['DEFAULT']['instance_usage_audit_period'] = 'hour'
-  conf['DEFAULT']['notify_on_state_change'] = 'vm_and_task_state'
   conf['DEFAULT']['disk_allocation_ratio'] = 1.5
   conf['DEFAULT']['resume_guests_state_on_host_boot'] = 'True'
   conf['DEFAULT']['block_device_allocate_retries'] = 120
+  conf['notifications']['notify_on_state_change'] = 'vm_and_task_state'
   if node['osl-openstack']['ceph']
     conf['libvirt']['disk_cachemodes'] = 'network=writeback'
     conf['libvirt']['force_raw_images'] = true

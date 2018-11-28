@@ -29,14 +29,11 @@ describe 'osl-openstack::compute_controller' do
     let(:file) { chef_run.template('/etc/nova/nova.conf') }
 
     [
-      /^scheduler_default_filters = \
-AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter$/,
       /^linuxnet_interface_driver = nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver$/,
       /^dns_server = 140.211.166.130 140.211.166.131$/,
       /^disk_allocation_ratio = 1.5$/,
       /^instance_usage_audit = True$/,
       /^instance_usage_audit_period = hour$/,
-      /^notify_on_state_change = vm_and_task_state$/,
       /^osapi_compute_listen = 10.0.0.2$/,
       /^metadata_listen = 10.0.0.2$/,
       /^resume_guests_state_on_host_boot = True$/,
@@ -48,10 +45,31 @@ AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter
       end
     end
     it do
+      expect(chef_run).to_not render_config_file(file.name)
+        .with_section_content(
+          'DEFAULT',
+          /^use_neutron =/
+        )
+    end
+    it do
       expect(chef_run).to render_config_file(file.name)
         .with_section_content(
           'oslo_messaging_notifications',
           /^driver = messagingv2$/
+        )
+    end
+    it do
+      expect(chef_run).to render_config_file(file.name)
+        .with_section_content(
+          'filter_scheduler',
+          /^enabled_filters = AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter$/
+        )
+    end
+    it do
+      expect(chef_run).to render_config_file(file.name)
+        .with_section_content(
+          'notifications',
+          /^notify_on_state_change = vm_and_task_state$/
         )
     end
     [
