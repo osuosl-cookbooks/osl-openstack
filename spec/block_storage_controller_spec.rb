@@ -28,6 +28,8 @@ describe 'osl-openstack::block_storage_controller' do
       /^osapi_volume_listen = 10.0.0.2$/,
       /^volume_group = openstack$/,
       /^volume_clear_size = 256$/,
+      /^enable_v1_api = false$/,
+      /^enable_v3_api = true$/,
       %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$},
     ].each do |line|
       it do

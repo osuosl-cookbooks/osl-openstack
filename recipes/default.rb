@@ -223,6 +223,8 @@ node.default['openstack']['block-storage']['conf'].tap do |conf|
   conf['oslo_messaging_notifications']['driver'] = 'messagingv2'
   conf['DEFAULT']['volume_group'] = 'openstack'
   conf['DEFAULT']['volume_clear_size'] = 256
+  conf['DEFAULT']['enable_v1_api'] = false
+  conf['DEFAULT']['enable_v3_api'] = true
   if node['osl-openstack']['ceph']
     conf['DEFAULT']['enabled_backends'] = 'ceph'
     conf['DEFAULT']['backup_driver'] = 'cinder.backup.drivers.ceph'

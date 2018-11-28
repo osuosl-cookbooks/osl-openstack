@@ -17,13 +17,15 @@ describe port('8776') do
 end
 
 describe file('/etc/cinder/cinder.conf') do
-  its(:content) do
-    should contain(/^volume_clear_size = 256$/)
-      .from(/^\[DEFAULT\]$/).to(/^\[/)
-  end
-  its(:content) do
-    should contain(/^volume_group = openstack$/)
-      .from(/^\[DEFAULT\]$/).to(/^\[/)
+  [
+    /^volume_clear_size = 256$/,
+    /^volume_group = openstack$/,
+    /^enable_v1_api = false$/,
+    /^enable_v3_api = true$/,
+  ].each do |line|
+    its(:content) do
+      should contain(line).from(/^\[DEFAULT\]$/).to(/^\[/)
+    end
   end
   its(:content) do
     should contain(/memcached_servers = .*:11211/)
