@@ -34,7 +34,7 @@ describe 'osl-openstack::image', image: true do
       case f
       when 'api'
         [
-          /^enable_v1_api = false$/,
+          # /^enable_v1_api = false$/,
           /^enable_v2_api = true$/,
         ].each do |line|
           it do
