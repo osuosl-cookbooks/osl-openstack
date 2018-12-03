@@ -205,7 +205,6 @@ suites:
       - recipe[osl-openstack::controller]
       - recipe[osl-openstack::compute]
       - recipe[osl-openstack::block_storage]
-      - recipe[openstack-integration-test::setup]
       - recipe[openstack_test::tempest]
       - recipe[openstack_test::orchestration]
     attributes:

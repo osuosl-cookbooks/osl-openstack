@@ -13,8 +13,10 @@
       },
       "compute": {
         "metering": true,
-        "libvirt": {
-          "virt_type": "qemu"
+        "conf": {
+          "libvirt": {
+            "virt_type": "qemu"
+          }
         }
       },
       "image": {
