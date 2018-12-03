@@ -28,6 +28,8 @@ describe 'osl-openstack::block_storage_controller' do
       /^osapi_volume_listen = 10.0.0.2$/,
       /^volume_group = openstack$/,
       /^volume_clear_size = 256$/,
+      /^enable_v1_api = false$/,
+      /^enable_v3_api = true$/,
       %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$},
     ].each do |line|
       it do
@@ -41,12 +43,13 @@ describe 'osl-openstack::block_storage_controller' do
           /^driver = messagingv2$/
         )
     end
-    it do
-      expect(chef_run).to render_config_file(file.name)
-        .with_section_content(
-          'keystone_authtoken',
-          %r{^auth_url = https://10.0.0.10:5000/v3$}
-        )
+    [
+      %r{^auth_url = https://10.0.0.10:5000/v3$},
+      %r{^auth_uri = https://10.0.0.10:5000/v3$},
+    ].each do |line|
+      it do
+        expect(chef_run).to render_config_file(file.name).with_section_content('keystone_authtoken', line)
+      end
     end
     it do
       expect(chef_run).to render_config_file(file.name)
@@ -69,16 +72,6 @@ describe 'osl-openstack::block_storage_controller' do
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('cache', line)
-      end
-    end
-
-    [
-      /^rabbit_host = 10.0.0.10$/,
-      /^rabbit_userid = guest$/,
-      /^rabbit_password = mq-pass$/,
-    ].each do |line|
-      it do
-        expect(chef_run).to render_config_file(file.name).with_section_content('oslo_messaging_rabbit', line)
       end
     end
     context 'Set ceph' do

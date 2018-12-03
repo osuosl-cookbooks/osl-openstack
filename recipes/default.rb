@@ -44,9 +44,78 @@ node.default['openstack']['identity']['ssl'].tap do |conf|
   conf['keyfile'] = '/etc/pki/tls/private/wildcard.key'
   conf['chainfile'] = '/etc/pki/tls/certs/wildcard-bundle.crt'
 end
+
+# Remove deprecated settings from upstream
+node.default['openstack']['identity']['conf'].delete('catalog')
+node.default['openstack']['identity']['conf'].delete('policy')
+node.default['openstack']['identity']['conf']['auth'].delete('external')
+node.default['openstack']['identity']['conf']['assignment']['driver'] = 'sql'
+node.default['openstack']['identity']['misc_paste'] =
+  [
+    '[filter:cors]',
+    'use = egg:oslo.middleware#cors',
+    'oslo_config_project = keystone',
+    '',
+    '[filter:osprofiler]',
+    'use = egg:osprofiler#osprofiler',
+    '',
+    '[filter:http_proxy_to_wsgi]',
+    'use = egg:oslo.middleware#http_proxy_to_wsgi',
+  ]
+node.default['openstack']['identity']['pipeline']['public_api'] =
+  %w(
+    cors
+    sizelimit
+    http_proxy_to_wsgi
+    osprofiler
+    url_normalize
+    request_id
+    build_auth_context
+    token_auth
+    json_body
+    ec2_extension
+    public_service
+  ).join(' ')
+node.default['openstack']['identity']['pipeline']['admin_api'] =
+  %w(
+    cors
+    sizelimit
+    http_proxy_to_wsgi
+    osprofiler
+    url_normalize
+    request_id
+    build_auth_context
+    token_auth
+    json_body
+    ec2_extension
+    s3_extension
+    admin_service
+  ).join(' ')
+node.default['openstack']['identity']['pipeline']['api_v3'] =
+  %w(
+    cors
+    sizelimit
+    http_proxy_to_wsgi
+    osprofiler
+    url_normalize
+    request_id
+    build_auth_context
+    token_auth
+    json_body
+    ec2_extension_v3
+    s3_extension
+    service_v3
+  ).join(' ')
 node.default['openstack']['image_api']['conf'].tap do |conf|
+  # enable_v1_api needs to be enabled for heat in Newton
+  # conf['DEFAULT']['enable_v1_api'] = false
+  conf['DEFAULT']['enable_v2_api'] = true
   if node['osl-openstack']['ceph']
     conf['DEFAULT']['show_image_direct_url'] = true
+    # show_multiple_locations will be deprecated soon [1][2][3]
+    # [1] https://docs.openstack.org/releasenotes/glance/newton.html#relnotes-13-0-0-origin-stable-newton
+    # [2] https://docs.openstack.org/releasenotes/glance/ocata.html#relnotes-14-0-0-origin-stable-ocata-other-notes
+    # [3] https://wiki.openstack.org/wiki/OSSN/OSSN-0065
     conf['DEFAULT']['show_multiple_locations'] = true
     conf['paste_deploy']['flavor'] = 'keystone'
     conf['glance_store']['stores'] = 'rbd,file,http'
@@ -107,7 +176,7 @@ end
 node.default['openstack']['network_l3']['conf'].tap do |conf|
   conf['DEFAULT']['interface_driver'] =
     'neutron.agent.linux.interface.BridgeInterfaceDriver'
-  conf['DEFAULT']['external_network_bridge'] = nil
+  conf['DEFAULT'].delete('external_network_bridge')
 end
 node.default['openstack']['network_dhcp']['conf'].tap do |conf|
   conf['DEFAULT']['interface_driver'] =
@@ -139,6 +208,10 @@ node.default['openstack']['network']['plugins']['linuxbridge']['conf']
   conf['securitygroup']['firewall_driver'] =
     'neutron.agent.linux.iptables_firewall.IptablesFirewallDriver'
 end
+node.default['openstack']['orchestration']['conf'].tap do |conf|
+  conf['trustee'].delete('auth_plugin')
+  conf['trustee']['auth_type'] = 'v3password'
+end
 node.default['openstack']['dashboard'].tap do |conf|
   conf['ssl']['use_data_bag'] = false
   conf['ssl']['key'] = 'wildcard.key'
@@ -155,6 +228,8 @@ node.default['openstack']['block-storage']['conf'].tap do |conf|
   conf['oslo_messaging_notifications']['driver'] = 'messagingv2'
   conf['DEFAULT']['volume_group'] = 'openstack'
   conf['DEFAULT']['volume_clear_size'] = 256
+  conf['DEFAULT']['enable_v1_api'] = false
+  conf['DEFAULT']['enable_v3_api'] = true
   if node['osl-openstack']['ceph']
     conf['DEFAULT']['enabled_backends'] = 'ceph'
     conf['DEFAULT']['backup_driver'] = 'cinder.backup.drivers.ceph'
@@ -297,9 +372,6 @@ end
     conf['cache']['enabled'] = true
     conf['cache']['backend'] = 'oslo_cache.memcache_pool'
     conf['keystone_authtoken']['memcached_servers'] = memcached_servers
-    conf['oslo_messaging_rabbit']['rabbit_host'] = endpoint_hostname
-    conf['oslo_messaging_rabbit']['rabbit_userid'] = rabbit_user
-    conf['oslo_messaging_rabbit']['rabbit_password'] = rabbit_pass
   end
   node.override['openstack'][i]['conf_secrets']['DEFAULT'].tap do |conf|
     conf['transport_url'] = "rabbit://#{rabbit_user}:#{rabbit_pass}@#{endpoint_hostname}:#{rabbit_port}"
@@ -368,6 +440,26 @@ node.default['openstack']['endpoints'].tap do |conf|
     %w(compute-novnc identity).each do |s|
       conf[t][s]['scheme'] = 'https'
     end
+  end
+end
+
+%w(
+  compute
+  block-storage
+  image_registry
+  image_api
+  network
+  network_dhcp
+  network_l3
+  network_metadata
+  network_metering
+  orchestration
+  telemetry
+).each do |i|
+  identity_endpoint = public_endpoint 'identity'
+  auth_url = auth_uri_transform identity_endpoint.to_s, node['openstack']['api']['auth']['version']
+  node.default['openstack'][i]['conf'].tap do |conf|
+    conf['keystone_authtoken']['auth_uri'] = auth_url
   end
 end
 

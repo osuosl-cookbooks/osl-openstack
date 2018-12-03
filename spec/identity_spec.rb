@@ -22,6 +22,7 @@ describe 'osl-openstack::identity', identity: true do
   end
   %w(
     /etc/keystone/keystone.conf
+    /etc/keystone/keystone-paste.ini
     /etc/httpd/sites-available/keystone-admin.conf
     /etc/httpd/sites-available/keystone-main.conf
   ).each do |t|
@@ -51,17 +52,6 @@ describe 'osl-openstack::identity', identity: true do
           .with_section_content('cache', line)
       end
     end
-    [
-      /^rabbit_host = 10.0.0.10$/,
-      /^rabbit_userid = guest$/,
-      /^rabbit_password = guest$/,
-    ].each do |line|
-      it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('oslo_messaging_rabbit', line)
-      end
-    end
-
     it do
       expect(chef_run).to render_config_file(file.name)
         .with_section_content(
@@ -69,6 +59,52 @@ describe 'osl-openstack::identity', identity: true do
           %r{^connection = mysql://keystone_x86:keystone_db_pass@10.0.0.10:\
 3306/keystone_x86\?charset=utf8$}
         )
+    end
+    it do
+      expect(chef_run).to_not render_config_file(file.name)
+        .with_section_content('catalog', 'keystone.catalog.backends.sql.Catalog')
+    end
+    it do
+      expect(chef_run).to_not render_config_file(file.name)
+        .with_section_content('policy', 'driver = keystone.policy.backends.sql.Policy')
+    end
+    it do
+      expect(chef_run).to_not render_config_file(file.name)
+        .with_section_content('assignment', 'driver = keystone.assignment.backends.sql.Assignment')
+    end
+  end
+  describe '/etc/keystone/keystone-paste.ini' do
+    let(:file) do
+      chef_run.template('/etc/keystone/keystone-paste.ini')
+    end
+    [
+      /^use = egg:oslo.middleware\#cors$/,
+      /^oslo_config_project = keystone$/,
+    ].each do |line|
+      it do
+        expect(chef_run).to render_config_file(file.name)
+          .with_section_content('filter:cors', line)
+      end
+    end
+    it do
+      expect(chef_run).to_not render_config_file(file.name)
+        .with_section_content('filter:osprofiler', 'use = egg:osprofiler\#osprofiler')
+    end
+    it do
+      expect(chef_run).to_not render_config_file(file.name)
+        .with_section_content('filter:http_proxy_to_wsgi', 'use = egg:oslo.middleware\#http_proxy_to_wsgi')
+    end
+    it do
+      expect(chef_run).to render_config_file(file.name)
+        .with_section_content('pipeline:public_api', 'pipeline = cors sizelimit http_proxy_to_wsgi osprofiler url_normalize request_id build_auth_context token_auth json_body ec2_extension public_service')
+    end
+    it do
+      expect(chef_run).to render_config_file(file.name)
+        .with_section_content('pipeline:admin_api', 'pipeline = cors sizelimit http_proxy_to_wsgi osprofiler url_normalize request_id build_auth_context token_auth json_body ec2_extension s3_extension admin_service')
+    end
+    it do
+      expect(chef_run).to render_config_file(file.name)
+        .with_section_content('pipeline:api_v3', 'pipeline = cors sizelimit http_proxy_to_wsgi osprofiler url_normalize request_id build_auth_context token_auth json_body ec2_extension_v3 s3_extension service_v3')
     end
   end
   describe '/etc/httpd/sites-available/keystone-admin.conf' do

@@ -67,6 +67,7 @@ AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter
     [
       /^memcached_servers = 10.0.0.10:11211$/,
       %r{^auth_url = https://10.0.0.10:5000/v3$},
+      %r{^auth_uri = https://10.0.0.10:5000/v3$},
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('keystone_authtoken', line)
@@ -99,16 +100,6 @@ AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter
       it do
         expect(chef_run).to render_config_file(file.name)
           .with_section_content('neutron', %r{^url = http://10.0.0.11:9696$})
-      end
-    end
-
-    [
-      /^rabbit_host = 10.0.0.10$/,
-      /^rabbit_userid = guest$/,
-      /^rabbit_password = mq-pass$/,
-    ].each do |line|
-      it do
-        expect(chef_run).to render_config_file(file.name).with_section_content('oslo_messaging_rabbit', line)
       end
     end
 

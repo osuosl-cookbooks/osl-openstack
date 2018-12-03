@@ -41,7 +41,7 @@ end
     end
     its(:content) do
       should contain(/memcached_servers = .*:11211/)
-        .from(/^\[keystone_authtoken\]/).to(/^\[/)
+        .from(/^\[keystone_authtoken\]/).to(/^auth_uri/)
     end
     its(:content) do
       should contain(/driver = messagingv2/)
@@ -52,7 +52,6 @@ end
 
 [
   'interface_driver = neutron.agent.linux.interface.BridgeInterfaceDriver',
-  'external_network_bridge = $',
 ].each do |s|
   describe file('/etc/neutron/l3_agent.ini') do
     its(:content) { should contain(/#{s}/).after(/^\[DEFAULT\]/) }

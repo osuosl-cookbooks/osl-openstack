@@ -98,6 +98,16 @@ neutron.services.l3_router.l3_router_plugin.L3RouterPlugin$/,
             %r{^auth_url = https://10.0.0.10:5000/v3$}
           )
       end
+      case s
+      when 'keystone_authtoken'
+        it do
+          expect(chef_run).to render_config_file(file.name)
+            .with_section_content(
+              s,
+              %r{^auth_uri = https://10.0.0.10:5000/v3$}
+            )
+        end
+      end
     end
     it do
       expect(chef_run).to render_config_file(file.name)
@@ -111,15 +121,15 @@ neutron_x86\?charset=utf8}
 
   describe '/etc/neutron/l3_agent.ini' do
     let(:file) { chef_run.template('/etc/neutron/l3_agent.ini') }
-    [
-      /^interface_driver = \
-neutron.agent.linux.interface.BridgeInterfaceDriver$/,
-      /^external_network_bridge = $/,
-    ].each do |line|
-      it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('DEFAULT', line)
-      end
+    it do
+      expect(chef_run).to render_config_file(file.name)
+        .with_section_content(
+          'DEFAULT',
+          /^interface_driver = neutron.agent.linux.interface.BridgeInterfaceDriver$/
+        )
+    end
+    it do
+      expect(chef_run).to_not render_config_file(file.name).with_section_content('DEFAULT', /^external_network_bridge/)
     end
   end
 
@@ -209,17 +219,6 @@ neutron.agent.linux.interface.BridgeInterfaceDriver$/,
         it do
           expect(chef_run).to render_config_file(file.name)
             .with_section_content('cache', line)
-        end
-      end
-
-      [
-        /^rabbit_host = 10.0.0.10$/,
-        /^rabbit_userid = guest$/,
-        /^rabbit_password = mq-pass$/,
-      ].each do |line|
-        it do
-          expect(chef_run).to render_config_file(file.name)
-            .with_section_content('oslo_messaging_rabbit', line)
         end
       end
     end

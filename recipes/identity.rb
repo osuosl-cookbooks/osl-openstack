@@ -33,6 +33,7 @@ end
 # restarted.
 %w(
   /etc/keystone/keystone.conf
+  /etc/keystone/keystone-paste.ini
   /etc/httpd/sites-available/keystone-admin.conf
   /etc/httpd/sites-available/keystone-main.conf
 ).each do |t|

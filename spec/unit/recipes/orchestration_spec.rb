@@ -25,6 +25,12 @@ describe 'osl-openstack::orchestration' do
         expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
       end
     end
+    it do
+      expect(chef_run).to render_config_file(file.name).with_section_content('trustee', /^auth_type = v3password$/)
+    end
+    it do
+      expect(chef_run).to_not render_config_file(file.name).with_section_content('trustee', /^auth_plugin =/)
+    end
     %w(heat_api heat_api_cfn heat_api_cloudwatch).each do |service|
       it do
         expect(chef_run).to render_config_file(file.name)
@@ -75,21 +81,11 @@ describe 'osl-openstack::orchestration' do
     [
       /^memcached_servers = 10.0.0.10:11211$/,
       %r{^auth_url = https://10.0.0.10:5000/v3$},
+      %r{^auth_uri = https://10.0.0.10:5000/v3$},
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
           .with_section_content('keystone_authtoken', line)
-      end
-    end
-
-    [
-      /^rabbit_host = 10.0.0.10$/,
-      /^rabbit_userid = guest$/,
-      /^rabbit_password = mq-pass$/,
-    ].each do |line|
-      it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('oslo_messaging_rabbit', line)
       end
     end
 

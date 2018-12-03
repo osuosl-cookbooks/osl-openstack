@@ -31,6 +31,17 @@ describe 'osl-openstack::image', image: true do
           expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
         end
       end
+      case f
+      when 'api'
+        [
+          # /^enable_v1_api = false$/,
+          /^enable_v2_api = true$/,
+        ].each do |line|
+          it do
+            expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
+          end
+        end
+      end
       context 'Set ceph' do
         next unless f == 'api'
         let(:runner) do
@@ -157,6 +168,7 @@ describe 'osl-openstack::image', image: true do
       [
         /^memcached_servers = 10.0.0.10:11211$/,
         %r{^auth_url = https://10.0.0.10:5000/v3$},
+        %r{^auth_uri = https://10.0.0.10:5000/v3$},
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name)
@@ -165,19 +177,7 @@ describe 'osl-openstack::image', image: true do
       end
 
       [
-        /^rabbit_host = 10.0.0.10$/,
-        /^rabbit_userid = guest$/,
-        /^rabbit_password = mq-pass$/,
-      ].each do |line|
-        it do
-          expect(chef_run).to render_config_file(file.name)
-            .with_section_content('oslo_messaging_rabbit', line)
-        end
-      end
-
-      [
-        %r{^connection = mysql://glance_x86:db-pass@10.0.0.10:3306/glance_x86\
-\?charset=utf8$},
+        %r{^connection = mysql://glance_x86:db-pass@10.0.0.10:3306/glance_x86\?charset=utf8$},
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name)
