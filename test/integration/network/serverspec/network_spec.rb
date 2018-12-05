@@ -6,6 +6,7 @@ set :backend, :exec
   neutron-dhcp-agent
   neutron-l3-agent
   neutron-metadata-agent
+  neutron-metering-agent
   neutron-server
 ).each do |s|
   describe service(s) do
@@ -19,8 +20,7 @@ describe port('9696') do
 end
 
 [
-  'service_plugins = ' \
-  'neutron.services.l3_router.l3_router_plugin.L3RouterPlugin',
+  'service_plugins = neutron.services.l3_router.l3_router_plugin.L3RouterPlugin,metering',
   'allow_overlapping_ips = True',
   'router_distributed = False',
 ].each do |s|
@@ -53,8 +53,10 @@ end
 [
   'interface_driver = neutron.agent.linux.interface.BridgeInterfaceDriver',
 ].each do |s|
-  describe file('/etc/neutron/l3_agent.ini') do
-    its(:content) { should contain(/#{s}/).after(/^\[DEFAULT\]/) }
+  %w(l3_agent metering_agent).each do |f|
+    describe file("/etc/neutron/#{f}.ini") do
+      its(:content) { should contain(/#{s}/).after(/^\[DEFAULT\]/) }
+    end
   end
 end
 
@@ -94,8 +96,51 @@ describe file('/etc/neutron/plugin.ini') do
   end
 end
 
-describe command('source /root/openrc && neutron ext-list') do
-  its(:stdout) do
-    should contain(/l3_agent_scheduler/)
+describe command('source /root/openrc && neutron ext-list -c alias -f value') do
+  %w(
+    address-scope
+    agent
+    allowed-address-pairs
+    auto-allocated-topology
+    availability_zone
+    binding
+    default-subnetpools
+    dhcp_agent_scheduler
+    dvr
+    external-net
+    ext-gw-mode
+    extra_dhcp_opt
+    extraroute
+    flavors
+    l3_agent_scheduler
+    l3-flavors
+    l3-ha
+    metering
+    multi-provider
+    net-mtu
+    network_availability_zone
+    network-ip-availability
+    pagination
+    port-security
+    project-id
+    provider
+    quotas
+    rbac-policies
+    router
+    router_availability_zone
+    security-group
+    service-type
+    sorting
+    standard-attr-description
+    standard-attr-revisions
+    standard-attr-timestamp
+    subnet_allocation
+    subnet-service-types
+    tag
+    tag-ext
+  ).each do |ext|
+    its(:stdout) do
+      should contain(/^#{ext}$/)
+    end
   end
 end

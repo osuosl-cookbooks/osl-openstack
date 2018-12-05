@@ -169,7 +169,10 @@ node.default['openstack']['compute']['conf'].tap do |conf|
 end
 node.default['openstack']['network'].tap do |conf|
   conf['conf']['DEFAULT']['service_plugins'] =
-    'neutron.services.l3_router.l3_router_plugin.L3RouterPlugin'
+    %w(
+      neutron.services.l3_router.l3_router_plugin.L3RouterPlugin
+      metering
+    ).join(',')
   conf['conf']['DEFAULT']['allow_overlapping_ips'] = 'True'
   conf['conf']['DEFAULT']['router_distributed'] = 'False'
   conf['dnsmasq']['upstream_dns_servers'] = %w(140.211.166.130 140.211.166.131)
@@ -187,6 +190,9 @@ node.default['openstack']['network_dhcp']['conf'].tap do |conf|
 end
 node.default['openstack']['network_metadata']['conf'].tap do |conf|
   conf['DEFAULT']['nova_metadata_ip'] = node['osl-openstack']['bind_service']
+end
+node.default['openstack']['network_metering']['conf'].tap do |conf|
+  conf['DEFAULT']['interface_driver'] = 'neutron.agent.linux.interface.BridgeInterfaceDriver'
 end
 node.override['openstack']['network']['plugins']['ml2']['conf'].tap do |conf|
   conf['ml2']['type_drivers'] = 'flat,vlan,vxlan'

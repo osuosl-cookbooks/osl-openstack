@@ -27,6 +27,7 @@ include_recipe 'openstack-network::server'
 include_recipe 'openstack-network::l3_agent'
 include_recipe 'openstack-network::dhcp_agent'
 include_recipe 'openstack-network::metadata_agent'
+include_recipe 'openstack-network::metering_agent'
 
 # Block external DNS requests to networks we have selected. This is to prevent them to be seen as open resolvers and
 # used in amplification attacks.
