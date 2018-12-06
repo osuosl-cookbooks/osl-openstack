@@ -2,10 +2,16 @@
 # Steps taken primarily from https://www.rdoproject.org/install/upgrading-rdo-2/
 # Specifically from this version for Newton https://git.io/vQGev
 
+source /root/openrc
+
 set -ex
 
 # Disable Chef temporarily
 rm -f /etc/cron.d/chef-client
+
+# Remove nova-cert service as it's been deprecated
+nova_cert_id="$(openstack compute service list -f value -c ID -c Binary | grep nova-cert | awk '{print $1}')"
+openstack compute service delete $nova_cert_id
 
 # Stop all OpenStack services
 systemctl stop 'openstack-*'
@@ -14,11 +20,13 @@ yum -y upgrade openstack-selinux
 systemctl stop httpd
 
 # Upgrade Keystone
-yum -d1 -y upgrade \*keystone\*
+yum -d1 -y upgrade \*keystone\* python2-oslo-config
 yum -y upgrade \*horizon\* \*openstack-dashboard\*
 yum -d1 -y upgrade \*horizon\* \*python-django\*
 keystone-manage token_flush
 su -s /bin/sh -c "keystone-manage db_sync" keystone
+keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone
+keystone-manage credential_setup --keystone-user keystone --keystone-group keystone
 systemctl start httpd
 
 # Upgrade Glance
@@ -49,14 +57,15 @@ set -e
 crudini --set /etc/nova/nova.conf upgrade_levels compute newton
 systemctl stop '*nova*'
 systemctl disable openstack-nova-cert
-source /root/openrc
-nova_cert_id="$(openstack compute service list -f value -c ID -c Binary | grep nova-cert | awk '{print $1}')"
-openstack compute service delete $nova_cert
 yum remove -y openstack-nova-cert
 yum -d1 -y upgrade \*nova\*
-su -s /bin/sh -c "nova-manage db sync" nova
+cell_db_uri=$(cat /root/nova-cell-db-uri)
+su -s /bin/sh -c "nova-manage cell_v2 map_cell0 --database_connection ${cell_db_uri}" nova
+su -s /bin/sh -c "nova-manage cell_v2 create_cell --verbose --name cell1" nova
 su -s /bin/sh -c "nova-manage api_db sync" nova
+su -s /bin/sh -c "nova-manage db sync" nova
 su -s /bin/sh -c "nova-manage db online_data_migrations" nova
+su -s /bin/sh -c "nova-manage cell_v2 discover_hosts" nova
 crudini --del /etc/nova/nova.conf upgrade_levels compute
 
 # Upgrade neutron
@@ -67,4 +76,5 @@ su -s /bin/sh -c "neutron-db-manage upgrade heads" neutron
 # Upgrade the rest of the packages
 yum -y upgrade
 
+rm -f /root/nova-cell-db-uri
 touch /root/ocata-upgrade-done

@@ -2,12 +2,12 @@ require 'serverspec'
 
 set :backend, :exec
 
-describe yumrepo('RDO-mitaka') do
+describe yumrepo('RDO-newton') do
   it { should_not exist }
   it { should_not be_enabled }
 end
 
-describe yumrepo('RDO-newton') do
+describe yumrepo('RDO-ocata') do
   it { should exist }
   it { should be_enabled }
 end

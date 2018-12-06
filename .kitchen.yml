@@ -229,6 +229,7 @@ suites:
       - role[ceph_mgr]
       - role[ceph_osd]
       - role[ceph_setup]
+      - recipe[openstack_test::upgrade_start]
       - role[openstack_tk]
       - recipe[openstack_test::upgrade]
       - recipe[osl-openstack::upgrade]
