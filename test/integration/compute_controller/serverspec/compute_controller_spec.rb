@@ -89,12 +89,12 @@ describe command("#{openstack} compute service list -f value -c Binary -c Status
   end
 end
 
-describe command("#{openstack} catalog list -f value") do
+describe command("#{openstack} catalog list -c Endpoints -f value") do
   its(:stdout) do
-    should match(%r{^nova-placement placement RegionOne
-  public: http://127.0.0.1:8778
-RegionOne
-  internal: http://127.0.0.1:8778})
+    should match(%r{public: http://controller.example.com:8778})
+  end
+  its(:stdout) do
+    should match(%r{internal: http://controller.example.com:8778})
   end
 end
 
