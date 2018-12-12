@@ -541,6 +541,11 @@ python_package 'openstacksdk' do
   virtualenv '/opt/osc'
 end
 
+python_package 'dogpile.cache' do
+  version '0.6.8'
+  virtualenv '/opt/osc'
+end
+
 python_package 'python-openstackclient' do
   version node['openstack']['common']['client_version']
   virtualenv '/opt/osc'

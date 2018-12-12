@@ -111,6 +111,13 @@ describe 'osl-openstack::default' do
       )
   end
   it do
+    expect(chef_run).to install_python_package('dogpile.cache')
+      .with(
+        version: '0.6.8',
+        # virtualenv: '/opt/osc'
+      )
+  end
+  it do
     expect(chef_run.link('/usr/local/bin/openstack')).to link_to('/opt/osc/bin/openstack')
   end
   it do
