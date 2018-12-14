@@ -5,7 +5,7 @@ ppc64le compute nodes.
 
 ## Supported Platforms
 
-- OpenStack Newton release
+- OpenStack Ocata release
 - CentOS 7
 
 # Multi-host test integration
@@ -15,8 +15,8 @@ this cookbook in multiple nodes, similar to that in production.
 
 ## Prereqs
 
-- ChefDK 1.2.22 or later
-- Vagrant 1.8.7 or later
+- ChefDK 2.5.3 or later
+- Vagrant 2.0.2 or later
 - Virtualbox (5.x or later is usually better)
 - OpenStack cluster (optional)
 
@@ -51,7 +51,7 @@ CHEF_DRIVER=fog:OpenStack
 
 # Various OpenStack variables
 OS_SSH_KEYPAIR=       # Name of ssh key on OpenStack to use
-OS_FLOATING_IP_POOL=  # Name of floating IP pool to use
+OS_NETWORK_UUID=      # UUID of the network you want the instances to use
 ```
 
 ## Initial Setup Steps
@@ -117,15 +117,15 @@ $ sudo su -
 ``` bash
 # Controller
 $ openstack server show -c addresses -f value controller
-private=192.168.56.X, 140.211.168.X
+140.211.168.X
 $ ssh centos@140.211.168.X
 # Network
 $ openstack server show -c addresses -f value network
-private=192.168.56.X, 140.211.168.X
+140.211.168.X
 $ ssh centos@140.211.168.X
 # Compute
 $ openstack server show -c addresses -f value compute
-private=192.168.56.X, 140.211.168.X
+140.211.168.X
 $ ssh centos@140.211.168.X
 ```
 
