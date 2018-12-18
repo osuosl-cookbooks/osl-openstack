@@ -27,6 +27,7 @@ node.default['apache']['contact'] = 'hostmaster@osuosl.org'
 node.default['osl-apache']['server_status_port'] = 80
 node.default['rabbitmq']['use_distro_version'] = true
 node.default['openstack']['release'] = 'pike'
+node.default['openstack']['is_release'] = true
 node.default['openstack']['secret']['key_path'] =
   '/etc/chef/encrypted_data_bag_secret'
 node.default['openstack']['misc_openrc'] = [
@@ -505,67 +506,21 @@ package %w(
 include_recipe 'firewall'
 include_recipe 'selinux::permissive'
 include_recipe 'yum-qemu-ev'
+include_recipe 'build-essential'
 include_recipe 'openstack-common'
 include_recipe 'openstack-common::logging'
 include_recipe 'openstack-common::sysctl'
+include_recipe 'openstack-common::python'
 include_recipe 'openstack-identity::openrc'
-include_recipe 'build-essential'
+include_recipe 'openstack-common::client'
 
-execute 'uninstall >= fog-openstack-0.2.0' do
-  command "/opt/chef/embedded/bin/gem uninstall -v '>= 0.2.0' fog-openstack --no-user-install"
-  only_if "/opt/chef/embedded/bin/gem list -i -v '>= 0.2.0' fog-openstack"
-end
-
-# TODO: Replace this with openstack-common::client when switching to Pike
-python_runtime '2' do
-  provider :system
-  pip_version '9.0.3'
-end
-
-python_virtualenv '/opt/osc' do
-  system_site_packages true
-end
-
-python_package 'cliff' do
-  version '2.9.0'
-  virtualenv '/opt/osc'
-end
-
-python_package 'os_client_config' do
-  version '1.28.0'
-  virtualenv '/opt/osc'
-end
-
-python_package 'osc_lib' do
-  version '1.7.0'
-  virtualenv '/opt/osc'
-end
-
-python_package 'openstacksdk' do
-  version '0.9.18'
-  virtualenv '/opt/osc'
-end
-
-python_package 'dogpile.cache' do
-  version '0.6.8'
-  virtualenv '/opt/osc'
-end
-
-python_package 'python-openstackclient' do
-  version node['openstack']['common']['client_version']
-  virtualenv '/opt/osc'
-end
-
+# We're now using the packages openstack client
 link '/usr/local/bin/openstack' do
   to '/opt/osc/bin/openstack'
+  action :delete
 end
 
 include_recipe 'osl-ceph' if node['osl-openstack']['ceph']
 
 # Needed for accessing neutron when running separate from controller node
 package 'python-memcached'
-
-# Upgrade mariadb-libs so we don't run into dep conflicts on CentOS 7.3
-package 'mariadb-libs' do
-  action :upgrade
-end

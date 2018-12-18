@@ -1,4 +1,4 @@
-describe yum.repo('RDO-ocata') do
+describe yum.repo('RDO-pike') do
   it { should exist }
   it { should be_enabled }
 end
@@ -30,10 +30,10 @@ describe file('/etc/sysconfig/iptables-config') do
   its(:content) { should match(/^IPTABLES_SAVE_ON_RESTART="no"$/) }
 end
 
-describe command('/usr/local/bin/openstack -h') do
-  its(:exit_status) { should eq 0 }
+describe file('/usr/local/bin/openstack') do
+  it { should_not exist }
 end
 
-describe command("/opt/chef/embedded/bin/gem list -i -v '>= 0.2.0' fog-openstack") do
-  its(:stdout) { should match(/^false$/) }
+describe command('/usr/bin/openstack -h') do
+  its(:exit_status) { should eq 0 }
 end
