@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+5.0.0 (2018-12-18)
+------------------
+- Ocata Release
+
 4.1.0 (2018-12-03)
 ------------------
 - Fix deprecation warnings in Newton
