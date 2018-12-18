@@ -18,25 +18,18 @@ describe 'osl-openstack::default' do
         node.normal['ibm_power']['cpu']['cpu_model'] = nil
       end.converge(described_recipe)
     end
-    %w(libffi-devel openssl-devel).each do |pkg|
-      it do
-        expect(chef_run).to install_package(pkg)
-      end
-    end
     it do
       expect(chef_run).to add_yum_repository('OSL-openpower-openstack')
         .with(
-          description: 'OSL Openpower OpenStack repo for centos-7/openstack-newton',
+          description: 'OSL Openpower OpenStack repo for centos-7/openstack-ocata',
           gpgkey: 'http://ftp.osuosl.org/pub/osl/repos/yum/RPM-GPG-KEY-osuosl',
           gpgcheck: true,
-          baseurl: 'http://ftp.osuosl.org/pub/osl/repos/yum/openpower/centos-$releasever/$basearch/openstack-newton'
+          baseurl: 'http://ftp.osuosl.org/pub/osl/repos/yum/openpower/centos-$releasever/$basearch/openstack-ocata'
         )
     end
   end
-  %w(libffi-devel openssl-devel).each do |pkg|
-    it do
-      expect(chef_run).to_not install_package(pkg)
-    end
+  it do
+    expect(chef_run).to install_package(%w(libffi-devel openssl-devel crudini))
   end
   it do
     expect(chef_run).to create_yum_repository('epel').with(exclude: 'zeromq*')
@@ -113,7 +106,14 @@ describe 'osl-openstack::default' do
   it do
     expect(chef_run).to install_python_package('python-openstackclient')
       .with(
-        version: '3.11.0',
+        version: '3.14.0',
+        # virtualenv: '/opt/osc'
+      )
+  end
+  it do
+    expect(chef_run).to install_python_package('dogpile.cache')
+      .with(
+        version: '0.6.8',
         # virtualenv: '/opt/osc'
       )
   end

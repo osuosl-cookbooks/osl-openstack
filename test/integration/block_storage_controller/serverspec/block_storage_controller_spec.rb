@@ -3,7 +3,6 @@ require 'serverspec'
 set :backend, :exec
 
 %w(
-  openstack-cinder-api
   openstack-cinder-scheduler
 ).each do |s|
   describe service(s) do
@@ -20,7 +19,6 @@ describe file('/etc/cinder/cinder.conf') do
   [
     /^volume_clear_size = 256$/,
     /^volume_group = openstack$/,
-    /^enable_v1_api = false$/,
     /^enable_v3_api = true$/,
   ].each do |line|
     its(:content) do

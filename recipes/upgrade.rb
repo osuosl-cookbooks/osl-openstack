@@ -15,11 +15,26 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-yum_repository 'RDO-mitaka' do
+yum_repository 'RDO-newton' do
   action :delete
 end
 
 include_recipe 'osl-openstack'
+
+if node['osl-openstack']['node_type'] == 'controller'
+  # include the recipe to setup fernet tokens
+  include_recipe 'openstack-identity::_fernet_tokens'
+
+  db_user = node['openstack']['db']['compute_cell0']['username']
+  db_password = get_password('db', 'nova_cell0')
+  uri = db_uri('compute_cell0', db_user, db_password)
+
+  file '/root/nova-cell-db-uri' do
+    content uri
+    mode '600'
+    sensitive true
+  end
+end
 
 cookbook_file '/root/upgrade.sh' do
   source "upgrade-#{node['osl-openstack']['node_type']}.sh"
@@ -30,4 +45,5 @@ ruby_block 'raise_upgrade_exeception' do
   block do
     raise 'Upgrade recipe enabled, stopping futher chef resources from running'
   end
+  not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/ocata-upgrade-done') }
 end

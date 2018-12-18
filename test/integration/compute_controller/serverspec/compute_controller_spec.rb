@@ -4,7 +4,6 @@ set :backend, :exec
 
 %w(
   openstack-nova-api
-  openstack-nova-cert
   openstack-nova-conductor
   openstack-nova-consoleauth
   openstack-nova-metadata-api
@@ -24,14 +23,11 @@ end
 end
 
 [
-  'scheduler_default_filters = ' \
-  'AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter',
   'linuxnet_interface_driver = nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver',
   'dns_server = 140.211.166.130 140.211.166.131',
   'disk_allocation_ratio = 1.5',
   'instance_usage_audit = True',
   'instance_usage_audit_period = hour',
-  'notify_on_state_change = vm_and_task_state',
   'resume_guests_state_on_host_boot = True',
   'block_device_allocate_retries = 120',
 ].each do |s|
@@ -43,6 +39,18 @@ end
 end
 
 describe file('/etc/nova/nova.conf') do
+  its(:content) do
+    should contain(/^enabled_filters = AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter$/)
+      .from(/^\[filter_scheduler\]/).to(/^\[/)
+  end
+  its(:content) do
+    should_not contain(/^use_neutron =/)
+      .from(/^\[DEFAULT\]/).to(/^\[/)
+  end
+  its(:content) do
+    should contain(/^notify_on_state_change = vm_and_task_state$/)
+      .from(/^\[notifications\]/).to(/^\[/)
+  end
   its(:content) do
     should contain(/memcached_servers = .*:11211/)
       .from(/^\[keystone_authtoken\]/).to(/^\[/)
@@ -73,14 +81,27 @@ end
 #   end
 # end
 
-describe command('source /root/openrc && /usr/local/bin/openstack compute service list') do
-  list_output = '\s*\|\s(compute-controll|controller|allinone).+\s*\|\sinternal\s\|\senabled\s\|\sup' \
-    '\s*\|\s[0-9]{4}-[0-9]{2}-[0-9]{2}'
-  %w(conductor scheduler cert consoleauth).each do |s|
-    its(:stdout) do
-      should contain(/nova-#{s}#{list_output}/)
-    end
+openstack = 'source /root/openrc && /usr/local/bin/openstack'
+
+describe command("#{openstack} compute service list -f value -c Binary -c Status -c State") do
+  %w(conductor scheduler consoleauth).each do |s|
+    its(:stdout) { should contain(/nova-#{s} enabled up/) }
   end
+end
+
+describe command("#{openstack} catalog list -c Endpoints -f value") do
+  its(:stdout) do
+    should match(%r{public: http://controller.example.com:8778})
+  end
+  its(:stdout) do
+    should match(%r{internal: http://controller.example.com:8778})
+  end
+end
+
+describe command('source /root/openrc && /bin/nova-status upgrade check') do
+  its(:stdout) { should match(/Check: Cells v2.*\n.*Result: Success/) }
+  its(:stdout) { should match(/Check: Placement API.*\n.*Result: Success/) }
+  its(:stdout) { should match(/Check: Resource Providers.*\n.*Result: Success/) }
 end
 
 describe command('curl -k -v https://controller.example.com:6080 2>&1') do

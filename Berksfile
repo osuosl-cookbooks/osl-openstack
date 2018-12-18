@@ -28,7 +28,6 @@ cookbook 'openstackclient',
 # WIP patches
 %w(
   block-storage
-  common
   compute
   dashboard
   identity
@@ -41,16 +40,17 @@ cookbook 'openstackclient',
 ).each do |cb|
   cookbook "openstack-#{cb}",
            github: "osuosl-cookbooks/cookbook-openstack-#{cb}",
-           branch: 'stable/newton-chef13'
+           branch: 'stable/ocata-chef13'
 end
 
 # Openstack deps
 %w(
+  common
   integration-test
 ).each do |cb|
   cookbook "openstack-#{cb}",
            github: "openstack/cookbook-openstack-#{cb}",
-           branch: 'stable/newton'
+           branch: 'stable/ocata'
 end
 
 cookbook 'openstack_test', path: 'test/cookbooks/openstack_test'

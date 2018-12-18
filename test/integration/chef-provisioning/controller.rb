@@ -48,6 +48,9 @@ EOF
   role 'separate_network_node' if ENV['SEPARATE_NETWORK_NODE']
   recipe 'osl-openstack::ops_database'
   recipe 'osl-openstack::controller'
+  role 'openstack_cinder'
+  recipe 'openstack_test::orchestration'
+  recipe 'openstack_test::tempest'
   file('/etc/chef/encrypted_data_bag_secret',
        File.dirname(__FILE__) +
        '/../default/encrypted_data_bag_secret')

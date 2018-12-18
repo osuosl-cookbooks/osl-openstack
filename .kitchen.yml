@@ -1,6 +1,8 @@
 ---
 driver:
+  name: openstack
   flavor_ref: 'm1.large'
+  user_data: userdata.txt
 provisioner:
   name: chef_zero
   roles_path: test/integration/roles
@@ -173,13 +175,6 @@ suites:
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::orchestration]
-  - name: mellanox_neo
-    attributes:
-      osl-openstack:
-        mellanox_neo:
-          server_hostname: 'neo.osuosl.org'
-    run_list:
-      - recipe[osl-openstack::mellanox_neo]
   - name: controller
     driver_config:
         server_name: "controller-<%= ENV['USER'] %>"
@@ -210,7 +205,6 @@ suites:
       - recipe[osl-openstack::controller]
       - recipe[osl-openstack::compute]
       - recipe[osl-openstack::block_storage]
-      - recipe[openstack-integration-test::setup]
       - recipe[openstack_test::tempest]
       - recipe[openstack_test::orchestration]
     attributes:
@@ -228,9 +222,26 @@ suites:
     driver_config:
         server_name: "upgrade-<%= ENV['USER'] %>"
     driver:
-      image_ref: "openstack-mitaka-aio"
+      image_ref: "openstack-newton-aio"
     run_list:
+      - role[ceph]
+      - role[ceph_mon]
+      - role[ceph_mgr]
+      - role[ceph_osd]
+      - role[ceph_setup]
+      - recipe[openstack_test::upgrade_start]
+      - role[openstack_tk]
+      - recipe[openstack_test::upgrade]
       - recipe[osl-openstack::upgrade]
+      - recipe[openstack_test]
+      - role[openstack_ops_identity]
+      - recipe[osl-openstack::controller]
+      - recipe[osl-openstack::compute]
+      - recipe[openstack-block-storage::volume_driver_lvm]
+      - recipe[osl-openstack::block_storage]
+      - recipe[openstack-integration-test::setup]
+      - recipe[openstack_test::tempest]
+      - recipe[openstack_test::orchestration]
     attributes:
       osl-openstack:
         node_type: controller

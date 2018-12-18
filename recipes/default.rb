@@ -26,14 +26,14 @@ node.default['authorization']['sudo']['include_sudoers_d'] = true
 node.default['apache']['contact'] = 'hostmaster@osuosl.org'
 node.default['osl-apache']['server_status_port'] = 80
 node.default['rabbitmq']['use_distro_version'] = true
-node.default['openstack']['release'] = 'newton'
+node.default['openstack']['release'] = 'ocata'
 node.default['openstack']['secret']['key_path'] =
   '/etc/chef/encrypted_data_bag_secret'
 node.default['openstack']['misc_openrc'] = [
   'export OS_CACERT="/etc/ssl/certs/ca-bundle.crt"',
 ]
 node.default['openstack']['yum']['uri'] = \
-  'http://vault.centos.org/7.4.1708/cloud/x86_64/openstack-' + node['openstack']['release']
+  'http://centos.osuosl.org/$releasever/cloud/x86_64/openstack-' + node['openstack']['release']
 node.default['openstack']['yum']['repo-key'] = 'https://github.com/' \
  "rdo-infra/rdo-release/raw/#{node['openstack']['release']}-rdo/" \
  'RPM-GPG-KEY-CentOS-SIG-Cloud'
@@ -43,6 +43,7 @@ node.default['openstack']['identity']['ssl'].tap do |conf|
   conf['certfile'] = '/etc/pki/tls/certs/wildcard.pem'
   conf['keyfile'] = '/etc/pki/tls/private/wildcard.key'
   conf['chainfile'] = '/etc/pki/tls/certs/wildcard-bundle.crt'
+  conf['ca_certs_path'] = '/etc/pki/tls/certs'
 end
 
 # Remove deprecated settings from upstream
@@ -107,8 +108,7 @@ node.default['openstack']['identity']['pipeline']['api_v3'] =
     service_v3
   ).join(' ')
 node.default['openstack']['image_api']['conf'].tap do |conf|
-  # enable_v1_api needs to be enabled for heat in Newton
-  # conf['DEFAULT']['enable_v1_api'] = false
+  conf['DEFAULT']['enable_v1_api'] = false
   conf['DEFAULT']['enable_v2_api'] = true
   if node['osl-openstack']['ceph']
     conf['DEFAULT']['show_image_direct_url'] = true
@@ -127,21 +127,22 @@ node.default['openstack']['image_api']['conf'].tap do |conf|
   end
 end
 node.default['openstack']['compute']['conf'].tap do |conf|
-  conf['DEFAULT']['scheduler_default_filters'] =
+  conf['filter_scheduler']['enabled_filters'] =
     %w(
       AggregateInstanceExtraSpecsFilter
       AvailabilityZoneFilter
       RamFilter
       ComputeFilter
     ).join(',')
+  conf['DEFAULT'].delete('use_neutron')
   conf['DEFAULT']['linuxnet_interface_driver'] = 'nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver'
   conf['DEFAULT']['dns_server'] = '140.211.166.130 140.211.166.131'
   conf['DEFAULT']['instance_usage_audit'] = 'True'
   conf['DEFAULT']['instance_usage_audit_period'] = 'hour'
-  conf['DEFAULT']['notify_on_state_change'] = 'vm_and_task_state'
   conf['DEFAULT']['disk_allocation_ratio'] = 1.5
   conf['DEFAULT']['resume_guests_state_on_host_boot'] = 'True'
   conf['DEFAULT']['block_device_allocate_retries'] = 120
+  conf['notifications']['notify_on_state_change'] = 'vm_and_task_state'
   if node['osl-openstack']['ceph']
     conf['libvirt']['disk_cachemodes'] = 'network=writeback'
     conf['libvirt']['force_raw_images'] = true
@@ -168,7 +169,10 @@ node.default['openstack']['compute']['conf'].tap do |conf|
 end
 node.default['openstack']['network'].tap do |conf|
   conf['conf']['DEFAULT']['service_plugins'] =
-    'neutron.services.l3_router.l3_router_plugin.L3RouterPlugin'
+    %w(
+      neutron.services.l3_router.l3_router_plugin.L3RouterPlugin
+      metering
+    ).join(',')
   conf['conf']['DEFAULT']['allow_overlapping_ips'] = 'True'
   conf['conf']['DEFAULT']['router_distributed'] = 'False'
   conf['dnsmasq']['upstream_dns_servers'] = %w(140.211.166.130 140.211.166.131)
@@ -186,6 +190,9 @@ node.default['openstack']['network_dhcp']['conf'].tap do |conf|
 end
 node.default['openstack']['network_metadata']['conf'].tap do |conf|
   conf['DEFAULT']['nova_metadata_ip'] = node['osl-openstack']['bind_service']
+end
+node.default['openstack']['network_metering']['conf'].tap do |conf|
+  conf['DEFAULT']['interface_driver'] = 'neutron.agent.linux.interface.BridgeInterfaceDriver'
 end
 node.override['openstack']['network']['plugins']['ml2']['conf'].tap do |conf|
   conf['ml2']['type_drivers'] = 'flat,vlan,vxlan'
@@ -224,11 +231,10 @@ node.default['openstack']['telemetry']['conf'].tap do |conf|
   conf['api']['default_api_return_limit'] = 1_000_000_000_000
 end
 
-node.default['openstack']['block-storage']['conf'].tap do |conf|
+node.override['openstack']['block-storage']['conf'].tap do |conf|
   conf['oslo_messaging_notifications']['driver'] = 'messagingv2'
   conf['DEFAULT']['volume_group'] = 'openstack'
   conf['DEFAULT']['volume_clear_size'] = 256
-  conf['DEFAULT']['enable_v1_api'] = false
   conf['DEFAULT']['enable_v3_api'] = true
   if node['osl-openstack']['ceph']
     conf['DEFAULT']['enabled_backends'] = 'ceph'
@@ -411,6 +417,7 @@ end
   orchestration-api
   orchestration-api-cfn
   orchestration-api-cloudwatch
+  placement-api
   telemetry
   telemetry-metric
 ).each do |service|
@@ -484,14 +491,11 @@ node['yum-epel']['repos'].each do |repo|
   r.exclude = [r.exclude, 'zeromq*'].reject(&:nil?).join(' ')
 end
 
-%w(
+package %w(
   libffi-devel
   openssl-devel
-).each do |p|
-  package p do
-    only_if { node['kernel']['machine'] == 'ppc64le' }
-  end
-end
+  crudini
+)
 
 include_recipe 'firewall'
 include_recipe 'selinux::permissive'
@@ -534,6 +538,11 @@ end
 
 python_package 'openstacksdk' do
   version '0.9.18'
+  virtualenv '/opt/osc'
+end
+
+python_package 'dogpile.cache' do
+  version '0.6.8'
   virtualenv '/opt/osc'
 end
 

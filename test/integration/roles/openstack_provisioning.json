@@ -1,9 +1,10 @@
 {
   "env_run_lists": {},
   "run_list": [
+    "recipe[osl-openstack]",
+    "recipe[openstack_test::compute]",
     "recipe[openstack_test::hosts_provisioning]",
-    "recipe[openstack_test::cacert]",
-    "recipe[osl-openstack]"
+    "recipe[openstack_test::cacert]"
   ],
   "chef_type": "role",
   "override_attributes": {},
@@ -13,8 +14,16 @@
       },
       "compute": {
         "metering": true,
-        "libvirt": {
-          "virt_type": "qemu"
+        "platform": {
+          "qemu_compute_packages": [
+            "qemu-system-x86"
+          ]
+        },
+        "conf": {
+          "libvirt": {
+            "virt_type": "qemu",
+            "cpu_mode": "none"
+          }
         }
       },
       "image": {
@@ -49,10 +58,10 @@
         {
           "name": "public",
           "controller": {
-            "default": "eth0"
+            "default": "eth1.42"
           },
           "compute": {
-            "default": "eth0"
+            "default": "eth1.42"
           }
         }
       ]

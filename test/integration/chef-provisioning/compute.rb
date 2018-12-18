@@ -38,11 +38,10 @@ config.vm.provider "virtualbox" do |v|
   v.memory = 1024
 end
 EOF
-  recipe 'openstack_test::ceph_compute'
   role provision_role
+  recipe 'openstack_test::ceph_compute'
   role 'separate_network_node' if ENV['SEPARATE_NETWORK_NODE']
   recipe 'osl-openstack::compute'
-  role 'openstack_cinder'
   file('/etc/chef/encrypted_data_bag_secret',
        File.dirname(__FILE__) +
        '/../default/encrypted_data_bag_secret')

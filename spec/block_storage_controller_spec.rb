@@ -22,15 +22,13 @@ describe 'osl-openstack::block_storage_controller' do
   describe '/etc/cinder/cinder.conf' do
     let(:file) { chef_run.template('/etc/cinder/cinder.conf') }
     [
-      /^glance_host = 10.0.0.10$/,
       /^my_ip = 10.0.0.2$/,
       %r{^glance_api_servers = http://10.0.0.10:9292},
       /^osapi_volume_listen = 10.0.0.2$/,
       /^volume_group = openstack$/,
       /^volume_clear_size = 256$/,
-      /^enable_v1_api = false$/,
       /^enable_v3_api = true$/,
-      %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$},
+      %r{^transport_url = rabbit://openstack:mq-pass@10.0.0.10:5672$},
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
@@ -44,7 +42,7 @@ describe 'osl-openstack::block_storage_controller' do
         )
     end
     [
-      %r{^auth_url = https://10.0.0.10:5000/v3$},
+      %r{^auth_url = https://10.0.0.10:35357/v3$},
       %r{^auth_uri = https://10.0.0.10:5000/v3$},
     ].each do |line|
       it do
@@ -55,7 +53,7 @@ describe 'osl-openstack::block_storage_controller' do
       expect(chef_run).to render_config_file(file.name)
         .with_section_content(
           'database',
-          %r{^connection = mysql://cinder_x86:cinder@10.0.0.10:3306/cinder_x86\?charset=utf8}
+          %r{^connection = mysql\+pymysql://cinder_x86:cinder@10.0.0.10:3306/cinder_x86\?charset=utf8}
         )
     end
     it do

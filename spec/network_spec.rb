@@ -20,6 +20,7 @@ describe 'osl-openstack::network', network: true do
     openstack-network::l3_agent
     openstack-network::dhcp_agent
     openstack-network::metadata_agent
+    openstack-network::metering_agent
   ).each do |r|
     it "includes cookbook #{r}" do
       expect(chef_run).to include_recipe(r)
@@ -63,12 +64,11 @@ EOL
   describe '/etc/neutron/neutron.conf' do
     let(:file) { chef_run.template('/etc/neutron/neutron.conf') }
     [
-      /^service_plugins = \
-neutron.services.l3_router.l3_router_plugin.L3RouterPlugin$/,
+      /^service_plugins = neutron.services.l3_router.l3_router_plugin.L3RouterPlugin,metering$/,
       /^allow_overlapping_ips = True$/,
       /^router_distributed = False$/,
       /^bind_host = 10.0.0.2$/,
-      %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$},
+      %r{^transport_url = rabbit://openstack:mq-pass@10.0.0.10:5672$},
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name)
@@ -113,8 +113,7 @@ neutron.services.l3_router.l3_router_plugin.L3RouterPlugin$/,
       expect(chef_run).to render_config_file(file.name)
         .with_section_content(
           'database',
-          %r{^connection = mysql://neutron_x86:neutron@10.0.0.10:3306/\
-neutron_x86\?charset=utf8}
+          %r{^connection = mysql\+pymysql://neutron_x86:neutron@10.0.0.10:3306/neutron_x86\?charset=utf8}
         )
     end
   end
@@ -187,11 +186,19 @@ neutron.agent.linux.interface.BridgeInterfaceDriver$/,
         .with_section_content('DEFAULT', /^nova_metadata_ip = 10.0.0.2$/)
     end
   end
+  describe '/etc/neutron/metering_agent.ini' do
+    let(:file) { chef_run.template('/etc/neutron/metering_agent.ini') }
+    it do
+      expect(chef_run).to render_config_file(file.name)
+        .with_section_content('DEFAULT', /^interface_driver = neutron.agent.linux.interface.BridgeInterfaceDriver$/)
+    end
+  end
   %w(
     neutron.conf
     l3_agent.ini
     dhcp_agent.ini
     metadata_agent.ini
+    metering_agent.ini
   ).each do |f|
     describe "/etc/neutron/#{f}" do
       let(:file) { chef_run.template("/etc/neutron/#{f}") }

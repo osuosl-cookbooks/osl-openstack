@@ -19,9 +19,9 @@ MemcachedCache',/)
   its(:content) do
     should_not match(/
 LAUNCH_INSTANCE_DEFAULTS = {
-  'create_volume': 'false',
-  'disable_volume': 'true',
-  'disable_volume_snapshot': 'true',
+  'create_volume': False,
+  'disable_volume': True,
+  'disable_volume_snapshot': True,
 }/)
   end
 end

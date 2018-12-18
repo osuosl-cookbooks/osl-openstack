@@ -1,0 +1,10 @@
+{
+  "id": "openstack-placement",
+  "openstack-placement": {
+    "encrypted_data": "GcefGpvQ+7mUpQmXmxqJYV7Lpb8iRxPeXLf/E0CzLR6t+C28+gpr6/mJ1qkb\nisf8\n",
+    "hmac": "3qapv2Sl2EVjAJbIW4+FFsfS2X7lxZG/EE2cznqatds=\n",
+    "iv": "zWJPbv1g/64ejkCqHHAm1w==\n",
+    "version": 2,
+    "cipher": "aes-256-cbc"
+  }
+}

@@ -25,7 +25,7 @@ describe 'osl-openstack::image', image: true do
 
       [
         /^bind_host = 10.0.0.2$/,
-        %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$},
+        %r{^transport_url = rabbit://openstack:mq-pass@10.0.0.10:5672$},
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
@@ -34,7 +34,7 @@ describe 'osl-openstack::image', image: true do
       case f
       when 'api'
         [
-          # /^enable_v1_api = false$/,
+          /^enable_v1_api = false$/,
           /^enable_v2_api = true$/,
         ].each do |line|
           it do
@@ -177,7 +177,7 @@ describe 'osl-openstack::image', image: true do
       end
 
       [
-        %r{^connection = mysql://glance_x86:db-pass@10.0.0.10:3306/glance_x86\?charset=utf8$},
+        %r{^connection = mysql\+pymysql://glance_x86:db-pass@10.0.0.10:3306/glance_x86\?charset=utf8$},
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name)

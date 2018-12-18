@@ -43,7 +43,7 @@ describe file('/etc/heat/heat.conf') do
 end
 
 describe command(
-  'source /root/openrc && /usr/local/bin/openstack orchestration service list -c binary -c status -f value'
+  'source /root/openrc && /usr/local/bin/openstack orchestration service list -c Binary -c Status -f value'
 ) do
   its(:stdout) { should match(/^heat-engine up$/) }
   its(:stdout) { should_not match(/^heat-engine down$/) }

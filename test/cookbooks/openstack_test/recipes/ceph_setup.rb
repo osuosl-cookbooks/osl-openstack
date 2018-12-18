@@ -6,6 +6,7 @@ execute 'update crush map' do
   command <<-EOF
     crushtool -c crush_map_decompressed -o new_crush_map_compressed
     ceph osd setcrushmap -i new_crush_map_compressed
+    touch /var/tmp/new_crush_map_compressed.done
   EOF
-  creates '/var/tmp/new_crush_map_compressed'
+  creates '/var/tmp/new_crush_map_compressed.done'
 end

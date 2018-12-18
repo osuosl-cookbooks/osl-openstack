@@ -2,6 +2,7 @@
   "env_run_lists": {},
   "run_list": [
     "recipe[osl-openstack]",
+    "recipe[openstack_test::compute]",
     "recipe[openstack_test::hosts_vagrant]",
     "recipe[openstack_test::cacert]"
   ],
@@ -21,14 +22,31 @@
         }
       }
     },
+    "firewall": {
+      "ceph": {
+        "range": {
+          "4": [
+            "192.168.60.0/24"
+          ]
+        }
+      }
+    },
     "openstack": {
       "mq": {
         "user": "admin"
       },
       "compute": {
         "metering": true,
-        "libvirt": {
-          "virt_type": "qemu"
+        "platform": {
+          "qemu_compute_packages": [
+            "qemu-system-x86"
+          ]
+        },
+        "conf": {
+          "libvirt": {
+            "virt_type": "qemu",
+            "cpu_mode": "none"
+          }
         }
       },
       "identity": {
@@ -69,10 +87,10 @@
         {
           "name": "public",
           "controller": {
-            "default": "enp0s8"
+            "default": "eth1.42"
           },
           "compute": {
-            "default": "enp0s8"
+            "default": "eth1.42"
           }
         }
       ]

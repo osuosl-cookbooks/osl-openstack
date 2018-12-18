@@ -16,7 +16,7 @@ describe 'osl-openstack::compute_controller' do
     openstack-compute::scheduler
     openstack-compute::api-os-compute
     openstack-compute::api-metadata
-    openstack-compute::nova-cert
+    openstack-compute::placement_api
     openstack-compute::vncproxy
     openstack-compute::identity_registration
   ).each do |r|
@@ -29,29 +29,47 @@ describe 'osl-openstack::compute_controller' do
     let(:file) { chef_run.template('/etc/nova/nova.conf') }
 
     [
-      /^scheduler_default_filters = \
-AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter$/,
       /^linuxnet_interface_driver = nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver$/,
       /^dns_server = 140.211.166.130 140.211.166.131$/,
       /^disk_allocation_ratio = 1.5$/,
       /^instance_usage_audit = True$/,
       /^instance_usage_audit_period = hour$/,
-      /^notify_on_state_change = vm_and_task_state$/,
       /^osapi_compute_listen = 10.0.0.2$/,
       /^metadata_listen = 10.0.0.2$/,
       /^resume_guests_state_on_host_boot = True$/,
       /^block_device_allocate_retries = 120$/,
-      %r{^transport_url = rabbit://guest:mq-pass@10.0.0.10:5672$},
+      %r{^transport_url = rabbit://openstack:mq-pass@10.0.0.10:5672$},
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
       end
     end
     it do
+      expect(chef_run).to_not render_config_file(file.name)
+        .with_section_content(
+          'DEFAULT',
+          /^use_neutron =/
+        )
+    end
+    it do
       expect(chef_run).to render_config_file(file.name)
         .with_section_content(
           'oslo_messaging_notifications',
           /^driver = messagingv2$/
+        )
+    end
+    it do
+      expect(chef_run).to render_config_file(file.name)
+        .with_section_content(
+          'filter_scheduler',
+          /^enabled_filters = AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter$/
+        )
+    end
+    it do
+      expect(chef_run).to render_config_file(file.name)
+        .with_section_content(
+          'notifications',
+          /^notify_on_state_change = vm_and_task_state$/
         )
     end
     [
@@ -137,7 +155,7 @@ AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter
       expect(chef_run).to render_config_file(file.name)
         .with_section_content(
           'database',
-          %r{^connection = mysql://nova_x86:nova_db_pass@10.0.0.10:3306/nova_x86\?charset=utf8$}
+          %r{^connection = mysql\+pymysql://nova_x86:nova_db_pass@10.0.0.10:3306/nova_x86\?charset=utf8$}
         )
     end
 
@@ -145,7 +163,7 @@ AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter
       expect(chef_run).to render_config_file(file.name)
         .with_section_content(
           'api_database',
-          %r{^connection = mysql://nova_api_x86:nova_api_db_pass@10.0.0.10:3306/nova_api_x86\?charset=utf8$}
+          %r{^connection = mysql\+pymysql://nova_api_x86:nova_api_db_pass@10.0.0.10:3306/nova_api_x86\?charset=utf8$}
         )
     end
     context 'Set ceph' do
@@ -184,6 +202,19 @@ AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter
         it do
           expect(chef_run).to render_config_file(file.name).with_section_content('libvirt', line)
         end
+      end
+    end
+  end
+
+  describe '/etc/httpd/sites-available/nova-placement-api.conf' do
+    let(:file) { chef_run.template('/etc/httpd/sites-available/nova-placement-api.conf') }
+
+    [
+      /^Listen 10.0.0.2:8778$/,
+      /^<VirtualHost 10.0.0.2:8778>$/,
+    ].each do |line|
+      it do
+        expect(chef_run).to render_file(file.name).with_content(line)
       end
     end
   end
