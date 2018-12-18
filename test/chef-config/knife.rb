@@ -11,5 +11,5 @@ cache_type 'BasicFile'
 cache_options(path: "#{ENV['HOME']}/.chef/checksums")
 cookbook_path ["#{current_dir}/../../cookbooks"]
 role_path "#{current_dir}/../integration/roles"
-data_bag_path "#{current_dir}/../integration/default/data_bags"
-knife[:secret_file] = "#{current_dir}../integration/default/encrypted_data_bag_secret"
+data_bag_path "#{current_dir}/../integration/data_bags"
+knife[:secret_file] = "#{current_dir}../integration/encrypted_data_bag_secret"

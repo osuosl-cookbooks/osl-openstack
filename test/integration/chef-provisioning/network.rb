@@ -42,8 +42,6 @@ EOF
   role provision_role
   role 'separate_network_node' if ENV['SEPARATE_NETWORK_NODE']
   recipe 'osl-openstack::network'
-  file('/etc/chef/encrypted_data_bag_secret',
-       File.dirname(__FILE__) +
-       '/../default/encrypted_data_bag_secret')
+  file('/etc/chef/encrypted_data_bag_secret', File.dirname(__FILE__) + '/../encrypted_data_bag_secret')
   converge true
 end
