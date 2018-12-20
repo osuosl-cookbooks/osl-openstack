@@ -1,4 +1,6 @@
 ---
+verifier:
+  name: inspec
 driver:
   name: openstack
   flavor_ref: 'm1.large'
@@ -33,6 +35,7 @@ provisioner:
       secret:
         key_path: "/tmp/kitchen/encrypted_data_bag_secret"
     ceph:
+      fsid-secret: 'ae3f1d03-bacd-4a90-b869-1a4fabb107f2'
       keyring:
         mon: '/etc/ceph/$cluster.mon.keyring'
     mariadb:
@@ -223,6 +226,9 @@ suites:
         server_name: "upgrade-<%= ENV['USER'] %>"
     driver:
       image_ref: "openstack-newton-aio"
+    verifier:
+      inspec_tests:
+        - path: test/integration/controller/inspec
     run_list:
       - role[ceph]
       - role[ceph_mon]

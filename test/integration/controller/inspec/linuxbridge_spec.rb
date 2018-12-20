@@ -1,0 +1,1 @@
+../../linuxbridge/inspec/linuxbridge_spec.rb

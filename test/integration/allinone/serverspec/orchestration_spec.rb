@@ -1,1 +1,0 @@
-../../orchestration/serverspec/orchestration_spec.rb

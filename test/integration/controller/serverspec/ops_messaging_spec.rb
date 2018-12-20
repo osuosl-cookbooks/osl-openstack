@@ -1,1 +1,0 @@
-../../ops_messaging/serverspec/ops_messaging_spec.rb
