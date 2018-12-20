@@ -21,8 +21,9 @@ systemctl stop httpd
 
 # Upgrade Keystone
 yum -d1 -y upgrade \*keystone\* python2-oslo-config
-yum -y upgrade \*horizon\* \*openstack-dashboard\*
-yum -d1 -y upgrade \*horizon\* \*python-django\*
+yum -d1 -y remove python-django-bash-completion
+yum -d1 -y install \*horizon\* \*openstack-dashboard\*
+yum -d1 -y upgrade \*horizon\*
 keystone-manage token_flush
 su -s /bin/sh -c "keystone-manage db_sync" keystone
 keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone
