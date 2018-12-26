@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+5.0.1 (2018-12-26)
+------------------
+- Convert to using Inspec
+
 5.0.0 (2018-12-18)
 ------------------
 - Ocata Release
