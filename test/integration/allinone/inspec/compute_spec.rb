@@ -1,0 +1,1 @@
+../../compute/inspec/compute_spec.rb

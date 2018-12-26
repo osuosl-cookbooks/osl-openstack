@@ -1,1 +1,0 @@
-../../mon_controller/serverspec/mon_controller_spec.rb

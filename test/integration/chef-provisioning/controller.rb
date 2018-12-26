@@ -51,8 +51,6 @@ EOF
   role 'openstack_cinder'
   recipe 'openstack_test::orchestration'
   recipe 'openstack_test::tempest'
-  file('/etc/chef/encrypted_data_bag_secret',
-       File.dirname(__FILE__) +
-       '/../default/encrypted_data_bag_secret')
+  file('/etc/chef/encrypted_data_bag_secret', File.dirname(__FILE__) + '/../encrypted_data_bag_secret')
   converge true
 end
