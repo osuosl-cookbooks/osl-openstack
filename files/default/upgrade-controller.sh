@@ -13,6 +13,16 @@ rm -f /etc/cron.d/chef-client
 nova_cert_id="$(openstack compute service list -f value -c ID -c Binary | grep nova-cert | awk '{print $1}')"
 openstack compute service delete $nova_cert_id
 
+# Remove old keystone API endpoints (in this specific order)
+for i in public internal admin ; do
+  openstack endpoint list | grep -E "(Service|keystone)" | grep v2.0 | \
+  grep $i | awk '{print $2}' | xargs -r -n 1 openstack endpoint delete
+done
+
+# Remove old nova API endpoints
+openstack endpoint list | grep -E "(Service|nova)" | grep "v2\/" | \
+  awk '{print $2}' | xargs -r -i openstack endpoint {}
+
 # Stop all OpenStack services
 systemctl stop 'openstack-*'
 systemctl stop 'neutron-*'
@@ -67,6 +77,8 @@ su -s /bin/sh -c "nova-manage api_db sync" nova
 su -s /bin/sh -c "nova-manage db sync" nova
 su -s /bin/sh -c "nova-manage db online_data_migrations" nova
 su -s /bin/sh -c "nova-manage cell_v2 discover_hosts" nova
+cell1_uuid=$(nova-manage cell_v2 list_cells | grep cell1 | awk '{print $4}')
+su -s /bin/sh -c "nova-manage cell_v2 map_instances --cell_uuid ${cell1_uuid}" nova
 crudini --del /etc/nova/nova.conf upgrade_levels compute
 
 # Upgrade neutron
