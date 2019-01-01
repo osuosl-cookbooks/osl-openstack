@@ -19,13 +19,13 @@ describe ini('/etc/glance/glance-api.conf') do
   its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
 end
 
-describe command('bash -c "source /root/openrc && /usr/local/bin/openstack image list"') do
+describe command('bash -c "source /root/openrc && /usr/bin/openstack image list"') do
   its('stdout') do
     should match(/\|\s[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\s\|\scirros.*\s\|\sactive/)
   end
 end
 
-describe command('bash -c "source /root/openrc && /usr/local/bin/openstack image show cirros -c properties -f value"') do
+describe command('bash -c "source /root/openrc && /usr/bin/openstack image show cirros -c properties -f value"') do
   its('stdout') { should match(/direct_url='rbd:/) }
   its('stdout') { should match(/locations=/) }
 end
