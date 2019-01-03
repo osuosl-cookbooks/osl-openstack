@@ -19,4 +19,5 @@
 include_recipe 'osl-openstack'
 include_recipe 'memcached'
 include_recipe 'certificate::wildcard'
+include_recipe 'osl-apache'
 include_recipe 'openstack-dashboard::horizon'
