@@ -244,6 +244,7 @@ node.default['openstack']['telemetry']['conf'].tap do |conf|
   conf['api']['default_api_return_limit'] = 1_000_000_000_000
 end
 
+node.default['openstack']['block-storage']['conf']['DEFAULT'].delete('glance_api_version')
 node.override['openstack']['block-storage']['conf'].tap do |conf|
   conf['oslo_messaging_notifications']['driver'] = 'messagingv2'
   conf['DEFAULT']['volume_group'] = 'openstack'
@@ -273,8 +274,6 @@ node.override['openstack']['block-storage']['conf'].tap do |conf|
     conf['libvirt']['rbd_secret_uuid'] = node['ceph']['fsid-secret']
   end
 end
-
-node.default['openstack']['block-storage']['platform']['cinder_volume_packages'] = %w(qemu-img-ev)
 
 # Dynamically find the hostname for the controller node, or use a pre-determined
 # DNS name

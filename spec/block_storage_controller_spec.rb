@@ -35,6 +35,9 @@ describe 'osl-openstack::block_storage_controller' do
       end
     end
     it do
+      expect(chef_run).to_not render_config_file(file.name).with_section_content('DEFAULT', /glance_api_version/)
+    end
+    it do
       expect(chef_run).to render_config_file(file.name)
         .with_section_content(
           'oslo_messaging_notifications',
