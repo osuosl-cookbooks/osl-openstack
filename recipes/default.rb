@@ -181,11 +181,11 @@ node.default['openstack']['network'].tap do |conf|
     ).join(',')
   conf['conf']['DEFAULT']['allow_overlapping_ips'] = 'True'
   conf['conf']['DEFAULT']['router_distributed'] = 'False'
+  conf['conf']['keystone_authtoken']['service_token_roles_required'] = 'True'
   conf['dnsmasq']['upstream_dns_servers'] = %w(140.211.166.130 140.211.166.131)
 end
 node.default['openstack']['network_l3']['conf'].tap do |conf|
-  conf['DEFAULT']['interface_driver'] =
-    'neutron.agent.linux.interface.BridgeInterfaceDriver'
+  conf['DEFAULT']['interface_driver'] = 'neutron.agent.linux.interface.BridgeInterfaceDriver'
   conf['DEFAULT'].delete('external_network_bridge')
 end
 node.default['openstack']['network_dhcp']['conf'].tap do |conf|
@@ -195,7 +195,7 @@ node.default['openstack']['network_dhcp']['conf'].tap do |conf|
   conf['DEFAULT']['dhcp_lease_duration'] = 600
 end
 node.default['openstack']['network_metadata']['conf'].tap do |conf|
-  conf['DEFAULT']['nova_metadata_ip'] = node['osl-openstack']['bind_service']
+  conf['DEFAULT']['nova_metadata_host'] = node['osl-openstack']['bind_service']
 end
 node.default['openstack']['network_metering']['conf'].tap do |conf|
   conf['DEFAULT']['interface_driver'] = 'neutron.agent.linux.interface.BridgeInterfaceDriver'

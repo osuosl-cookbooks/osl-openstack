@@ -75,6 +75,13 @@ EOL
           .with_section_content('DEFAULT', line)
       end
     end
+    it do
+      expect(chef_run).to render_config_file(file.name)
+        .with_section_content(
+          'keystone_authtoken',
+          /^service_token_roles_required = True$/
+        )
+    end
     context 'Set bind_service' do
       cached(:chef_run) do
         ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
@@ -183,7 +190,7 @@ neutron.agent.linux.interface.BridgeInterfaceDriver$/,
     let(:file) { chef_run.template('/etc/neutron/metadata_agent.ini') }
     it do
       expect(chef_run).to render_config_file(file.name)
-        .with_section_content('DEFAULT', /^nova_metadata_ip = 10.0.0.2$/)
+        .with_section_content('DEFAULT', /^nova_metadata_host = 10.0.0.2$/)
     end
   end
   describe '/etc/neutron/metering_agent.ini' do

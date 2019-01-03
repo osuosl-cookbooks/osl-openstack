@@ -21,12 +21,14 @@ describe ini('/etc/neutron/neutron.conf') do
   its('DEFAULT.service_plugins') { should cmp 'neutron.services.l3_router.l3_router_plugin.L3RouterPlugin,metering' }
   its('DEFAULT.allow_overlapping_ips') { should cmp 'True' }
   its('DEFAULT.router_distributed') { should cmp 'False' }
+  its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
 end
 
 %w(
   neutron.conf
   l3_agent.ini
   dhcp_agent.ini
+  metadata_agent.ini
 ).each do |f|
   describe ini("/etc/neutron/#{f}") do
     its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
@@ -45,6 +47,10 @@ describe ini('/etc/neutron/dhcp_agent.ini') do
   its('DEFAULT.interface_driver') { should cmp 'neutron.agent.linux.interface.BridgeInterfaceDriver' }
   its('DEFAULT.enable_isolated_metadata') { should cmp 'True' }
   its('DEFAULT.dhcp_lease_duration') { should cmp '600' }
+end
+
+describe ini('/etc/neutron/metadata_agent.ini') do
+  its('DEFAULT.nova_metadata_host') { should cmp '127.0.0.1' }
 end
 
 describe ini('/etc/neutron/plugin.ini') do
