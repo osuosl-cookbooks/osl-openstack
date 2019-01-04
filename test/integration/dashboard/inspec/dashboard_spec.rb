@@ -10,11 +10,9 @@ describe file('/etc/openstack-dashboard/local_settings') do
   its('content') { should match(/'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',/) }
   its('content') { match(/'LOCATION': \[\n\s*'controller.example.com:11211',/) }
   its('content') do
-    should_not match(/
+    should match(/
 LAUNCH_INSTANCE_DEFAULTS = {
   'create_volume': False,
-  'disable_volume': True,
-  'disable_volume_snapshot': True,
 }/)
   end
 end

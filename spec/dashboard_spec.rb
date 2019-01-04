@@ -29,4 +29,11 @@ describe 'osl-openstack::dashboard', dashboard: true do
       expect(chef_run).to render_file('/etc/httpd/sites-available/openstack-dashboard.conf').with_content(line)
     end
   end
+  it do
+    expect(chef_run).to render_file('/etc/openstack-dashboard/local_settings')
+      .with_content(/
+LAUNCH_INSTANCE_DEFAULTS = {
+  'create_volume': False,
+}/)
+  end
 end

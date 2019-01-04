@@ -233,8 +233,6 @@ node.default['openstack']['dashboard'].tap do |conf|
   conf['misc_local_settings'] = {
     'LAUNCH_INSTANCE_DEFAULTS' => {
       create_volume: false,
-      disable_volume: true,
-      disable_volume_snapshot: true,
     },
   }
 end
