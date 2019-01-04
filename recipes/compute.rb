@@ -100,6 +100,7 @@ if node['osl-openstack']['ceph']
     members %w(nova qemu)
     action :modify
     notifies :restart, 'service[nova-compute]', :immediately
+    notifies :restart, 'service[libvirt-bin]', :immediately
   end
 
   secrets = openstack_credential_secrets
