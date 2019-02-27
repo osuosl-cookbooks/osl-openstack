@@ -81,6 +81,9 @@ include_recipe 'osl-openstack::linuxbridge'
 include_recipe 'openstack-compute::compute'
 include_recipe 'openstack-telemetry::agent-compute'
 
+# This resource is causing issues with virsh so remove it
+delete_resource(:execute, 'Deleting default libvirt network')
+
 if node['osl-openstack']['ceph']
   %w(
     /var/run/ceph/guests
@@ -89,6 +92,7 @@ if node['osl-openstack']['ceph']
     directory d do
       owner 'qemu'
       group 'libvirt'
+      notifies :restart, 'service[libvirt-bin]'
     end
   end
 
