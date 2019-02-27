@@ -1,9 +1,9 @@
-describe yum.repo('RDO-newton') do
+describe yum.repo('RDO-ocata') do
   it { should_not exist }
   it { should_not be_enabled }
 end
 
-describe yum.repo('RDO-ocata') do
+describe yum.repo('RDO-pike') do
   it { should exist }
   it { should be_enabled }
 end
