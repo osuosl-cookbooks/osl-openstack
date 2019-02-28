@@ -17,7 +17,11 @@ export OS_PROJECT_NAME=admin
 export OS_PROJECT_DOMAIN_NAME=default
 export OS_IDENTITY_API_VERSION=3
 export OS_AUTH_URL=https://controller.example.com:5000/v3
-export OS_REGION_NAME=RegionOne})
+export OS_REGION_NAME=RegionOne
+
+# Misc options
+export OS_CACERT="/etc/ssl/certs/ca-bundle.crt"
+export OS_AUTH_TYPE=password})
   end
 end
 

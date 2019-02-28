@@ -57,4 +57,13 @@ describe 'osl-openstack::default' do
   it do
     expect(chef_run).to install_package('python-memcached')
   end
+
+  [
+    %r{^export OS_CACERT="/etc/ssl/certs/ca-bundle.crt"$},
+    /^export OS_AUTH_TYPE=password$/,
+  ].each do |line|
+    it do
+      expect(chef_run).to render_file('/root/openrc').with_content(line)
+    end
+  end
 end

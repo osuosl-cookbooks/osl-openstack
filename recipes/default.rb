@@ -32,6 +32,7 @@ node.default['openstack']['secret']['key_path'] =
   '/etc/chef/encrypted_data_bag_secret'
 node.default['openstack']['misc_openrc'] = [
   'export OS_CACERT="/etc/ssl/certs/ca-bundle.crt"',
+  'export OS_AUTH_TYPE=password',
 ]
 node.default['openstack']['yum']['uri'] = \
   'http://centos.osuosl.org/$releasever/cloud/x86_64/openstack-' + node['openstack']['release']
@@ -237,9 +238,20 @@ node.default['openstack']['dashboard'].tap do |conf|
   }
 end
 
-node.default['openstack']['telemetry']['conf'].tap do |conf|
-  conf['DEFAULT']['meter_dispatchers'] = 'database'
-  conf['api']['default_api_return_limit'] = 1_000_000_000_000
+node.default['openstack']['telemetry']['platform'].tap do |conf|
+  # Fixes for CentOS and wsgi
+  conf['gnocchi-metricd_service'] = 'httpd'
+  conf['gnocchi-api_wsgi_file'] = '/usr/lib/python2.7/site-packages/gnocchi/rest/app.wsgi'
+end
+
+node.default['openstack']['telemetry-metric']['conf'].tap do |conf|
+  conf['api']['auth_mode'] = 'keystone'
+  conf['storage']['driver'] = 'ceph'
+  conf['storage'].delete('file_basepath')
+  conf['storage']['ceph_pool'] = node['osl-openstack']['telemetry-metric']['rbd_store_pool']
+  conf['storage']['ceph_username'] = node['osl-openstack']['telemetry-metric']['rbd_store_user']
+  conf['storage']['ceph_keyring'] =
+    "/etc/ceph/ceph.client.#{node['osl-openstack']['telemetry-metric']['rbd_store_user']}.keyring"
 end
 
 node.default['openstack']['block-storage']['conf']['DEFAULT'].delete('glance_api_version')
