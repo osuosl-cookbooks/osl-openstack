@@ -43,5 +43,6 @@ depends 'yum-centos'
 depends 'yum-epel'
 depends 'yum-kernel-osuosl'
 depends 'yum-qemu-ev'
+depends 'yum-scl'
 
 supports         'centos', '~> 7.0'
