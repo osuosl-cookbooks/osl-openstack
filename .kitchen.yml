@@ -179,6 +179,20 @@ suites:
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::orchestration]
+  - name: container_controller
+    driver_config:
+        server_name: "container_controller-<%= ENV['USER'] %>"
+    run_list:
+      - role[openstack_tk]
+      - role[openstack_ops_identity]
+      - recipe[osl-openstack::container_controller]
+  - name: container
+    driver_config:
+        server_name: "container-<%= ENV['USER'] %>"
+    run_list:
+      - role[openstack_tk]
+      - role[openstack_ops_identity]
+      - recipe[osl-openstack::container]
   - name: controller
     driver_config:
         server_name: "controller-<%= ENV['USER'] %>"
