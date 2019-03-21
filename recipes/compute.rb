@@ -39,7 +39,7 @@ when 'ppc64le'
   include_recipe 'yum-kernel-osuosl::install'
   include_recipe 'base::grub'
 
-  if %w(openstack).include?(node.deep_fetch('cloud', 'provider'))
+  if %w(openstack).include?(node.deep_fetch('openstack', 'provider'))
     kernel_module 'kvm_pr'
   else
     kernel_module 'kvm_hv'
