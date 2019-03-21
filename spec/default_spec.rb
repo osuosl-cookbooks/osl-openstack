@@ -24,7 +24,7 @@ describe 'osl-openstack::default' do
           description: 'OSL Openpower OpenStack repo for centos-7/openstack-pike',
           gpgkey: 'http://ftp.osuosl.org/pub/osl/repos/yum/RPM-GPG-KEY-osuosl',
           gpgcheck: true,
-          baseurl: 'http://ftp.osuosl.org/pub/osl/repos/yum/openpower/centos-$releasever/$basearch/openstack-pike'
+          baseurl: 'http://ftp.osuosl.org/pub/osl/repos/yum/$releasever/openstack-pike/$basearch'
         )
     end
   end

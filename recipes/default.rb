@@ -494,9 +494,9 @@ end
 yum_repository 'OSL-openpower-openstack' do
   description "OSL Openpower OpenStack repo for #{node['platform']}-#{node['platform_version'].to_i}" \
               "/openstack-#{node['openstack']['release']}"
-  gpgkey node['osl-openstack']['openpower']['yum']['repo-key']
+  gpgkey 'http://ftp.osuosl.org/pub/osl/repos/yum/RPM-GPG-KEY-osuosl'
   gpgcheck true
-  baseurl "#{node['osl-openstack']['openpower']['yum']['uri']}/openstack-#{node['openstack']['release']}"
+  baseurl "http://ftp.osuosl.org/pub/osl/repos/yum/$releasever/openstack-#{node['openstack']['release']}/$basearch"
   enabled true
   only_if { node['kernel']['machine'] == 'ppc64le' }
   action :add

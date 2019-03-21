@@ -65,6 +65,3 @@ default['osl-openstack']['novnc'] = {
   'cert_file' => 'novnc.pem',
   'key_file' => 'novnc.key',
 }
-default['osl-openstack']['openpower']['yum']['repo-key'] = 'http://ftp.osuosl.org/pub/osl/repos/yum/RPM-GPG-KEY-osuosl'
-default['osl-openstack']['openpower']['yum']['uri'] =
-  'http://ftp.osuosl.org/pub/osl/repos/yum/openpower/centos-$releasever/$basearch'
