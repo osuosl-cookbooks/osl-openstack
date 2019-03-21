@@ -49,7 +49,7 @@ ceilometer-upgrade --skip-gnocchi-resource-types --config-file /etc/ceilometer/c
 set -e
 
 # Upgrade nova
-crudini --set /etc/nova/nova.conf upgrade_levels compute pike
+crudini --set /etc/nova/nova.conf upgrade_levels compute ocata
 systemctl stop '*nova*'
 yum -d1 -y upgrade \*nova\*
 cell_db_uri=$(cat /root/nova-cell-db-uri)
