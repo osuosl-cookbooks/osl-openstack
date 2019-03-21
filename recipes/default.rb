@@ -502,11 +502,8 @@ yum_repository 'OSL-openpower-openstack' do
   action :add
 end
 
-node.default['yum-scl']['prefer_os_package'] = false
-
 include_recipe 'base::packages'
 include_recipe 'yum-epel'
-include_recipe 'yum-scl'
 
 node['yum-epel']['repos'].each do |repo|
   next unless node['yum'][repo]['managed']
@@ -528,7 +525,6 @@ include_recipe 'build-essential'
 include_recipe 'openstack-common'
 include_recipe 'openstack-common::logging'
 include_recipe 'openstack-common::sysctl'
-include_recipe 'openstack-common::python'
 include_recipe 'openstack-identity::openrc'
 include_recipe 'openstack-common::client'
 

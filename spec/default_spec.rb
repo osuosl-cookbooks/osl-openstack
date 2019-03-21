@@ -41,7 +41,6 @@ describe 'osl-openstack::default' do
     openstack-common
     openstack-common::client
     openstack-common::logging
-    openstack-common::python
     openstack-common::sysctl
     openstack-identity::openrc
     selinux::permissive
