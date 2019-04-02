@@ -62,7 +62,7 @@ describe 'osl-openstack::compute_controller' do
       expect(chef_run).to render_config_file(file.name)
         .with_section_content(
           'filter_scheduler',
-          /^enabled_filters = AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter$/
+          /^enabled_filters = AggregateInstanceExtraSpecsFilter,RetryFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter$/
         )
     end
     it do
