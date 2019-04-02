@@ -130,9 +130,14 @@ node.default['openstack']['compute']['conf'].tap do |conf|
   conf['filter_scheduler']['enabled_filters'] =
     %w(
       AggregateInstanceExtraSpecsFilter
+      RetryFilter
       AvailabilityZoneFilter
       RamFilter
       ComputeFilter
+      ComputeCapabilitiesFilter
+      ImagePropertiesFilter
+      ServerGroupAntiAffinityFilter
+      ServerGroupAffinityFilter
     ).join(',')
   conf['DEFAULT'].delete('use_neutron')
   conf['DEFAULT']['linuxnet_interface_driver'] = 'nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver'
