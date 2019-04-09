@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+6.0.0 (2019-04-09)
+------------------
+- Pike release
+
 5.0.3 (2019-04-02)
 ------------------
 - Fix Nova compute filters so they work properly
