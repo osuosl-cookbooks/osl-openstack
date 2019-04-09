@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+6.0.1 (2019-04-09)
+------------------
+- Fix metadata issues breaking berks upload
+
 6.0.0 (2019-04-09)
 ------------------
 - Pike release
