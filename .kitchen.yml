@@ -46,9 +46,6 @@ provisioner:
         baseurl: http://epel.osuosl.org/7/$basearch
         enabled: true
         gpgkey: http://epel.osuosl.org/RPM-GPG-KEY-EPEL-7
-    scl:
-      packages:
-        - python27
     omnibus_updater:
       disabled: true
 
@@ -168,6 +165,11 @@ suites:
     driver_config:
         server_name: "telemetry-<%= ENV['USER'] %>"
     run_list:
+      - role[ceph]
+      - role[ceph_mon]
+      - role[ceph_mgr]
+      - role[ceph_osd]
+      - role[ceph_setup]
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::telemetry]
@@ -225,7 +227,7 @@ suites:
     driver_config:
         server_name: "upgrade-<%= ENV['USER'] %>"
     driver:
-      image_ref: "openstack-newton-aio"
+      image_ref: "openstack-ocata-aio"
     verifier:
       inspec_tests:
         - path: test/integration/controller/inspec

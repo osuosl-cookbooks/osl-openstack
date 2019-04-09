@@ -21,10 +21,10 @@ describe 'osl-openstack::default' do
     it do
       expect(chef_run).to add_yum_repository('OSL-openpower-openstack')
         .with(
-          description: 'OSL Openpower OpenStack repo for centos-7/openstack-ocata',
+          description: 'OSL Openpower OpenStack repo for centos-7/openstack-pike',
           gpgkey: 'http://ftp.osuosl.org/pub/osl/repos/yum/RPM-GPG-KEY-osuosl',
           gpgcheck: true,
-          baseurl: 'http://ftp.osuosl.org/pub/osl/repos/yum/openpower/centos-$releasever/$basearch/openstack-ocata'
+          baseurl: 'http://ftp.osuosl.org/pub/osl/repos/yum/$releasever/openstack-pike/$basearch'
         )
     end
   end
@@ -36,94 +36,33 @@ describe 'osl-openstack::default' do
   end
   %w(
     base::packages
-    selinux::permissive
-    yum-qemu-ev
+    build-essential
+    firewall
     openstack-common
+    openstack-common::client
     openstack-common::logging
     openstack-common::sysctl
     openstack-identity::openrc
+    selinux::permissive
+    yum-qemu-ev
   ).each do |r|
     it do
       expect(chef_run).to include_recipe(r)
     end
   end
   it do
-    expect(chef_run).to_not run_execute('uninstall >= fog-openstack-0.2.0')
-      .with(command: "/opt/chef/embedded/bin/gem uninstall -v '>= 0.2.0' fog-openstack --no-user-install")
-  end
-  context 'newer fog-openstack installed' do
-    cached(:chef_run) do
-      ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-        node.automatic['filesystem2']['by_mountpoint']
-      end.converge(described_recipe)
-    end
-    before do
-      stub_command("/opt/chef/embedded/bin/gem list -i -v '>= 0.2.0' fog-openstack").and_return(true)
-    end
-    it do
-      expect(chef_run).to run_execute('uninstall >= fog-openstack-0.2.0')
-        .with(command: "/opt/chef/embedded/bin/gem uninstall -v '>= 0.2.0' fog-openstack --no-user-install")
-    end
-  end
-  it do
-    expect(chef_run).to install_python_runtime('2')
-      .with(
-        provider: PoisePython::PythonProviders::System,
-        pip_version: '9.0.3'
-      )
-  end
-  it do
-    expect(chef_run).to create_python_virtualenv('/opt/osc').with(system_site_packages: true)
-  end
-  it do
-    expect(chef_run).to install_python_package('cliff')
-      .with(
-        version: '2.9.0',
-        # virtualenv: '/opt/osc'
-      )
-  end
-  it do
-    expect(chef_run).to install_python_package('os_client_config')
-      .with(
-        version: '1.28.0',
-        # virtualenv: '/opt/osc'
-      )
-  end
-  it do
-    expect(chef_run).to install_python_package('osc_lib')
-      .with(
-        version: '1.7.0',
-        # virtualenv: '/opt/osc'
-      )
-  end
-  it do
-    expect(chef_run).to install_python_package('openstacksdk')
-      .with(
-        version: '0.9.18',
-        # virtualenv: '/opt/osc'
-      )
-  end
-  it do
-    expect(chef_run).to install_python_package('python-openstackclient')
-      .with(
-        version: '3.14.0',
-        # virtualenv: '/opt/osc'
-      )
-  end
-  it do
-    expect(chef_run).to install_python_package('dogpile.cache')
-      .with(
-        version: '0.6.8',
-        # virtualenv: '/opt/osc'
-      )
-  end
-  it do
-    expect(chef_run.link('/usr/local/bin/openstack')).to link_to('/opt/osc/bin/openstack')
+    expect(chef_run).to delete_link('/usr/local/bin/openstack')
   end
   it do
     expect(chef_run).to install_package('python-memcached')
   end
-  it do
-    expect(chef_run).to upgrade_package('mariadb-libs')
+
+  [
+    %r{^export OS_CACERT="/etc/ssl/certs/ca-bundle.crt"$},
+    /^export OS_AUTH_TYPE=password$/,
+  ].each do |line|
+    it do
+      expect(chef_run).to render_file('/root/openrc').with_content(line)
+    end
   end
 end

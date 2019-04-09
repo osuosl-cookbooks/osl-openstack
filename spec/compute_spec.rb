@@ -222,7 +222,7 @@ Host *
     context 'Setting as openstack guest' do
       cached(:chef_run) { runner.converge(described_recipe) }
       before do
-        node.automatic['cloud']['provider'] = 'openstack'
+        node.automatic['openstack']['provider'] = 'openstack'
       end
       it 'loads kvm_pr module' do
         expect(chef_run).to load_kernel_module('kvm_pr')

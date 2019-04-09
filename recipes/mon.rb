@@ -45,6 +45,16 @@ if node['osl-openstack']['node_type'] == 'controller'
   include_recipe 'base::oslrepo'
   include_recipe 'git'
 
+  python_runtime 'osc-nagios' do
+    version '2'
+    provider :system
+  end
+
+  python_virtualenv '/opt/osc-nagios' do
+    python 'osc-nagios'
+    system_site_packages true
+  end
+
   # Remove old openstack nagios plugins and their checks
   package 'nagios-plugins-openstack' do
     action :remove
@@ -66,14 +76,14 @@ if node['osl-openstack']['node_type'] == 'controller'
   tools_dir = ::File.join(Chef::Config[:file_cache_path], 'osops-tools-monitoring')
 
   python_execute 'monitoring-for-openstack deps' do
-    virtualenv '/opt/osc'
+    virtualenv '/opt/osc-nagios'
     command '-m pip install -r requirements.txt'
     cwd ::File.join(tools_dir, 'monitoring-for-openstack')
     action :nothing
   end
 
   python_execute 'monitoring-for-openstack install' do
-    virtualenv '/opt/osc'
+    virtualenv '/opt/osc-nagios'
     command 'setup.py install'
     cwd ::File.join(tools_dir, 'monitoring-for-openstack')
     action :nothing

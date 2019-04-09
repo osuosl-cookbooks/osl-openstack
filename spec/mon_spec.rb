@@ -59,6 +59,20 @@ describe 'osl-openstack::mon' do
       end
     end
     it do
+      expect(chef_run).to install_python_runtime('osc-nagios')
+        .with(
+          version: '2',
+          provider: PoisePython::PythonProviders::System
+        )
+    end
+    it do
+      expect(chef_run).to create_python_virtualenv('/opt/osc-nagios')
+        .with(
+          python: '/usr/bin/python',
+          system_site_packages: true
+        )
+    end
+    it do
       expect(chef_run).to remove_package('nagios-plugins-openstack')
     end
     it do

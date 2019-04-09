@@ -39,7 +39,7 @@ when 'ppc64le'
   include_recipe 'yum-kernel-osuosl::install'
   include_recipe 'base::grub'
 
-  if %w(openstack).include?(node.deep_fetch('cloud', 'provider'))
+  if %w(openstack).include?(node.deep_fetch('openstack', 'provider'))
     kernel_module 'kvm_pr'
   else
     kernel_module 'kvm_hv'
@@ -81,6 +81,9 @@ include_recipe 'osl-openstack::linuxbridge'
 include_recipe 'openstack-compute::compute'
 include_recipe 'openstack-telemetry::agent-compute'
 
+# This resource is causing issues with virsh so remove it
+delete_resource(:execute, 'Deleting default libvirt network')
+
 if node['osl-openstack']['ceph']
   %w(
     /var/run/ceph/guests
@@ -89,6 +92,7 @@ if node['osl-openstack']['ceph']
     directory d do
       owner 'qemu'
       group 'libvirt'
+      notifies :restart, 'service[libvirt-bin]'
     end
   end
 
@@ -100,6 +104,7 @@ if node['osl-openstack']['ceph']
     members %w(nova qemu)
     action :modify
     notifies :restart, 'service[nova-compute]', :immediately
+    notifies :restart, 'service[libvirt-bin]', :immediately
   end
 
   secrets = openstack_credential_secrets

@@ -26,11 +26,13 @@ node.default['authorization']['sudo']['include_sudoers_d'] = true
 node.default['apache']['contact'] = 'hostmaster@osuosl.org'
 node.default['osl-apache']['server_status_port'] = 80
 node.default['rabbitmq']['use_distro_version'] = true
-node.default['openstack']['release'] = 'ocata'
+node.default['openstack']['release'] = 'pike'
+node.default['openstack']['is_release'] = true
 node.default['openstack']['secret']['key_path'] =
   '/etc/chef/encrypted_data_bag_secret'
 node.default['openstack']['misc_openrc'] = [
   'export OS_CACERT="/etc/ssl/certs/ca-bundle.crt"',
+  'export OS_AUTH_TYPE=password',
 ]
 node.default['openstack']['yum']['uri'] = \
   'http://centos.osuosl.org/$releasever/cloud/x86_64/openstack-' + node['openstack']['release']
@@ -183,8 +185,7 @@ node.default['openstack']['network'].tap do |conf|
   conf['dnsmasq']['upstream_dns_servers'] = %w(140.211.166.130 140.211.166.131)
 end
 node.default['openstack']['network_l3']['conf'].tap do |conf|
-  conf['DEFAULT']['interface_driver'] =
-    'neutron.agent.linux.interface.BridgeInterfaceDriver'
+  conf['DEFAULT']['interface_driver'] = 'neutron.agent.linux.interface.BridgeInterfaceDriver'
   conf['DEFAULT'].delete('external_network_bridge')
 end
 node.default['openstack']['network_dhcp']['conf'].tap do |conf|
@@ -194,7 +195,7 @@ node.default['openstack']['network_dhcp']['conf'].tap do |conf|
   conf['DEFAULT']['dhcp_lease_duration'] = 600
 end
 node.default['openstack']['network_metadata']['conf'].tap do |conf|
-  conf['DEFAULT']['nova_metadata_ip'] = node['osl-openstack']['bind_service']
+  conf['DEFAULT']['nova_metadata_host'] = node['osl-openstack']['bind_service']
 end
 node.default['openstack']['network_metering']['conf'].tap do |conf|
   conf['DEFAULT']['interface_driver'] = 'neutron.agent.linux.interface.BridgeInterfaceDriver'
@@ -229,13 +230,30 @@ node.default['openstack']['dashboard'].tap do |conf|
   conf['ssl']['key'] = 'wildcard.key'
   conf['ssl']['cert'] = 'wildcard.pem'
   conf['ssl']['chain'] = 'wildcard-bundle.crt'
+  conf['misc_local_settings'] = {
+    'LAUNCH_INSTANCE_DEFAULTS' => {
+      create_volume: false,
+    },
+  }
 end
 
-node.default['openstack']['telemetry']['conf'].tap do |conf|
-  conf['DEFAULT']['meter_dispatchers'] = 'database'
-  conf['api']['default_api_return_limit'] = 1_000_000_000_000
+node.default['openstack']['telemetry']['platform'].tap do |conf|
+  # Fixes for CentOS and wsgi
+  conf['gnocchi-metricd_service'] = 'httpd'
+  conf['gnocchi-api_wsgi_file'] = '/usr/lib/python2.7/site-packages/gnocchi/rest/app.wsgi'
 end
 
+node.default['openstack']['telemetry-metric']['conf'].tap do |conf|
+  conf['api']['auth_mode'] = 'keystone'
+  conf['storage']['driver'] = 'ceph'
+  conf['storage'].delete('file_basepath')
+  conf['storage']['ceph_pool'] = node['osl-openstack']['telemetry-metric']['rbd_store_pool']
+  conf['storage']['ceph_username'] = node['osl-openstack']['telemetry-metric']['rbd_store_user']
+  conf['storage']['ceph_keyring'] =
+    "/etc/ceph/ceph.client.#{node['osl-openstack']['telemetry-metric']['rbd_store_user']}.keyring"
+end
+
+node.default['openstack']['block-storage']['conf']['DEFAULT'].delete('glance_api_version')
 node.override['openstack']['block-storage']['conf'].tap do |conf|
   conf['oslo_messaging_notifications']['driver'] = 'messagingv2'
   conf['DEFAULT']['volume_group'] = 'openstack'
@@ -265,8 +283,6 @@ node.override['openstack']['block-storage']['conf'].tap do |conf|
     conf['libvirt']['rbd_secret_uuid'] = node['ceph']['fsid-secret']
   end
 end
-
-node.default['openstack']['block-storage']['platform']['cinder_volume_packages'] = %w(qemu-img-ev)
 
 # Dynamically find the hostname for the controller node, or use a pre-determined
 # DNS name
@@ -478,9 +494,9 @@ end
 yum_repository 'OSL-openpower-openstack' do
   description "OSL Openpower OpenStack repo for #{node['platform']}-#{node['platform_version'].to_i}" \
               "/openstack-#{node['openstack']['release']}"
-  gpgkey node['osl-openstack']['openpower']['yum']['repo-key']
+  gpgkey 'http://ftp.osuosl.org/pub/osl/repos/yum/RPM-GPG-KEY-osuosl'
   gpgcheck true
-  baseurl "#{node['osl-openstack']['openpower']['yum']['uri']}/openstack-#{node['openstack']['release']}"
+  baseurl "http://ftp.osuosl.org/pub/osl/repos/yum/$releasever/openstack-#{node['openstack']['release']}/$basearch"
   enabled true
   only_if { node['kernel']['machine'] == 'ppc64le' }
   action :add
@@ -505,67 +521,20 @@ package %w(
 include_recipe 'firewall'
 include_recipe 'selinux::permissive'
 include_recipe 'yum-qemu-ev'
+include_recipe 'build-essential'
 include_recipe 'openstack-common'
 include_recipe 'openstack-common::logging'
 include_recipe 'openstack-common::sysctl'
 include_recipe 'openstack-identity::openrc'
-include_recipe 'build-essential'
+include_recipe 'openstack-common::client'
 
-execute 'uninstall >= fog-openstack-0.2.0' do
-  command "/opt/chef/embedded/bin/gem uninstall -v '>= 0.2.0' fog-openstack --no-user-install"
-  only_if "/opt/chef/embedded/bin/gem list -i -v '>= 0.2.0' fog-openstack"
-end
-
-# TODO: Replace this with openstack-common::client when switching to Pike
-python_runtime '2' do
-  provider :system
-  pip_version '9.0.3'
-end
-
-python_virtualenv '/opt/osc' do
-  system_site_packages true
-end
-
-python_package 'cliff' do
-  version '2.9.0'
-  virtualenv '/opt/osc'
-end
-
-python_package 'os_client_config' do
-  version '1.28.0'
-  virtualenv '/opt/osc'
-end
-
-python_package 'osc_lib' do
-  version '1.7.0'
-  virtualenv '/opt/osc'
-end
-
-python_package 'openstacksdk' do
-  version '0.9.18'
-  virtualenv '/opt/osc'
-end
-
-python_package 'dogpile.cache' do
-  version '0.6.8'
-  virtualenv '/opt/osc'
-end
-
-python_package 'python-openstackclient' do
-  version node['openstack']['common']['client_version']
-  virtualenv '/opt/osc'
-end
-
+# We're now using the packages openstack client
 link '/usr/local/bin/openstack' do
   to '/opt/osc/bin/openstack'
+  action :delete
 end
 
 include_recipe 'osl-ceph' if node['osl-openstack']['ceph']
 
 # Needed for accessing neutron when running separate from controller node
 package 'python-memcached'
-
-# Upgrade mariadb-libs so we don't run into dep conflicts on CentOS 7.3
-package 'mariadb-libs' do
-  action :upgrade
-end

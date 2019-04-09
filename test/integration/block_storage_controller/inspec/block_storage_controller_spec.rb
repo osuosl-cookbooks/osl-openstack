@@ -17,6 +17,7 @@ describe ini('/etc/cinder/cinder.conf') do
   its('DEFAULT.volume_clear_size') { should cmp '256' }
   its('DEFAULT.volume_group') { should cmp 'openstack' }
   its('DEFAULT.enable_v3_api') { should cmp 'true' }
+  its('DEFAULT.glance_api_version') { should_not cmp '' }
   its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
   its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
   its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }

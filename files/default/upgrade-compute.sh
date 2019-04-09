@@ -17,7 +17,7 @@ yum -y upgrade
 
 set +ex
 
-touch /root/ocata-upgrade-done
+touch /root/pike-upgrade-done
 
 echo
 echo "Run the following command once the controller has been upgraded:"

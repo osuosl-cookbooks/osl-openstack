@@ -64,7 +64,7 @@ describe file('/etc/sysconfig/openstack-nova-novncproxy') do
   its('content') { should match(%r{cert.*/etc/nova/pki}) }
 end
 
-openstack = 'bash -c "source /root/openrc && /usr/local/bin/openstack'
+openstack = 'bash -c "source /root/openrc && /usr/bin/openstack'
 
 describe command("#{openstack} compute service list -f value -c Binary -c Status -c State\"") do
   %w(conductor scheduler consoleauth).each do |s|

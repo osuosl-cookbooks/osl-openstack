@@ -1,4 +1,4 @@
-describe yum.repo('RDO-ocata') do
+describe yum.repo('RDO-pike') do
   it { should exist }
   it { should be_enabled }
 end
@@ -17,7 +17,11 @@ export OS_PROJECT_NAME=admin
 export OS_PROJECT_DOMAIN_NAME=default
 export OS_IDENTITY_API_VERSION=3
 export OS_AUTH_URL=https://controller.example.com:5000/v3
-export OS_REGION_NAME=RegionOne})
+export OS_REGION_NAME=RegionOne
+
+# Misc options
+export OS_CACERT="/etc/ssl/certs/ca-bundle.crt"
+export OS_AUTH_TYPE=password})
   end
 end
 
@@ -30,10 +34,10 @@ describe file('/etc/sysconfig/iptables-config') do
   its(:content) { should match(/^IPTABLES_SAVE_ON_RESTART="no"$/) }
 end
 
-describe command('/usr/local/bin/openstack -h') do
-  its(:exit_status) { should eq 0 }
+describe file('/usr/local/bin/openstack') do
+  it { should_not exist }
 end
 
-describe command("/opt/chef/embedded/bin/gem list -i -v '>= 0.2.0' fog-openstack") do
-  its(:stdout) { should match(/^false$/) }
+describe command('/usr/bin/openstack -h') do
+  its(:exit_status) { should eq 0 }
 end

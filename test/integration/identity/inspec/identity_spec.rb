@@ -11,7 +11,7 @@ end
   end
 end
 
-describe command('bash -c "source /root/openrc && /usr/local/bin/openstack token issue"') do
+describe command('bash -c "source /root/openrc && /usr/bin/openstack token issue"') do
   its('stdout') { should match(/expires.*[0-9]{4}-[0-9]{2}-[0-9]{2}/) }
   its('stdout') { should match(/id\s*\|\s[0-9a-z]{32}/) }
   its('stdout') { should match(/project_id\s*\|\s[0-9a-z]{32}/) }
