@@ -6,7 +6,7 @@ ChefSpec::Coverage.start! { add_filter 'osl-openstack' }
 
 REDHAT_OPTS = {
   platform: 'centos',
-  version: '7.2.1511',
+  version: '7.4.1708',
   file_cache_path: '/var/chef/cache',
   log_level: :fatal,
 }.freeze
