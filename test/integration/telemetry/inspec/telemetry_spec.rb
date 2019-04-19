@@ -57,3 +57,9 @@ end
 describe file('/etc/gnocchi/api-paste.ini') do
   its('content') { should match(/composite:gnocchi\+basic/) }
 end
+
+describe file('/etc/ceph/ceph.client.gnocchi.keyring') do
+  its('content') { should match(%r{key = [A-Za-z0-9+/].*==$}) }
+  it { should be_owned_by 'ceph' }
+  it { should be_grouped_into 'ceph' }
+end

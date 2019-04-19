@@ -47,7 +47,42 @@ describe 'osl-openstack::telemetry', telemetry: true do
     expect(chef_run.group('ceph-telemetry')).to notify('service[gnocchi-metricd]').immediately
   end
   it do
+    expect(chef_run).to create_template('/etc/ceph/ceph.client.gnocchi.keyring')
+      .with(
+        source: 'ceph.client.keyring.erb',
+        owner: 'ceph',
+        group: 'ceph',
+        sensitive: true,
+        variables: {
+          ceph_user: 'gnocchi',
+          ceph_token: 'metrics_token',
+        }
+      )
+  end
+  it do
+    expect(chef_run.template('/etc/ceph/ceph.client.gnocchi.keyring')).to notify('service[gnocchi-metricd]').to(:restart)
+  end
+
+  it do
     expect(chef_run).to create_file('/usr/share/gnocchi/gnocchi-dist.conf').with(mode: '0644')
+  end
+  context 'no metrics_token' do
+    let(:runner) do
+      ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
+        node.set['osl-openstack']['ceph'] = true
+        node.automatic['filesystem2']['by_mountpoint']
+      end
+    end
+    let(:node) { runner.node }
+    cached(:chef_run) { runner.converge(described_recipe) }
+    include_context 'common_stubs'
+    include_context 'ceph_stubs'
+    before do
+      node.set['osl-openstack']['credentials']['ceph']['metrics_token'] = nil
+    end
+    it do
+      expect(chef_run).to_not create_template('/etc/ceph/ceph.client.gnocchi.keyring')
+    end
   end
   describe '/etc/ceilometer/ceilometer.conf' do
     let(:file) { chef_run.template('/etc/ceilometer/ceilometer.conf') }

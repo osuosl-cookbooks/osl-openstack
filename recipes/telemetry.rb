@@ -27,6 +27,21 @@ group 'ceph-telemetry' do
   notifies :restart, 'service[gnocchi-metricd]', :immediately
 end
 
+secrets = openstack_credential_secrets
+
+template "/etc/ceph/ceph.client.#{node['osl-openstack']['telemetry-metric']['rbd_store_user']}.keyring" do
+  source 'ceph.client.keyring.erb'
+  owner node['ceph']['owner']
+  group node['ceph']['group']
+  sensitive true
+  variables(
+    ceph_user: node['osl-openstack']['telemetry-metric']['rbd_store_user'],
+    ceph_token: secrets['ceph']['metrics_token']
+  )
+  not_if { secrets['ceph']['metrics_token'].nil? }
+  notifies :restart, 'service[gnocchi-metricd]'
+end
+
 # This file for some reason is set 640 which breaks gnocchi
 file '/usr/share/gnocchi/gnocchi-dist.conf' do
   mode '0644'
