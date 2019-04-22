@@ -21,6 +21,7 @@ shared_context 'common_stubs' do
     node.normal['osl-openstack']['credentials']['ceph']['image_token'] = 'image_token'
     node.normal['osl-openstack']['credentials']['ceph']['block_token'] = 'block_token'
     node.normal['osl-openstack']['credentials']['ceph']['block_backup_token'] = 'block_backup_token'
+    node.normal['osl-openstack']['credentials']['ceph']['metrics_token'] = 'metrics_token'
     node.normal['ibm_power']['cpu']['cpu_model'] = nil
     node.normal['ceph']['fsid-secret'] = '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8'
     node.automatic['filesystem2']['by_mountpoint']
