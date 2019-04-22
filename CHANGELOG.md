@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+6.0.2 (2019-04-22)
+------------------
+- Add ceph client file for the gnocchi user
+
 6.0.1 (2019-04-09)
 ------------------
 - Fix metadata issues breaking berks upload
