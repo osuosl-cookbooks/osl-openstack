@@ -10,6 +10,7 @@ cookbook 'ibm-power', git: 'git@github.com:osuosl-cookbooks/ibm-power.git'
 cookbook 'munin', git: 'git@github.com:osuosl-cookbooks/munin'
 cookbook 'osl-apache', git: 'git@github.com:osuosl-cookbooks/osl-apache', branch: 'detjensrobert/apache-upgrading'
 cookbook 'osl-ceph', git: 'git@github.com:osuosl-cookbooks/osl-ceph'
+cookbook 'osl-docker', git: 'git@github.com:osuosl-cookbooks/osl-docker'
 cookbook 'osl-munin', git: 'git@github.com:osuosl-cookbooks/osl-munin'
 cookbook 'osl-nrpe', git: 'git@github.com:osuosl-cookbooks/osl-nrpe'
 cookbook 'osl-php', git: 'git@github.com:osuosl-cookbooks/osl-php'
@@ -19,6 +20,12 @@ cookbook 'osl-selinux', git: 'git@github.com:osuosl-cookbooks/osl-selinux'
 cookbook 'resource_from_hash', git: 'git@github.com:osuosl-cookbooks/resource_from_hash'
 cookbook 'yum-kernel-osuosl', git: 'git@github.com:osuosl-cookbooks/yum-kernel-osuosl.git'
 cookbook 'yum-qemu-ev', git: 'git@github.com:osuosl-cookbooks/yum-qemu-ev.git'
+cookbook 'openstack-container',
+  git: 'git@github.com:osuosl-cookbooks/openstack-container.git',
+  branch: 'ramereth/stein'
+cookbook 'openstack-common',
+  github: 'osuosl-cookbooks/cookbook-openstack-common',
+  branch: 'stein-zun'
 
 # WIP patches
 # %w(
@@ -32,7 +39,6 @@ cookbook 'yum-qemu-ev', git: 'git@github.com:osuosl-cookbooks/yum-qemu-ev.git'
 %w(
   -block-storage
   client
-  -common
   -compute
   -dashboard
   -dns

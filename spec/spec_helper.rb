@@ -479,3 +479,50 @@ shared_context 'orchestration_stubs' do
     allow(Chef::Application).to receive(:fatal!)
   end
 end
+
+shared_context 'container_stubs' do
+  before do
+    stub_search(:node, 'role:openstack_role')
+      .and_return(
+        [
+          {
+            ipaddress: '192.168.1.100',
+          },
+        ]
+      )
+    allow_any_instance_of(Chef::Recipe).to receive(:address_for)
+      .with('lo')
+      .and_return('127.0.1.1')
+    allow_any_instance_of(Chef::Recipe).to receive(:config_by_role)
+      .with('rabbitmq-server', 'queue')
+      .and_return(
+        'host' => 'rabbit-host', 'port' => 'rabbit-port'
+      )
+    allow_any_instance_of(Chef::Recipe).to receive(:rabbit_servers)
+      .and_return '1.1.1.1:5672,2.2.2.2:5672'
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('token', 'openstack_identity_bootstrap_token')
+      .and_return('bootstrap-token')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('token', 'openstack_vmware_secret_name')
+      .and_return 'vmware_secret_name'
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('db', 'zun')
+      .and_return('db-pass')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('service', 'openstack-container')
+      .and_return('zun-pass')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('service', 'openstack-container-network')
+      .and_return('kuryr-pass')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('user', 'openstack')
+      .and_return('mq-pass')
+    allow_any_instance_of(Chef::Recipe).to receive(:get_password)
+      .with('user', 'admin')
+      .and_return('admin-pass')
+    allow_any_instance_of(Chef::Recipe).to receive(:rabbit_transport_url)
+      .with('container')
+      .and_return('rabbit://openstack:openstack@controller.example.org:5672')
+  end
+end

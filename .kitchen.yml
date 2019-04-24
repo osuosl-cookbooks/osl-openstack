@@ -192,6 +192,7 @@ suites:
     run_list:
       - role[openstack_tk]
       - role[openstack_ops_identity]
+      - recipe[osl-openstack::container_controller]
       - recipe[osl-openstack::container]
   - name: controller
     driver_config:

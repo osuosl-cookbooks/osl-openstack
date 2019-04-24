@@ -15,4 +15,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-include_recipe 'osl-openstack::default'
+docker_hosts = %w(127.0.0.1)
+search(:node, "role:#{node['osl-openstack']['cluster_role']}") do |n|
+  docker_hosts << n['ipaddress']
+end
+
+node.default['firewall']['docker']['range']['4'] = docker_hosts.sort.uniq
+node.default['osl-docker']['client_only'] = true
+
+include_recipe 'osl-openstack'
+include_recipe 'firewall::openstack'
+include_recipe 'firewall::docker'
+include_recipe 'osl-docker::nvidia'
+include_recipe 'openstack-container::compute'
+include_recipe 'openstack-container::network'

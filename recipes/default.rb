@@ -501,6 +501,17 @@ end
 memcached_servers = "#{endpoint_hostname}:11211"
 node.default['openstack']['memcached_servers'] = [memcached_servers]
 
+# Set zun settings
+node.default['openstack']['container']['conf']['DEFAULT']['container_runtime'] = 'nvidia'
+node.override['openstack']['container']['conf']['etcd']['etcd_host'] = endpoint_hostname
+node.override['openstack']['container']['conf']['websocket_proxy']['wsproxy_host'] = endpoint_hostname
+node.override['openstack']['container']['conf']['websocket_proxy']['base_url'] = "wss://#{endpoint_hostname}:6784"
+node.override['openstack']['container']['conf']['websocket_proxy']['ssl_only'] = 'True'
+node.override['openstack']['container']['conf']['websocket_proxy']['cert'] =
+  "#{node['osl-openstack']['zun_ssl_dir']}/certs/zun.pem"
+node.override['openstack']['container']['conf']['websocket_proxy']['key'] =
+  "#{node['osl-openstack']['zun_ssl_dir']}/private/zun.key"
+
 # set data bag attributes with our prefix
 databag_prefix = node['osl-openstack']['databag_prefix']
 if databag_prefix
@@ -512,6 +523,7 @@ end
 
 %w(
   compute
+  container
   block-storage
   identity
   image_api
@@ -565,6 +577,10 @@ end
   compute-vnc-proxy
   compute-api
   compute-serial-proxy
+  container
+  container-docker
+  container-etcd
+  container-wsproxy
   orchestration-api
   orchestration-api-cfn
   orchestration-api-cloudwatch
@@ -602,6 +618,7 @@ end
 
 %w(
   compute
+  container
   block-storage
   image_api
   network
