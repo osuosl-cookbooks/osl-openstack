@@ -1,4 +1,4 @@
-describe yum.repo('RDO-pike') do
+describe yum.repo('RDO-queens') do
   it { should exist }
   it { should be_enabled }
 end
