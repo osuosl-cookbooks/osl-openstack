@@ -22,3 +22,7 @@ clients/
 nodes/
 /cookbooks/
 vms/
+
+# kitchen-terraform
+.terraform/
+terraform.*

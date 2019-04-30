@@ -5,141 +5,97 @@ ppc64le compute nodes.
 
 ## Supported Platforms
 
-- OpenStack Ocata release
+- OpenStack Pike release
 - CentOS 7
 
 # Multi-host test integration
 
-This cookbook utilizes [Chef Provisioning](https://github.com/chef/chef-provisioning) to test deploying various parts of
-this cookbook in multiple nodes, similar to that in production.
+This cookbook utilizes [kitchen-terraform](https://github.com/newcontext-oss/kitchen-terraform) to test deploying
+various parts of this cookbook in multiple nodes, similar to that in production.
 
 ## Prereqs
 
 - ChefDK 2.5.3 or later
-- Vagrant 2.0.2 or later
-- Virtualbox (5.x or later is usually better)
-- OpenStack cluster (optional)
+- Terraform
+- kitchen-terraform
+- OpenStack cluster
 
-### Openstack Provisioning
-
-Ironically enough, you can run this suite on an already deployed OpenStack cluster, which might be easier. This uses the
-[Chef Provisioning Fog provider](https://github.com/chef/chef-provisioning-fog) and requires a bit of extra setup:
-
-``` console
-$ chef gem install chef-provisioning-fog
-```
-
-Next you need to create a ``~/.fog`` file which contains the various bits of information (replace with your
-credentials):
-
-``` yaml
-default:
-    openstack_api_key: <OS_PASSWORD>
-    openstack_auth_url: https://openstack.example.org:5000/v2.0/tokens
-    openstack_tenant: admin
-    openstack_username: admin
-    private_key_path: /home/manatee/.ssh/id_rsa
-    public_key_path: /home/manatee/.ssh/id_rsa.pub
-```
-
-Next you need to set the following environment variables:
+Ensure you have the following in your ``.bashrc`` (or similar):
 
 ``` bash
-NODE_OS=        # UUID of CentOS 7 image
-FLAVOR=         # UUID of flavor for m1.large
-CHEF_DRIVER=fog:OpenStack
-
-# Various OpenStack variables
-OS_SSH_KEYPAIR=       # Name of ssh key on OpenStack to use
-OS_NETWORK_UUID=      # UUID of the network you want the instances to use
-```
-
-## Initial Setup Steps
-
-``` console
-$ git clone https://github.com/osuosl-cookbooks/osl-openstack.git
-$ cd osl-openstack
-$ chef exec rake berks_vendor
+export TF_VAR_ssh_key_name="$OS_SSH_KEYPAIR"
 ```
 
 ## Supported Deployments
 
-- Controller / Compute+Cinder
-  - Controller node (DB, MQ, Neutron, public apis, web interface, etc)
-  - Compute node (also includes Cinder volume service)
-- Controller / Network / Compute+Cinder
-  - Controller node (DB, MQ, public apis, web interface, etc)
-  - Network node (Neutron)
-  - Compute node (also includes Cinder volume service)
+- Chef-zero node acting as a Chef Server
+- Controller node (DB, MQ, Neutron, public apis, web interface, etc)
+- Compute node (also includes Cinder volume service)
 
-## Rake Deploy Commands
+## Testing
 
-These commands will spin up various compute nodes.
+First, generate some keys for chef-zero and then simply run the following suite.
 
-``` bash
-# Spin up Controller and Compute nodes
-$ chef exec rake controller_compute
-# Spin up only the controller node
-$ chef exec rake controller
-# Spin up only the compute node
-$ chef exec rake compute
-
-# To setup a cluster using a separate network node, please do the following instead
-$ chef exec rake controller_network_compute
-# Spin up only the controller node
-$ chef exec rake controller_sep_net
-# Spin up the network node
-$ chef exec rake network
-# Spin up only the compute node
-$ chef exec rake compute_sep_net
-
+``` console
+# Only need to run this once
+$ chef exec rake create_key
+$ kitchen test multi-node
 ```
+
+Be patient as this will take a while to converge all of the nodes (approximately 40 minutes).
 
 ## Access the nodes
 
-### Vagrant+Virtualbox
+Unfortunately, kitchen-terraform doesn't support using ``kitchen console`` so you will need to log into the nodes
+manually. To see what their IP addresses are, just run ``terraform output`` which will output all of the IPs.
 
 ``` bash
-$ cd vms
-# Controller
-$ vagrant ssh controller
-$ sudo su -
-# Network (if deployed)
-$ vagrant ssh network
-$ sudo su -
-# Compute
-$ vagrant ssh compute
-$ sudo su -
+# You can run the following commands to login to each node
+$ ssh centos@$(terraform output controller)
+$ ssh centos@$(terraform output compute)
+
+# Or you can look at the IPs for all for all of the nodes at once
+$ terraform output
 ```
 
-### OpenStack
+## Interacting with the chef-zero server
+
+All of these nodes are configured using a Chef Server which is a container running chef-zero. You can interact with the
+chef-zero server by doing the following:
 
 ``` bash
-# Controller
-$ openstack server show -c addresses -f value controller
-140.211.168.X
-$ ssh centos@140.211.168.X
-# Network
-$ openstack server show -c addresses -f value network
-140.211.168.X
-$ ssh centos@140.211.168.X
-# Compute
-$ openstack server show -c addresses -f value compute
-140.211.168.X
-$ ssh centos@140.211.168.X
+$ CHEF_SERVER="$(terraform output chef_zero)" knife node list -c test/chef-config/knife.rb
+controller
+compute
+$ CHEF_SERVER="$(terraform output chef_zero)" knife node edit -c test/chef-config/knife.rb
+```
+
+In addition, on any node that has been deployed, you can re-run ``chef-client`` like you normally would on a production
+system. This should allow you to do development on your multi-node environment as needed. **Just make sure you include
+the knife config otherwise you will be interacting with our production chef server!**
+
+## Using Terraform directly
+
+You do not need to use kitchen-terraform directly if you're just doing development. It's primarily useful for testing
+the multi-node cluster using inspec. You can simply deploy the cluster using terraform directly by doing the following:
+
+``` bash
+# Sanity check
+$ terraform plan
+# Deploy the cluster
+$ terraform apply
+# Destroy the cluster
+$ terraform destroy
 ```
 
 ## Cleanup
 
 ``` bash
-# To remove all the nodes and start again, run the following rake command.
-$ chef exec rake destroy_machines
+# To remove all the nodes and start again, run the following test-kitchen command.
+$ kitchen destroy multi-node
 
 # To refresh all the cookbooks, use the following command.
-$ chef exec rake berks_vendor
-
-# To cleanup everything, including the cookbooks and machines run the following command.
-$ chef exec rake clean
+$ CHEF_SERVER="$(terraform output chef_zero)" chef exec rake knife_upload
 ```
 
 ## Contributing
