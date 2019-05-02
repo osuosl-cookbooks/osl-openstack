@@ -418,8 +418,7 @@ end
 node.default['openstack']['bind_service'].tap do |conf|
   conf['mq']['host'] = '0.0.0.0'
   conf['db']['host'] = '0.0.0.0'
-  conf['admin']['identity']['host'] = '0.0.0.0'
-  conf['main']['identity']['host'] = '0.0.0.0'
+  conf['public']['identity']['host'] = '0.0.0.0'
 end
 
 # Looping magic for endpoints and binding
