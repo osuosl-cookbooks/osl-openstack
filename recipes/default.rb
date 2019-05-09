@@ -142,8 +142,6 @@ node.default['openstack']['compute']['conf'].tap do |conf|
       ServerGroupAffinityFilter
     ).join(',')
   conf['DEFAULT'].delete('use_neutron')
-  conf['DEFAULT']['linuxnet_interface_driver'] = 'nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver'
-  conf['DEFAULT']['dns_server'] = '140.211.166.130 140.211.166.131'
   conf['DEFAULT']['instance_usage_audit'] = 'True'
   conf['DEFAULT']['instance_usage_audit_period'] = 'hour'
   conf['DEFAULT']['disk_allocation_ratio'] = 1.5
