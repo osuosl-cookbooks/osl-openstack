@@ -264,3 +264,19 @@ suites:
         block-storage:
           volume:
             create_volume_group: true
+  - name: multi-node
+    driver:
+      name: terraform
+      command_timeout: 3600
+    provisioner: terraform
+    verifier:
+      name: terraform
+      groups:
+        - name: controller
+          controls:
+            - controller
+          hostnames: controller
+        - name: compute
+          controls:
+            - compute
+          hostnames: compute

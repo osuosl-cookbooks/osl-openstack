@@ -7,7 +7,7 @@
     "recipe[openstack_test::cacert]"
   ],
   "chef_type": "role",
-  "override_attributes": {},
+  "override_attributes": {
     "openstack": {
       "mq": {
         "user": "admin"

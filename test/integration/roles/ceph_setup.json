@@ -9,5 +9,5 @@
   "default_attributes": {},
   "json_class": "Chef::Role",
   "description": "Ceph Role",
-  "name": "ceph"
+  "name": "ceph_setup"
 }
