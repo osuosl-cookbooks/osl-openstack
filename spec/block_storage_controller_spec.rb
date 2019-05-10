@@ -45,7 +45,6 @@ describe 'osl-openstack::block_storage_controller' do
         )
     end
     [
-      %r{^auth_url = https://10.0.0.10:35357/v3$},
       %r{^auth_uri = https://10.0.0.10:5000/v3$},
     ].each do |line|
       it do
