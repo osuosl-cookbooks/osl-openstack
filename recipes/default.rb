@@ -502,13 +502,6 @@ end
 include_recipe 'base::packages'
 include_recipe 'yum-epel'
 
-node['yum-epel']['repos'].each do |repo|
-  next unless node['yum'][repo]['managed']
-  r = resources(yum_repository: repo)
-  # If we already have excludes, include them and append we what need
-  r.exclude = [r.exclude, 'python-django-bash-completion'].reject(&:nil?).join(' ')
-end
-
 package %w(
   libffi-devel
   openssl-devel

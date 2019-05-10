@@ -3,10 +3,6 @@ describe yum.repo('RDO-queens') do
   it { should be_enabled }
 end
 
-describe file('/etc/yum.repos.d/epel.repo') do
-  its(:content) { should match(/^exclude=python-django-bash-completion$/) }
-end
-
 describe file('/root/openrc') do
   its(:content) do
     should match(%r{
