@@ -238,7 +238,8 @@ end
 node.default['openstack']['telemetry']['platform'].tap do |conf|
   # Fixes for CentOS and wsgi
   conf['gnocchi-metricd_service'] = 'httpd'
-  conf['gnocchi-api_wsgi_file'] = '/usr/lib/python2.7/site-packages/gnocchi/rest/app.wsgi'
+  conf['gnocchi-api_wsgi_file'] = '/usr/bin/gnocchi-api'
+  conf['agent_notification_packages'] = %w(openstack-ceilometer-notification)
 end
 
 node.default['openstack']['telemetry-metric']['conf'].tap do |conf|

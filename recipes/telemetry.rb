@@ -48,10 +48,8 @@ file '/usr/share/gnocchi/gnocchi-dist.conf' do
 end
 
 include_recipe 'openstack-telemetry::gnocchi_configure'
-include_recipe 'openstack-telemetry::api'
 include_recipe 'openstack-telemetry::agent-central'
 include_recipe 'openstack-telemetry::agent-notification'
-include_recipe 'openstack-telemetry::collector'
 include_recipe 'openstack-telemetry::identity_registration'
 
 # Ensure we run this as the ceph group so that is can access /etc/ceph/ceph.conf

@@ -1,6 +1,5 @@
 %w(
   openstack-ceilometer-central
-  openstack-ceilometer-collector
   openstack-ceilometer-notification
 ).each do |s|
   describe service(s) do
@@ -9,12 +8,21 @@
   end
 end
 
-%w(8777 8041).each do |p|
-  describe port(p) do
-    it { should be_listening }
-    its('protocols') { should include 'tcp' }
-    its('addresses') { should include '127.0.0.1' }
-  end
+describe service('openstack-ceilometer-collector') do
+  it { should_not be_enabled }
+  it { should_not be_running }
+end
+
+describe port(8041) do
+  it { should be_listening }
+  its('protocols') { should include 'tcp' }
+  its('addresses') { should include '127.0.0.1' }
+end
+
+describe port(8777) do
+  it { should_not be_listening }
+  its('protocols') { should_not include 'tcp' }
+  its('addresses') { should_not include '127.0.0.1' }
 end
 
 describe ini('/etc/ceilometer/ceilometer.conf') do
