@@ -18,7 +18,6 @@ describe 'osl-openstack::orchestration' do
     [
       %r{^heat_metadata_server_url = http://10.0.0.10:8000$},
       %r{^heat_waitcondition_server_url = http://10.0.0.10:8000/v1/waitcondition$},
-      %r{^heat_watch_server_url = http://10.0.0.10:8003$},
       %r{^transport_url = rabbit://openstack:openstack@10.0.0.10:5672$},
     ].each do |line|
       it do
@@ -31,7 +30,7 @@ describe 'osl-openstack::orchestration' do
     it do
       expect(chef_run).to_not render_config_file(file.name).with_section_content('trustee', /^auth_plugin =/)
     end
-    %w(heat_api heat_api_cfn heat_api_cloudwatch).each do |service|
+    %w(heat_api heat_api_cfn).each do |service|
       it do
         expect(chef_run).to render_config_file(file.name)
           .with_section_content(
@@ -48,7 +47,7 @@ describe 'osl-openstack::orchestration' do
       let(:node) { runner.node }
       cached(:chef_run) { runner.converge(described_recipe) }
       include_context 'common_stubs'
-      %w(heat_api heat_api_cfn heat_api_cloudwatch).each do |service|
+      %w(heat_api heat_api_cfn).each do |service|
         it do
           node.set['osl-openstack']['bind_service'] = '192.168.1.1'
           expect(chef_run).to render_config_file(file.name)

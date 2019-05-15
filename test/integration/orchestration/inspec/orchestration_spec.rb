@@ -1,6 +1,5 @@
 %w(
   openstack-heat-api-cfn
-  openstack-heat-api-cloudwatch
   openstack-heat-api
   openstack-heat-engine
 ).each do |s|
@@ -10,9 +9,13 @@
   end
 end
 
+describe service('openstack-heat-api-cloudwatch') do
+  it { should_not be_enabled }
+  it { should_not be_running }
+end
+
 %w(
   8000
-  8003
   8004
 ).each do |p|
   describe port(p) do
@@ -20,6 +23,12 @@ end
     its('protocols') { should include 'tcp' }
     its('addresses') { should include '127.0.0.1' }
   end
+end
+
+describe port(8003) do
+  it { should_not be_listening }
+  its('protocols') { should_not include 'tcp' }
+  its('addresses') { should_not include '127.0.0.1' }
 end
 
 describe ini('/etc/heat/heat.conf') do
