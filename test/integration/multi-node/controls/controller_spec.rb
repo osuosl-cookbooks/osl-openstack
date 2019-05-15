@@ -51,16 +51,25 @@ control 'controller' do
     its(:stdout) { should match(/cinder-scheduler#{list_output}/) }
   end
   %w(
-    openstack-nova-api
     openstack-nova-conductor
     openstack-nova-consoleauth
-    openstack-nova-metadata-api
     openstack-nova-novncproxy
     openstack-nova-scheduler
   ).each do |s|
     describe service(s) do
       it { should be_enabled }
       it { should be_running }
+    end
+  end
+
+  # These are on httpd now via wsgi
+  %w(
+    openstack-nova-api
+    openstack-nova-metadata-api
+  ).each do |s|
+    describe service(s) do
+      it { should_not be_enabled }
+      it { should_not be_running }
     end
   end
 
@@ -74,8 +83,6 @@ control 'controller' do
 
   describe ini('/etc/nova/nova.conf') do
     its('DEFAULT.use_neutron') { should_not cmp '' }
-    its('DEFAULT.linuxnet_interface_driver') { should cmp 'nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver' }
-    its('DEFAULT.dns_server') { should cmp '140.211.166.130 140.211.166.131' }
     its('DEFAULT.disk_allocation_ratio') { should cmp '1.5' }
     its('DEFAULT.instance_usage_audit') { should cmp 'True' }
     its('DEFAULT.instance_usage_audit_period') { should cmp 'hour' }
@@ -174,13 +181,9 @@ LAUNCH_INSTANCE_DEFAULTS = {
     its('stdout') { should match(/< HTTP.*200 OK/) }
     its('stdout') { should_not match(/CSRF verification failed. Request aborted./) }
   end
-  describe yum.repo('RDO-pike') do
+  describe yum.repo('RDO-queens') do
     it { should exist }
     it { should be_enabled }
-  end
-
-  describe file('/etc/yum.repos.d/epel.repo') do
-    its(:content) { should match(/^exclude=python-django-bash-completion$/) }
   end
 
   describe file('/root/openrc') do
@@ -222,12 +225,16 @@ export OS_AUTH_TYPE=password})
     it { should be_running }
   end
 
-  %w(5000 35357).each do |p|
-    describe port(p) do
-      it { should be_listening }
-      its('protocols') { should include 'tcp' }
-      its('addresses') { should include '0.0.0.0' }
-    end
+  describe port(5000) do
+    it { should be_listening }
+    its('protocols') { should include 'tcp' }
+    its('addresses') { should include '0.0.0.0' }
+  end
+
+  describe port(35357) do
+    it { should_not be_listening }
+    its('protocols') { should_not include 'tcp' }
+    its('addresses') { should_not include '0.0.0.0' }
   end
 
   describe command('bash -c "source /root/openrc && /usr/bin/openstack token issue"') do
@@ -239,10 +246,6 @@ export OS_AUTH_TYPE=password})
 
   describe ini('/etc/keystone/keystone.conf') do
     its('memcache.servers') { should cmp 'controller.example.com:11211' }
-  end
-
-  describe apache_conf('/etc/httpd/sites-enabled/keystone-admin.conf') do
-    its('<VirtualHost') { should include '0.0.0.0:35357>' }
   end
 
   describe apache_conf('/etc/httpd/sites-enabled/keystone-main.conf') do
@@ -528,7 +531,6 @@ export OS_AUTH_TYPE=password})
   end
   %w(
     openstack-heat-api-cfn
-    openstack-heat-api-cloudwatch
     openstack-heat-api
     openstack-heat-engine
   ).each do |s|
@@ -538,9 +540,13 @@ export OS_AUTH_TYPE=password})
     end
   end
 
+  describe service('openstack-heat-api-cloudwatch') do
+    it { should_not be_enabled }
+    it { should_not be_running }
+  end
+
   %w(
     8000
-    8003
     8004
   ).each do |p|
     describe port(p) do
@@ -548,6 +554,12 @@ export OS_AUTH_TYPE=password})
       its('protocols') { should include 'tcp' }
       its('addresses') { should_not include '127.0.0.1' }
     end
+  end
+
+  describe port(8003) do
+    it { should_not be_listening }
+    its('protocols') { should_not include 'tcp' }
+    its('addresses') { should_not include '127.0.0.1' }
   end
 
   describe ini('/etc/heat/heat.conf') do
@@ -566,7 +578,6 @@ export OS_AUTH_TYPE=password})
   end
   %w(
     openstack-ceilometer-central
-    openstack-ceilometer-collector
     openstack-ceilometer-notification
   ).each do |s|
     describe service(s) do
@@ -575,12 +586,21 @@ export OS_AUTH_TYPE=password})
     end
   end
 
-  %w(8777 8041).each do |p|
-    describe port(p) do
-      it { should be_listening }
-      its('protocols') { should include 'tcp' }
-      its('addresses') { should_not include '127.0.0.1' }
-    end
+  describe service('openstack-ceilometer-collector') do
+    it { should_not be_enabled }
+    it { should_not be_running }
+  end
+
+  describe port(8041) do
+    it { should be_listening }
+    its('protocols') { should include 'tcp' }
+    its('addresses') { should_not include '127.0.0.1' }
+  end
+
+  describe port(8777) do
+    it { should_not be_listening }
+    its('protocols') { should_not include 'tcp' }
+    its('addresses') { should_not include '127.0.0.1' }
   end
 
   describe ini('/etc/ceilometer/ceilometer.conf') do
