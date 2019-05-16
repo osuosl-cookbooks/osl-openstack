@@ -9,6 +9,11 @@ set -ex
 # Disable Chef temporarily
 rm -f /etc/cron.d/chef-client
 
+# Change admin URL to port 5000
+KEYSTONE_URL="$(openstack endpoint list --service keystone --interface public -c URL -f value)"
+KEYSTONE_ADMIN_ID="$(openstack endpoint list --service keystone --interface admin -c ID -f value)"
+openstack endpoint set --url $KEYSTONE_URL $KEYSTONE_ADMIN_ID
+
 # Stop all OpenStack services
 systemctl stop 'openstack-*'
 systemctl stop 'neutron-*'
@@ -36,6 +41,8 @@ su -s /bin/sh -c "cinder-manage db sync" cinder
 
 # Upgrade Heat
 systemctl stop '*heat*'
+# Removed by upstream
+systemctl disable openstack-heat-api-cloudwatch
 yum -d1 -y upgrade \*heat\*
 su -s /bin/sh -c "heat-manage db_sync" heat
 
@@ -43,7 +50,9 @@ su -s /bin/sh -c "heat-manage db_sync" heat
 systemctl stop '*ceilometer*'
 systemctl stop '*aodh*'
 systemctl stop '*gnocchi*'
-yum -d1 -y upgrade \*ceilometer\* \*aodh\* \*gnocchi\* python2-cotyledon
+# Removed by upstream
+systemctl disable openstack-ceilometer-collector
+yum -d1 -y upgrade \*ceilometer\* \*aodh\* \*gnocchi\*
 set +e
 ceilometer-upgrade --skip-gnocchi-resource-types --config-file /etc/ceilometer/ceilometer.conf
 set -e
@@ -51,6 +60,8 @@ set -e
 # Upgrade nova
 crudini --set /etc/nova/nova.conf upgrade_levels compute auto
 systemctl stop '*nova*'
+# These were converted to wsgi
+systemctl disable openstack-nova-api openstack-nova-metadata-api
 yum -d1 -y upgrade \*nova\*
 cell_db_uri=$(cat /root/nova-cell-db-uri)
 su -s /bin/sh -c "nova-manage api_db sync" nova
@@ -63,11 +74,14 @@ crudini --del /etc/nova/nova.conf upgrade_levels compute
 
 # Upgrade neutron
 systemctl stop '*neutron*'
-yum -d1 -y upgrade \*neutron\* python-pecan
+yum -d1 -y upgrade \*neutron\*
 su -s /bin/sh -c "neutron-db-manage upgrade heads" neutron
 
+# Fix EPEL dependency issue from Pike
+yum -y remove python-django
+yum -y install openstack-dashboard
 # Upgrade the rest of the packages
 yum -y upgrade
 
 rm -f /root/nova-cell-db-uri
-touch /root/pike-upgrade-done
+touch /root/queens-upgrade-done

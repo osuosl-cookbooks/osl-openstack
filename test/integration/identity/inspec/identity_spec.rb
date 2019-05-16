@@ -26,6 +26,12 @@ describe ini('/etc/keystone/keystone.conf') do
   its('memcache.servers') { should cmp 'controller.example.com:11211' }
 end
 
+%w(keystone-admin.conf keystone-main.conf).each do |conf|
+  describe file("/etc/httpd/sites-enabled/#{conf}") do
+    it { should_not exist }
+  end
+end
+
 describe apache_conf('/etc/httpd/sites-enabled/identity.conf') do
   its('<VirtualHost') { should include '0.0.0.0:5000>' }
 end

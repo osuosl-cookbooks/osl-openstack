@@ -15,7 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-yum_repository 'RDO-ocata' do
+yum_repository 'RDO-pike' do
   action :delete
 end
 
@@ -45,5 +45,5 @@ ruby_block 'raise_upgrade_exeception' do
   block do
     raise 'Upgrade recipe enabled, stopping futher chef resources from running'
   end
-  not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/pike-upgrade-done') }
+  not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/queens-upgrade-done') }
 end

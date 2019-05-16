@@ -20,6 +20,14 @@ include_recipe 'osl-openstack'
 include_recipe 'osl-openstack::ops_messaging'
 include_recipe 'firewall::openstack'
 include_recipe 'certificate::wildcard'
+
+# Disable previous vhosts now that it's unified into one in Queens
+%w(keystone-admin keystone-main).each do |keystone_site|
+  apache_site keystone_site do
+    enable false
+  end
+end
+
 include_recipe 'openstack-identity::server-apache'
 include_recipe 'openstack-identity::registration'
 

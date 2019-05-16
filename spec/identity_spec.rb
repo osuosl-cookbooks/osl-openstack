@@ -17,6 +17,11 @@ describe 'osl-openstack::identity', identity: true do
       expect(chef_run).to include_recipe(r)
     end
   end
+  %w(keystone-admin.conf keystone-main.conf).each do |conf|
+    it do
+      expect(chef_run).to run_execute("a2dissite #{conf}")
+    end
+  end
   it do
     expect(chef_run.execute('Clear Keystone apache restart')).to do_nothing
   end
