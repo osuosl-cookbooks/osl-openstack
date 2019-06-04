@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+6.0.3 (2019-06-04)
+------------------
+- Remove zeromq exclude as it's no longer needed and causing issues
+
 6.0.2 (2019-04-22)
 ------------------
 - Add ceph client file for the gnocchi user
