@@ -32,7 +32,7 @@ describe 'osl-openstack::default' do
     expect(chef_run).to install_package(%w(libffi-devel openssl-devel crudini))
   end
   it do
-    expect(chef_run).to create_yum_repository('epel').with(exclude: 'zeromq* python-django-bash-completion')
+    expect(chef_run).to create_yum_repository('epel').with(exclude: 'python-django-bash-completion')
   end
   %w(
     base::packages

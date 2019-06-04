@@ -4,7 +4,7 @@ describe yum.repo('RDO-pike') do
 end
 
 describe file('/etc/yum.repos.d/epel.repo') do
-  its(:content) { should match(/^exclude=zeromq\* python-django-bash-completion$/) }
+  its(:content) { should match(/^exclude=python-django-bash-completion$/) }
 end
 
 describe file('/root/openrc') do
