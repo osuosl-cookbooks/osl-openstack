@@ -227,7 +227,7 @@ suites:
     driver_config:
         server_name: "upgrade-<%= ENV['USER'] %>"
     driver:
-      image_ref: "openstack-ocata-aio"
+      image_ref: "openstack-pike-aio"
     verifier:
       inspec_tests:
         - path: test/integration/controller/inspec

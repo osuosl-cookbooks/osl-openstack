@@ -21,18 +21,15 @@ describe 'osl-openstack::default' do
     it do
       expect(chef_run).to add_yum_repository('OSL-openpower-openstack')
         .with(
-          description: 'OSL Openpower OpenStack repo for centos-7/openstack-pike',
+          description: 'OSL Openpower OpenStack repo for centos-7/openstack-queens',
           gpgkey: 'http://ftp.osuosl.org/pub/osl/repos/yum/RPM-GPG-KEY-osuosl',
           gpgcheck: true,
-          baseurl: 'http://ftp.osuosl.org/pub/osl/repos/yum/$releasever/openstack-pike/$basearch'
+          baseurl: 'http://ftp.osuosl.org/pub/osl/repos/yum/$releasever/openstack-queens/$basearch'
         )
     end
   end
   it do
     expect(chef_run).to install_package(%w(libffi-devel openssl-devel crudini))
-  end
-  it do
-    expect(chef_run).to create_yum_repository('epel').with(exclude: 'python-django-bash-completion')
   end
   %w(
     base::packages

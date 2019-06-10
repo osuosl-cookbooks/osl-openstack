@@ -12,10 +12,8 @@ describe 'osl-openstack::telemetry', telemetry: true do
     osl-openstack
     openstack-telemetry::gnocchi_install
     openstack-telemetry::gnocchi_configure
-    openstack-telemetry::api
     openstack-telemetry::agent-central
     openstack-telemetry::agent-notification
-    openstack-telemetry::collector
     openstack-telemetry::identity_registration
   ).each do |r|
     it "includes cookbook #{r}" do

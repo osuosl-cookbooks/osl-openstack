@@ -3,12 +3,16 @@ describe service('httpd') do
   it { should be_running }
 end
 
-%w(5000 35357).each do |p|
-  describe port(p) do
-    it { should be_listening }
-    its('protocols') { should include 'tcp' }
-    its('addresses') { should include '0.0.0.0' }
-  end
+describe port(5000) do
+  it { should be_listening }
+  its('protocols') { should include 'tcp' }
+  its('addresses') { should include '0.0.0.0' }
+end
+
+describe port(35357) do
+  it { should_not be_listening }
+  its('protocols') { should_not include 'tcp' }
+  its('addresses') { should_not include '0.0.0.0' }
 end
 
 describe command('bash -c "source /root/openrc && /usr/bin/openstack token issue"') do
@@ -22,11 +26,13 @@ describe ini('/etc/keystone/keystone.conf') do
   its('memcache.servers') { should cmp 'controller.example.com:11211' }
 end
 
-describe apache_conf('/etc/httpd/sites-enabled/keystone-admin.conf') do
-  its('<VirtualHost') { should include '0.0.0.0:35357>' }
+%w(keystone-admin.conf keystone-main.conf).each do |conf|
+  describe file("/etc/httpd/sites-enabled/#{conf}") do
+    it { should_not exist }
+  end
 end
 
-describe apache_conf('/etc/httpd/sites-enabled/keystone-main.conf') do
+describe apache_conf('/etc/httpd/sites-enabled/identity.conf') do
   its('<VirtualHost') { should include '0.0.0.0:5000>' }
 end
 

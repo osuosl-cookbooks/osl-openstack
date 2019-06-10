@@ -23,18 +23,18 @@ cookbook 'yum-qemu-ev', git: 'git@github.com:osuosl-cookbooks/yum-qemu-ev.git'
 cookbook 'ibm-power', git: 'git@github.com:osuosl-cookbooks/ibm-power.git'
 
 # WIP patches
-%w(
-  compute
-).each do |cb|
-  cookbook "openstack-#{cb}",
-           github: "osuosl-cookbooks/cookbook-openstack-#{cb}",
-           branch: 'stable/pike'
-end
+# %w(
+# ).each do |cb|
+#   cookbook "openstack-#{cb}",
+#            github: "osuosl-cookbooks/cookbook-openstack-#{cb}",
+#            branch: 'stable/queens'
+# end
 
 # Openstack deps
 %w(
   block-storage
   common
+  compute
   dashboard
   identity
   image
@@ -47,7 +47,7 @@ end
 ).each do |cb|
   cookbook "openstack-#{cb}",
            github: "openstack/cookbook-openstack-#{cb}",
-           branch: 'stable/pike'
+           branch: 'stable/queens'
 end
 
 cookbook 'openstack_test', path: 'test/cookbooks/openstack_test'

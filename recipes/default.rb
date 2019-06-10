@@ -26,7 +26,7 @@ node.default['authorization']['sudo']['include_sudoers_d'] = true
 node.default['apache']['contact'] = 'hostmaster@osuosl.org'
 node.default['osl-apache']['server_status_port'] = 80
 node.default['rabbitmq']['use_distro_version'] = true
-node.default['openstack']['release'] = 'pike'
+node.default['openstack']['release'] = 'queens'
 node.default['openstack']['is_release'] = true
 node.default['openstack']['secret']['key_path'] =
   '/etc/chef/encrypted_data_bag_secret'
@@ -142,8 +142,6 @@ node.default['openstack']['compute']['conf'].tap do |conf|
       ServerGroupAffinityFilter
     ).join(',')
   conf['DEFAULT'].delete('use_neutron')
-  conf['DEFAULT']['linuxnet_interface_driver'] = 'nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver'
-  conf['DEFAULT']['dns_server'] = '140.211.166.130 140.211.166.131'
   conf['DEFAULT']['instance_usage_audit'] = 'True'
   conf['DEFAULT']['instance_usage_audit_period'] = 'hour'
   conf['DEFAULT']['disk_allocation_ratio'] = 1.5
@@ -240,7 +238,8 @@ end
 node.default['openstack']['telemetry']['platform'].tap do |conf|
   # Fixes for CentOS and wsgi
   conf['gnocchi-metricd_service'] = 'httpd'
-  conf['gnocchi-api_wsgi_file'] = '/usr/lib/python2.7/site-packages/gnocchi/rest/app.wsgi'
+  conf['gnocchi-api_wsgi_file'] = '/usr/bin/gnocchi-api'
+  conf['agent_notification_packages'] = %w(openstack-ceilometer-notification)
 end
 
 node.default['openstack']['telemetry-metric']['conf'].tap do |conf|
@@ -418,8 +417,7 @@ end
 node.default['openstack']['bind_service'].tap do |conf|
   conf['mq']['host'] = '0.0.0.0'
   conf['db']['host'] = '0.0.0.0'
-  conf['admin']['identity']['host'] = '0.0.0.0'
-  conf['main']['identity']['host'] = '0.0.0.0'
+  conf['public']['identity']['host'] = '0.0.0.0'
 end
 
 # Looping magic for endpoints and binding
@@ -504,13 +502,6 @@ end
 
 include_recipe 'base::packages'
 include_recipe 'yum-epel'
-
-node['yum-epel']['repos'].each do |repo|
-  next unless node['yum'][repo]['managed']
-  r = resources(yum_repository: repo)
-  # If we already have excludes, include them and append we what need
-  r.exclude = [r.exclude, 'python-django-bash-completion'].reject(&:nil?).join(' ')
-end
 
 package %w(
   libffi-devel

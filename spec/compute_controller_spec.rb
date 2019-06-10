@@ -29,12 +29,9 @@ describe 'osl-openstack::compute_controller' do
     let(:file) { chef_run.template('/etc/nova/nova.conf') }
 
     [
-      /^linuxnet_interface_driver = nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver$/,
-      /^dns_server = 140.211.166.130 140.211.166.131$/,
       /^disk_allocation_ratio = 1.5$/,
       /^instance_usage_audit = True$/,
       /^instance_usage_audit_period = hour$/,
-      /^osapi_compute_listen = 10.0.0.2$/,
       /^metadata_listen = 10.0.0.2$/,
       /^resume_guests_state_on_host_boot = True$/,
       /^block_device_allocate_retries = 120$/,
@@ -103,21 +100,10 @@ describe 'osl-openstack::compute_controller' do
 
     [
       /^service_metadata_proxy = true$/,
-      %r{^url = http://10.0.0.10:9696$},
       %r{^auth_url = https://10.0.0.10:5000/v3$},
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('neutron', line)
-      end
-    end
-    context 'Separate Network Node' do
-      cached(:chef_run) { runner.converge(described_recipe) }
-      before do
-        node.set['osl-openstack']['separate_network_node'] = true
-      end
-      it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('neutron', %r{^url = http://10.0.0.11:9696$})
       end
     end
 
@@ -126,8 +112,8 @@ describe 'osl-openstack::compute_controller' do
       %r{^xvpvncproxy_base_url = http://10.0.0.10:6081/console$},
       /^xvpvncproxy_host = 10.0.0.2$/,
       /^novncproxy_host = 10.0.0.2$/,
-      /^vncserver_listen = 10.0.0.2$/,
-      /^vncserver_proxyclient_address = 10.0.0.2$/,
+      /^server_listen = 10.0.0.2$/,
+      /^server_proxyclient_address = 10.0.0.2$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('vnc', line)

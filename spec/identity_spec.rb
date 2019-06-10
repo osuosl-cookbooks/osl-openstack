@@ -17,14 +17,18 @@ describe 'osl-openstack::identity', identity: true do
       expect(chef_run).to include_recipe(r)
     end
   end
+  %w(keystone-admin.conf keystone-main.conf).each do |conf|
+    it do
+      expect(chef_run).to run_execute("a2dissite #{conf}")
+    end
+  end
   it do
     expect(chef_run.execute('Clear Keystone apache restart')).to do_nothing
   end
   %w(
     /etc/keystone/keystone.conf
     /etc/keystone/keystone-paste.ini
-    /etc/httpd/sites-available/keystone-admin.conf
-    /etc/httpd/sites-available/keystone-main.conf
+    /etc/httpd/sites-available/identity.conf
   ).each do |t|
     it do
       expect(chef_run.template(t)).to notify('execute[Clear Keystone apache restart]').to(:run).immediately
@@ -34,7 +38,7 @@ describe 'osl-openstack::identity', identity: true do
     let(:file) { chef_run.template('/etc/keystone/keystone.conf') }
     [
       %r{^public_endpoint = https://10.0.0.10:5000/$},
-      %r{^admin_endpoint = https://10.0.0.10:35357/$},
+      %r{^admin_endpoint = https://10.0.0.10:5000/$},
       %r{^transport_url = rabbit://openstack:openstack@10.0.0.10:5672$},
     ].each do |line|
       it do
@@ -106,24 +110,9 @@ describe 'osl-openstack::identity', identity: true do
         .with_section_content('pipeline:api_v3', 'pipeline = cors sizelimit http_proxy_to_wsgi osprofiler url_normalize request_id build_auth_context token_auth json_body ec2_extension_v3 s3_extension service_v3')
     end
   end
-  describe '/etc/httpd/sites-available/keystone-admin.conf' do
+  describe '/etc/httpd/sites-available/identity.conf' do
     let(:file) do
-      chef_run.template('/etc/httpd/sites-available/keystone-admin.conf')
-    end
-    [
-      /^<VirtualHost 0.0.0.0:35357>$/,
-      %r{SSLCertificateFile /etc/pki/tls/certs/wildcard.pem$},
-      %r{SSLCertificateKeyFile /etc/pki/tls/private/wildcard.key$},
-      %r{SSLCertificateChainFile /etc/pki/tls/certs/wildcard-bundle.crt$},
-    ].each do |line|
-      it do
-        expect(chef_run).to render_config_file(file.name).with_content(line)
-      end
-    end
-  end
-  describe '/etc/httpd/sites-available/keystone-main.conf' do
-    let(:file) do
-      chef_run.template('/etc/httpd/sites-available/keystone-main.conf')
+      chef_run.template('/etc/httpd/sites-available/identity.conf')
     end
     [
       /^<VirtualHost 0.0.0.0:5000>$/,

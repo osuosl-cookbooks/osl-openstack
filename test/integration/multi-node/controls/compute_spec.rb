@@ -1,8 +1,6 @@
 control 'compute' do
   describe ini('/etc/nova/nova.conf') do
     its('DEFAULT.use_neutron') { should_not cmp '' }
-    its('DEFAULT.linuxnet_interface_driver') { should cmp 'nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver' }
-    its('DEFAULT.dns_server') { should cmp '140.211.166.130 140.211.166.131' }
     its('DEFAULT.disk_allocation_ratio') { should cmp '1.5' }
     its('DEFAULT.instance_usage_audit') { should cmp 'True' }
     its('DEFAULT.instance_usage_audit_period') { should cmp 'hour' }

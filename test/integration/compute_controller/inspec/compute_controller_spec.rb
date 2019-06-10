@@ -1,14 +1,23 @@
 %w(
-  openstack-nova-api
   openstack-nova-conductor
   openstack-nova-consoleauth
-  openstack-nova-metadata-api
   openstack-nova-novncproxy
   openstack-nova-scheduler
 ).each do |s|
   describe service(s) do
     it { should be_enabled }
     it { should be_running }
+  end
+end
+
+# These are on httpd now via wsgi
+%w(
+  openstack-nova-api
+  openstack-nova-metadata-api
+).each do |s|
+  describe service(s) do
+    it { should_not be_enabled }
+    it { should_not be_running }
   end
 end
 
@@ -22,8 +31,6 @@ end
 
 describe ini('/etc/nova/nova.conf') do
   its('DEFAULT.use_neutron') { should_not cmp '' }
-  its('DEFAULT.linuxnet_interface_driver') { should cmp 'nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver' }
-  its('DEFAULT.dns_server') { should cmp '140.211.166.130 140.211.166.131' }
   its('DEFAULT.disk_allocation_ratio') { should cmp '1.5' }
   its('DEFAULT.instance_usage_audit') { should cmp 'True' }
   its('DEFAULT.instance_usage_audit_period') { should cmp 'hour' }
