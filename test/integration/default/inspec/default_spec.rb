@@ -1,11 +1,11 @@
 baseurl =
   if os.arch == 'x86_64'
-    'http://centos.osuosl.org/7/cloud/x86_64/openstack-queens/'
+    'http://centos.osuosl.org/7/cloud/x86_64/openstack-rocky/'
   elsif os.arch == 'ppc64le'
-    'http://centos-altarch.osuosl.org/7/cloud/ppc64le/openstack-queens/'
+    'http://centos-altarch.osuosl.org/7/cloud/ppc64le/openstack-rocky/'
   end
 
-describe yum.repo('RDO-queens') do
+describe yum.repo('RDO-rocky') do
   it { should exist }
   it { should be_enabled }
   its('baseurl') { should cmp baseurl }

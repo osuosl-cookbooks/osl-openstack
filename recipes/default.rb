@@ -26,7 +26,7 @@ node.default['authorization']['sudo']['include_sudoers_d'] = true
 node.default['apache']['contact'] = 'hostmaster@osuosl.org'
 node.default['osl-apache']['server_status_port'] = 80
 node.default['rabbitmq']['use_distro_version'] = true
-node.default['openstack']['release'] = 'queens'
+node.default['openstack']['release'] = 'rocky'
 node.default['openstack']['is_release'] = true
 node.default['openstack']['secret']['key_path'] =
   '/etc/chef/encrypted_data_bag_secret'
@@ -488,7 +488,7 @@ end
   telemetry
 ).each do |i|
   identity_endpoint = public_endpoint 'identity'
-  auth_url = auth_uri_transform identity_endpoint.to_s, node['openstack']['api']['auth']['version']
+  auth_url = auth_uri_transform identity_endpoint.to_s, 'v3.0'
   node.default['openstack'][i]['conf'].tap do |conf|
     conf['keystone_authtoken']['auth_uri'] = auth_url
   end
