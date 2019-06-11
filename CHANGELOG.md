@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+7.0.1 (2019-06-11)
+------------------
+- Remove resources which restart httpd on every chef run
+
 7.0.0 (2019-06-10)
 ------------------
 - Queens Release
