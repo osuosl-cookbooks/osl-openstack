@@ -154,6 +154,16 @@ grep -c '^Current mode:.*enforcing') -eq 1 ]").and_return(true)
     allow(File).to receive(:symlink?).and_call_original
     allow(File).to receive(:symlink?).with('/etc/httpd/sites-enabled/keystone-admin.conf').and_return(true)
     allow(File).to receive(:symlink?).with('/etc/httpd/sites-enabled/keystone-main.conf').and_return(true)
+    stub_search('node', 'role:openstack').and_return(
+      [
+        {
+          ipaddress: '10.0.0.10',
+        },
+        {
+          ipaddress: '10.0.0.11',
+        },
+      ]
+    )
   end
 end
 

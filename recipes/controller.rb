@@ -18,11 +18,11 @@
 #
 node.default['osl-openstack']['node_type'] = 'controller'
 
+include_recipe 'osl-openstack::default'
 include_recipe 'osl-apache::default'
 include_recipe 'firewall::openstack'
 include_recipe 'firewall::memcached'
 include_recipe 'firewall::vnc'
-include_recipe 'osl-openstack::default'
 include_recipe 'memcached'
 include_recipe 'osl-openstack::identity'
 include_recipe 'osl-openstack::image'
