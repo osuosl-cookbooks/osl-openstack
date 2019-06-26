@@ -37,6 +37,20 @@ describe 'osl-openstack::controller' do
       expect(chef_run).to include_recipe(r)
     end
   end
+  it 'adds cluster nodes ipaddresses' do
+    expect(chef_run).to create_iptables_ng_rule('memcached_ipv4').with(
+      rule:
+        [
+          '--protocol tcp --source 10.0.0.10 --destination-port 11211 --jump ACCEPT',
+          '--protocol udp --source 10.0.0.10 --destination-port 11211 --jump ACCEPT',
+          '--protocol tcp --source 10.0.0.11 --destination-port 11211 --jump ACCEPT',
+          '--protocol udp --source 10.0.0.11 --destination-port 11211 --jump ACCEPT',
+          '--protocol tcp --source 127.0.0.1 --destination-port 11211 --jump ACCEPT',
+          '--protocol udp --source 127.0.0.1 --destination-port 11211 --jump ACCEPT',
+        ],
+      chain: 'memcached'
+    )
+  end
   describe '/etc/nova/nova.conf' do
     let(:file) { chef_run.template('/etc/nova/nova.conf') }
 

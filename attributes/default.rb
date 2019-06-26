@@ -24,6 +24,7 @@ default['osl-openstack']['credentials']['ceph'] = {}
 default['osl-openstack']['ceph'] = false
 default['osl-openstack']['ceph_databag'] = 'ceph'
 default['osl-openstack']['ceph_item'] = 'openstack'
+default['osl-openstack']['cluster_role'] = 'openstack'
 default['osl-openstack']['database_suffix'] = nil
 default['osl-openstack']['databag_prefix'] = nil
 default['osl-openstack']['compute']['rbd_store_pool'] = 'vms'

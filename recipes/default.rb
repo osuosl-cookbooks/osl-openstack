@@ -529,3 +529,9 @@ include_recipe 'osl-ceph' if node['osl-openstack']['ceph']
 
 # Needed for accessing neutron when running separate from controller node
 package 'python-memcached'
+
+cluster_hosts = %w(127.0.0.1)
+search(:node, "role:#{node['osl-openstack']['cluster_role']}") do |n|
+  cluster_hosts << n['ipaddress']
+end
+node.override['firewall']['range']['memcached']['4'] = cluster_hosts.flatten.sort
