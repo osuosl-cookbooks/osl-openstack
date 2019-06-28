@@ -31,6 +31,7 @@ default['osl-openstack']['compute']['rbd_store_pool'] = 'vms'
 default['osl-openstack']['cinder']['iscsi_role'] = nil
 default['osl-openstack']['cinder']['iscsi_ips'] = []
 default['osl-openstack']['block']['rbd_store_pool'] = 'volumes'
+default['osl-openstack']['block']['rbd_ssd_pool'] = 'volumes_ssd'
 default['osl-openstack']['block']['rbd_store_user'] = 'cinder'
 default['osl-openstack']['block_backup']['rbd_store_pool'] = 'backups'
 default['osl-openstack']['block_backup']['rbd_store_user'] = 'cinder-backup'

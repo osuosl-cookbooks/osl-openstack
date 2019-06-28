@@ -259,7 +259,7 @@ node.override['openstack']['block-storage']['conf'].tap do |conf|
   conf['DEFAULT']['volume_clear_size'] = 256
   conf['DEFAULT']['enable_v3_api'] = true
   if node['osl-openstack']['ceph']
-    conf['DEFAULT']['enabled_backends'] = 'ceph'
+    conf['DEFAULT']['enabled_backends'] = 'ceph,ceph_ssd'
     conf['DEFAULT']['backup_driver'] = 'cinder.backup.drivers.ceph'
     conf['DEFAULT']['backup_ceph_conf'] = '/etc/ceph/ceph.conf'
     conf['DEFAULT']['backup_ceph_user'] = node['osl-openstack']['block_backup']['rbd_store_user']
@@ -278,6 +278,16 @@ node.override['openstack']['block-storage']['conf'].tap do |conf|
     conf['ceph']['rados_connect_timeout'] = -1
     conf['ceph']['rbd_user'] = node['osl-openstack']['block']['rbd_store_user']
     conf['ceph']['rbd_secret_uuid'] = node['ceph']['fsid-secret']
+    conf['ceph_ssd']['volume_driver'] = 'cinder.volume.drivers.rbd.RBDDriver'
+    conf['ceph_ssd']['volume_backend_name'] = 'ceph_ssd'
+    conf['ceph_ssd']['rbd_pool'] = node['osl-openstack']['block']['rbd_ssd_pool']
+    conf['ceph_ssd']['rbd_ceph_conf'] = '/etc/ceph/ceph.conf'
+    conf['ceph_ssd']['rbd_flatten_volume_from_snapshot'] = false
+    conf['ceph_ssd']['rbd_max_clone_depth'] = 5
+    conf['ceph_ssd']['rbd_store_chunk_size'] = 4
+    conf['ceph_ssd']['rados_connect_timeout'] = -1
+    conf['ceph_ssd']['rbd_user'] = node['osl-openstack']['block']['rbd_store_user']
+    conf['ceph_ssd']['rbd_secret_uuid'] = node['ceph']['fsid-secret']
     conf['libvirt']['rbd_user'] = node['osl-openstack']['block']['rbd_store_user']
     conf['libvirt']['rbd_secret_uuid'] = node['ceph']['fsid-secret']
   end
