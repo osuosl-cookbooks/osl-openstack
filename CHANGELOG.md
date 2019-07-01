@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+7.0.3 (2019-07-01)
+------------------
+- Enable SSD enabled ceph pool for volumes
+
 7.0.2 (2019-06-26)
 ------------------
 - Allow access to controller memcached server from all servers in the cluster
