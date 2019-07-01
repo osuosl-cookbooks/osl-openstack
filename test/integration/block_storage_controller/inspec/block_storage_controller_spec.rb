@@ -21,7 +21,7 @@ describe ini('/etc/cinder/cinder.conf') do
   its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
   its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
   its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
-  its('DEFAULT.enabled_backends') { should cmp 'ceph' }
+  its('DEFAULT.enabled_backends') { should cmp 'ceph,ceph_ssd' }
   its('DEFAULT.backup_driver') { should cmp 'cinder.backup.drivers.ceph' }
   its('DEFAULT.backup_ceph_conf') { should cmp '/etc/ceph/ceph.conf' }
   its('DEFAULT.backup_ceph_user') { should cmp 'cinder-backup' }
@@ -40,6 +40,16 @@ describe ini('/etc/cinder/cinder.conf') do
   its('ceph.rados_connect_timeout') { should cmp '-1' }
   its('ceph.rbd_user') { should cmp 'cinder' }
   its('ceph.rbd_secret_uuid') { should cmp 'ae3f1d03-bacd-4a90-b869-1a4fabb107f2' }
+  its('ceph_ssd.volume_driver') { should cmp 'cinder.volume.drivers.rbd.RBDDriver' }
+  its('ceph_ssd.volume_backend_name') { should cmp 'ceph_ssd' }
+  its('ceph_ssd.rbd_pool') { should cmp 'volumes_ssd' }
+  its('ceph_ssd.rbd_ceph_conf') { should cmp '/etc/ceph/ceph.conf' }
+  its('ceph_ssd.rbd_flatten_volume_from_snapshot') { should cmp 'false' }
+  its('ceph_ssd.rbd_max_clone_depth') { should cmp '5' }
+  its('ceph_ssd.rbd_store_chunk_size') { should cmp '4' }
+  its('ceph_ssd.rados_connect_timeout') { should cmp '-1' }
+  its('ceph_ssd.rbd_user') { should cmp 'cinder' }
+  its('ceph_ssd.rbd_secret_uuid') { should cmp 'ae3f1d03-bacd-4a90-b869-1a4fabb107f2' }
   its('libvirt.rbd_user') { should cmp 'cinder' }
   its('libvirt.rbd_secret_uuid') { should cmp 'ae3f1d03-bacd-4a90-b869-1a4fabb107f2' }
 end

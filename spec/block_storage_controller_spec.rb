@@ -86,7 +86,7 @@ describe 'osl-openstack::block_storage_controller' do
       include_context 'common_stubs'
       include_context 'ceph_stubs'
       [
-        /^enabled_backends = ceph$/,
+        /^enabled_backends = ceph,ceph_ssd$/,
         /^backup_driver = cinder.backup.drivers.ceph$/,
         %r{^backup_ceph_conf = /etc/ceph/ceph.conf$},
         /^backup_ceph_user = cinder-backup$/,
@@ -114,6 +114,22 @@ describe 'osl-openstack::block_storage_controller' do
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name).with_section_content('ceph', line)
+        end
+      end
+      [
+        /^volume_driver = cinder.volume.drivers.rbd.RBDDriver$/,
+        /^volume_backend_name = ceph_ssd$/,
+        /^rbd_pool = volumes_ssd$/,
+        %r{rbd_ceph_conf = /etc/ceph/ceph.conf$},
+        /^rbd_flatten_volume_from_snapshot = false$/,
+        /^rbd_max_clone_depth = 5$/,
+        /^rbd_store_chunk_size = 4$/,
+        /^rados_connect_timeout = -1$/,
+        /^rbd_user = cinder$/,
+        /^rbd_secret_uuid = 8102bb29-f48b-4f6e-81d7-4c59d80ec6b8$/,
+      ].each do |line|
+        it do
+          expect(chef_run).to render_config_file(file.name).with_section_content('ceph_ssd', line)
         end
       end
       [
