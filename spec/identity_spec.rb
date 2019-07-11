@@ -17,11 +17,6 @@ describe 'osl-openstack::identity', identity: true do
       expect(chef_run).to include_recipe(r)
     end
   end
-  %w(keystone-admin.conf keystone-main.conf).each do |conf|
-    it do
-      expect(chef_run).to run_execute("a2dissite #{conf}")
-    end
-  end
   it do
     expect(chef_run.execute('Clear Keystone apache restart')).to do_nothing
   end
@@ -38,7 +33,6 @@ describe 'osl-openstack::identity', identity: true do
     let(:file) { chef_run.template('/etc/keystone/keystone.conf') }
     [
       %r{^public_endpoint = https://10.0.0.10:5000/$},
-      %r{^admin_endpoint = https://10.0.0.10:5000/$},
       %r{^transport_url = rabbit://openstack:openstack@10.0.0.10:5672$},
     ].each do |line|
       it do
@@ -96,14 +90,6 @@ describe 'osl-openstack::identity', identity: true do
     it do
       expect(chef_run).to_not render_config_file(file.name)
         .with_section_content('filter:http_proxy_to_wsgi', 'use = egg:oslo.middleware\#http_proxy_to_wsgi')
-    end
-    it do
-      expect(chef_run).to render_config_file(file.name)
-        .with_section_content('pipeline:public_api', 'pipeline = cors sizelimit http_proxy_to_wsgi osprofiler url_normalize request_id build_auth_context token_auth json_body ec2_extension public_service')
-    end
-    it do
-      expect(chef_run).to render_config_file(file.name)
-        .with_section_content('pipeline:admin_api', 'pipeline = cors sizelimit http_proxy_to_wsgi osprofiler url_normalize request_id build_auth_context token_auth json_body ec2_extension s3_extension admin_service')
     end
     it do
       expect(chef_run).to render_config_file(file.name)

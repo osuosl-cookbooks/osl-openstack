@@ -148,7 +148,6 @@ grep -c '^Current mode:.*enforcing') -eq 1 ]").and_return(true)
     allow_any_instance_of(Chef::Recipe).to receive(:rabbit_transport_url)
       .with('identity')
       .and_return('rabbit://openstack:openstack@controller.example.org:5672')
-    stub_command("/opt/chef/embedded/bin/gem list -i -v '>= 0.2.0' fog-openstack")
     allow(File).to receive(:symlink?).and_call_original
     allow(File).to receive(:symlink?).with('/etc/httpd/sites-enabled/keystone-admin.conf').and_return(true)
     allow(File).to receive(:symlink?).with('/etc/httpd/sites-enabled/keystone-main.conf').and_return(true)
