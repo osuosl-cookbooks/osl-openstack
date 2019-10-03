@@ -4,7 +4,7 @@ require 'chef/application'
 describe 'osl-openstack::compute' do
   let(:runner) do
     ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-      node.set['osl-openstack']['physical_interface_mappings'] = { compute: 'eth1' }
+      node.normal['osl-openstack']['physical_interface_mappings'] = { compute: 'eth1' }
     end
   end
   let(:node) { runner.node }
@@ -107,7 +107,7 @@ Host *
   context 'Set ceph' do
     let(:runner) do
       ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-        node.set['osl-openstack']['ceph'] = true
+        node.normal['osl-openstack']['ceph'] = true
         node.automatic['filesystem2']['by_mountpoint']
       end
     end
@@ -189,7 +189,7 @@ Host *
     context 'virsh secret exists' do
       let(:runner) do
         ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-          node.set['osl-openstack']['ceph'] = true
+          node.normal['osl-openstack']['ceph'] = true
           node.automatic['filesystem2']['by_mountpoint']
         end
       end

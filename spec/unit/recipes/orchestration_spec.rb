@@ -49,7 +49,7 @@ describe 'osl-openstack::orchestration' do
       include_context 'common_stubs'
       %w(heat_api heat_api_cfn).each do |service|
         it do
-          node.set['osl-openstack']['bind_service'] = '192.168.1.1'
+          node.normal['osl-openstack']['bind_service'] = '192.168.1.1'
           expect(chef_run).to render_config_file(file.name)
             .with_section_content(
               service,
