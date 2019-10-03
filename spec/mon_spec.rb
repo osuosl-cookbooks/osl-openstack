@@ -100,9 +100,9 @@ describe 'osl-openstack::mon' do
       expect(chef_run).to create_file(check_openstack)
     end
     it do
-      expect(chef_run).to install_sudo('nrpe-openstack')
+      expect(chef_run).to create_sudo('nrpe-openstack')
         .with(
-          user: '%nrpe',
+          user: ['%nrpe'],
           nopasswd: true,
           runas: 'root',
           commands: [check_openstack]
