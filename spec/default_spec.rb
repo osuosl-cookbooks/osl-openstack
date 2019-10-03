@@ -33,7 +33,6 @@ describe 'osl-openstack::default' do
   end
   %w(
     base::packages
-    build-essential
     firewall
     openstack-common
     openstack-common::client
@@ -46,6 +45,9 @@ describe 'osl-openstack::default' do
     it do
       expect(chef_run).to include_recipe(r)
     end
+  end
+  it do
+    expect(chef_run).to install_build_essential('osl-openstack')
   end
   it do
     expect(chef_run).to delete_link('/usr/local/bin/openstack')
