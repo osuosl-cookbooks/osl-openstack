@@ -59,7 +59,7 @@ when 'ppc64le'
       'grep -E \'SMT is off|Machine is not SMT capable\''
   end
 when 'x86_64'
-  kernel_module 'kvm-intel' do
+  kernel_module 'kvm-intel' do # ~FC009
     onboot true
     reload false
     options %w(nested=1)
