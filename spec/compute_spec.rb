@@ -231,7 +231,7 @@ Host *
     it 'loads kvm_hv module' do
       expect(chef_run).to load_kernel_module('kvm_hv')
     end
-    %w(chef-sugar::default yum-kernel-osuosl::install base::grub).each do |r|
+    %w(yum-kernel-osuosl::install base::grub).each do |r|
       it do
         expect(chef_run).to include_recipe(r)
       end
