@@ -21,13 +21,12 @@ cookbook 'yum-kernel-osuosl', git: 'git@github.com:osuosl-cookbooks/yum-kernel-o
 cookbook 'yum-qemu-ev', git: 'git@github.com:osuosl-cookbooks/yum-qemu-ev.git'
 
 # WIP patches
-%w(
-  orchestration
-).each do |cb|
-  cookbook "openstack-#{cb}",
-           github: "osuosl-cookbooks/cookbook-openstack-#{cb}",
-           branch: 'fog-fixes-and-remove-admin-endpoint'
-end
+# %w(
+# ).each do |cb|
+#   cookbook "openstack-#{cb}",
+#            github: "osuosl-cookbooks/cookbook-openstack-#{cb}",
+#            branch: 'fog-fixes-and-remove-admin-endpoint'
+# end
 
 # Openstack deps
 %w(
@@ -41,6 +40,7 @@ end
   network
   ops-database
   ops-messaging
+  orchestration
   telemetry
 ).each do |cb|
   cookbook "openstack-#{cb}",
