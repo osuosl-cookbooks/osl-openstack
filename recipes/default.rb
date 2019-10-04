@@ -457,7 +457,7 @@ end
   telemetry
 ).each do |i|
   identity_endpoint = public_endpoint 'identity'
-  auth_url = auth_uri_transform identity_endpoint.to_s, 'v3.0'
+  auth_url = ::URI.decode identity_endpoint.to_s
   node.default['openstack'][i]['conf'].tap do |conf|
     conf['keystone_authtoken']['auth_uri'] = auth_url
   end
