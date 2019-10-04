@@ -501,6 +501,11 @@ link '/usr/local/bin/openstack' do
   action :delete
 end
 
+# We need to ensure we pul in this version from the RDO repo
+package 'python2-urllib3' do
+  action :upgrade
+end
+
 include_recipe 'osl-ceph' if node['osl-openstack']['ceph']
 
 # Needed for accessing neutron when running separate from controller node

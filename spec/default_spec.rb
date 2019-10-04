@@ -61,6 +61,9 @@ describe 'osl-openstack::default' do
     expect(chef_run).to delete_link('/usr/local/bin/openstack')
   end
   it do
+    expect(chef_run).to upgrade_package('python2-urllib3')
+  end
+  it do
     expect(chef_run).to install_package('python-memcached')
   end
 
