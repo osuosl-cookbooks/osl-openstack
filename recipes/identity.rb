@@ -22,28 +22,3 @@ include_recipe 'firewall::openstack'
 include_recipe 'certificate::wildcard'
 include_recipe 'openstack-identity::server-apache'
 include_recipe 'openstack-identity::registration'
-
-# Clear lock file when notified
-execute 'Clear Keystone apache restart' do
-  command "rm -f #{Chef::Config[:file_cache_path]}/keystone-apache-restarted"
-  action :nothing
-end
-
-# Whenever a keystone config is updated, have it notify the resource which clears the lock so the service can be
-# restarted.
-%w(
-  /etc/keystone/keystone.conf
-  /etc/keystone/keystone-paste.ini
-  /etc/httpd/sites-available/identity.conf
-).each do |t|
-  edit_resource(:template, t) do
-    notifies :run, 'execute[Clear Keystone apache restart]', :immediately
-  end
-end
-
-# Only restart Keystone apache during the initial install. This causes monitoring and service issues while the service
-# is restarted.
-edit_resource(:execute, 'Keystone apache restart') do
-  command "touch #{Chef::Config[:file_cache_path]}/keystone-apache-restarted"
-  creates "#{Chef::Config[:file_cache_path]}/keystone-apache-restarted"
-end

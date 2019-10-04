@@ -378,7 +378,7 @@ shared_context 'block_storage_stubs' do
       .and_return('test_pass')
     allow(Chef::Application).to receive(:fatal!)
     allow_any_instance_of(Chef::Recipe).to receive(:rabbit_transport_url)
-      .with('block-storage')
+      .with('block_storage')
       .and_return('rabbit://openstack:openstack@controller.example.org:5672')
   end
 end

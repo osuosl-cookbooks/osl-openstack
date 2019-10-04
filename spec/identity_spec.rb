@@ -17,18 +17,6 @@ describe 'osl-openstack::identity', identity: true do
       expect(chef_run).to include_recipe(r)
     end
   end
-  it do
-    expect(chef_run.execute('Clear Keystone apache restart')).to do_nothing
-  end
-  %w(
-    /etc/keystone/keystone.conf
-    /etc/keystone/keystone-paste.ini
-    /etc/httpd/sites-available/identity.conf
-  ).each do |t|
-    it do
-      expect(chef_run.template(t)).to notify('execute[Clear Keystone apache restart]').to(:run).immediately
-    end
-  end
   describe '/etc/keystone/keystone.conf' do
     let(:file) { chef_run.template('/etc/keystone/keystone.conf') }
     [
@@ -110,12 +98,5 @@ describe 'osl-openstack::identity', identity: true do
         expect(chef_run).to render_config_file(file.name).with_content(line)
       end
     end
-  end
-  it do
-    expect(chef_run).to run_execute('Keystone apache restart')
-      .with(
-        command: "touch #{Chef::Config[:file_cache_path]}/keystone-apache-restarted",
-        creates: "#{Chef::Config[:file_cache_path]}/keystone-apache-restarted"
-      )
   end
 end
