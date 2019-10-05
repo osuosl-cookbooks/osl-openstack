@@ -105,8 +105,6 @@ describe command('bash -c "source /root/openrc && neutron ext-list -c alias -f v
     standard-attr-timestamp
     subnet_allocation
     subnet-service-types
-    tag
-    tag-ext
   ).each do |ext|
     its('stdout') { should match(/^#{ext}$/) }
   end
