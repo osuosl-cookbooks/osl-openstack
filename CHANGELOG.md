@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+7.1.0 (2019-10-07)
+------------------
+- Chef 14 fixes
+
 7.0.3 (2019-07-01)
 ------------------
 - Enable SSD enabled ceph pool for volumes
