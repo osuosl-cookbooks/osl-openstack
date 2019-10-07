@@ -67,7 +67,7 @@ describe 'osl-openstack::telemetry', telemetry: true do
   context 'no metrics_token' do
     let(:runner) do
       ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-        node.set['osl-openstack']['ceph'] = true
+        node.normal['osl-openstack']['ceph'] = true
         node.automatic['filesystem2']['by_mountpoint']
       end
     end
@@ -76,7 +76,7 @@ describe 'osl-openstack::telemetry', telemetry: true do
     include_context 'common_stubs'
     include_context 'ceph_stubs'
     before do
-      node.set['osl-openstack']['credentials']['ceph']['metrics_token'] = nil
+      node.normal['osl-openstack']['credentials']['ceph']['metrics_token'] = nil
     end
     it do
       expect(chef_run).to_not create_template('/etc/ceph/ceph.client.gnocchi.keyring')

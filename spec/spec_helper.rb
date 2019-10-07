@@ -2,13 +2,11 @@ require 'chefspec'
 require 'chefspec/berkshelf'
 require_relative 'support/matchers'
 
-ChefSpec::Coverage.start! { add_filter 'osl-openstack' }
-
 REDHAT_OPTS = {
   platform: 'centos',
-  version: '7.4.1708',
+  version: '7',
   file_cache_path: '/var/chef/cache',
-  log_level: :fatal,
+  log_level: :warn,
 }.freeze
 
 shared_context 'common_stubs' do

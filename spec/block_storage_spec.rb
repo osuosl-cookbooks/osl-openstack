@@ -18,8 +18,8 @@ describe 'osl-openstack::block_storage' do
     end
   end
   before do
-    node.set['osl-openstack']['cinder']['iscsi_role'] = 'iscsi_role'
-    node.set['osl-openstack']['cinder']['iscsi_ips'] = %w(10.11.0.1)
+    node.normal['osl-openstack']['cinder']['iscsi_role'] = 'iscsi_role'
+    node.normal['osl-openstack']['cinder']['iscsi_ips'] = %w(10.11.0.1)
     node.automatic['filesystem2']['by_mountpoint']
     stub_search(:node, 'role:iscsi_role').and_return([{ ipaddress: '10.10.0.1' }])
   end
@@ -47,7 +47,7 @@ describe 'osl-openstack::block_storage' do
   context 'Set ceph' do
     let(:runner) do
       ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-        node.set['osl-openstack']['ceph'] = true
+        node.normal['osl-openstack']['ceph'] = true
         node.automatic['filesystem2']['by_mountpoint']
       end
     end

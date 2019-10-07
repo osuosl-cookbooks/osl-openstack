@@ -155,7 +155,7 @@ describe 'osl-openstack::compute_controller' do
     context 'Set ceph' do
       let(:runner) do
         ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-          node.set['osl-openstack']['ceph'] = true
+          node.normal['osl-openstack']['ceph'] = true
           node.automatic['filesystem2']['by_mountpoint']
         end
       end

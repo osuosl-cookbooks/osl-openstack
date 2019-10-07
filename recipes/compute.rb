@@ -35,7 +35,6 @@ kernel_module 'tun'
 case node['kernel']['machine']
 when 'ppc64le'
   node.default['base']['grub']['cmdline'] << %w(kvm_cma_resv_ratio=15)
-  include_recipe 'chef-sugar::default'
   include_recipe 'yum-kernel-osuosl::install'
   include_recipe 'base::grub'
 
@@ -60,7 +59,7 @@ when 'ppc64le'
       'grep -E \'SMT is off|Machine is not SMT capable\''
   end
 when 'x86_64'
-  kernel_module 'kvm-intel' do
+  kernel_module 'kvm-intel' do # ~FC009
     onboot true
     reload false
     options %w(nested=1)

@@ -522,7 +522,9 @@ package %w(
 include_recipe 'firewall'
 include_recipe 'selinux::permissive'
 include_recipe 'yum-qemu-ev'
-include_recipe 'build-essential'
+
+build_essential 'osl-openstack'
+
 include_recipe 'openstack-common'
 include_recipe 'openstack-common::logging'
 include_recipe 'openstack-common::sysctl'
