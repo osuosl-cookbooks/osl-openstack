@@ -198,7 +198,8 @@ suites:
       - recipe[openstack_test::tempest]
   - name: allinone
     driver_config:
-        server_name: "allinone-<%= ENV['USER'] %>"
+      server_name: "allinone-<%= ENV['USER'] %>"
+      flavor_ref: 'm1.xlarge'
     run_list:
       - role[ceph]
       - role[ceph_mon]
