@@ -181,7 +181,7 @@ LAUNCH_INSTANCE_DEFAULTS = {
     its('stdout') { should match(/< HTTP.*200 OK/) }
     its('stdout') { should_not match(/CSRF verification failed. Request aborted./) }
   end
-  describe yum.repo('RDO-queens') do
+  describe yum.repo('RDO-rocky') do
     it { should exist }
     it { should be_enabled }
   end
@@ -509,8 +509,6 @@ export OS_AUTH_TYPE=password})
       standard-attr-timestamp
       subnet_allocation
       subnet-service-types
-      tag
-      tag-ext
     ).each do |ext|
       its('stdout') { should match(/^#{ext}$/) }
     end
