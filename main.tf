@@ -103,6 +103,7 @@ resource "openstack_compute_instance_v2" "compute" {
     provisioner "chef" {
         run_list        = [
             "role[openstack_provisioning]",
+            "role[ceph]",
             "recipe[openstack_test::ceph_compute]",
             "recipe[osl-openstack::compute]"
         ]
