@@ -394,7 +394,6 @@ end
   network
   network_dhcp
   network_l3
-  network_metadata
   network_metering
   orchestration
   telemetry

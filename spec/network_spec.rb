@@ -197,7 +197,6 @@ neutron.agent.linux.interface.BridgeInterfaceDriver$/,
     neutron.conf
     l3_agent.ini
     dhcp_agent.ini
-    metadata_agent.ini
     metering_agent.ini
   ).each do |f|
     describe "/etc/neutron/#{f}" do
