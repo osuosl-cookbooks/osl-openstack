@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+7.1.1 (2019-10-14)
+------------------
+- Temporarily disable memcached for the metadata agent
+
 7.1.0 (2019-10-07)
 ------------------
 - Chef 14 fixes
