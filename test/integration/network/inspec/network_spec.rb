@@ -27,7 +27,6 @@ end
   neutron.conf
   l3_agent.ini
   dhcp_agent.ini
-  metadata_agent.ini
 ).each do |f|
   describe ini("/etc/neutron/#{f}") do
     its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
