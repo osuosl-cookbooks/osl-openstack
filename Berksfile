@@ -26,7 +26,7 @@ cookbook 'yum-qemu-ev', git: 'git@github.com:osuosl-cookbooks/yum-qemu-ev.git'
 ).each do |cb|
   cookbook "openstack-#{cb}",
            github: "osuosl-cookbooks/cookbook-openstack-#{cb}",
-           branch: 'fog-openstack-1.x'
+           branch: 'osuosl/rocky'
 end
 
 # Openstack deps
