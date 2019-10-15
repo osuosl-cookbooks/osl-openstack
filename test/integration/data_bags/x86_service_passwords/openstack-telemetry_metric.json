@@ -1,9 +1,9 @@
 {
   "id": "openstack-telemetry_metric",
   "openstack-telemetry_metric": {
-    "encrypted_data": "WJx/h1KA/vEqgyFOoYYlhm4Jcad5XfUt01vXj4nK+l30qsxCioQr+rC4H2/O\nmAAl\n",
-    "hmac": "h5q0ydnR75osEMiYhzS8DLB3U6Xc4Cc3Sadk2qmDsxU=\n",
-    "iv": "wsu8mrdoeYaNNdQsOs5u7g==\n",
+    "encrypted_data": "wF5O4nG3bYfgPdTbYqkwmDuwwpBKqSsShTQQvVa12N3l2aAxnVao+L8iK/vA\ndF1k\n",
+    "hmac": "MfILcBqszMWsRidqJLL1PsVjeoHoSL2YLBJNI//NgaA=\n",
+    "iv": "miFddmYsH1RYxPZ3UJVc2w==\n",
     "version": 2,
     "cipher": "aes-256-cbc"
   }
