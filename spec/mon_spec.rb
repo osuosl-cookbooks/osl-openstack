@@ -45,7 +45,7 @@ describe 'osl-openstack::mon' do
   end
   context 'controller node' do
     cached(:chef_run) do
-      ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
+      ChefSpec::SoloRunner.new(REDHAT_OPTS.dup.merge(step_into: %w(osc_nagios_check))) do |node|
         node.normal['osl-openstack']['node_type'] = 'controller'
         node.automatic['filesystem2']['by_mountpoint']
       end.converge(described_recipe)
@@ -128,12 +128,18 @@ describe 'osl-openstack::mon' do
       check_neutron_floating_ip
     ).each do |check|
       it do
+        expect(chef_run).to add_osc_nagios_check(check)
+      end
+      it do
         expect(chef_run.link(::File.join(plugin_dir, check))).to \
           link_to("/usr/libexec/openstack-monitoring/checks/oschecks-#{check}")
       end
       it do
         expect(chef_run).to add_nrpe_check(check).with(command: "/bin/sudo #{check_openstack} #{check}")
       end
+    end
+    it do
+      expect(chef_run).to add_osc_nagios_check('check_nova_api').with(parameters: '--os-compute-api-version 2')
     end
     it do
       expect(chef_run.link(::File.join(plugin_dir, 'check_nova_api'))).to \

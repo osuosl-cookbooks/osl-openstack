@@ -121,21 +121,10 @@ EOF
     check_neutron_api
     check_neutron_floating_ip
   ).each do |check|
-    link "#{node['nrpe']['plugin_dir']}/#{check}" do
-      to "/usr/libexec/openstack-monitoring/checks/oschecks-#{check}"
-    end
-
-    nrpe_check check do
-      command "/bin/sudo #{check_openstack} #{check}"
-    end
+    osc_nagios_check check
   end
 
-  link "#{node['nrpe']['plugin_dir']}/check_nova_api" do
-    to '/usr/libexec/openstack-monitoring/checks/oschecks-check_nova_api'
-  end
-
-  nrpe_check 'check_nova_api' do
-    command "/bin/sudo #{check_openstack} check_nova_api"
+  osc_nagios_check 'check_nova_api' do
     parameters '--os-compute-api-version 2'
   end
 end
