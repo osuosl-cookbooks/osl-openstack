@@ -67,3 +67,4 @@ default['osl-openstack']['novnc'] = {
   'cert_file' => 'novnc.pem',
   'key_file' => 'novnc.key',
 }
+default['osl-openstack']['external_networks'] = %w(public)

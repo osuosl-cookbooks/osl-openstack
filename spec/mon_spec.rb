@@ -109,11 +109,13 @@ describe 'osl-openstack::mon' do
         )
     end
     %w(
-      check_nova_services
+      check_cinder_api
+      check_cinder_services
+      check_neutron_agents
+      check_neutron_floating_ip
       check_nova_hypervisors
       check_nova_images
-      check_neutron_agents
-      check_cinder_services
+      check_nova_services
     ).each do |check|
       it do
         expect(chef_run).to remove_nrpe_check(check)
@@ -121,11 +123,9 @@ describe 'osl-openstack::mon' do
     end
 
     %w(
-      check_cinder_api
       check_glance_api
       check_keystone_api
       check_neutron_api
-      check_neutron_floating_ip
     ).each do |check|
       it do
         expect(chef_run).to add_osc_nagios_check(check)
@@ -151,6 +151,56 @@ describe 'osl-openstack::mon' do
           command: "/bin/sudo #{check_openstack} check_nova_api",
           parameters: '--os-compute-api-version 2'
         )
+    end
+    it do
+      expect(chef_run).to add_osc_nagios_check('check_cinder_api_v2')
+        .with(
+          plugin: 'check_cinder_api',
+          parameters: '--os-volume-api-version 2'
+        )
+    end
+    it do
+      expect(chef_run).to add_nrpe_check('check_cinder_api_v2')
+        .with(
+          command: "/bin/sudo #{check_openstack} check_cinder_api",
+          parameters: '--os-volume-api-version 2'
+        )
+    end
+    it do
+      expect(chef_run.link(::File.join(plugin_dir, 'check_cinder_api'))).to \
+        link_to('/usr/libexec/openstack-monitoring/checks/oschecks-check_cinder_api')
+    end
+    it do
+      expect(chef_run).to add_osc_nagios_check('check_cinder_api_v3')
+        .with(
+          plugin: 'check_cinder_api',
+          parameters: '--os-volume-api-version 3'
+        )
+    end
+    it do
+      expect(chef_run).to add_nrpe_check('check_cinder_api_v3')
+        .with(
+          command: "/bin/sudo #{check_openstack} check_cinder_api",
+          parameters: '--os-volume-api-version 3'
+        )
+    end
+    it do
+      expect(chef_run).to add_osc_nagios_check('check_neutron_floating_ip_public')
+        .with(
+          plugin: 'check_neutron_floating_ip',
+          parameters: '--ext_network_name public'
+        )
+    end
+    it do
+      expect(chef_run).to add_nrpe_check('check_neutron_floating_ip_public')
+        .with(
+          command: "/bin/sudo #{check_openstack} check_neutron_floating_ip",
+          parameters: '--ext_network_name public'
+        )
+    end
+    it do
+      expect(chef_run.link(::File.join(plugin_dir, 'check_neutron_floating_ip'))).to \
+        link_to('/usr/libexec/openstack-monitoring/checks/oschecks-check_neutron_floating_ip')
     end
   end
 end

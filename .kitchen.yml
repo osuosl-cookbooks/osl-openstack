@@ -213,6 +213,7 @@ suites:
       - recipe[osl-openstack::block_storage]
       - recipe[openstack_test::tempest]
       - recipe[openstack_test::orchestration]
+      - recipe[openstack_test::network]
     attributes:
       osl-openstack:
         cinder:

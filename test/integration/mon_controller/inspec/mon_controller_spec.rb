@@ -14,11 +14,13 @@ describe file('/etc/sudoers.d/nrpe-openstack') do
 end
 
 %w(
-  check_nova_services
+  check_cinder_api
+  check_cinder_services
+  check_neutron_agents
+  check_neutron_floating_ip
   check_nova_hypervisors
   check_nova_images
-  check_neutron_agents
-  check_cinder_services
+  check_nova_services
 ).each do |check|
   describe file("/etc/nagios/nrpe.d/#{check}.cfg") do
     it { should_not exist }
@@ -26,22 +28,37 @@ end
 end
 
 %w(
-  check_cinder_api
   check_glance_api
   check_keystone_api
   check_neutron_api
-  check_neutron_floating_ip
 ).each do |check|
   describe file("/etc/nagios/nrpe.d/#{check}.cfg") do
     its('content') do
-      should match(%r{command\[#{check}\]=/bin/sudo /usr/lib64/nagios/plugins/check_openstack #{check}})
+      should match(%r{command\[#{check}\]=/bin/sudo /usr/lib64/nagios/plugins/check_openstack #{check}$})
     end
   end
 end
 
 describe file('/etc/nagios/nrpe.d/check_nova_api.cfg') do
   its('content') do
-    should match(%r{command\[check_nova_api\]=/bin/sudo /usr/lib64/nagios/plugins/check_openstack check_nova_api \
---os-compute-api-version 2})
+    should match(%r{command\[check_nova_api\]=/bin/sudo /usr/lib64/nagios/plugins/check_openstack check_nova_api --os-compute-api-version 2$})
+  end
+end
+
+describe file('/etc/nagios/nrpe.d/check_cinder_api_v2.cfg') do
+  its('content') do
+    should match(%r{command\[check_cinder_api_v2\]=/bin/sudo /usr/lib64/nagios/plugins/check_openstack check_cinder_api --os-volume-api-version 2$})
+  end
+end
+
+describe file('/etc/nagios/nrpe.d/check_cinder_api_v3.cfg') do
+  its('content') do
+    should match(%r{command\[check_cinder_api_v3\]=/bin/sudo /usr/lib64/nagios/plugins/check_openstack check_cinder_api --os-volume-api-version 3$})
+  end
+end
+
+describe file('/etc/nagios/nrpe.d/check_neutron_floating_ip_public.cfg') do
+  its('content') do
+    should match(%r{command\[check_neutron_floating_ip_public\]=/bin/sudo /usr/lib64/nagios/plugins/check_openstack check_neutron_floating_ip --ext_network_name public$})
   end
 end

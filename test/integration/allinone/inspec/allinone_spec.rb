@@ -10,3 +10,17 @@ end
 describe command('bash -c "source /root/openrc && openstack stack delete -y  stack"') do
   its('exit_status') { should eq 0 }
 end
+
+%w(
+  check_cinder_api_v2
+  check_cinder_api_v3
+  check_glance_api
+  check_keystone_api
+  check_neutron_api
+  check_neutron_floating_ip_public
+  check_nova_api
+).each do |check|
+  describe command("/usr/lib64/nagios/plugins/check_nrpe -H localhost -c #{check}") do
+    its('exit_status') { should eq 0 }
+  end
+end
