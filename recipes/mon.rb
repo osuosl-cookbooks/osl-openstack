@@ -61,11 +61,13 @@ if node['osl-openstack']['node_type'] == 'controller'
   end
 
   %w(
-    check_nova_services
+    check_cinder_api
+    check_cinder_services
+    check_neutron_agents
+    check_neutron_floating_ip
     check_nova_hypervisors
     check_nova_images
-    check_neutron_agents
-    check_cinder_services
+    check_nova_services
   ).each do |check|
     nrpe_check check do
       action :remove
@@ -90,7 +92,7 @@ if node['osl-openstack']['node_type'] == 'controller'
   end
 
   git tools_dir do
-    revision 'osuosl'
+    revision 'queens'
     repository 'https://github.com/osuosl/osops-tools-monitoring.git'
     notifies :run, 'python_execute[monitoring-for-openstack deps]', :immediately
     notifies :run, 'python_execute[monitoring-for-openstack install]', :immediately
@@ -115,27 +117,31 @@ EOF
   end
 
   %w(
-    check_cinder_api
     check_glance_api
     check_keystone_api
     check_neutron_api
-    check_neutron_floating_ip
   ).each do |check|
-    link "#{node['nrpe']['plugin_dir']}/#{check}" do
-      to "/usr/libexec/openstack-monitoring/checks/oschecks-#{check}"
-    end
-
-    nrpe_check check do
-      command "/bin/sudo #{check_openstack} #{check}"
-    end
+    osc_nagios_check check
   end
 
-  link "#{node['nrpe']['plugin_dir']}/check_nova_api" do
-    to '/usr/libexec/openstack-monitoring/checks/oschecks-check_nova_api'
-  end
-
-  nrpe_check 'check_nova_api' do
-    command "/bin/sudo #{check_openstack} check_nova_api"
+  osc_nagios_check 'check_nova_api' do
     parameters '--os-compute-api-version 2'
+  end
+
+  osc_nagios_check 'check_cinder_api_v2' do
+    plugin 'check_cinder_api'
+    parameters '--os-volume-api-version 2'
+  end
+
+  osc_nagios_check 'check_cinder_api_v3' do
+    plugin 'check_cinder_api'
+    parameters '--os-volume-api-version 3'
+  end
+
+  node['osl-openstack']['external_networks'].each do |network|
+    osc_nagios_check "check_neutron_floating_ip_#{network}" do
+      plugin 'check_neutron_floating_ip'
+      parameters "--ext_network_name #{network}"
+    end
   end
 end
