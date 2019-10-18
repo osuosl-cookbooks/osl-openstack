@@ -17,7 +17,7 @@
 # limitations under the License.
 #
 node.default['mariadb']['install']['prefer_os_package'] = true
-node.default['mariadb']['mysqld']['lc_messages_dir'] = '/usr/share/mariadb' if node['kernel']['machine'] == 'x86_64'
+node.default['mariadb']['mysqld']['lc_messages_dir'] = '/usr/share/mariadb'
 include_recipe 'osl-openstack'
 include_recipe 'firewall::mysql'
 include_recipe 'openstack-ops-database::server'
