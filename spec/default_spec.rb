@@ -8,7 +8,14 @@ describe 'osl-openstack::default' do
   end
   include_context 'identity_stubs'
   it do
-    expect(chef_run).to_not add_yum_repository('OSL-Openpower')
+    expect(chef_run).to add_yum_repository('RDO-queens')
+      .with(
+        baseurl: 'http://centos.osuosl.org/$releasever/cloud/$basearch/openstack-queens',
+        gpgkey: 'https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Cloud'
+      )
+  end
+  it do
+    expect(chef_run).to_not remove_yum_repository('OSL-openpower-openstack')
   end
   context 'setting arch to ppc64le' do
     cached(:chef_run) do
@@ -19,13 +26,14 @@ describe 'osl-openstack::default' do
       end.converge(described_recipe)
     end
     it do
-      expect(chef_run).to add_yum_repository('OSL-openpower-openstack')
+      expect(chef_run).to add_yum_repository('RDO-queens')
         .with(
-          description: 'OSL Openpower OpenStack repo for centos-7/openstack-queens',
-          gpgkey: 'http://ftp.osuosl.org/pub/osl/repos/yum/RPM-GPG-KEY-osuosl',
-          gpgcheck: true,
-          baseurl: 'http://ftp.osuosl.org/pub/osl/repos/yum/$releasever/openstack-queens/$basearch'
+          baseurl: 'http://centos-altarch.osuosl.org/$releasever/cloud/$basearch/openstack-queens',
+          gpgkey: 'https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Cloud'
         )
+    end
+    it do
+      expect(chef_run).to remove_yum_repository('OSL-openpower-openstack')
     end
   end
   it do

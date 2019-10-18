@@ -34,11 +34,13 @@ node.default['openstack']['misc_openrc'] = [
   'export OS_CACERT="/etc/ssl/certs/ca-bundle.crt"',
   'export OS_AUTH_TYPE=password',
 ]
-node.default['openstack']['yum']['uri'] = \
-  'http://centos.osuosl.org/$releasever/cloud/x86_64/openstack-' + node['openstack']['release']
-node.default['openstack']['yum']['repo-key'] = 'https://github.com/' \
- "rdo-infra/rdo-release/raw/#{node['openstack']['release']}-rdo/" \
- 'RPM-GPG-KEY-CentOS-SIG-Cloud'
+node.default['openstack']['yum']['uri'] =
+  if node['kernel']['machine'] == 'ppc64le'
+    'http://centos-altarch.osuosl.org/$releasever/cloud/$basearch/openstack-' + node['openstack']['release']
+  else
+    'http://centos.osuosl.org/$releasever/cloud/$basearch/openstack-' + node['openstack']['release']
+  end
+node.default['openstack']['yum']['repo-key'] = 'https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Cloud'
 node.default['openstack']['identity']['ssl'].tap do |conf|
   conf['enabled'] = true
   conf['basedir'] = '/etc/pki/tls'
@@ -504,9 +506,9 @@ yum_repository 'OSL-openpower-openstack' do
   gpgkey 'http://ftp.osuosl.org/pub/osl/repos/yum/RPM-GPG-KEY-osuosl'
   gpgcheck true
   baseurl "http://ftp.osuosl.org/pub/osl/repos/yum/$releasever/openstack-#{node['openstack']['release']}/$basearch"
-  enabled true
+  enabled false
   only_if { node['kernel']['machine'] == 'ppc64le' }
-  action :add
+  action :remove
 end
 
 include_recipe 'base::packages'
