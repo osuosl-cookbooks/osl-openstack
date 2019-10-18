@@ -1,6 +1,19 @@
+baseurl =
+  if os.arch == 'x86_64'
+    'http://centos.osuosl.org/7/cloud/x86_64/openstack-queens/'
+  elsif os.arch == 'ppc64le'
+    'http://centos-altarch.osuosl.org/7/cloud/ppc64le/openstack-queens/'
+  end
+
 describe yum.repo('RDO-queens') do
   it { should exist }
   it { should be_enabled }
+  its('baseurl') { should cmp baseurl }
+end
+
+describe yum.repo('OSL-openpower-openstack') do
+  it { should_not exist }
+  it { should_not be_enabled }
 end
 
 describe file('/root/openrc') do
