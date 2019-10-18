@@ -7,7 +7,7 @@ license          'Apache-2.0'
 chef_version     '>= 12.18' if respond_to?(:chef_version)
 description      'Installs/Configures osl-openstack'
 long_description 'Installs/Configures osl-openstack'
-version          '7.1.2'
+version          '7.1.3'
 
 depends 'apache2'
 depends 'base'
