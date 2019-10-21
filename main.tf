@@ -73,7 +73,8 @@ resource "openstack_compute_instance_v2" "controller" {
             "recipe[osl-openstack::controller]",
             "role[openstack_cinder]",
             "recipe[openstack_test::orchestration]",
-            "recipe[openstack_test::tempest]"
+            "recipe[openstack_test::tempest]",
+            "recipe[openstack_test::network]"
         ]
         node_name       = "controller"
         secret_key      = "${file("test/integration/encrypted_data_bag_secret")}"
