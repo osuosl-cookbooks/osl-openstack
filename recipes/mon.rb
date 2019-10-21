@@ -92,7 +92,7 @@ if node['osl-openstack']['node_type'] == 'controller'
   end
 
   git tools_dir do
-    revision 'queens'
+    revision 'rocky'
     repository 'https://github.com/osuosl/osops-tools-monitoring.git'
     notifies :run, 'python_execute[monitoring-for-openstack deps]', :immediately
     notifies :run, 'python_execute[monitoring-for-openstack install]', :immediately
