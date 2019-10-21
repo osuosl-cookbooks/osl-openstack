@@ -40,7 +40,7 @@ describe ini('/etc/heat/heat.conf') do
 end
 
 describe command(
-  'bash -c "source /root/openrc && /usr/bin/openstack orchestration service list -c Binary -c Status -f value"'
+  'bash -c "source /root/openrc && /bin/heat-manage service clean && /usr/bin/openstack orchestration service list -c Binary -c Status -f value"'
 ) do
   its('stdout') { should match(/^heat-engine up$/) }
   its('stdout') { should_not match(/^heat-engine down$/) }
