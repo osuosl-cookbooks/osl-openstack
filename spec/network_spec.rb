@@ -75,6 +75,13 @@ EOL
           .with_section_content('DEFAULT', line)
       end
     end
+    [
+      /^service_token_roles_required = True$/,
+    ].each do |line|
+      it do
+        expect(chef_run).to render_config_file(file.name).with_section_content('keystone_authtoken', line)
+      end
+    end
     context 'Set bind_service' do
       cached(:chef_run) do
         ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
