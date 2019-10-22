@@ -1,16 +1,12 @@
-%w(openstack-glance-api openstack-glance-registry).each do |s|
-  describe service(s) do
-    it { should be_enabled }
-    it { should be_running }
-  end
+describe service('openstack-glance-api') do
+  it { should be_enabled }
+  it { should be_running }
 end
 
-%w(9292 9191).each do |p|
-  describe port(p) do
-    it { should be_listening }
-    its('protocols') { should include 'tcp' }
-    its('addresses') { should include '127.0.0.1' }
-  end
+describe port(9292) do
+  it { should be_listening }
+  its('protocols') { should include 'tcp' }
+  its('addresses') { should include '127.0.0.1' }
 end
 
 describe ini('/etc/glance/glance-api.conf') do

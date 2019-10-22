@@ -19,7 +19,6 @@
 include_recipe 'osl-openstack'
 include_recipe 'firewall::openstack'
 include_recipe 'openstack-image::api'
-include_recipe 'openstack-image::registry'
 include_recipe 'openstack-image::identity_registration'
 
 if node['osl-openstack']['ceph']

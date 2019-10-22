@@ -31,6 +31,8 @@ su -s /bin/sh -c "glance-manage db_sync" glance
 
 # Upgrade Cinder
 systemctl stop '*cinder*'
+# openstack-glance-registry has been deprecated upstream
+systemctl disable openstack-glance-registry
 yum -d1 -y upgrade \*cinder\*
 su -s /bin/sh -c "cinder-manage db sync" cinder
 

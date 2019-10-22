@@ -11,7 +11,6 @@ describe 'osl-openstack::image', image: true do
     osl-openstack
     firewall::openstack
     openstack-image::api
-    openstack-image::registry
     openstack-image::identity_registration
     openstack-image::image_upload
   ).each do |r|
@@ -19,7 +18,7 @@ describe 'osl-openstack::image', image: true do
       expect(chef_run).to include_recipe(r)
     end
   end
-  %w(api registry).each do |f|
+  %w(api).each do |f|
     describe "/etc/glance/glance-#{f}.conf" do
       let(:file) { chef_run.template("/etc/glance/glance-#{f}.conf") }
 
@@ -85,6 +84,7 @@ describe 'osl-openstack::image', image: true do
         [
           /^show_image_direct_url = true$/,
           /^show_multiple_locations = true$/,
+          /^enabled_backends = cheap:rbd$/,
         ].each do |line|
           it do
             expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
@@ -98,15 +98,21 @@ describe 'osl-openstack::image', image: true do
           end
         end
         [
-          /^default_store = rbd$/,
-          /^stores = rbd,file,http$/,
+          /^default_backend = cheap$/,
+        ].each do |line|
+          it do
+            expect(chef_run).to render_config_file(file.name).with_section_content('glance_store', line)
+          end
+        end
+        [
+          /^store_description = Cheap rbd backend$/,
           /^rbd_store_pool = images$/,
           /^rbd_store_user = glance$/,
           %r{^rbd_store_ceph_conf = /etc/ceph/ceph.conf$},
           /^rbd_store_chunk_size = 8$/,
         ].each do |line|
           it do
-            expect(chef_run).to render_config_file(file.name).with_section_content('glance_store', line)
+            expect(chef_run).to render_config_file(file.name).with_section_content('cheap', line)
           end
         end
         context 'no image_token' do
@@ -168,7 +174,7 @@ describe 'osl-openstack::image', image: true do
       [
         /^memcached_servers = 10.0.0.10:11211$/,
         %r{^auth_url = https://10.0.0.10:5000/v3$},
-        %r{^auth_uri = https://10.0.0.10:5000/v3$},
+        %r{^www_authenticate_uri = https://10.0.0.10:5000/v3$},
       ].each do |line|
         it do
           expect(chef_run).to render_config_file(file.name)
@@ -183,18 +189,6 @@ describe 'osl-openstack::image', image: true do
           expect(chef_run).to render_config_file(file.name)
             .with_section_content('database', line)
         end
-      end
-    end
-  end
-  describe '/etc/glance/glance-api.conf' do
-    let(:file) { chef_run.template('/etc/glance/glance-api.conf') }
-
-    [
-      /^registry_host = 10.0.0.10$/,
-    ].each do |line|
-      it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('DEFAULT', line)
       end
     end
   end

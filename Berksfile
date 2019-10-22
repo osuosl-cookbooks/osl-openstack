@@ -22,6 +22,7 @@ cookbook 'yum-qemu-ev', git: 'git@github.com:osuosl-cookbooks/yum-qemu-ev.git'
 
 # WIP patches
 %w(
+  image
   telemetry
 ).each do |cb|
   cookbook "openstack-#{cb}",
@@ -36,7 +37,6 @@ end
   compute
   dashboard
   identity
-  image
   integration-test
   network
   ops-database
