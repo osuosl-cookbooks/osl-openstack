@@ -80,6 +80,20 @@ include_recipe 'osl-openstack::linuxbridge'
 include_recipe 'openstack-compute::compute'
 include_recipe 'openstack-telemetry::agent-compute'
 
+delete_lines 'remove dhcpbridge on compute' do
+  path '/usr/share/nova/nova-dist.conf'
+  pattern '^dhcpbridge.*'
+  backup true
+  notifies :restart, 'service[nova-compute]'
+end
+
+delete_lines 'remove force_dhcp_release on compute' do
+  path '/usr/share/nova/nova-dist.conf'
+  pattern '^force_dhcp_release.*'
+  backup true
+  notifies :restart, 'service[nova-compute]'
+end
+
 # This resource is causing issues with virsh so remove it
 delete_resource(:execute, 'Deleting default libvirt network')
 

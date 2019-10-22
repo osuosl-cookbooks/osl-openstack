@@ -25,6 +25,39 @@ describe 'osl-openstack::compute_controller' do
     end
   end
 
+  it do
+    expect(chef_run).to edit_delete_lines('remove dhcpbridge on controller')
+      .with(
+        path: '/usr/share/nova/nova-dist.conf',
+        pattern: '^dhcpbridge.*',
+        backup: true
+      )
+  end
+
+  it do
+    expect(chef_run).to edit_delete_lines('remove force_dhcp_release on controller')
+      .with(
+        path: '/usr/share/nova/nova-dist.conf',
+        pattern: '^force_dhcp_release.*',
+        backup: true
+      )
+  end
+
+  %w(
+    service[apache2]
+    service[openstack-nova-novncproxy]
+    service[nova-consoleauth]
+    service[nova-scheduler]
+  ).each do |service|
+    it do
+      expect(chef_run.delete_lines('remove dhcpbridge on controller')).to notify(service).to(:restart)
+    end
+
+    it do
+      expect(chef_run.delete_lines('remove force_dhcp_release on controller')).to notify(service).to(:restart)
+    end
+  end
+
   describe '/etc/nova/nova.conf' do
     let(:file) { chef_run.template('/etc/nova/nova.conf') }
 

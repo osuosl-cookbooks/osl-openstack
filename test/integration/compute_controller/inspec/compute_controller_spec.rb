@@ -29,6 +29,12 @@ end
   end
 end
 
+describe ini('/usr/share/nova/nova-dist.conf') do
+  its('DEFAULT.dhcpbridge') { should cmp nil }
+  its('DEFAULT.dhcpbridge_flagfile') { should cmp nil }
+  its('DEFAULT.force_dhcp_release') { should cmp nil }
+end
+
 describe ini('/etc/nova/nova.conf') do
   its('DEFAULT.use_neutron') { should_not cmp '' }
   its('DEFAULT.disk_allocation_ratio') { should cmp '1.5' }
