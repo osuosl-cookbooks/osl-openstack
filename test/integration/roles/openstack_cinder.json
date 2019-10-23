@@ -10,11 +10,6 @@
             "sudo": {
                 "include_sudoers_d": true
             }
-        },
-        "osl-openstack": {
-          "cinder": {
-            "iscsi_role": "openstack_cinder"
-          }
         }
     },
     "run_list": [

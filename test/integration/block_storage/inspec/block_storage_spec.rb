@@ -1,13 +1,3 @@
-describe iptables do
-  %w(
-    127.0.0.1
-    127.0.2.1
-    127.0.3.1
-  ).each do |ip|
-    it { should have_rule("-A iscsi -s #{ip}/32 -p tcp -m tcp --dport 3260 -j ACCEPT") }
-  end
-end
-
 describe user('cinder') do
   its('groups') { should include 'ceph' }
 end

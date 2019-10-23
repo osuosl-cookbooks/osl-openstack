@@ -16,21 +16,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-iscsi_hosts = ['127.0.0.1']
-iscsi_hosts += node['osl-openstack']['cinder']['iscsi_ips']
-iscsi_role = node['osl-openstack']['cinder']['iscsi_role']
-if (iscsi_role && !Chef::Config[:solo]) || defined?(ChefSpec)
-  search(:node, "role:#{iscsi_role}") do |n| # ~FC003
-    iscsi_hosts << n['ipaddress']
-  end
-end
-
-node.override['firewall']['range']['iscsi']['4'] = iscsi_hosts
-
 # Missing package dep
 package 'python2-crypto'
 
-include_recipe 'firewall::iscsi'
 include_recipe 'osl-openstack'
 include_recipe 'openstack-block-storage::volume'
 include_recipe 'openstack-block-storage::identity_registration'
