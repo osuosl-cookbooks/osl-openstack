@@ -21,3 +21,13 @@ include_recipe 'firewall::openstack'
 include_recipe 'openstack-block-storage::api'
 include_recipe 'openstack-block-storage::scheduler'
 include_recipe 'openstack-block-storage::identity_registration'
+
+replace_or_add 'log-dir controller' do
+  path '/usr/share/cinder/cinder-dist.conf'
+  pattern '^logdir.*'
+  line 'log-dir = /var/log/cinder'
+  backup true
+  replace_only true
+  notifies :restart, 'service[apache2]'
+  notifies :restart, 'service[cinder-scheduler]'
+end

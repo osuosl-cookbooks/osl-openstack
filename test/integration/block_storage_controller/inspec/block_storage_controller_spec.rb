@@ -13,6 +13,11 @@ describe port(8776) do
   its('addresses') { should include '127.0.0.1' }
 end
 
+describe ini('/usr/share/cinder/cinder-dist.conf') do
+  its('DEFAULT.logdir') { should cmp nil }
+  its('DEFAULT.log-dir') { should cmp '/var/log/cinder' }
+end
+
 describe ini('/etc/cinder/cinder.conf') do
   its('DEFAULT.volume_clear_size') { should cmp '256' }
   its('DEFAULT.volume_group') { should cmp 'openstack' }

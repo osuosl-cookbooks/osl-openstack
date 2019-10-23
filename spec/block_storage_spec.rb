@@ -102,5 +102,17 @@ describe 'osl-openstack::block_storage' do
           }
         )
     end
+    it do
+      expect(chef_run).to edit_replace_or_add('log-dir storage')
+        .with(
+          path: '/usr/share/cinder/cinder-dist.conf',
+          pattern: '^logdir.*',
+          replace_only: true,
+          backup: true
+        )
+    end
+    it do
+      expect(chef_run.replace_or_add('log-dir storage')).to notify('service[cinder-volume]').to(:restart)
+    end
   end
 end

@@ -35,3 +35,12 @@ include_recipe 'osl-openstack'
 include_recipe 'openstack-block-storage::volume'
 include_recipe 'openstack-block-storage::identity_registration'
 include_recipe 'osl-openstack::_block_ceph' if node['osl-openstack']['ceph']
+
+replace_or_add 'log-dir storage' do
+  path '/usr/share/cinder/cinder-dist.conf'
+  pattern '^logdir.*'
+  line 'log-dir = /var/log/cinder'
+  backup true
+  replace_only true
+  notifies :restart, 'service[cinder-volume]'
+end
