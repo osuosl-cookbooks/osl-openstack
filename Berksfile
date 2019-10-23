@@ -22,6 +22,7 @@ cookbook 'yum-qemu-ev', git: 'git@github.com:osuosl-cookbooks/yum-qemu-ev.git'
 
 # WIP patches
 %w(
+  dashboard
   image
   telemetry
 ).each do |cb|
@@ -35,7 +36,6 @@ end
   block-storage
   common
   compute
-  dashboard
   identity
   integration-test
   network
