@@ -199,6 +199,7 @@ node.default['openstack']['network']['plugins']['linuxbridge']['conf']
     'neutron.agent.linux.iptables_firewall.IptablesFirewallDriver'
 end
 node.default['openstack']['orchestration']['conf'].tap do |conf|
+  conf['keystone_authtoken']['service_token_roles_required'] = 'True'
   conf['trustee'].delete('auth_plugin')
   conf['trustee']['auth_type'] = 'v3password'
 end
