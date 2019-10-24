@@ -74,9 +74,3 @@ template '/etc/sysconfig/openstack-nova-novncproxy' do
             key: ::File.join(ssl_dir, 'private', novnc['key_file']))
   notifies :restart, proxy_service
 end
-
-# These will restart apache on every chef run, so let's disable this
-delete_resource(:execute, 'nova-api apache restart')
-delete_resource(:execute, 'nova-api: set-selinux-permissive')
-delete_resource(:execute, 'nova-metadata apache restart')
-delete_resource(:execute, 'nova-metadata: set-selinux-permissive')

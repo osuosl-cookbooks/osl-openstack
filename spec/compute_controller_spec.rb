@@ -254,14 +254,4 @@ describe 'osl-openstack::compute_controller' do
     expect(chef_run.template('/etc/sysconfig/openstack-nova-novncproxy')).to \
       notify('service[openstack-nova-novncproxy]')
   end
-  [
-    'nova-api apache restart',
-    'nova-api: set-selinux-permissive',
-    'nova-metadata apache restart',
-    'nova-metadata: set-selinux-permissive',
-  ].each do |e|
-    it do
-      expect(chef_run).to_not run_execute(e)
-    end
-  end
 end
