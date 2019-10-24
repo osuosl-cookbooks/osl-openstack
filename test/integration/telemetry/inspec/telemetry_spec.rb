@@ -32,5 +32,6 @@ describe ini('/etc/ceilometer/ceilometer.conf') do
   its('api.host') { should cmp '127.0.0.1' }
   its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
   its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
+  its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
   its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
 end

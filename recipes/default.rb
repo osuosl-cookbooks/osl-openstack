@@ -218,7 +218,10 @@ node.default['openstack']['telemetry']['platform'].tap do |conf|
   conf['agent_notification_packages'] = %w(openstack-ceilometer-notification)
 end
 
-node.default['openstack']['telemetry']['conf']['DEFAULT'].delete('meter_dispatchers')
+node.default['openstack']['telemetry']['conf'].tap do |conf|
+  conf['DEFAULT'].delete('meter_dispatchers')
+  conf['keystone_authtoken']['service_token_roles_required'] = 'True'
+end
 
 node.default['openstack']['block-storage']['conf']['DEFAULT'].delete('glance_api_version')
 node.override['openstack']['block-storage']['conf'].tap do |conf|
