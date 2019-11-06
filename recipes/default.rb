@@ -238,21 +238,10 @@ node.default['openstack']['dashboard'].tap do |conf|
 end
 
 node.default['openstack']['telemetry']['platform'].tap do |conf|
-  # Fixes for CentOS and wsgi
-  conf['gnocchi-metricd_service'] = 'httpd'
-  conf['gnocchi-api_wsgi_file'] = '/usr/bin/gnocchi-api'
   conf['agent_notification_packages'] = %w(openstack-ceilometer-notification)
 end
 
-node.default['openstack']['telemetry-metric']['conf'].tap do |conf|
-  conf['api']['auth_mode'] = 'keystone'
-  conf['storage']['driver'] = 'ceph'
-  conf['storage'].delete('file_basepath')
-  conf['storage']['ceph_pool'] = node['osl-openstack']['telemetry-metric']['rbd_store_pool']
-  conf['storage']['ceph_username'] = node['osl-openstack']['telemetry-metric']['rbd_store_user']
-  conf['storage']['ceph_keyring'] =
-    "/etc/ceph/ceph.client.#{node['osl-openstack']['telemetry-metric']['rbd_store_user']}.keyring"
-end
+node.default['openstack']['telemetry']['conf']['DEFAULT'].delete('meter_dispatchers')
 
 node.default['openstack']['block-storage']['conf']['DEFAULT'].delete('glance_api_version')
 node.override['openstack']['block-storage']['conf'].tap do |conf|
@@ -449,7 +438,6 @@ end
   orchestration-api-cloudwatch
   placement-api
   telemetry
-  telemetry-metric
 ).each do |service|
   node.default['openstack']['bind_service']['all'][service]['host'] =
     node['osl-openstack']['bind_service']

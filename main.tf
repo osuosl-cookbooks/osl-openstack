@@ -81,7 +81,7 @@ resource "openstack_compute_instance_v2" "controller" {
         recreate_client = true
         user_name       = "fakeclient"
         user_key        = "${file("test/chef-config/fakeclient.pem")}"
-        version         = "14.13.11"
+        version         = "14"
     }
 }
 
@@ -112,7 +112,7 @@ resource "openstack_compute_instance_v2" "compute" {
         recreate_client = true
         user_name       = "fakeclient"
         user_key        = "${file("test/chef-config/fakeclient.pem")}"
-        version         = "14.13.11"
+        version         = "14"
     }
 
     # Run restart libvirtd and run chef-client again
