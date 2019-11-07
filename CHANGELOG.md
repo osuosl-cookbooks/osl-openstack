@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+7.2.0 (2019-11-07)
+------------------
+- Remove and disable gnocchi
+
 7.1.3 (2019-10-18)
 ------------------
 - Switch to using upstream repo for ppc64le now that it exists
