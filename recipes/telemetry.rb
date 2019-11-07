@@ -21,6 +21,20 @@ include_recipe 'openstack-telemetry::agent-central'
 include_recipe 'openstack-telemetry::agent-notification'
 include_recipe 'openstack-telemetry::identity_registration'
 
+# TODO: Apply upstream patch which fixes [1] use with prometheus
+# [1] https://review.opendev.org/686368
+package 'patch'
+
+cookbook_file ::File.join(Chef::Config[:file_cache_path], 'ceilometer-prometheus.patch')
+
+execute "patch -p1 < #{::File.join(Chef::Config[:file_cache_path], 'ceilometer-prometheus.patch')}" do
+  cwd '/usr/lib/python2.7/site-packages'
+  notifies :restart, 'service[ceilometer-agent-central]'
+  notifies :restart, 'service[ceilometer-agent-notification]'
+  notifies :restart, 'service[apache2]'
+  not_if 'grep -q curated_sname /usr/lib/python2.7/site-packages/ceilometer/publisher/prometheus.py'
+end
+
 # TODO: Remove the following after this converges on nodes
 platform = node['openstack']['telemetry']['platform']
 

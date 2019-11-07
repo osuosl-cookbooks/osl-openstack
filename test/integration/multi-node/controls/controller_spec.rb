@@ -630,4 +630,8 @@ export OS_AUTH_TYPE=password})
     its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
     its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
   end
+
+  describe http('http://localhost:9091/metrics', enable_remote_worker: true) do
+    its('body') { should match /^image_size{instance="",job="ceilometer"/ }
+  end
 end

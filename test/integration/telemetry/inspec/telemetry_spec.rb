@@ -35,3 +35,7 @@ describe ini('/etc/ceilometer/ceilometer.conf') do
   its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
   its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
 end
+
+describe http('http://localhost:9091/metrics', enable_remote_worker: true) do
+  its('body') { should match /^image_size{instance="",job="ceilometer"/ }
+end

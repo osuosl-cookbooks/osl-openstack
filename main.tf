@@ -69,6 +69,7 @@ resource "openstack_compute_instance_v2" "controller" {
             "role[ceph_osd]",
             "role[ceph_setup]",
             "role[openstack_provisioning]",
+            "recipe[osl-prometheus::server]",
             "recipe[osl-openstack::ops_database]",
             "recipe[osl-openstack::controller]",
             "role[openstack_cinder]",

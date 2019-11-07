@@ -14,6 +14,7 @@ cookbook 'osl-ceph', git: 'git@github.com:osuosl-cookbooks/osl-ceph'
 cookbook 'osl-munin', git: 'git@github.com:osuosl-cookbooks/osl-munin'
 cookbook 'osl-nrpe', git: 'git@github.com:osuosl-cookbooks/osl-nrpe'
 cookbook 'osl-php', git: 'git@github.com:osuosl-cookbooks/osl-php'
+cookbook 'osl-prometheus', git: 'git@github.com:osuosl-cookbooks/osl-prometheus'
 cookbook 'osl-rsync', git: 'git@github.com:osuosl-cookbooks/osl-rsync'
 cookbook 'osl-selinux', git: 'git@github.com:osuosl-cookbooks/osl-selinux'
 cookbook 'resource_from_hash', git: 'git@github.com:osuosl-cookbooks/resource_from_hash'
@@ -22,8 +23,6 @@ cookbook 'yum-qemu-ev', git: 'git@github.com:osuosl-cookbooks/yum-qemu-ev.git'
 
 # WIP patches
 %w(
-  dashboard
-  image
   telemetry
 ).each do |cb|
   cookbook "openstack-#{cb}",
@@ -36,7 +35,9 @@ end
   block-storage
   common
   compute
+  dashboard
   identity
+  image
   integration-test
   network
   ops-database

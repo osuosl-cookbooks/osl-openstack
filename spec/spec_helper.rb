@@ -438,6 +438,8 @@ shared_context 'telemetry_stubs' do
     allow_any_instance_of(Chef::Recipe).to receive(:rabbit_transport_url)
       .with('telemetry')
       .and_return('rabbit://openstack:openstack@controller.example.org:5672')
+    stub_command('grep -q curated_sname /usr/lib/python2.7/site-packages/ceilometer/publisher/prometheus.py')
+      .and_return(false)
   end
 end
 

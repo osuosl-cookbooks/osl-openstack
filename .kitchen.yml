@@ -166,7 +166,9 @@ suites:
       - role[ceph_setup]
       - role[openstack_tk]
       - role[openstack_ops_identity]
+      - recipe[osl-prometheus::server]
       - recipe[osl-openstack::telemetry]
+      - recipe[osl-openstack::image]
   - name: orchestration
     driver_config:
         server_name: "orchestration-<%= ENV['USER'] %>"
