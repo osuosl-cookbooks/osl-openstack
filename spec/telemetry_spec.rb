@@ -85,10 +85,10 @@ ceilometer_x86\?charset=utf8}
       end
     end
     it do
-      expect(chef_run).to stop_service('gnocchi-metricd').with(service_name: 'openstack-gnocchi-metricd')
+      expect(chef_run).to stop_service('gnocchi-metricd').with(service_name: 'gnocchi-metricd')
     end
     it do
-      expect(chef_run).to disable_service('gnocchi-metricd').with(service_name: 'openstack-gnocchi-metricd')
+      expect(chef_run).to disable_service('gnocchi-metricd').with(service_name: 'gnocchi-metricd')
     end
     it do
       expect(chef_run).to delete_file('/etc/httpd/sites-enabled/gnocchi-api.conf').with(manage_symlink_source: true)
