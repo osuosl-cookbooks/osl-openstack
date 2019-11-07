@@ -22,7 +22,7 @@ control 'controller' do
     its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
     its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
     its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
-    its('DEFAULT.enabled_backends') { should cmp 'ceph' }
+    its('DEFAULT.enabled_backends') { should cmp 'ceph,ceph_ssd' }
     its('DEFAULT.backup_driver') { should cmp 'cinder.backup.drivers.ceph' }
     its('DEFAULT.backup_ceph_conf') { should cmp '/etc/ceph/ceph.conf' }
     its('DEFAULT.backup_ceph_user') { should cmp 'cinder-backup' }
@@ -344,11 +344,13 @@ export OS_AUTH_TYPE=password})
   end
 
   %w(
-    check_nova_services
+    check_cinder_api
+    check_cinder_services
+    check_neutron_agents
+    check_neutron_floating_ip
     check_nova_hypervisors
     check_nova_images
-    check_neutron_agents
-    check_cinder_services
+    check_nova_services
   ).each do |check|
     describe file("/etc/nagios/nrpe.d/#{check}.cfg") do
       it { should_not exist }
@@ -356,11 +358,9 @@ export OS_AUTH_TYPE=password})
   end
 
   %w(
-    check_cinder_api
     check_glance_api
     check_keystone_api
     check_neutron_api
-    check_neutron_floating_ip
   ).each do |check|
     describe file("/etc/nagios/nrpe.d/#{check}.cfg") do
       its('content') do
@@ -375,6 +375,25 @@ export OS_AUTH_TYPE=password})
 --os-compute-api-version 2})
     end
   end
+
+  describe file('/etc/nagios/nrpe.d/check_cinder_api_v2.cfg') do
+    its('content') do
+      should match(%r{command\[check_cinder_api_v2\]=/bin/sudo /usr/lib64/nagios/plugins/check_openstack check_cinder_api --os-volume-api-version 2$})
+    end
+  end
+
+  describe file('/etc/nagios/nrpe.d/check_cinder_api_v3.cfg') do
+    its('content') do
+      should match(%r{command\[check_cinder_api_v3\]=/bin/sudo /usr/lib64/nagios/plugins/check_openstack check_cinder_api --os-volume-api-version 3$})
+    end
+  end
+
+  describe file('/etc/nagios/nrpe.d/check_neutron_floating_ip_public.cfg') do
+    its('content') do
+      should match(%r{command\[check_neutron_floating_ip_public\]=/bin/sudo /usr/lib64/nagios/plugins/check_openstack check_neutron_floating_ip --ext_network_name public$})
+    end
+  end
+
   # Should match the number of VCPUs the VMs use
   t_cpu = 4
 
@@ -420,7 +439,6 @@ export OS_AUTH_TYPE=password})
     neutron.conf
     l3_agent.ini
     dhcp_agent.ini
-    metadata_agent.ini
   ).each do |f|
     describe ini("/etc/neutron/#{f}") do
       its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
@@ -592,8 +610,8 @@ export OS_AUTH_TYPE=password})
   end
 
   describe port(8041) do
-    it { should be_listening }
-    its('protocols') { should include 'tcp' }
+    it { should_not be_listening }
+    its('protocols') { should_not include 'tcp' }
     its('addresses') { should_not include '127.0.0.1' }
   end
 
@@ -605,48 +623,11 @@ export OS_AUTH_TYPE=password})
 
   describe ini('/etc/ceilometer/ceilometer.conf') do
     its('DEFAULT.meter_dispatchers') { should_not cmp 'database' }
+    its('DEFAULT.meter_dispatchers') { should_not cmp 'gnocchi' }
     its('api.default_api_return_limit') { should_not cmp '1000000000000' }
-    its('DEFAULT.meter_dispatchers') { should cmp 'gnocchi' }
     its('api.host') { should_not cmp '127.0.0.1' }
     its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
     its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
     its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
-  end
-
-  describe ini('/etc/gnocchi/gnocchi.conf') do
-    its('keystone_authtoken.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
-    its('keystone_authtoken.password') { should cmp 'openstack-telemetry-metric' }
-    its('storage.driver') { should cmp 'ceph' }
-    its('storage.ceph_pool') { should cmp 'metrics' }
-    its('storage.ceph_username') { should cmp 'gnocchi' }
-    its('storage.ceph_keyring') { should cmp '/etc/ceph/ceph.client.gnocchi.keyring' }
-    its('storage.file_basepath') { should_not cmp '/var/lib/gnocchi' }
-    its('api.auth_mode') { should cmp 'keystone' }
-    its('api.host') { should_not cmp '127.0.0.1' }
-    its('database.connection') { should cmp 'mysql+pymysql://gnocchi_x86:gnocchi@controller.example.com:3306/gnocchi_x86?charset=utf8' }
-    its('indexer.url') { should cmp 'mysql+pymysql://gnocchi_x86:gnocchi@controller.example.com:3306/gnocchi_x86?charset=utf8' }
-  end
-
-  describe user('gnocchi') do
-    its('groups') { should include 'ceph' }
-  end
-
-  describe file('/usr/share/gnocchi/gnocchi-dist.conf') do
-    its('mode') { should cmp '0644' }
-  end
-
-  describe command('bash -c "source /root/openrc && /usr/bin/openstack metric status -f shell"') do
-    its('stdout') { should match(%r{^storage/number_of_metric_having_measures_to_process="0"$}) }
-    its('stdout') { should match(%r{^storage/total_number_of_measures_to_process="0"$}) }
-  end
-
-  describe file('/etc/gnocchi/api-paste.ini') do
-    its('content') { should match(/composite:gnocchi\+basic/) }
-  end
-
-  describe file('/etc/ceph/ceph.client.gnocchi.keyring') do
-    its('content') { should match(%r{key = [A-Za-z0-9+/].*==$}) }
-    it { should be_owned_by 'ceph' }
-    it { should be_grouped_into 'ceph' }
   end
 end

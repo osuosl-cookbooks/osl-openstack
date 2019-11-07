@@ -1,8 +1,8 @@
 {
   "ceph": {
-    "encrypted_data": "VVmkrWQIn8o5uPTKule3hFnSyqxQ5AOU7UWGp9f2CVtDL33GoGgF6gw8TVfE\nMHs+MlOcKpysu7YRMWvJNt0+vxVbwJ3aWi2qB2GUChrmylbUAIgfk2dw1MB6\n6NAOxyV0afKg+73dlXH/nrgDowX4qAKh461UWPEwOAiETwLr00TEN2nJKU3J\n7N/m2foTxyJkSCNmwxM3okJFsgtVeu0Bo68JlM0vS73Kxpc007uHgemvgBbs\nuVEwRyzVJsR4Y1gdvjjvF0iuc7UmkToz1EEiS+rVuoGs3Kuy2Pb+YAK6sPzt\nXlK6+CvaOC7vUVRZfD+SLpBqwIr0qFFDkq2ketfS7A==\n",
-    "hmac": "WSKZ65EKIAOvzdRSykNciexYO2OuQ5iPTRXw1ukba/0=\n",
-    "iv": "LI3nJE3xGXoNsfpuDt69IA==\n",
+    "encrypted_data": "UvjI0a0aqzH6+is01Er4pIClITRBuFCnOE0sLs1trZxqiY7rObos0OXsabSG\nsM5Mu3OTwOLlSiq1VYpTeVgYa5LrB62JK2OEP8bd7YJRsQ/5pHKHTPWtY8UL\nLeslDOAKw5zeB5dN0Z3r0w+VkmwKX9m34vHX+6MXdEBC8XgE4lzSUR0i7D7R\nUYceKxMRmfVaGx3I2k1Mq38wMRkOEUdaMTA8NlLemlQnbianMrsJf4nR2LZ5\nQHRplSHchqpC17JbVNg+Ppmg+26WycMe4j3fUA==\n",
+    "hmac": "DOyKM/5VnTVyp5kMAJ9bXbdHG4qeiyJAMa+GiqBmiBs=\n",
+    "iv": "rsvURfi3DluKPkhUvzW6og==\n",
     "version": 2,
     "cipher": "aes-256-cbc"
   },

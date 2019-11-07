@@ -49,10 +49,9 @@ su -s /bin/sh -c "heat-manage db_sync" heat
 # Upgrade Ceilometer
 systemctl stop '*ceilometer*'
 systemctl stop '*aodh*'
-systemctl stop '*gnocchi*'
 # Removed by upstream
 systemctl disable openstack-ceilometer-collector
-yum -d1 -y upgrade \*ceilometer\* \*aodh\* \*gnocchi\*
+yum -d1 -y upgrade \*ceilometer\* \*aodh\*
 set +e
 ceilometer-upgrade --skip-gnocchi-resource-types --config-file /etc/ceilometer/ceilometer.conf
 set -e
