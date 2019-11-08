@@ -60,8 +60,7 @@ end
 
 include_recipe 'openstack-network::ml2_linuxbridge'
 
-systemd_service node['openstack']['network']['platform']['neutron_linuxbridge_agent_service'] do
-  part_of "#{node['iptables-ng']['service_ipv4']}.service"
-  override node['openstack']['network']['platform']['neutron_linuxbridge_agent_service']
-  drop_in true
+systemd_service_drop_in node['openstack']['network']['platform']['neutron_linuxbridge_agent_service'] do
+  unit_part_of "#{node['iptables-ng']['service_ipv4']}.service"
+  override "#{node['openstack']['network']['platform']['neutron_linuxbridge_agent_service']}.service"
 end

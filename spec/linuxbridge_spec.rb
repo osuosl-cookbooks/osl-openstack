@@ -271,11 +271,10 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/,
     end
   end
   it do
-    expect(chef_run).to create_systemd_service('neutron-linuxbridge-agent')
+    expect(chef_run).to create_systemd_service_drop_in('neutron-linuxbridge-agent')
       .with(
-        part_of: 'iptables.service',
-        override: 'neutron-linuxbridge-agent',
-        drop_in: true
+        unit_part_of: 'iptables.service',
+        override: 'neutron-linuxbridge-agent.service'
       )
   end
 end
