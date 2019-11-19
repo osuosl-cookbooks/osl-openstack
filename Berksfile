@@ -22,13 +22,12 @@ cookbook 'yum-kernel-osuosl', git: 'git@github.com:osuosl-cookbooks/yum-kernel-o
 cookbook 'yum-qemu-ev', git: 'git@github.com:osuosl-cookbooks/yum-qemu-ev.git'
 
 # WIP patches
-%w(
-  telemetry
-).each do |cb|
-  cookbook "openstack-#{cb}",
-           github: "osuosl-cookbooks/cookbook-openstack-#{cb}",
-           branch: 'osuosl/rocky'
-end
+# %w(
+# ).each do |cb|
+#   cookbook "openstack-#{cb}",
+#            github: "osuosl-cookbooks/cookbook-openstack-#{cb}",
+#            branch: 'osuosl/rocky'
+# end
 
 # Openstack deps
 %w(
@@ -43,6 +42,7 @@ end
   ops-database
   ops-messaging
   orchestration
+  telemetry
 ).each do |cb|
   cookbook "openstack-#{cb}",
            github: "openstack/cookbook-openstack-#{cb}",
