@@ -80,17 +80,10 @@ describe 'osl-openstack::telemetry', telemetry: true do
       %r{^auth_url = https://10.0.0.10:5000/v3$},
       %r{^www_authenticate_uri = https://10.0.0.10:5000/v3$},
       /^service_token_roles_required = True$/,
+      /^service_token_roles = admin$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('keystone_authtoken', line)
-      end
-    end
-    [
-      /^host = 10.0.0.2$/,
-    ].each do |line|
-      it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('api', line)
       end
     end
     it do

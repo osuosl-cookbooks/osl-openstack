@@ -24,3 +24,12 @@ end
     its('exit_status') { should eq 0 }
   end
 end
+
+describe command('bash -c "source /root/openrc && openstack server create --image cirros --flavor m1.nano test"') do
+  its('exit_status') { should eq 0 }
+  its('stdout') { should match /OS-EXT-STS:vm_state.*building/ }
+end
+
+describe command('bash -c "source /root/openrc && openstack server delete test"') do
+  its('exit_status') { should eq 0 }
+end

@@ -21,6 +21,8 @@ control 'controller' do
     its('DEFAULT.glance_api_version') { should_not cmp '' }
     its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
     its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
+    its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
+    its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
     its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
     its('DEFAULT.enabled_backends') { should cmp 'ceph,ceph_ssd' }
     its('DEFAULT.backup_driver') { should cmp 'cinder.backup.drivers.ceph' }
@@ -94,6 +96,8 @@ control 'controller' do
     end
     its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
     its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
+    its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
+    its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
     its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
     its('libvirt.disk_cachemodes') { should cmp 'network=writeback' }
     its('libvirt.force_raw_images') { should cmp 'true' }
@@ -280,6 +284,8 @@ export OS_AUTH_TYPE=password})
 
   describe ini('/etc/glance/glance-api.conf') do
     its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
+    its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
+    its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
     its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
     its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
   end
@@ -445,6 +451,8 @@ export OS_AUTH_TYPE=password})
     describe ini("/etc/neutron/#{f}") do
       its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
       its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
+      its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
+      its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
       its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
     end
   end
@@ -585,6 +593,8 @@ export OS_AUTH_TYPE=password})
     its('trustee.auth_type') { should cmp 'v3password' }
     its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
     its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
+    its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
+    its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
     its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
   end
 
@@ -624,14 +634,23 @@ export OS_AUTH_TYPE=password})
   describe ini('/etc/ceilometer/ceilometer.conf') do
     its('DEFAULT.meter_dispatchers') { should_not cmp 'database' }
     its('DEFAULT.meter_dispatchers') { should_not cmp 'gnocchi' }
-    its('api.default_api_return_limit') { should_not cmp '1000000000000' }
-    its('api.host') { should_not cmp '127.0.0.1' }
     its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
     its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
+    its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
+    its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
     its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
   end
 
   describe http('http://localhost:9091/metrics', enable_remote_worker: true) do
     its('body') { should match /^image_size{instance="",job="ceilometer"/ }
+  end
+
+  describe command('bash -c "source /root/openrc && openstack server create --image cirros --flavor m1.nano test"') do
+    its('exit_status') { should eq 0 }
+    its('stdout') { should match /OS-EXT-STS:vm_state.*building/ }
+  end
+
+  describe command('bash -c "source /root/openrc && openstack server delete test"') do
+    its('exit_status') { should eq 0 }
   end
 end

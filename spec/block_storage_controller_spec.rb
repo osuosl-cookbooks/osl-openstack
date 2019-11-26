@@ -46,6 +46,8 @@ describe 'osl-openstack::block_storage_controller' do
     end
     [
       %r{^www_authenticate_uri = https://10.0.0.10:5000/v3$},
+      /^service_token_roles_required = True$/,
+      /^service_token_roles = admin$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('keystone_authtoken', line)

@@ -37,6 +37,7 @@ describe ini('/etc/heat/heat.conf') do
   its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
   its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
   its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
+  its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
   its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
 end
 

@@ -22,6 +22,7 @@ describe ini('/etc/neutron/neutron.conf') do
   its('DEFAULT.allow_overlapping_ips') { should cmp 'True' }
   its('DEFAULT.router_distributed') { should cmp 'False' }
   its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
+  its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
 end
 
 %w(

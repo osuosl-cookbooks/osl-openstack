@@ -158,7 +158,6 @@ node.default['openstack']['network'].tap do |conf|
     ).join(',')
   conf['conf']['DEFAULT']['allow_overlapping_ips'] = 'True'
   conf['conf']['DEFAULT']['router_distributed'] = 'False'
-  conf['conf']['keystone_authtoken']['service_token_roles_required'] = 'True'
   conf['dnsmasq']['upstream_dns_servers'] = %w(140.211.166.130 140.211.166.131)
 end
 node.default['openstack']['network_l3']['conf'].tap do |conf|
@@ -199,7 +198,6 @@ node.default['openstack']['network']['plugins']['linuxbridge']['conf']
     'neutron.agent.linux.iptables_firewall.IptablesFirewallDriver'
 end
 node.default['openstack']['orchestration']['conf'].tap do |conf|
-  conf['keystone_authtoken']['service_token_roles_required'] = 'True'
   conf['trustee'].delete('auth_plugin')
   conf['trustee']['auth_type'] = 'v3password'
 end
@@ -375,7 +373,6 @@ end
 
 node.default['openstack']['telemetry']['conf'].tap do |conf|
   conf['DEFAULT'].delete('meter_dispatchers')
-  conf['keystone_authtoken']['service_token_roles_required'] = 'True'
 end
 
 node.default['openstack']['block-storage']['conf']['DEFAULT'].delete('glance_api_version')
@@ -617,6 +614,8 @@ end
   auth_url = ::URI.decode identity_endpoint.to_s
   node.default['openstack'][i]['conf'].tap do |conf|
     conf['keystone_authtoken']['www_authenticate_uri'] = auth_url
+    conf['keystone_authtoken']['service_token_roles_required'] = 'True'
+    conf['keystone_authtoken']['service_token_roles'] = 'admin'
   end
 end
 
