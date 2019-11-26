@@ -69,6 +69,7 @@ describe 'osl-openstack::compute_controller' do
       /^resume_guests_state_on_host_boot = True$/,
       /^block_device_allocate_retries = 120$/,
       %r{^transport_url = rabbit://openstack:mq-pass@10.0.0.10:5672$},
+      /^compute_monitors = cpu.virt_driver$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)

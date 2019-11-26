@@ -125,6 +125,7 @@ node.default['openstack']['compute']['conf'].tap do |conf|
   conf['DEFAULT']['disk_allocation_ratio'] = 1.5
   conf['DEFAULT']['resume_guests_state_on_host_boot'] = 'True'
   conf['DEFAULT']['block_device_allocate_retries'] = 120
+  conf['DEFAULT']['compute_monitors'] = 'cpu.virt_driver'
   conf['notifications']['notify_on_state_change'] = 'vm_and_task_state'
   if node['osl-openstack']['ceph']
     conf['libvirt']['disk_cachemodes'] = 'network=writeback'

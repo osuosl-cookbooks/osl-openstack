@@ -42,6 +42,7 @@ describe ini('/etc/nova/nova.conf') do
   its('DEFAULT.instance_usage_audit_period') { should cmp 'hour' }
   its('DEFAULT.resume_guests_state_on_host_boot') { should cmp 'True' }
   its('DEFAULT.block_device_allocate_retries') { should cmp '120' }
+  its('DEFAULT.compute_monitors') { should cmp 'cpu.virt_driver' }
   its('notifications.notify_on_state_change') { should cmp 'vm_and_task_state' }
   its('filter_scheduler.enabled_filters') do
     should cmp 'AggregateInstanceExtraSpecsFilter,RetryFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter'
