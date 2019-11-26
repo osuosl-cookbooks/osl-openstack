@@ -204,6 +204,7 @@ suites:
       - role[openstack_tk]
       - recipe[openstack_test]
       - role[openstack_ops_identity]
+      - recipe[osl-prometheus::server]
       - recipe[osl-openstack::controller]
       - recipe[osl-openstack::compute]
       - recipe[osl-openstack::block_storage]
