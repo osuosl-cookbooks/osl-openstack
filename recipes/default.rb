@@ -214,6 +214,7 @@ node.default['openstack']['dashboard'].tap do |conf|
 end
 
 node.default['openstack']['telemetry'].tap do |conf|
+  conf['polling']['interval'] = 60
   conf['polling']['meters'] =
     %w(
       bandwidth
@@ -234,17 +235,19 @@ node.default['openstack']['telemetry'].tap do |conf|
       cpu_util
       disk.allocation
       disk.capacity
+      disk.device.allocation
+      disk.device.capacity
+      disk.device.iops
+      disk.device.latency
       disk.device.read.bytes
       disk.device.read.requests
+      disk.device.read.requests.rate
       disk.device.write.bytes
       disk.device.write.requests
+      disk.device.write.requests.rate
       disk.ephemeral.size
-      disk.iops
-      disk.latency
-      disk.read.requests.rate
       disk.root.size
       disk.usage
-      disk.write.requests.rate
       hardware.cpu.load.15min
       hardware.cpu.load.1min
       hardware.cpu.load.5min
@@ -299,18 +302,11 @@ node.default['openstack']['telemetry'].tap do |conf|
       memory.swap.out
       memory.usage
       network.incoming.bytes
-      network.incoming.bytes
-      network.incoming.bytes.rate
-      network.incoming.packets
       network.incoming.packets
       network.incoming.packets.drop
       network.incoming.packets.error
       network.incoming.packets.rate
       network.outgoing.bytes
-      network.outgoing.bytes
-      network.outgoing.bytes.rate
-      network.outgoing.packets
-      network.outgoing.packets
       network.outgoing.packets.drop
       network.outgoing.packets.error
       network.outgoing.packets.rate
