@@ -41,11 +41,6 @@ describe command("#{openstack} compute service list -f value -c Binary -c Status
   its('stdout') { should match(/nova-compute enabled up/) }
 end
 
-# Nasty hack to work around issue with virsh commands never completing
-describe command('systemctl restart libvirtd') do
-  its('exit_status') { should eq 0 }
-end
-
 describe command('virsh secret-list') do
   its('stdout') do
     should match(/ae3f1d03-bacd-4a90-b869-1a4fabb107f2\s.+ceph client.cinder secret/)
@@ -65,6 +60,13 @@ describe file('/etc/sysconfig/libvirt-guests') do
   its('content') { should match(/^ON_SHUTDOWN=shutdown$/) }
   its('content') { should match(/^PARALLEL_SHUTDOWN=25$/) }
   its('content') { should match(/^SHUTDOWN_TIMEOUT=120$/) }
+end
+
+describe file('/etc/libvirt/libvirtd.conf') do
+  its('content') { should match(/^max_clients = 200$/) }
+  its('content') { should match(/^max_workers = 200$/) }
+  its('content') { should match(/^max_requests = 200$/) }
+  its('content') { should match(/^max_client_requests = 50$/) }
 end
 
 describe file('/var/lib/nova/.ssh/authorized_keys') do

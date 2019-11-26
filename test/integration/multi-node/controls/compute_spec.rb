@@ -73,11 +73,6 @@ control 'compute' do
     its('stdout') { should match(/nova-compute enabled up/) }
   end
 
-  # Nasty hack to work around issue with virsh commands never completing
-  describe command('systemctl restart libvirtd') do
-    its('exit_status') { should eq 0 }
-  end
-
   describe command('virsh secret-list') do
     its('stdout') do
       should match(/ae3f1d03-bacd-4a90-b869-1a4fabb107f2\s.+ceph client.cinder secret/)

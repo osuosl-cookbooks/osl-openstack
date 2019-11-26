@@ -130,6 +130,12 @@ node.default['openstack']['image_api']['conf'].tap do |conf|
     conf['glance_store']['rbd_store_chunk_size'] = 8
   end
 end
+node.default['openstack']['compute']['libvirt']['conf'].tap do |conf|
+  conf['max_clients'] = '200'
+  conf['max_workers'] = '200'
+  conf['max_requests'] = '200'
+  conf['max_client_requests'] = '50'
+end
 node.default['openstack']['compute']['conf'].tap do |conf|
   conf['filter_scheduler']['enabled_filters'] =
     %w(
