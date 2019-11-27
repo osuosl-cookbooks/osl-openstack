@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+7.3.1 (2019-11-27)
+------------------
+- Increase max client settings for libvirtd
+
 7.3.0 (2019-11-08)
 ------------------
 - Switch to using systemd_service_drop_in resource
