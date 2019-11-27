@@ -115,10 +115,9 @@ resource "openstack_compute_instance_v2" "compute" {
         version         = "14"
     }
 
-    # Run restart libvirtd and run chef-client again
+    # Run chef-client again
     provisioner "remote-exec" {
         inline = [
-            "sudo systemctl restart libvirtd",
             "sudo chef-client"
         ]
         connection {

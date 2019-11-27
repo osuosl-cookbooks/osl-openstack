@@ -91,7 +91,6 @@ if node['osl-openstack']['ceph']
     directory d do
       owner 'qemu'
       group 'libvirt'
-      notifies :restart, 'service[libvirt-bin]'
     end
   end
 

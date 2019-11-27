@@ -67,6 +67,16 @@ describe 'osl-openstack::compute' do
   it do
     expect(chef_run).to start_service('libvirt-guests')
   end
+  [
+    /^max_clients = 200$/,
+    /^max_workers = 200$/,
+    /^max_requests = 200$/,
+    /^max_client_requests = 50$/,
+  ].each do |line|
+    it do
+      expect(chef_run).to render_file('/etc/libvirt/libvirtd.conf').with_content(line)
+    end
+  end
   it do
     expect(chef_run).to create_user_account('nova')
       .with(
