@@ -17,7 +17,7 @@ yum -y upgrade
 
 set +ex
 
-touch /root/queens-upgrade-done
+touch /root/rocky-upgrade-done
 
 echo
 echo "Run the following command once the controller has been upgraded:"
