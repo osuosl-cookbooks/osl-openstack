@@ -236,6 +236,7 @@ suites:
       - recipe[openstack_test::upgrade]
       - recipe[openstack_test]
       - role[openstack_ops_identity]
+      - recipe[osl-prometheus::server]
       - recipe[osl-openstack::controller]
       - recipe[osl-openstack::compute]
       - recipe[openstack-block-storage::volume_driver_lvm]
