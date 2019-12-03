@@ -259,12 +259,18 @@ suites:
     provisioner: terraform
     verifier:
       name: terraform
-      groups:
+      systems:
         - name: controller
+          backend: ssh
           controls:
             - controller
-          hostnames: controller
+          hosts_output: controller
+          user: centos
+          sudo: true
         - name: compute
+          backend: ssh
           controls:
             - compute
-          hostnames: compute
+          hosts_output: compute
+          user: centos
+          sudo: true
