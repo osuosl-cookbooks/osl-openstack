@@ -440,6 +440,8 @@ shared_context 'telemetry_stubs' do
       .and_return('rabbit://openstack:openstack@controller.example.org:5672')
     stub_command('grep -q curated_sname /usr/lib/python2.7/site-packages/ceilometer/publisher/prometheus.py')
       .and_return(false)
+    stub_command('grep -q s.project_id /usr/lib/python2.7/site-packages/ceilometer/publisher/prometheus.py')
+      .and_return(false)
   end
 end
 

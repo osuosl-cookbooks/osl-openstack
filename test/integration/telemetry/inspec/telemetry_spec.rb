@@ -35,6 +35,6 @@ describe ini('/etc/ceilometer/ceilometer.conf') do
   its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
 end
 
-describe http('http://localhost:9091/metrics', enable_remote_worker: true) do
-  its('body') { should match /^image_size{instance="",job="ceilometer"/ }
+describe http('http://localhost:9091/metrics') do
+  its('body') { should match /^image_size{instance="",job="ceilometer",project_id="/ }
 end

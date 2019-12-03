@@ -146,7 +146,7 @@ control 'controller' do
     its('stdout') { should match(/Check: Resource Providers.*\n.*Result: Success/) }
   end
 
-  describe http('https://controller.example.com:6080', enable_remote_worker: true, ssl_verify: false) do
+  describe http('https://controller.example.com:6080', ssl_verify: false) do
     its('status') { should cmp 200 }
   end
   %w(80 443).each do |p|
@@ -641,8 +641,8 @@ export OS_AUTH_TYPE=password})
     its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
   end
 
-  describe http('http://localhost:9091/metrics', enable_remote_worker: true) do
-    its('body') { should match /^image_size{instance="",job="ceilometer"/ }
+  describe http('http://localhost:9091/metrics') do
+    its('body') { should match /^image_size{instance="",job="ceilometer",project_id="/ }
   end
 
   describe command('bash -c "source /root/openrc && openstack server create --image cirros --flavor m1.nano test"') do

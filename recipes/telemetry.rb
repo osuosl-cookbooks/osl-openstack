@@ -25,14 +25,23 @@ include_recipe 'openstack-telemetry::identity_registration'
 # [1] https://review.opendev.org/686368
 package 'patch'
 
-cookbook_file ::File.join(Chef::Config[:file_cache_path], 'ceilometer-prometheus.patch')
+cookbook_file ::File.join(Chef::Config[:file_cache_path], 'ceilometer-prometheus1.patch')
+cookbook_file ::File.join(Chef::Config[:file_cache_path], 'ceilometer-prometheus2.patch')
 
-execute "patch -p1 < #{::File.join(Chef::Config[:file_cache_path], 'ceilometer-prometheus.patch')}" do
+execute "patch -p1 < #{::File.join(Chef::Config[:file_cache_path], 'ceilometer-prometheus1.patch')}" do
   cwd '/usr/lib/python2.7/site-packages'
   notifies :restart, 'service[ceilometer-agent-central]'
   notifies :restart, 'service[ceilometer-agent-notification]'
   notifies :restart, 'service[apache2]'
   not_if 'grep -q curated_sname /usr/lib/python2.7/site-packages/ceilometer/publisher/prometheus.py'
+end
+
+execute "patch -p1 < #{::File.join(Chef::Config[:file_cache_path], 'ceilometer-prometheus2.patch')}" do
+  cwd '/usr/lib/python2.7/site-packages'
+  notifies :restart, 'service[ceilometer-agent-central]'
+  notifies :restart, 'service[ceilometer-agent-notification]'
+  notifies :restart, 'service[apache2]'
+  not_if 'grep -q s.project_id /usr/lib/python2.7/site-packages/ceilometer/publisher/prometheus.py'
 end
 
 # TODO: Remove the following after this converges on nodes

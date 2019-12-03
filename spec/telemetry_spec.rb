@@ -22,22 +22,41 @@ describe 'osl-openstack::telemetry', telemetry: true do
     expect(chef_run).to install_package('patch')
   end
   it do
-    expect(chef_run).to create_cookbook_file('/var/chef/cache/ceilometer-prometheus.patch')
+    expect(chef_run).to create_cookbook_file('/var/chef/cache/ceilometer-prometheus1.patch')
   end
   it do
-    expect(chef_run).to run_execute('patch -p1 < /var/chef/cache/ceilometer-prometheus.patch')
+    expect(chef_run).to create_cookbook_file('/var/chef/cache/ceilometer-prometheus2.patch')
+  end
+  it do
+    expect(chef_run).to run_execute('patch -p1 < /var/chef/cache/ceilometer-prometheus1.patch')
       .with(cwd: '/usr/lib/python2.7/site-packages')
   end
   it do
-    expect(chef_run.execute('patch -p1 < /var/chef/cache/ceilometer-prometheus.patch')) \
+    expect(chef_run).to run_execute('patch -p1 < /var/chef/cache/ceilometer-prometheus2.patch')
+      .with(cwd: '/usr/lib/python2.7/site-packages')
+  end
+  it do
+    expect(chef_run.execute('patch -p1 < /var/chef/cache/ceilometer-prometheus1.patch')) \
       .to notify('service[ceilometer-agent-central]').to(:restart)
   end
   it do
-    expect(chef_run.execute('patch -p1 < /var/chef/cache/ceilometer-prometheus.patch')) \
+    expect(chef_run.execute('patch -p1 < /var/chef/cache/ceilometer-prometheus1.patch')) \
       .to notify('service[ceilometer-agent-notification]').to(:restart)
   end
   it do
-    expect(chef_run.execute('patch -p1 < /var/chef/cache/ceilometer-prometheus.patch')) \
+    expect(chef_run.execute('patch -p1 < /var/chef/cache/ceilometer-prometheus1.patch')) \
+      .to notify('service[apache2]').to(:restart)
+  end
+  it do
+    expect(chef_run.execute('patch -p1 < /var/chef/cache/ceilometer-prometheus2.patch')) \
+      .to notify('service[ceilometer-agent-central]').to(:restart)
+  end
+  it do
+    expect(chef_run.execute('patch -p1 < /var/chef/cache/ceilometer-prometheus2.patch')) \
+      .to notify('service[ceilometer-agent-notification]').to(:restart)
+  end
+  it do
+    expect(chef_run.execute('patch -p1 < /var/chef/cache/ceilometer-prometheus2.patch')) \
       .to notify('service[apache2]').to(:restart)
   end
   context 'ceilometer patched' do
@@ -45,9 +64,17 @@ describe 'osl-openstack::telemetry', telemetry: true do
     before do
       stub_command('grep -q curated_sname /usr/lib/python2.7/site-packages/ceilometer/publisher/prometheus.py')
         .and_return(true)
+      stub_command('grep -q s.project_id /usr/lib/python2.7/site-packages/ceilometer/publisher/prometheus.py')
+        .and_return(true)
     end
     it do
-      expect(chef_run).to_not run_execute('patch -p1 < /var/chef/cache/ceilometer-prometheus.patch')
+      expect(chef_run).to_not run_execute('patch -p1 < /var/chef/cache/ceilometer-prometheus1.patch')
+        .with(
+          cwd: '/usr/lib/python2.7/site-packages'
+        )
+    end
+    it do
+      expect(chef_run).to_not run_execute('patch -p1 < /var/chef/cache/ceilometer-prometheus2.patch')
         .with(
           cwd: '/usr/lib/python2.7/site-packages'
         )
