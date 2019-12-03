@@ -99,6 +99,6 @@ describe command('bash -c "source /root/openrc && /bin/nova-status upgrade check
   its('stdout') { should match(/Check: Resource Providers.*\n.*Result: Success/) }
 end
 
-describe http('https://controller.example.com:6080', enable_remote_worker: true, ssl_verify: false) do
+describe http('https://controller.example.com:6080', ssl_verify: false) do
   its('status') { should cmp 200 }
 end
