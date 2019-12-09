@@ -20,8 +20,6 @@ yum -d1 -y upgrade \*keystone\* python2-oslo-config
 yum -d1 -y upgrade \*horizon\*
 keystone-manage token_flush
 su -s /bin/sh -c "keystone-manage db_sync" keystone
-#keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone
-#keystone-manage credential_setup --keystone-user keystone --keystone-group keystone
 systemctl start httpd
 
 # Upgrade Glance
