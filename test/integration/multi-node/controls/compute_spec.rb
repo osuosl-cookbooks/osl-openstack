@@ -27,7 +27,7 @@ control 'compute' do
     its('libvirt.rbd_user') { should cmp 'cinder' }
   end
 
-  describe http('https://controller.example.com:6080', enable_remote_worker: true, ssl_verify: false) do
+  describe http('https://controller.example.com:6080', ssl_verify: false) do
     its('status') { should cmp 200 }
   end
   %w(

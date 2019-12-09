@@ -28,6 +28,13 @@
             "virt_type": "qemu"
           }
         }
+      },
+      "telemetry": {
+        "pipeline": {
+          "publishers": [
+            "prometheus://localhost:9091/metrics/job/ceilometer"
+          ]
+        }
       }
     }
   },

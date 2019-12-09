@@ -29,6 +29,12 @@ end
   end
 end
 
+describe ini('/usr/share/nova/nova-dist.conf') do
+  its('DEFAULT.dhcpbridge') { should cmp nil }
+  its('DEFAULT.dhcpbridge_flagfile') { should cmp nil }
+  its('DEFAULT.force_dhcp_release') { should cmp nil }
+end
+
 describe ini('/etc/nova/nova.conf') do
   its('DEFAULT.use_neutron') { should_not cmp '' }
   its('DEFAULT.disk_allocation_ratio') { should cmp '1.5' }
@@ -36,12 +42,15 @@ describe ini('/etc/nova/nova.conf') do
   its('DEFAULT.instance_usage_audit_period') { should cmp 'hour' }
   its('DEFAULT.resume_guests_state_on_host_boot') { should cmp 'True' }
   its('DEFAULT.block_device_allocate_retries') { should cmp '120' }
+  its('DEFAULT.compute_monitors') { should cmp 'cpu.virt_driver' }
   its('notifications.notify_on_state_change') { should cmp 'vm_and_task_state' }
   its('filter_scheduler.enabled_filters') do
     should cmp 'AggregateInstanceExtraSpecsFilter,RetryFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter'
   end
   its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
   its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
+  its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
+  its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
   its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
   its('libvirt.disk_cachemodes') { should cmp 'network=writeback' }
   its('libvirt.force_raw_images') { should cmp 'true' }
@@ -90,6 +99,6 @@ describe command('bash -c "source /root/openrc && /bin/nova-status upgrade check
   its('stdout') { should match(/Check: Resource Providers.*\n.*Result: Success/) }
 end
 
-describe http('https://controller.example.com:6080', enable_remote_worker: true, ssl_verify: false) do
+describe http('https://controller.example.com:6080', ssl_verify: false) do
   its('status') { should cmp 200 }
 end

@@ -1,0 +1,28 @@
+From 8b6807e44e400451038da73bd024834624ec932f Mon Sep 17 00:00:00 2001
+From: Lance Albertson <lance@osuosl.org>
+Date: Tue, 26 Nov 2019 16:39:29 -0800
+Subject: [PATCH] Include project_id in Prometheus publisher
+
+It's quite useful to have a project ID included in Prometheus data so that one
+can filter data based on projects. Currently it only includes the resource_id
+which can be difficult to track for a project.
+
+Change-Id: Ied85839d089a019c0511cb5600d6bdaa811d5d1a
+diff --git a/ceilometer/publisher/prometheus.py b/ceilometer/publisher/prometheus.py
+index 973f8777..caca9fb4 100644
+--- a/ceilometer/publisher/prometheus.py
++++ b/ceilometer/publisher/prometheus.py
+@@ -71,8 +71,8 @@ class PrometheusPublisher(http.HttpPublisher):
+             # data += '%s{resource_id="%s"} %s %d\n' % (
+             #     curated_sname, s.resource_id, s.volume, timestamp_ms)
+ 
+-            data += '%s{resource_id="%s"} %s\n' % (
+-                curated_sname, s.resource_id, s.volume)
++            data += '%s{resource_id="%s", project_id="%s"} %s\n' % (
++                curated_sname, s.resource_id, s.project_id, s.volume)
+         self._do_post(data)
+ 
+     @staticmethod
+-- 
+2.11.0
+

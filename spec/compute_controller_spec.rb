@@ -25,6 +25,39 @@ describe 'osl-openstack::compute_controller' do
     end
   end
 
+  it do
+    expect(chef_run).to edit_delete_lines('remove dhcpbridge on controller')
+      .with(
+        path: '/usr/share/nova/nova-dist.conf',
+        pattern: '^dhcpbridge.*',
+        backup: true
+      )
+  end
+
+  it do
+    expect(chef_run).to edit_delete_lines('remove force_dhcp_release on controller')
+      .with(
+        path: '/usr/share/nova/nova-dist.conf',
+        pattern: '^force_dhcp_release.*',
+        backup: true
+      )
+  end
+
+  %w(
+    service[apache2]
+    service[openstack-nova-novncproxy]
+    service[nova-consoleauth]
+    service[nova-scheduler]
+  ).each do |service|
+    it do
+      expect(chef_run.delete_lines('remove dhcpbridge on controller')).to notify(service).to(:restart)
+    end
+
+    it do
+      expect(chef_run.delete_lines('remove force_dhcp_release on controller')).to notify(service).to(:restart)
+    end
+  end
+
   describe '/etc/nova/nova.conf' do
     let(:file) { chef_run.template('/etc/nova/nova.conf') }
 
@@ -36,6 +69,7 @@ describe 'osl-openstack::compute_controller' do
       /^resume_guests_state_on_host_boot = True$/,
       /^block_device_allocate_retries = 120$/,
       %r{^transport_url = rabbit://openstack:mq-pass@10.0.0.10:5672$},
+      /^compute_monitors = cpu.virt_driver$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
@@ -82,7 +116,9 @@ describe 'osl-openstack::compute_controller' do
     [
       /^memcached_servers = 10.0.0.10:11211$/,
       %r{^auth_url = https://10.0.0.10:5000/v3$},
-      %r{^auth_uri = https://10.0.0.10:5000/v3$},
+      %r{^www_authenticate_uri = https://10.0.0.10:5000/v3$},
+      /^service_token_roles_required = True$/,
+      /^service_token_roles = admin$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('keystone_authtoken', line)
@@ -220,15 +256,5 @@ describe 'osl-openstack::compute_controller' do
   it 'novnc-proxy sysconfig file notifies openstack-nova-novncproxy service' do
     expect(chef_run.template('/etc/sysconfig/openstack-nova-novncproxy')).to \
       notify('service[openstack-nova-novncproxy]')
-  end
-  [
-    'nova-api apache restart',
-    'nova-api: set-selinux-permissive',
-    'nova-metadata apache restart',
-    'nova-metadata: set-selinux-permissive',
-  ].each do |e|
-    it do
-      expect(chef_run).to_not run_execute(e)
-    end
   end
 end

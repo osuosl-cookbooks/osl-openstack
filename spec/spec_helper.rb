@@ -148,7 +148,6 @@ grep -c '^Current mode:.*enforcing') -eq 1 ]").and_return(true)
     allow_any_instance_of(Chef::Recipe).to receive(:rabbit_transport_url)
       .with('identity')
       .and_return('rabbit://openstack:openstack@controller.example.org:5672')
-    stub_command("/opt/chef/embedded/bin/gem list -i -v '>= 0.2.0' fog-openstack")
     allow(File).to receive(:symlink?).and_call_original
     allow(File).to receive(:symlink?).with('/etc/httpd/sites-enabled/keystone-admin.conf').and_return(true)
     allow(File).to receive(:symlink?).with('/etc/httpd/sites-enabled/keystone-main.conf').and_return(true)
@@ -379,7 +378,7 @@ shared_context 'block_storage_stubs' do
       .and_return('test_pass')
     allow(Chef::Application).to receive(:fatal!)
     allow_any_instance_of(Chef::Recipe).to receive(:rabbit_transport_url)
-      .with('block-storage')
+      .with('block_storage')
       .and_return('rabbit://openstack:openstack@controller.example.org:5672')
   end
 end
@@ -427,7 +426,7 @@ shared_context 'telemetry_stubs' do
       .with('service', 'openstack-telemetry')
       .and_return('ceilometer-pass')
     allow_any_instance_of(Chef::Recipe).to receive(:get_password)
-      .with('service', 'openstack-telemetry-metric')
+      .with('service', 'openstack-telemetry_metric')
       .and_return('gnocchi-pass')
     allow_any_instance_of(Chef::Recipe).to receive(:get_password)
       .with('user', 'openstack')
@@ -439,6 +438,10 @@ shared_context 'telemetry_stubs' do
     allow_any_instance_of(Chef::Recipe).to receive(:rabbit_transport_url)
       .with('telemetry')
       .and_return('rabbit://openstack:openstack@controller.example.org:5672')
+    stub_command('grep -q curated_sname /usr/lib/python2.7/site-packages/ceilometer/publisher/prometheus.py')
+      .and_return(false)
+    stub_command('grep -q s.project_id /usr/lib/python2.7/site-packages/ceilometer/publisher/prometheus.py')
+      .and_return(false)
   end
 end
 

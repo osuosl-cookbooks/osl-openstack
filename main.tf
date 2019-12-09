@@ -69,11 +69,13 @@ resource "openstack_compute_instance_v2" "controller" {
             "role[ceph_osd]",
             "role[ceph_setup]",
             "role[openstack_provisioning]",
+            "recipe[osl-prometheus::server]",
             "recipe[osl-openstack::ops_database]",
             "recipe[osl-openstack::controller]",
             "role[openstack_cinder]",
             "recipe[openstack_test::orchestration]",
-            "recipe[openstack_test::tempest]"
+            "recipe[openstack_test::tempest]",
+            "recipe[openstack_test::network]"
         ]
         node_name       = "controller"
         secret_key      = "${file("test/integration/encrypted_data_bag_secret")}"
@@ -103,6 +105,7 @@ resource "openstack_compute_instance_v2" "compute" {
     provisioner "chef" {
         run_list        = [
             "role[openstack_provisioning]",
+            "role[ceph]",
             "recipe[openstack_test::ceph_compute]",
             "recipe[osl-openstack::compute]"
         ]

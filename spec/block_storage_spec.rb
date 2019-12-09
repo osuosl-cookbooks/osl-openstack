@@ -8,7 +8,6 @@ describe 'osl-openstack::block_storage' do
   include_context 'identity_stubs'
   include_context 'block_storage_stubs'
   %w(
-    firewall::iscsi
     osl-openstack
     openstack-block-storage::volume
     openstack-block-storage::identity_registration
@@ -18,10 +17,7 @@ describe 'osl-openstack::block_storage' do
     end
   end
   before do
-    node.normal['osl-openstack']['cinder']['iscsi_role'] = 'iscsi_role'
-    node.normal['osl-openstack']['cinder']['iscsi_ips'] = %w(10.11.0.1)
     node.automatic['filesystem2']['by_mountpoint']
-    stub_search(:node, 'role:iscsi_role').and_return([{ ipaddress: '10.10.0.1' }])
   end
 
   it do
@@ -32,18 +28,6 @@ describe 'osl-openstack::block_storage' do
     expect(chef_run).to upgrade_package('qemu-img-ev')
   end
 
-  it 'adds iscsi nodes ipaddresses' do
-    # TODO: Add a test that actually works with the node search
-    expect(chef_run).to create_iptables_ng_rule('iscsi_ipv4').with(
-      rule:
-        [
-          '--protocol tcp --source 10.10.0.1 --destination-port 3260 --jump ACCEPT',
-          '--protocol tcp --source 10.11.0.1 --destination-port 3260 --jump ACCEPT',
-          '--protocol tcp --source 127.0.0.1 --destination-port 3260 --jump ACCEPT',
-        ],
-      chain: 'iscsi'
-    )
-  end
   context 'Set ceph' do
     let(:runner) do
       ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
@@ -101,6 +85,18 @@ describe 'osl-openstack::block_storage' do
             ceph_token: 'block_backup_token',
           }
         )
+    end
+    it do
+      expect(chef_run).to edit_replace_or_add('log-dir storage')
+        .with(
+          path: '/usr/share/cinder/cinder-dist.conf',
+          pattern: '^logdir.*',
+          replace_only: true,
+          backup: true
+        )
+    end
+    it do
+      expect(chef_run.replace_or_add('log-dir storage')).to notify('service[cinder-volume]').to(:restart)
     end
   end
 end

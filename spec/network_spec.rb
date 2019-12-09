@@ -75,6 +75,13 @@ EOL
           .with_section_content('DEFAULT', line)
       end
     end
+    [
+      /^service_token_roles_required = True$/,
+    ].each do |line|
+      it do
+        expect(chef_run).to render_config_file(file.name).with_section_content('keystone_authtoken', line)
+      end
+    end
     context 'Set bind_service' do
       cached(:chef_run) do
         ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
@@ -100,12 +107,14 @@ EOL
       end
       case s
       when 'keystone_authtoken'
-        it do
-          expect(chef_run).to render_config_file(file.name)
-            .with_section_content(
-              s,
-              %r{^auth_uri = https://10.0.0.10:5000/v3$}
-            )
+        [
+          %r{^www_authenticate_uri = https://10.0.0.10:5000/v3$},
+          /^service_token_roles_required = True$/,
+          /^service_token_roles = admin$/,
+        ].each do |line|
+          it do
+            expect(chef_run).to render_config_file(file.name).with_section_content(s, line)
+          end
         end
       end
     end

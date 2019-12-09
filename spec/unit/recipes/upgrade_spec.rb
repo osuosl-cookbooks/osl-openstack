@@ -11,7 +11,7 @@ describe 'osl-openstack::upgrade' do
     expect { chef_run }.to_not raise_error
   end
   it do
-    expect(chef_run).to delete_yum_repository('RDO-pike')
+    expect(chef_run).to delete_yum_repository('RDO-queens')
   end
   it do
     expect(chef_run).to create_cookbook_file('/root/upgrade.sh')
@@ -57,7 +57,21 @@ describe 'osl-openstack::upgrade' do
       expect(chef_run).to_not run_ruby_block('raise_upgrade_exeception')
     end
   end
-  context '/root/queens-upgrade-done exists' do
+  context '/root/rocky-upgrade-done exists' do
+    cached(:chef_run) do
+      ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
+        node.automatic['filesystem2']['by_mountpoint']
+      end.converge(described_recipe)
+    end
+    before do
+      allow(File).to receive(:exist?).and_call_original
+      allow(File).to receive(:exist?).with('/root/rocky-upgrade-done').and_return(true)
+    end
+    it do
+      expect(chef_run).to_not run_ruby_block('raise_upgrade_exeception')
+    end
+  end
+  context '/root/upgrade-test and /root/rocky-upgrade-done exists' do
     cached(:chef_run) do
       ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
         node.automatic['filesystem2']['by_mountpoint']
@@ -66,20 +80,6 @@ describe 'osl-openstack::upgrade' do
     before do
       allow(File).to receive(:exist?).and_call_original
       allow(File).to receive(:exist?).with('/root/queens-upgrade-done').and_return(true)
-    end
-    it do
-      expect(chef_run).to_not run_ruby_block('raise_upgrade_exeception')
-    end
-  end
-  context '/root/upgrade-test and /root/queens-upgrade-done exists' do
-    cached(:chef_run) do
-      ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-        node.automatic['filesystem2']['by_mountpoint']
-      end.converge(described_recipe)
-    end
-    before do
-      allow(File).to receive(:exist?).and_call_original
-      allow(File).to receive(:exist?).with('/root/pike-upgrade-done').and_return(true)
       allow(File).to receive(:exist?).with('/root/upgrade-test').and_return(true)
     end
     it do

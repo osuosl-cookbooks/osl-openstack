@@ -13,6 +13,11 @@ describe port(8776) do
   its('addresses') { should include '127.0.0.1' }
 end
 
+describe ini('/usr/share/cinder/cinder-dist.conf') do
+  its('DEFAULT.logdir') { should cmp nil }
+  its('DEFAULT.log-dir') { should cmp '/var/log/cinder' }
+end
+
 describe ini('/etc/cinder/cinder.conf') do
   its('DEFAULT.volume_clear_size') { should cmp '256' }
   its('DEFAULT.volume_group') { should cmp 'openstack' }
@@ -20,6 +25,8 @@ describe ini('/etc/cinder/cinder.conf') do
   its('DEFAULT.glance_api_version') { should_not cmp '' }
   its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
   its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
+  its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
+  its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
   its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
   its('DEFAULT.enabled_backends') { should cmp 'ceph,ceph_ssd' }
   its('DEFAULT.backup_driver') { should cmp 'cinder.backup.drivers.ceph' }

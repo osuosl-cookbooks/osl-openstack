@@ -27,6 +27,26 @@ include_recipe 'openstack-compute::vncproxy'
 include_recipe 'openstack-compute::scheduler'
 include_recipe 'openstack-compute::identity_registration'
 
+delete_lines 'remove dhcpbridge on controller' do
+  path '/usr/share/nova/nova-dist.conf'
+  pattern '^dhcpbridge.*'
+  backup true
+  notifies :restart, 'service[apache2]'
+  notifies :restart, 'service[openstack-nova-novncproxy]'
+  notifies :restart, 'service[nova-consoleauth]'
+  notifies :restart, 'service[nova-scheduler]'
+end
+
+delete_lines 'remove force_dhcp_release on controller' do
+  path '/usr/share/nova/nova-dist.conf'
+  pattern '^force_dhcp_release.*'
+  backup true
+  notifies :restart, 'service[apache2]'
+  notifies :restart, 'service[openstack-nova-novncproxy]'
+  notifies :restart, 'service[nova-consoleauth]'
+  notifies :restart, 'service[nova-scheduler]'
+end
+
 platform_options = node['openstack']['compute']['platform']
 proxy_service = "service[#{platform_options['compute_vncproxy_service']}]"
 ssl_dir = node['osl-openstack']['nova_ssl_dir']
@@ -54,9 +74,3 @@ template '/etc/sysconfig/openstack-nova-novncproxy' do
             key: ::File.join(ssl_dir, 'private', novnc['key_file']))
   notifies :restart, proxy_service
 end
-
-# These will restart apache on every chef run, so let's disable this
-delete_resource(:execute, 'nova-api apache restart')
-delete_resource(:execute, 'nova-api: set-selinux-permissive')
-delete_resource(:execute, 'nova-metadata apache restart')
-delete_resource(:execute, 'nova-metadata: set-selinux-permissive')

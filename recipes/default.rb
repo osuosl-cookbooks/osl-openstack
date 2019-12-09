@@ -26,7 +26,7 @@ node.default['authorization']['sudo']['include_sudoers_d'] = true
 node.default['apache']['contact'] = 'hostmaster@osuosl.org'
 node.default['osl-apache']['server_status_port'] = 80
 node.default['rabbitmq']['use_distro_version'] = true
-node.default['openstack']['release'] = 'queens'
+node.default['openstack']['release'] = 'rocky'
 node.default['openstack']['is_release'] = true
 node.default['openstack']['secret']['key_path'] =
   '/etc/chef/encrypted_data_bag_secret'
@@ -51,9 +51,7 @@ node.default['openstack']['identity']['ssl'].tap do |conf|
 end
 
 # Remove deprecated settings from upstream
-node.default['openstack']['identity']['conf'].delete('catalog')
 node.default['openstack']['identity']['conf'].delete('policy')
-node.default['openstack']['identity']['conf']['auth'].delete('external')
 node.default['openstack']['identity']['conf']['assignment']['driver'] = 'sql'
 node.default['openstack']['identity']['misc_paste'] =
   [
@@ -67,35 +65,6 @@ node.default['openstack']['identity']['misc_paste'] =
     '[filter:http_proxy_to_wsgi]',
     'use = egg:oslo.middleware#http_proxy_to_wsgi',
   ]
-node.default['openstack']['identity']['pipeline']['public_api'] =
-  %w(
-    cors
-    sizelimit
-    http_proxy_to_wsgi
-    osprofiler
-    url_normalize
-    request_id
-    build_auth_context
-    token_auth
-    json_body
-    ec2_extension
-    public_service
-  ).join(' ')
-node.default['openstack']['identity']['pipeline']['admin_api'] =
-  %w(
-    cors
-    sizelimit
-    http_proxy_to_wsgi
-    osprofiler
-    url_normalize
-    request_id
-    build_auth_context
-    token_auth
-    json_body
-    ec2_extension
-    s3_extension
-    admin_service
-  ).join(' ')
 node.default['openstack']['identity']['pipeline']['api_v3'] =
   %w(
     cors
@@ -121,13 +90,14 @@ node.default['openstack']['image_api']['conf'].tap do |conf|
     # [2] https://docs.openstack.org/releasenotes/glance/ocata.html#relnotes-14-0-0-origin-stable-ocata-other-notes
     # [3] https://wiki.openstack.org/wiki/OSSN/OSSN-0065
     conf['DEFAULT']['show_multiple_locations'] = true
+    conf['DEFAULT']['enabled_backends'] = 'cheap:rbd'
     conf['paste_deploy']['flavor'] = 'keystone'
-    conf['glance_store']['stores'] = 'rbd,file,http'
-    conf['glance_store']['default_store'] = 'rbd'
-    conf['glance_store']['rbd_store_pool'] = node['osl-openstack']['image']['rbd_store_pool']
-    conf['glance_store']['rbd_store_user'] = node['osl-openstack']['image']['rbd_store_user']
-    conf['glance_store']['rbd_store_ceph_conf'] = '/etc/ceph/ceph.conf'
-    conf['glance_store']['rbd_store_chunk_size'] = 8
+    conf['glance_store']['default_backend'] = 'cheap'
+    conf['cheap']['store_description'] = 'Cheap rbd backend'
+    conf['cheap']['rbd_store_pool'] = node['osl-openstack']['image']['rbd_store_pool']
+    conf['cheap']['rbd_store_user'] = node['osl-openstack']['image']['rbd_store_user']
+    conf['cheap']['rbd_store_ceph_conf'] = '/etc/ceph/ceph.conf'
+    conf['cheap']['rbd_store_chunk_size'] = 8
   end
 end
 node.default['openstack']['compute']['libvirt']['conf'].tap do |conf|
@@ -155,6 +125,7 @@ node.default['openstack']['compute']['conf'].tap do |conf|
   conf['DEFAULT']['disk_allocation_ratio'] = 1.5
   conf['DEFAULT']['resume_guests_state_on_host_boot'] = 'True'
   conf['DEFAULT']['block_device_allocate_retries'] = 120
+  conf['DEFAULT']['compute_monitors'] = 'cpu.virt_driver'
   conf['notifications']['notify_on_state_change'] = 'vm_and_task_state'
   if node['osl-openstack']['ceph']
     conf['libvirt']['disk_cachemodes'] = 'network=writeback'
@@ -243,11 +214,163 @@ node.default['openstack']['dashboard'].tap do |conf|
   }
 end
 
+node.default['openstack']['telemetry'].tap do |conf|
+  conf['polling']['interval'] = 60
+  conf['polling']['meters'] =
+    %w(
+      bandwidth
+      compute.instance.booting.time
+      compute.node.cpu.frequency
+      compute.node.cpu.idle.percent
+      compute.node.cpu.idle.time
+      compute.node.cpu.iowait.percent
+      compute.node.cpu.iowait.time
+      compute.node.cpu.kernel.percent
+      compute.node.cpu.kernel.time
+      compute.node.cpu.percent
+      compute.node.cpu.user.percent
+      compute.node.cpu.user.time
+      cpu
+      cpu.delta
+      cpu_l3_cache
+      cpu_util
+      disk.allocation
+      disk.capacity
+      disk.device.allocation
+      disk.device.capacity
+      disk.device.iops
+      disk.device.latency
+      disk.device.read.bytes
+      disk.device.read.requests
+      disk.device.read.requests.rate
+      disk.device.write.bytes
+      disk.device.write.requests
+      disk.device.write.requests.rate
+      disk.ephemeral.size
+      disk.root.size
+      disk.usage
+      hardware.cpu.load.15min
+      hardware.cpu.load.1min
+      hardware.cpu.load.5min
+      hardware.cpu.util
+      hardware.disk.read.bytes
+      hardware.disk.read.requests
+      hardware.disk.size.total
+      hardware.disk.size.used
+      hardware.disk.write.bytes
+      hardware.disk.write.requests
+      hardware.memory.buffer
+      hardware.memory.cached
+      hardware.memory.swap.avail
+      hardware.memory.swap.total
+      hardware.memory.total
+      hardware.memory.used
+      hardware.network.incoming.bytes
+      hardware.network.ip.incoming.datagrams
+      hardware.network.ip.outgoing.datagrams
+      hardware.network.outgoing.bytes
+      hardware.network.outgoing.errors
+      hardware.system_stats.cpu.idle
+      hardware.system_stats.io.incoming.blocks
+      hardware.system_stats.io.outgoing.blocks
+      identity.authenticate.failure
+      identity.authenticate.pending
+      identity.authenticate.success
+      identity.group.created
+      identity.group.deleted
+      identity.group.updated
+      identity.project.created
+      identity.project.deleted
+      identity.project.updated
+      identity.role_assignment.created
+      identity.role_assignment.deleted
+      identity.role.created
+      identity.role.deleted
+      identity.role.updated
+      identity.trust.created
+      identity.trust.deleted
+      identity.user.created
+      identity.user.deleted
+      identity.user.updated
+      image.download
+      image.serve
+      image.size
+      ip.floating
+      memory.bandwidth.local
+      memory.bandwidth.total
+      memory.resident
+      memory.swap.in
+      memory.swap.out
+      memory.usage
+      network.incoming.bytes
+      network.incoming.packets
+      network.incoming.packets.drop
+      network.incoming.packets.error
+      network.incoming.packets.rate
+      network.outgoing.bytes
+      network.outgoing.packets.drop
+      network.outgoing.packets.error
+      network.outgoing.packets.rate
+      perf.cache.misses
+      perf.cache.references
+      perf.cpu.cycles
+      perf.instructions
+      port
+      port.receive.bytes
+      port.receive.drops
+      port.receive.errors
+      port.receive.packets
+      port.transmit.bytes
+      port.transmit.packets
+      port.uptime
+      snapshot.size
+      stack.create
+      stack.delete
+      stack.resume
+      stack.suspend
+      stack.update
+      switch
+      switch.port
+      switch.port.collision.count
+      switch.port.receive.bytes
+      switch.port.receive.crc_error
+      switch.port.receive.drops
+      switch.port.receive.errors
+      switch.port.receive.frame_error
+      switch.port.receive.overrun_error
+      switch.port.receive.packets
+      switch.ports
+      switch.port.transmit.bytes
+      switch.port.transmit.drops
+      switch.port.transmit.errors
+      switch.port.transmit.packets
+      switch.port.uptime
+      switch.table.active.entries
+      vcpus
+      volume
+      volume.backup.size
+      volume.provider.capacity.allocated
+      volume.provider.capacity.free
+      volume.provider.capacity.provisioned
+      volume.provider.capacity.total
+      volume.provider.capacity.virtual_free
+      volume.provider.pool.capacity.allocated
+      volume.provider.pool.capacity.free
+      volume.provider.pool.capacity.provisioned
+      volume.provider.pool.capacity.total
+      volume.provider.pool.capacity.virtual_free
+      volume.size
+      volume.snapshot.size
+    )
+end
+
 node.default['openstack']['telemetry']['platform'].tap do |conf|
   conf['agent_notification_packages'] = %w(openstack-ceilometer-notification)
 end
 
-node.default['openstack']['telemetry']['conf']['DEFAULT'].delete('meter_dispatchers')
+node.default['openstack']['telemetry']['conf'].tap do |conf|
+  conf['DEFAULT'].delete('meter_dispatchers')
+end
 
 node.default['openstack']['block-storage']['conf']['DEFAULT'].delete('glance_api_version')
 node.override['openstack']['block-storage']['conf'].tap do |conf|
@@ -386,7 +509,6 @@ end
   compute
   block-storage
   identity
-  image_registry
   image_api
   network
   network_dhcp
@@ -430,7 +552,6 @@ end
 %w(
   block-storage
   identity
-  image_registry
   image_api
   compute-xvpvnc
   compute-novnc
@@ -477,7 +598,6 @@ end
 %w(
   compute
   block-storage
-  image_registry
   image_api
   network
   network_dhcp
@@ -488,9 +608,11 @@ end
   telemetry
 ).each do |i|
   identity_endpoint = public_endpoint 'identity'
-  auth_url = auth_uri_transform identity_endpoint.to_s, node['openstack']['api']['auth']['version']
+  auth_url = ::URI.decode identity_endpoint.to_s
   node.default['openstack'][i]['conf'].tap do |conf|
-    conf['keystone_authtoken']['auth_uri'] = auth_url
+    conf['keystone_authtoken']['www_authenticate_uri'] = auth_url
+    conf['keystone_authtoken']['service_token_roles_required'] = 'True'
+    conf['keystone_authtoken']['service_token_roles'] = 'admin'
   end
 end
 
@@ -530,6 +652,11 @@ include_recipe 'openstack-common::client'
 link '/usr/local/bin/openstack' do
   to '/opt/osc/bin/openstack'
   action :delete
+end
+
+# We need to ensure we pul in this version from the RDO repo
+package 'python2-urllib3' do
+  action :upgrade
 end
 
 include_recipe 'osl-ceph' if node['osl-openstack']['ceph']

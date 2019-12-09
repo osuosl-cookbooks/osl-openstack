@@ -18,6 +18,68 @@ describe 'osl-openstack::telemetry', telemetry: true do
       expect(chef_run).to include_recipe(r)
     end
   end
+  it do
+    expect(chef_run).to install_package('patch')
+  end
+  it do
+    expect(chef_run).to create_cookbook_file('/var/chef/cache/ceilometer-prometheus1.patch')
+  end
+  it do
+    expect(chef_run).to create_cookbook_file('/var/chef/cache/ceilometer-prometheus2.patch')
+  end
+  it do
+    expect(chef_run).to run_execute('patch -p1 < /var/chef/cache/ceilometer-prometheus1.patch')
+      .with(cwd: '/usr/lib/python2.7/site-packages')
+  end
+  it do
+    expect(chef_run).to run_execute('patch -p1 < /var/chef/cache/ceilometer-prometheus2.patch')
+      .with(cwd: '/usr/lib/python2.7/site-packages')
+  end
+  it do
+    expect(chef_run.execute('patch -p1 < /var/chef/cache/ceilometer-prometheus1.patch')) \
+      .to notify('service[ceilometer-agent-central]').to(:restart)
+  end
+  it do
+    expect(chef_run.execute('patch -p1 < /var/chef/cache/ceilometer-prometheus1.patch')) \
+      .to notify('service[ceilometer-agent-notification]').to(:restart)
+  end
+  it do
+    expect(chef_run.execute('patch -p1 < /var/chef/cache/ceilometer-prometheus1.patch')) \
+      .to notify('service[apache2]').to(:restart)
+  end
+  it do
+    expect(chef_run.execute('patch -p1 < /var/chef/cache/ceilometer-prometheus2.patch')) \
+      .to notify('service[ceilometer-agent-central]').to(:restart)
+  end
+  it do
+    expect(chef_run.execute('patch -p1 < /var/chef/cache/ceilometer-prometheus2.patch')) \
+      .to notify('service[ceilometer-agent-notification]').to(:restart)
+  end
+  it do
+    expect(chef_run.execute('patch -p1 < /var/chef/cache/ceilometer-prometheus2.patch')) \
+      .to notify('service[apache2]').to(:restart)
+  end
+  context 'ceilometer patched' do
+    cached(:chef_run) { runner.converge(described_recipe, 'apache2') }
+    before do
+      stub_command('grep -q curated_sname /usr/lib/python2.7/site-packages/ceilometer/publisher/prometheus.py')
+        .and_return(true)
+      stub_command('grep -q s.project_id /usr/lib/python2.7/site-packages/ceilometer/publisher/prometheus.py')
+        .and_return(true)
+    end
+    it do
+      expect(chef_run).to_not run_execute('patch -p1 < /var/chef/cache/ceilometer-prometheus1.patch')
+        .with(
+          cwd: '/usr/lib/python2.7/site-packages'
+        )
+    end
+    it do
+      expect(chef_run).to_not run_execute('patch -p1 < /var/chef/cache/ceilometer-prometheus2.patch')
+        .with(
+          cwd: '/usr/lib/python2.7/site-packages'
+        )
+    end
+  end
   describe '/etc/ceilometer/ceilometer.conf' do
     let(:file) { chef_run.template('/etc/ceilometer/ceilometer.conf') }
     [
@@ -43,18 +105,12 @@ describe 'osl-openstack::telemetry', telemetry: true do
     end
     [
       %r{^auth_url = https://10.0.0.10:5000/v3$},
-      %r{^auth_uri = https://10.0.0.10:5000/v3$},
+      %r{^www_authenticate_uri = https://10.0.0.10:5000/v3$},
+      /^service_token_roles_required = True$/,
+      /^service_token_roles = admin$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('keystone_authtoken', line)
-      end
-    end
-    [
-      /^host = 10.0.0.2$/,
-    ].each do |line|
-      it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('api', line)
       end
     end
     it do
@@ -84,10 +140,10 @@ ceilometer_x86\?charset=utf8}
       end
     end
     it do
-      expect(chef_run).to stop_service('gnocchi-metricd').with(service_name: 'openstack-gnocchi-metricd')
+      expect(chef_run).to stop_service('gnocchi-metricd').with(service_name: 'gnocchi-metricd')
     end
     it do
-      expect(chef_run).to disable_service('gnocchi-metricd').with(service_name: 'openstack-gnocchi-metricd')
+      expect(chef_run).to disable_service('gnocchi-metricd').with(service_name: 'gnocchi-metricd')
     end
     it do
       expect(chef_run).to delete_file('/etc/httpd/sites-enabled/gnocchi-api.conf').with(manage_symlink_source: true)

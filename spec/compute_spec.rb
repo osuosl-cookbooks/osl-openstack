@@ -31,6 +31,32 @@ describe 'osl-openstack::compute' do
   end
 
   it do
+    expect(chef_run).to edit_delete_lines('remove dhcpbridge on compute')
+      .with(
+        path: '/usr/share/nova/nova-dist.conf',
+        pattern: '^dhcpbridge.*',
+        backup: true
+      )
+  end
+
+  it do
+    expect(chef_run).to edit_delete_lines('remove force_dhcp_release on compute')
+      .with(
+        path: '/usr/share/nova/nova-dist.conf',
+        pattern: '^force_dhcp_release.*',
+        backup: true
+      )
+  end
+
+  it do
+    expect(chef_run.delete_lines('remove dhcpbridge on compute')).to notify('service[nova-compute]').to(:restart)
+  end
+
+  it do
+    expect(chef_run.delete_lines('remove force_dhcp_release on compute')).to notify('service[nova-compute]').to(:restart)
+  end
+
+  it do
     expect(chef_run).to_not include_recipe('osl-openstack::_block_ceph')
   end
 

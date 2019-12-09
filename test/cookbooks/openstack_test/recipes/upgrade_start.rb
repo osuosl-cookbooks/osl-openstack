@@ -1,4 +1,4 @@
-execute 'systemctl start httpd openstack-nova-api'
+execute 'systemctl start httpd'
 
 file '/root/upgrade-test' do
   action :touch

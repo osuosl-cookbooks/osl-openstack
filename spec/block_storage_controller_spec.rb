@@ -45,7 +45,9 @@ describe 'osl-openstack::block_storage_controller' do
         )
     end
     [
-      %r{^auth_uri = https://10.0.0.10:5000/v3$},
+      %r{^www_authenticate_uri = https://10.0.0.10:5000/v3$},
+      /^service_token_roles_required = True$/,
+      /^service_token_roles = admin$/,
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('keystone_authtoken', line)
@@ -72,6 +74,20 @@ describe 'osl-openstack::block_storage_controller' do
     ].each do |line|
       it do
         expect(chef_run).to render_config_file(file.name).with_section_content('cache', line)
+      end
+    end
+    it do
+      expect(chef_run).to edit_replace_or_add('log-dir controller')
+        .with(
+          path: '/usr/share/cinder/cinder-dist.conf',
+          pattern: '^logdir.*',
+          replace_only: true,
+          backup: true
+        )
+    end
+    %w(service[apache2] service[cinder-scheduler]).each do |service|
+      it do
+        expect(chef_run.replace_or_add('log-dir controller')).to notify(service).to(:restart)
       end
     end
     context 'Set ceph' do

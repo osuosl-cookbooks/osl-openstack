@@ -31,6 +31,13 @@
         "upload_images": [
           "cirros"
         ]
+      },
+      "telemetry": {
+        "pipeline": {
+          "publishers": [
+            "prometheus://localhost:9091/metrics/job/ceilometer"
+          ]
+        }
       }
     }
   },

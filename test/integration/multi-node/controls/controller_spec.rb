@@ -21,6 +21,8 @@ control 'controller' do
     its('DEFAULT.glance_api_version') { should_not cmp '' }
     its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
     its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
+    its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
+    its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
     its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
     its('DEFAULT.enabled_backends') { should cmp 'ceph,ceph_ssd' }
     its('DEFAULT.backup_driver') { should cmp 'cinder.backup.drivers.ceph' }
@@ -94,6 +96,8 @@ control 'controller' do
     end
     its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
     its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
+    its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
+    its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
     its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
     its('libvirt.disk_cachemodes') { should cmp 'network=writeback' }
     its('libvirt.force_raw_images') { should cmp 'true' }
@@ -142,7 +146,7 @@ control 'controller' do
     its('stdout') { should match(/Check: Resource Providers.*\n.*Result: Success/) }
   end
 
-  describe http('https://controller.example.com:6080', enable_remote_worker: true, ssl_verify: false) do
+  describe http('https://controller.example.com:6080', ssl_verify: false) do
     its('status') { should cmp 200 }
   end
   %w(80 443).each do |p|
@@ -181,7 +185,7 @@ LAUNCH_INSTANCE_DEFAULTS = {
     its('stdout') { should match(/< HTTP.*200 OK/) }
     its('stdout') { should_not match(/CSRF verification failed. Request aborted./) }
   end
-  describe yum.repo('RDO-queens') do
+  describe yum.repo('RDO-rocky') do
     it { should exist }
     it { should be_enabled }
   end
@@ -252,34 +256,36 @@ export OS_AUTH_TYPE=password})
     its('<VirtualHost') { should include '0.0.0.0:5000>' }
   end
 
-  describe command("/opt/chef/embedded/bin/gem list -i -v '>= 0.2.0' fog-openstack") do
-    its('stdout') { should match(/^false$/) }
-  end
-
-  describe command("/opt/chef/embedded/bin/gem list -i -v '< 0.2.0' fog-openstack") do
-    its('stdout') { should match(/^true$/) }
-  end
-
   describe command('grep -q deprecation /var/log/keystone/keystone.log') do
     its('exit_status') { should eq 1 }
   end
-  %w(openstack-glance-api openstack-glance-registry).each do |s|
-    describe service(s) do
-      it { should be_enabled }
-      it { should be_running }
-    end
+
+  describe service('openstack-glance-api') do
+    it { should be_enabled }
+    it { should be_running }
   end
 
-  %w(9292 9191).each do |p|
-    describe port(p) do
-      it { should be_listening }
-      its('protocols') { should include 'tcp' }
-      its('addresses') { should_not include '127.0.0.1' }
-    end
+  describe service('openstack-glance-registry') do
+    it { should_not be_enabled }
+    it { should_not be_running }
+  end
+
+  describe port(9292) do
+    it { should be_listening }
+    its('protocols') { should include 'tcp' }
+    its('addresses') { should_not include '127.0.0.1' }
+  end
+
+  describe port(9191) do
+    it { should_not be_listening }
+    its('protocols') { should_not include 'tcp' }
+    its('addresses') { should_not include '127.0.0.1' }
   end
 
   describe ini('/etc/glance/glance-api.conf') do
     its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
+    its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
+    its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
     its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
     its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
   end
@@ -358,14 +364,16 @@ export OS_AUTH_TYPE=password})
   end
 
   %w(
+    check_cinder_api_v2
+    check_cinder_api_v3
     check_glance_api
     check_keystone_api
     check_neutron_api
+    check_neutron_floating_ip_public
+    check_nova_api
   ).each do |check|
-    describe file("/etc/nagios/nrpe.d/#{check}.cfg") do
-      its('content') do
-        should match(%r{command\[#{check}\]=/bin/sudo /usr/lib64/nagios/plugins/check_openstack #{check}})
-      end
+    describe command("/usr/lib64/nagios/plugins/check_nrpe -H localhost -c #{check}") do
+      its('exit_status') { should eq 0 }
     end
   end
 
@@ -443,6 +451,8 @@ export OS_AUTH_TYPE=password})
     describe ini("/etc/neutron/#{f}") do
       its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
       its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
+      its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
+      its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
       its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
     end
   end
@@ -517,8 +527,6 @@ export OS_AUTH_TYPE=password})
       standard-attr-timestamp
       subnet_allocation
       subnet-service-types
-      tag
-      tag-ext
     ).each do |ext|
       its('stdout') { should match(/^#{ext}$/) }
     end
@@ -585,11 +593,13 @@ export OS_AUTH_TYPE=password})
     its('trustee.auth_type') { should cmp 'v3password' }
     its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
     its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
+    its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
+    its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
     its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
   end
 
   describe command(
-    'bash -c "source /root/openrc && /usr/bin/openstack orchestration service list -c Binary -c Status -f value"'
+    'bash -c "source /root/openrc && /bin/heat-manage service clean && /usr/bin/openstack orchestration service list -c Binary -c Status -f value"'
   ) do
     its('stdout') { should match(/^heat-engine up$/) }
     its('stdout') { should_not match(/^heat-engine down$/) }
@@ -624,10 +634,23 @@ export OS_AUTH_TYPE=password})
   describe ini('/etc/ceilometer/ceilometer.conf') do
     its('DEFAULT.meter_dispatchers') { should_not cmp 'database' }
     its('DEFAULT.meter_dispatchers') { should_not cmp 'gnocchi' }
-    its('api.default_api_return_limit') { should_not cmp '1000000000000' }
-    its('api.host') { should_not cmp '127.0.0.1' }
     its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
     its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
+    its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
+    its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
     its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
+  end
+
+  describe http('http://localhost:9091/metrics') do
+    its('body') { should match /^image_size{instance="",job="ceilometer",project_id="/ }
+  end
+
+  describe command('bash -c "source /root/openrc && openstack server create --image cirros --flavor m1.nano test"') do
+    its('exit_status') { should eq 0 }
+    its('stdout') { should match /OS-EXT-STS:vm_state.*building/ }
+  end
+
+  describe command('bash -c "source /root/openrc && openstack server delete test"') do
+    its('exit_status') { should eq 0 }
   end
 end

@@ -148,13 +148,6 @@ suites:
       - recipe[osl-openstack::block_storage_controller]
       - recipe[openstack-block-storage::volume_driver_lvm]
       - recipe[osl-openstack::block_storage]
-    attributes:
-      osl-openstack:
-        cinder:
-          iscsi_role: openstack_base
-          iscsi_ips:
-            - 127.0.2.1
-            - 127.0.3.1
   - name: block_storage_controller
     driver_config:
         server_name: "block-storage-controller-<%= ENV['USER'] %>"
@@ -173,7 +166,9 @@ suites:
       - role[ceph_setup]
       - role[openstack_tk]
       - role[openstack_ops_identity]
+      - recipe[osl-prometheus::server]
       - recipe[osl-openstack::telemetry]
+      - recipe[osl-openstack::image]
   - name: orchestration
     driver_config:
         server_name: "orchestration-<%= ENV['USER'] %>"
@@ -198,7 +193,8 @@ suites:
       - recipe[openstack_test::tempest]
   - name: allinone
     driver_config:
-        server_name: "allinone-<%= ENV['USER'] %>"
+      server_name: "allinone-<%= ENV['USER'] %>"
+      flavor_ref: 'm1.xlarge'
     run_list:
       - role[ceph]
       - role[ceph_mon]
@@ -208,6 +204,7 @@ suites:
       - role[openstack_tk]
       - recipe[openstack_test]
       - role[openstack_ops_identity]
+      - recipe[osl-prometheus::server]
       - recipe[osl-openstack::controller]
       - recipe[osl-openstack::compute]
       - recipe[osl-openstack::block_storage]
@@ -215,12 +212,6 @@ suites:
       - recipe[openstack_test::orchestration]
       - recipe[openstack_test::network]
     attributes:
-      osl-openstack:
-        cinder:
-          iscsi_role: openstack_base
-          iscsi_ips:
-            - 127.0.2.1
-            - 127.0.3.1
       openstack:
         block-storage:
           volume:
@@ -229,7 +220,7 @@ suites:
     driver_config:
         server_name: "upgrade-<%= ENV['USER'] %>"
     driver:
-      image_ref: "openstack-pike-aio"
+      image_ref: "openstack-queens-aio"
     verifier:
       inspec_tests:
         - path: test/integration/controller/inspec
@@ -245,6 +236,7 @@ suites:
       - recipe[openstack_test::upgrade]
       - recipe[openstack_test]
       - role[openstack_ops_identity]
+      - recipe[osl-prometheus::server]
       - recipe[osl-openstack::controller]
       - recipe[osl-openstack::compute]
       - recipe[openstack-block-storage::volume_driver_lvm]
@@ -257,11 +249,6 @@ suites:
         node_type: controller
         endpoint_hostname: controller.example.com
         db_hostname: controller.example.com
-        cinder:
-          iscsi_role: openstack_base
-          iscsi_ips:
-            - 127.0.2.1
-            - 127.0.3.1
       openstack:
         block-storage:
           volume:
@@ -273,12 +260,18 @@ suites:
     provisioner: terraform
     verifier:
       name: terraform
-      groups:
+      systems:
         - name: controller
+          backend: ssh
           controls:
             - controller
-          hostnames: controller
+          hosts_output: controller
+          user: centos
+          sudo: true
         - name: compute
+          backend: ssh
           controls:
             - compute
-          hostnames: compute
+          hosts_output: compute
+          user: centos
+          sudo: true

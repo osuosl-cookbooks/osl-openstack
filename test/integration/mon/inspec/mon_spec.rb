@@ -1,5 +1,5 @@
 # Should match the number of VCPUs the VMs use
-t_cpu = 4
+t_cpu = inspec.command('/usr/bin/grep -c processor /proc/cpuinfo').stdout.chomp.to_i
 
 load_thres = if %w(ppc64 ppc64le).include?(os[:arch])
                "-w #{t_cpu * 5 + 10},#{t_cpu * 5 + 5},#{t_cpu * 5} " \
