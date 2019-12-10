@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+7.3.2 (2019-12-10)
+------------------
+- Migrate away from kernel-modules cookbook
+
 7.3.1 (2019-11-27)
 ------------------
 - Increase max client settings for libvirtd
