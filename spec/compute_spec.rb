@@ -284,12 +284,20 @@ Host *
       node.automatic['kernel']['machine'] = 'x86_64'
       node.automatic['dmi']['processor']['manufacturer'] = 'Intel(R) Corporation'
     end
-    it 'loads kvm-intel module with nested option' do
-      expect(chef_run).to load_kernel_module('kvm-intel').with(
-        onboot: true,
-        reload: false,
-        options: %w(nested=1)
-      )
+    it do
+      expect(chef_run).to create_file('/etc/modprobe.d/options_kvm-intel.conf')
+        .with(
+          content: 'options kvm-intel nested=1'
+        )
+    end
+    it do
+      expect(chef_run).to delete_file('/etc/modprobe.d/kvm-intel.conf')
+    end
+    it do
+      expect(chef_run).to install_kernel_module('kvm-intel')
+    end
+    it do
+      expect(chef_run).to load_kernel_module('kvm-intel')
     end
     it "doesn't load kvm-amd module" do
       expect(chef_run).to_not load_kernel_module('kvm-amd')
@@ -301,12 +309,20 @@ Host *
       node.automatic['kernel']['machine'] = 'x86_64'
       node.automatic['dmi']['processor']['manufacturer'] = 'AMD'
     end
-    it 'loads kvm-amd module with nested option' do
-      expect(chef_run).to load_kernel_module('kvm-amd').with(
-        onboot: true,
-        reload: false,
-        options: %w(nested=1)
-      )
+    it do
+      expect(chef_run).to create_file('/etc/modprobe.d/options_kvm-amd.conf')
+        .with(
+          content: 'options kvm-amd nested=1'
+        )
+    end
+    it do
+      expect(chef_run).to delete_file('/etc/modprobe.d/kvm-amd.conf')
+    end
+    it do
+      expect(chef_run).to install_kernel_module('kvm-amd')
+    end
+    it do
+      expect(chef_run).to load_kernel_module('kvm-amd')
     end
     it "doesn't load kvm-intel module" do
       expect(chef_run).to_not load_kernel_module('kvm-intel')

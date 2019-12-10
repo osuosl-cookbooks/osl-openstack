@@ -30,7 +30,9 @@ include_recipe 'firewall::vnc'
 include_recipe 'osl-openstack::default'
 include_recipe 'ibm-power::default'
 
-kernel_module 'tun'
+kernel_module 'tun' do
+  action :load
+end
 
 case node['kernel']['machine']
 when 'ppc64le'
@@ -39,9 +41,13 @@ when 'ppc64le'
   include_recipe 'base::grub'
 
   if %w(openstack).include?(node.deep_fetch('openstack', 'provider'))
-    kernel_module 'kvm_pr'
+    kernel_module 'kvm_pr' do
+      action :load
+    end
   else
-    kernel_module 'kvm_hv'
+    kernel_module 'kvm_hv' do
+      action :load
+    end
   end
 
   # Turn off smt on boot (required for KVM support)
@@ -59,17 +65,27 @@ when 'ppc64le'
       'grep -E \'SMT is off|Machine is not SMT capable\''
   end
 when 'x86_64'
-  kernel_module 'kvm-intel' do # ~FC009
-    onboot true
-    reload false
-    options %w(nested=1)
-    only_if { node.deep_fetch('dmi', 'processor', 'manufacturer') == 'Intel(R) Corporation' }
+  kvm_module =
+    if node.deep_fetch('dmi', 'processor', 'manufacturer') == 'AMD'
+      'kvm-amd'
+    else
+      'kvm-intel'
+    end
+
+  # TODO: Remove after the next release of chef-14 after 14.14.29 which should include this [1]
+  # [1] https://github.com/chef/chef/pull/9120
+  file "/etc/modprobe.d/options_#{kvm_module}.conf" do
+    content "options #{kvm_module} nested=1"
   end
-  kernel_module 'kvm-amd' do
-    onboot true
-    reload false
-    options %w(nested=1)
-    only_if { node.deep_fetch('dmi', 'processor', 'manufacturer') == 'AMD' }
+
+  # TODO: This can be removed after the first run as this removes the file that the old provider created.
+  file "/etc/modprobe.d/#{kvm_module}.conf" do
+    action :delete
+  end
+
+  kernel_module kvm_module do
+    # options %w(nested=1)
+    action [:install, :load]
   end
 end
 
