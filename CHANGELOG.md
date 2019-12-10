@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+8.0.1 (2019-12-10)
+------------------
+- Migrate away from kernel-modules cookbook
+
 8.0.0 (2019-12-09)
 ------------------
 - Rocky release
