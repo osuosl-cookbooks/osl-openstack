@@ -46,7 +46,7 @@ cookbook 'yum-qemu-ev', git: 'git@github.com:osuosl-cookbooks/yum-qemu-ev.git'
 ).each do |cb|
   cookbook "openstack-#{cb}",
            github: "openstack/cookbook-openstack-#{cb}",
-           branch: 'master'
+           branch: 'stable/rocky'
 end
 
 cookbook 'openstack_test', path: 'test/cookbooks/openstack_test'
