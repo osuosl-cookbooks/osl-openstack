@@ -35,7 +35,8 @@ node.default['openstack']['misc_openrc'] = [
   'export OS_AUTH_TYPE=password',
 ]
 node.default['openstack']['yum']['uri'] =
-  if node['kernel']['machine'] == 'ppc64le'
+  case node['kernel']['machine']
+  when 'ppc64le', 'aarch64'
     'http://centos-altarch.osuosl.org/$releasever/cloud/$basearch/openstack-' + node['openstack']['release']
   else
     'http://centos.osuosl.org/$releasever/cloud/$basearch/openstack-' + node['openstack']['release']
