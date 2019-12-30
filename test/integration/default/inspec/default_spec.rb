@@ -1,7 +1,8 @@
 baseurl =
-  if os.arch == 'x86_64'
+  case os.arch
+  when 'x86_64'
     'http://centos.osuosl.org/7/cloud/x86_64/openstack-rocky/'
-  elsif os.arch == 'ppc64le'
+  when 'ppc64le', 'aarch64'
     'http://centos-altarch.osuosl.org/7/cloud/ppc64le/openstack-rocky/'
   end
 
