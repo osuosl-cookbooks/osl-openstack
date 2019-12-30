@@ -7,7 +7,7 @@ license          'Apache-2.0'
 chef_version     '>= 14.0'
 description      'Installs/Configures osl-openstack'
 long_description 'Installs/Configures osl-openstack'
-version          '8.0.2'
+version          '8.1.0'
 
 depends 'apache2'
 depends 'base'

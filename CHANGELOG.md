@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+8.1.0 (2019-12-30)
+------------------
+- Chef 14 post-migration fixes
+
 8.0.2 (2019-12-21)
 ------------------
 - Fix yum repo for aarch64
