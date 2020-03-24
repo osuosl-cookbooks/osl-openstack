@@ -17,6 +17,7 @@
 # limitations under the License.
 #
 node.default['osl-openstack']['node_type'] = 'controller'
+node.default['osl-apache']['install_resource'] = false
 
 include_recipe 'osl-openstack::default'
 include_recipe 'osl-apache::default'
