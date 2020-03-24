@@ -96,7 +96,9 @@ end
 describe command('bash -c "source /root/openrc && /bin/nova-status upgrade check"') do
   its('stdout') { should match(/Check: Cells v2.*\n.*Result: Success/) }
   its('stdout') { should match(/Check: Placement API.*\n.*Result: Success/) }
-  its('stdout') { should match(/Check: Resource Providers.*\n.*Result: Success/) }
+  its('stdout') { should match(/Check: Ironic Flavor Migration.*\n.*Result: Success/) }
+  its('stdout') { should match(/Check: Request Spec Migration.*\n.*Result: Success/) }
+  its('stdout') { should match(/Check: Console Auths.*\n.*Result: Success/) }
 end
 
 describe http('https://controller.example.com:6080', ssl_verify: false) do

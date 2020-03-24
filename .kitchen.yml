@@ -7,12 +7,18 @@ driver:
   user_data: userdata.txt
 provisioner:
   name: chef_zero
+  product_name: chef
+  product_version: 15
+  client_rb:
+    chef_license: accept
   roles_path: test/integration/roles
   data_bags_path: test/integration/data_bags
   encrypted_data_bag_secret_key_path: test/integration/encrypted_data_bag_secret
   attributes:
     base:
       packages: []
+    osl-apache:
+      install_resource: false
     osl-openstack:
       ceph: true
       cluster_role: openstack_tk
