@@ -58,27 +58,25 @@ describe 'osl-openstack::mon' do
       end
     end
     it do
-      expect(chef_run).to install_python_runtime('osc-nagios')
+      expect(chef_run).to run_execute('virtualenv /opt/osc-nagios')
         .with(
-          version: '2',
-          provider: PoisePython::PythonProviders::System
-        )
-    end
-    it do
-      expect(chef_run).to create_python_virtualenv('/opt/osc-nagios')
-        .with(
-          python: '/usr/bin/python',
-          system_site_packages: true
+          creates: '/opt/osc-nagios/bin/pip'
         )
     end
     it do
       expect(chef_run).to remove_package('nagios-plugins-openstack')
     end
     it do
-      expect(chef_run.python_execute('monitoring-for-openstack deps')).to do_nothing
+      expect(chef_run).to nothing_execute('monitoring-for-openstack deps').with(
+        command: '/opt/osc-nagios/bin/pip install -r requirements.txt',
+        cwd: '/var/chef/cache/osops-tools-monitoring/monitoring-for-openstack'
+      )
     end
     it do
-      expect(chef_run.python_execute('monitoring-for-openstack install')).to do_nothing
+      expect(chef_run).to nothing_execute('monitoring-for-openstack install').with(
+        command: '/opt/osc-nagios/bin/python setup.py install',
+        cwd: '/var/chef/cache/osops-tools-monitoring/monitoring-for-openstack'
+      )
     end
     it do
       expect(chef_run).to sync_git('/var/chef/cache/osops-tools-monitoring')
@@ -89,11 +87,11 @@ describe 'osl-openstack::mon' do
     end
     it do
       expect(chef_run.git('/var/chef/cache/osops-tools-monitoring')).to \
-        notify('python_execute[monitoring-for-openstack deps]').immediately
+        notify('execute[monitoring-for-openstack deps]').immediately
     end
     it do
       expect(chef_run.git('/var/chef/cache/osops-tools-monitoring')).to \
-        notify('python_execute[monitoring-for-openstack install]').immediately
+        notify('execute[monitoring-for-openstack install]').immediately
     end
     it do
       expect(chef_run).to create_file(check_openstack)
