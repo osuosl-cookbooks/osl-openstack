@@ -4,7 +4,7 @@ require 'chef/application'
 describe 'osl-openstack::telemetry', telemetry: true do
   let(:runner) { ChefSpec::SoloRunner.new(REDHAT_OPTS) }
   let(:node) { runner.node }
-  cached(:chef_run) { runner.converge(described_recipe, 'apache2') }
+  cached(:chef_run) { runner.converge(described_recipe) }
   include_context 'common_stubs'
   include_context 'identity_stubs'
   include_context 'telemetry_stubs'
@@ -60,7 +60,7 @@ describe 'osl-openstack::telemetry', telemetry: true do
       .to notify('service[apache2]').to(:restart)
   end
   context 'ceilometer patched' do
-    cached(:chef_run) { runner.converge(described_recipe, 'apache2') }
+    cached(:chef_run) { runner.converge(described_recipe) }
     before do
       stub_command('grep -q curated_sname /usr/lib/python2.7/site-packages/ceilometer/publisher/prometheus.py')
         .and_return(true)

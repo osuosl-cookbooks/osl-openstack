@@ -228,11 +228,16 @@ describe 'osl-openstack::compute_controller' do
     end
   end
 
-  describe '/etc/httpd/sites-available/nova-placement-api.conf' do
-    let(:file) { chef_run.template('/etc/httpd/sites-available/nova-placement-api.conf') }
+  it do
+    expect(chef_run).to install_apache2_install('openstack').with(
+      listen: %w(10.0.0.2:8774 10.0.0.2:8775 10.0.0.2:8778)
+    )
+  end
+
+  describe '/etc/httpd/sites-available/nova-placement.conf' do
+    let(:file) { chef_run.template('/etc/httpd/sites-available/nova-placement.conf') }
 
     [
-      /^Listen 10.0.0.2:8778$/,
       /^<VirtualHost 10.0.0.2:8778>$/,
     ].each do |line|
       it do

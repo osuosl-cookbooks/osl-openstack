@@ -40,7 +40,7 @@ when 'ppc64le'
   include_recipe 'yum-kernel-osuosl::install'
   include_recipe 'base::grub'
 
-  if %w(openstack).include?(node.deep_fetch('openstack', 'provider'))
+  if %w(openstack).include?(node.read('openstack', 'provider'))
     kernel_module 'kvm_pr' do
       action :load
     end
@@ -66,7 +66,7 @@ when 'ppc64le'
   end
 when 'x86_64'
   kvm_module =
-    if node.deep_fetch('dmi', 'processor', 'manufacturer') == 'AMD'
+    if node.read('dmi', 'processor', 'manufacturer') == 'AMD'
       'kvm-amd'
     else
       'kvm-intel'

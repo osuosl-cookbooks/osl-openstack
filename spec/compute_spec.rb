@@ -119,7 +119,7 @@ describe 'osl-openstack::compute' do
         sensitive: true,
         user: 'nova',
         group: 'nova',
-        mode: 0600
+        mode: '600'
       )
   end
   it do
@@ -127,7 +127,7 @@ describe 'osl-openstack::compute' do
       .with(
         user: 'nova',
         group: 'nova',
-        mode: 0600,
+        mode: '600',
         content: <<-EOL
 Host *
   StrictHostKeyChecking no
