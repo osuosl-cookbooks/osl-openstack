@@ -1,8 +1,8 @@
 #
-# Cookbook Name:: osl-openstack
+# Cookbook:: osl-openstack
 # Recipe:: compute_controller
 #
-# Copyright (C) 2016 Oregon State University
+# Copyright:: (C) 2016-2020, Oregon State University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ end
 
 template '/etc/sysconfig/openstack-nova-novncproxy' do
   source 'novncproxy.erb'
-  mode 00644
+  mode '644'
   owner 'root'
   group 'root'
   variables(cert: ::File.join(ssl_dir, 'certs', novnc['cert_file']),

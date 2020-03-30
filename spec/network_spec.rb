@@ -29,7 +29,7 @@ describe 'osl-openstack::network', network: true do
   context 'Set subnet and uuid in physical_interface_mappings' do
     cached(:chef_run) do
       ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-        node.normal['osl-openstack']['physical_interface_mappings'] =
+        node.override['osl-openstack']['physical_interface_mappings'] =
           [
             {
               name: 'public',
@@ -85,7 +85,7 @@ EOL
     context 'Set bind_service' do
       cached(:chef_run) do
         ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-          node.normal['osl-openstack']['bind_service'] = '192.168.1.1'
+          node.override['osl-openstack']['bind_service'] = '192.168.1.1'
           node.automatic['filesystem2']['by_mountpoint']
         end.converge(described_recipe)
       end

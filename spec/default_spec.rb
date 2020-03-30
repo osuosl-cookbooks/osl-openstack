@@ -22,7 +22,7 @@ describe 'osl-openstack::default' do
       ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
         node.automatic['kernel']['machine'] = 'ppc64le'
         node.automatic['filesystem2']['by_mountpoint']
-        node.normal['ibm_power']['cpu']['cpu_model'] = nil
+        node.override['ibm_power']['cpu']['cpu_model'] = nil
       end.converge(described_recipe)
     end
     it do
@@ -41,7 +41,7 @@ describe 'osl-openstack::default' do
       ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
         node.automatic['kernel']['machine'] = 'aarch64'
         node.automatic['filesystem2']['by_mountpoint']
-        node.normal['ibm_power']['cpu']['cpu_model'] = nil
+        node.override['ibm_power']['cpu']['cpu_model'] = nil
       end.converge(described_recipe)
     end
     it do
