@@ -1,8 +1,8 @@
 #
-# Cookbook Name:: osl-openstack
+# Cookbook:: osl-openstack
 # Recipe:: mon
 #
-# Copyright (C) 2014-2016 Oregon State University
+# Copyright:: (C) 2014-2020, Oregon State University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ if node['osl-openstack']['node_type'] == 'controller'
 
   # Wrapper for using sudo to check openstack services
   file check_openstack do
-    mode 0755
+    mode '755'
     content <<-EOF
 #!/bin/bash
 

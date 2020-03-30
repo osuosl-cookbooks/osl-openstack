@@ -45,7 +45,7 @@ describe 'osl-openstack::image', image: true do
         next unless f == 'api'
         let(:runner) do
           ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-            node.normal['osl-openstack']['ceph'] = true
+            node.default['osl-openstack']['ceph'] = true
             node.automatic['filesystem2']['by_mountpoint']
           end
         end
@@ -119,7 +119,7 @@ describe 'osl-openstack::image', image: true do
           next unless f == 'api'
           let(:runner) do
             ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-              node.normal['osl-openstack']['ceph'] = true
+              node.default['osl-openstack']['ceph'] = true
               node.automatic['filesystem2']['by_mountpoint']
             end
           end
@@ -128,7 +128,7 @@ describe 'osl-openstack::image', image: true do
           include_context 'common_stubs'
           include_context 'ceph_stubs'
           before do
-            node.normal['osl-openstack']['credentials']['ceph']['image_token'] = nil
+            node.default['osl-openstack']['credentials']['ceph']['image_token'] = nil
           end
           it do
             expect(chef_run).to_not create_template('/etc/ceph/ceph.client.glance.keyring')
@@ -139,7 +139,7 @@ describe 'osl-openstack::image', image: true do
       context 'Set bind_service' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-            node.normal['osl-openstack']['bind_service'] = '192.168.1.1'
+            node.default['osl-openstack']['bind_service'] = '192.168.1.1'
             node.automatic['filesystem2']['by_mountpoint']
           end.converge(described_recipe)
         end

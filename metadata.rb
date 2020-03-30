@@ -6,7 +6,6 @@ maintainer_email 'systems@osuosl.org'
 license          'Apache-2.0'
 chef_version     '>= 14.0'
 description      'Installs/Configures osl-openstack'
-long_description 'Installs/Configures osl-openstack'
 version          '8.2.1'
 
 depends 'apache2'
@@ -43,4 +42,4 @@ depends 'yum-epel'
 depends 'yum-kernel-osuosl'
 depends 'yum-qemu-ev'
 
-supports         'centos', '~> 7.0'
+supports 'centos', '~> 7.0'

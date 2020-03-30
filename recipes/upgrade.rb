@@ -2,7 +2,7 @@
 # Cookbook:: osl-openstack
 # Recipe:: upgrade
 #
-# Copyright:: 2017, Oregon State University
+# Copyright:: 2017-2020, Oregon State University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ end
 
 cookbook_file '/root/upgrade.sh' do
   source "upgrade-#{node['osl-openstack']['node_type']}.sh"
-  mode 0755
+  mode '755'
 end
 
 ruby_block 'raise_upgrade_exeception' do

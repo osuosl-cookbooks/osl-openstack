@@ -32,7 +32,7 @@ describe 'osl-openstack::mon' do
   context 'compute node w/ 4.14 kernel' do
     cached(:chef_run) do
       ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-        node.normal['osl-openstack']['node_type'] = 'compute'
+        node.override['osl-openstack']['node_type'] = 'compute'
         node.automatic['kernel']['release'] = '4.14.23-gentoo-osuosl-1.x86_64'
         node.automatic['filesystem2']['by_mountpoint']
       end.converge(described_recipe)
@@ -45,7 +45,7 @@ describe 'osl-openstack::mon' do
   context 'controller node' do
     cached(:chef_run) do
       ChefSpec::SoloRunner.new(REDHAT_OPTS.dup.merge(step_into: %w(osc_nagios_check))) do |node|
-        node.normal['osl-openstack']['node_type'] = 'controller'
+        node.override['osl-openstack']['node_type'] = 'controller'
         node.automatic['filesystem2']['by_mountpoint']
       end.converge(described_recipe)
     end

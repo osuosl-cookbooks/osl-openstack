@@ -1,8 +1,8 @@
 #
-# Cookbook Name:: osl-openstack
+# Cookbook:: osl-openstack
 # Recipe:: compute
 #
-# Copyright (C) 2014, 2015 Oregon State University
+# Copyright:: (C) 2014-2020, Oregon State University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ when 'ppc64le'
   cookbook_file '/etc/rc.d/rc.local' do
     owner 'root'
     group 'root'
-    mode 0755
+    mode '755'
   end
 
   # Turn off smt during runtime
@@ -208,7 +208,7 @@ file '/var/lib/nova/.ssh/id_rsa' do
   sensitive true
   user 'nova'
   group 'nova'
-  mode 0600
+  mode '600'
 end
 
 file '/var/lib/nova/.ssh/config' do
@@ -219,7 +219,7 @@ Host *
   EOL
   user 'nova'
   group 'nova'
-  mode 0600
+  mode '600'
 end
 
 package 'libguestfs-tools'
