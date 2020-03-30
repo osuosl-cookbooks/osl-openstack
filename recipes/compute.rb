@@ -69,7 +69,7 @@ when 'aarch64'
   include_recipe 'base::grub'
 when 'x86_64'
   kvm_module =
-    if node.deep_fetch('dmi', 'processor', 'manufacturer') == 'AMD'
+    if node.read('dmi', 'processor', 'manufacturer') == 'AMD'
       'kvm-amd'
     else
       'kvm-intel'

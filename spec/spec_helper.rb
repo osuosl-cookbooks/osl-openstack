@@ -1,6 +1,5 @@
 require 'chefspec'
 require 'chefspec/berkshelf'
-require_relative 'support/matchers'
 
 REDHAT_OPTS = {
   platform: 'centos',
@@ -73,7 +72,7 @@ shared_context 'ceph_stubs' do
     stub_search('node', 'tags:ceph-restapi').and_return([{}])
     allow(Chef::EncryptedDataBagItem).to receive(:load)
       .with('ceph', 'openstack')
-      .and_raise(Net::HTTPServerException.new(
+      .and_raise(Net::HTTPClientException.new(
                    'ceph databag not found',
                    Net::HTTPResponse.new('1.1', '404', '')
                  ))
