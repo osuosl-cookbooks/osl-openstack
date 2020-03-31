@@ -41,9 +41,6 @@ provisioner:
       fsid-secret: 'ae3f1d03-bacd-4a90-b869-1a4fabb107f2'
       keyring:
         mon: '/etc/ceph/$cluster.mon.keyring'
-    mariadb:
-      server_root_password: "rootpass"
-      forbid_remote_root: false
     yum:
       epel:
         baseurl: http://epel.osuosl.org/7/$basearch
