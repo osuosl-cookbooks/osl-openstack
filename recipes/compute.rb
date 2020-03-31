@@ -71,19 +71,8 @@ when 'x86_64'
       'kvm-intel'
     end
 
-  # TODO: Remove after the next release of chef-14 after 14.14.29 which should include this [1]
-  # [1] https://github.com/chef/chef/pull/9120
-  file "/etc/modprobe.d/options_#{kvm_module}.conf" do
-    content "options #{kvm_module} nested=1"
-  end
-
-  # TODO: This can be removed after the first run as this removes the file that the old provider created.
-  file "/etc/modprobe.d/#{kvm_module}.conf" do
-    action :delete
-  end
-
   kernel_module kvm_module do
-    # options %w(nested=1)
+    options %w(nested=1)
     action [:install, :load]
   end
 end
