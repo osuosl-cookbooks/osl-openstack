@@ -61,8 +61,7 @@ when 'ppc64le'
   # Turn off smt during runtime
   execute 'ppc64_cpu_smt_off' do
     command '/sbin/ppc64_cpu --smt=off'
-    not_if '/sbin/ppc64_cpu --smt 2>&1 | ' \
-      'grep -E \'SMT is off|Machine is not SMT capable\''
+    not_if '/sbin/ppc64_cpu --smt 2>&1 | grep -E \'SMT is off|Machine is not SMT capable\''
   end
 when 'aarch64'
   include_recipe 'yum-kernel-osuosl::install'
