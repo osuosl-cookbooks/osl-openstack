@@ -25,6 +25,7 @@ end
 node.default['authorization']['sudo']['include_sudoers_d'] = true
 node.default['apache']['contact'] = 'hostmaster@osuosl.org'
 node.default['osl-apache']['server_status_port'] = 80
+node.default['osl-apache']['install_resource'] = false
 node.default['rabbitmq']['use_distro_version'] = true
 node.default['openstack']['release'] = 'stein'
 node.default['openstack']['is_release'] = true
