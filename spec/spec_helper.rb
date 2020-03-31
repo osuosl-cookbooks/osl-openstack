@@ -490,6 +490,26 @@ shared_context 'container_stubs' do
           },
         ]
       )
+    stub_search(:node, 'recipes:osl-openstack\:\:controller')
+      .and_return(
+        [
+          {
+            ipaddress: '192.168.1.101',
+            network: {
+              interfaces: {
+                eth1: {
+                  addresses: {
+                    '192.168.99.10' => {
+                      family: 'inet',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        ]
+      )
+    node.override['osl-openstack']['vxlan_interface']['controller']['default'] = 'eth1'
     allow_any_instance_of(Chef::Recipe).to receive(:address_for)
       .with('lo')
       .and_return('127.0.1.1')
@@ -524,5 +544,6 @@ shared_context 'container_stubs' do
     allow_any_instance_of(Chef::Recipe).to receive(:rabbit_transport_url)
       .with('container')
       .and_return('rabbit://openstack:openstack@controller.example.org:5672')
+    stub_command("/opt/osc-zun/bin/pip show websockify | grep -q 'Version: 0.8.0'").and_return(false)
   end
 end

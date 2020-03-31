@@ -20,6 +20,12 @@ search(:node, "role:#{node['osl-openstack']['cluster_role']}") do |n|
   docker_hosts << n['ipaddress']
 end
 
+controller_backend = node['osl-openstack']['vxlan_interface']['controller']['default']
+search(:node, "recipes:osl-openstack\\:\\:controller AND role:#{node['osl-openstack']['cluster_role']}") do |n|
+  docker_hosts <<
+    n['network']['interfaces'][controller_backend]['addresses'].select { |_k, v| v['family'] == 'inet' }.keys.first
+end
+
 node.default['firewall']['docker']['range']['4'] = docker_hosts.sort.uniq
 node.default['osl-docker']['client_only'] = true
 

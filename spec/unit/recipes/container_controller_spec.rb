@@ -48,7 +48,7 @@ describe 'osl-openstack::container_controller' do
         /^host = 10.0.0.10$/,
       ].each do |line|
         it do
-          node.set['osl-openstack']['bind_service'] = '10.0.0.10'
+          node.override['osl-openstack']['bind_service'] = '10.0.0.10'
           expect(chef_run).to render_config_file(file.name).with_section_content('api', line)
         end
       end
