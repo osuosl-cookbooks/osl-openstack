@@ -46,9 +46,11 @@ desc 'Blow everything away'
 task clean: [:destroy_all]
 
 # CI tasks
+require 'cookstyle'
+require 'rubocop/rake_task'
 desc 'Run RuboCop (cookstyle) tests'
-task :style do
-  run_command('cookstyle')
+RuboCop::RakeTask.new(:style) do |task|
+  task.options << '--display-cop-names'
 end
 
 desc 'Run FoodCritic (lint) tests'
