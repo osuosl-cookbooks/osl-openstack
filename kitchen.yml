@@ -7,6 +7,7 @@ driver:
   user_data: userdata.txt
 provisioner:
   name: chef_zero
+  deprecations_as_errors: true
   roles_path: test/integration/roles
   data_bags_path: test/integration/data_bags
   encrypted_data_bag_secret_key_path: test/integration/encrypted_data_bag_secret
@@ -188,6 +189,7 @@ suites:
       - role[openstack_tk]
       - recipe[openstack_test]
       - role[openstack_ops_identity]
+      - recipe[osl-prometheus::server]
       - recipe[osl-openstack::controller]
       - recipe[openstack-integration-test::setup]
       - recipe[openstack_test::tempest]
