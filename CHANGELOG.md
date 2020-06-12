@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+8.2.0 (2020-06-12)
+------------------
+- Lock to using osl-apache < 5.0.0
+
 8.1.0 (2019-12-30)
 ------------------
 - Chef 14 post-migration fixes
