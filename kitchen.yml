@@ -220,7 +220,7 @@ suites:
     driver_config:
         server_name: "upgrade-<%= ENV['USER'] %>"
     driver:
-      image_ref: "openstack-queens-aio"
+      image_ref: "openstack-rocky-aio"
     verifier:
       inspec_tests:
         - path: test/integration/controller/inspec
@@ -232,6 +232,7 @@ suites:
       - role[ceph_setup]
       - recipe[openstack_test::upgrade_start]
       - role[openstack_tk]
+      - recipe[openstack-ops-database::openstack-db]
       - recipe[osl-openstack::upgrade]
       - recipe[openstack_test::upgrade]
       - recipe[openstack_test]

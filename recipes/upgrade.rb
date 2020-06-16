@@ -22,9 +22,6 @@ end
 include_recipe 'osl-openstack'
 
 if node['osl-openstack']['node_type'] == 'controller'
-  # include the recipe to setup fernet tokens
-  include_recipe 'openstack-identity::_fernet_tokens'
-
   db_user = node['openstack']['db']['compute_cell0']['username']
   db_password = get_password('db', 'nova_cell0')
   uri = db_uri('compute_cell0', db_user, db_password)
@@ -35,6 +32,34 @@ if node['osl-openstack']['node_type'] == 'controller'
     sensitive true
   end
 end
+
+### Stein Upgrade
+# TODO: Remove after Stein
+
+nova_api_pass = get_password 'db', 'nova_api'
+placement_user = node['openstack']['db']['placement']['username']
+placement_pass = get_password 'db', 'placement'
+placement_db_uri = db_uri('placement', placement_user, placement_pass)
+
+template '/root/migrate-db.rc' do
+  mode '600'
+  sensitive true
+  variables(
+    nova_api_pass: nova_api_pass,
+    placement_pass: placement_pass
+  )
+end
+
+package 'openstack-placement-common'
+
+replace_or_add 'placement db' do
+  path '/etc/placement/placement.conf'
+  pattern /^#connection = <None>/
+  line "connection = #{placement_db_uri}"
+  replace_only true
+end
+
+###
 
 cookbook_file '/root/upgrade.sh' do
   source "upgrade-#{node['osl-openstack']['node_type']}.sh"
