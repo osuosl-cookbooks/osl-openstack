@@ -35,6 +35,8 @@ provisioner:
          compute:
           default: eth1
     openstack:
+      compute:
+        nova_placement: false
       secret:
         key_path: "/tmp/kitchen/encrypted_data_bag_secret"
     ceph:
