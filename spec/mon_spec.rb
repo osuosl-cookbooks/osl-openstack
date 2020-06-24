@@ -27,7 +27,7 @@ describe 'osl-openstack::mon' do
     end
   end
   it do
-    expect(chef_run).to_not create_link('/etc/munin/plugins/cma')
+    expect(chef_run).to_not create_munin_plugin('cma')
   end
   context 'compute node w/ 4.14 kernel' do
     cached(:chef_run) do
@@ -38,9 +38,8 @@ describe 'osl-openstack::mon' do
       end.converge(described_recipe)
     end
     include_context 'identity_stubs'
-    # Since we can't test definitions, lets test for one of the resources it should create
     it do
-      expect(chef_run).to create_link('/etc/munin/plugins/cma')
+      expect(chef_run).to create_munin_plugin('cma').with(plugin_dir: '/usr/share/munin/contrib/plugins/osuosl')
     end
   end
   context 'controller node' do
