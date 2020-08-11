@@ -40,14 +40,14 @@ when 'ppc64le'
   include_recipe 'yum-kernel-osuosl::install'
   include_recipe 'base::grub'
 
-  if %w(openstack).include?(node.deep_fetch('openstack', 'provider'))
-    kernel_module 'kvm_pr' do
-      action :load
-    end
-  else
-    kernel_module 'kvm_hv' do
-      action :load
-    end
+  kernel_module 'kvm_pr' do
+    action :load
+    only_if 'lscpu | grep "KVM"'
+  end
+
+  kernel_module 'kvm_hv' do
+    action :load
+    not_if 'lscpu | grep "KVM"'
   end
 
   # Turn off smt on boot (required for KVM support)

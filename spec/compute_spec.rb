@@ -254,11 +254,12 @@ Host *
     cached(:chef_run) { runner.converge(described_recipe) }
     before do
       node.automatic['kernel']['machine'] = 'ppc64le'
+      stub_command('lscpu | grep "KVM"').and_return(false)
     end
     context 'Setting as openstack guest' do
       cached(:chef_run) { runner.converge(described_recipe) }
       before do
-        node.automatic['openstack']['provider'] = 'openstack'
+        stub_command('lscpu | grep "KVM"').and_return(true)
       end
       it 'loads kvm_pr module' do
         expect(chef_run).to load_kernel_module('kvm_pr')
