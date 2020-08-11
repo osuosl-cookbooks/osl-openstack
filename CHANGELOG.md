@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+8.2.1 (2020-08-11)
+------------------
+- Use lscpu to determine whether or not to load kvm_pr or kvm_hv
+
 8.2.0 (2020-06-12)
 ------------------
 - Lock to using osl-apache < 5.0.0
