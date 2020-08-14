@@ -33,7 +33,7 @@ kernel_version = node['kernel']['release'].split('-').first
 
 # Only enable the cma graph if this is a compute node and has a 4.14 or newer kernel which exposes the information we
 # need in /proc
-if node['osl-openstack']['node_type'] == 'compute' && # ~FC023 only_if does not work with definitions :(
+if node['osl-openstack']['node_type'] == 'compute' &&
    Gem::Version.new(kernel_version) >= Gem::Version.new('4.14.0')
   munin_plugin 'cma' do
     plugin_dir ::File.join(node['osl-munin']['contrib_path'], 'plugins', 'osuosl')
