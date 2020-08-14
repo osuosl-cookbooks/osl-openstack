@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+8.3.0 (2020-08-14)
+------------------
+- Chef 15 updates
+
 8.2.1 (2020-08-11)
 ------------------
 - Use lscpu to determine whether or not to load kvm_pr or kvm_hv
