@@ -1,8 +1,8 @@
 #
-# Cookbook Name:: osl-openstack
+# Cookbook:: osl-openstack
 # Recipe:: compute
 #
-# Copyright (C) 2014, 2015 Oregon State University
+# Copyright:: 2014-2020, Oregon State University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ when 'ppc64le'
   cookbook_file '/etc/rc.d/rc.local' do
     owner 'root'
     group 'root'
-    mode 0755
+    mode '755'
   end
 
   # Turn off smt during runtime
@@ -64,27 +64,19 @@ when 'ppc64le'
     not_if '/sbin/ppc64_cpu --smt 2>&1 | ' \
       'grep -E \'SMT is off|Machine is not SMT capable\''
   end
+when 'aarch64'
+  include_recipe 'yum-kernel-osuosl::install'
+  include_recipe 'base::grub'
 when 'x86_64'
   kvm_module =
-    if node.deep_fetch('dmi', 'processor', 'manufacturer') == 'AMD'
+    if node.read('dmi', 'processor', 'manufacturer') == 'AMD'
       'kvm-amd'
     else
       'kvm-intel'
     end
 
-  # TODO: Remove after the next release of chef-14 after 14.14.29 which should include this [1]
-  # [1] https://github.com/chef/chef/pull/9120
-  file "/etc/modprobe.d/options_#{kvm_module}.conf" do
-    content "options #{kvm_module} nested=1"
-  end
-
-  # TODO: This can be removed after the first run as this removes the file that the old provider created.
-  file "/etc/modprobe.d/#{kvm_module}.conf" do
-    action :delete
-  end
-
   kernel_module kvm_module do
-    # options %w(nested=1)
+    options %w(nested=1)
     action [:install, :load]
   end
 end
@@ -205,7 +197,7 @@ file '/var/lib/nova/.ssh/id_rsa' do
   sensitive true
   user 'nova'
   group 'nova'
-  mode 0600
+  mode '600'
 end
 
 file '/var/lib/nova/.ssh/config' do
@@ -216,7 +208,7 @@ Host *
   EOL
   user 'nova'
   group 'nova'
-  mode 0600
+  mode '600'
 end
 
 package 'libguestfs-tools'

@@ -57,8 +57,8 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/,
     context 'Setting controller vxlan_interface to eth0 on controller' do
       cached(:chef_run) { runner.converge(described_recipe) }
       before do
-        node.normal['osl-openstack']['node_type'] = 'controller'
-        node.normal['osl-openstack']['vxlan_interface']['controller'] \
+        node.override['osl-openstack']['node_type'] = 'controller'
+        node.override['osl-openstack']['vxlan_interface']['controller'] \
           ['default'] = 'eth0'
         node.automatic['network']['interfaces']['eth0']['addresses'] = {
           '192.168.1.10' => {
@@ -77,8 +77,8 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/,
     context 'Setting controller vxlan_interface to downed eth2' do
       cached(:chef_run) { runner.converge(described_recipe) }
       before do
-        node.normal['osl-openstack']['node_type'] = 'controller'
-        node.normal['osl-openstack']['vxlan_interface']['controller']['default'] = 'eth2'
+        node.override['osl-openstack']['node_type'] = 'controller'
+        node.override['osl-openstack']['vxlan_interface']['controller']['default'] = 'eth2'
         node.automatic['network']['interfaces']['eth2']['addresses'] = {
           'AA:00:00:4A:A6:6E' => { 'family' => 'lladdr' },
           'fe80::a800:ff:fe4a:a66e' => { 'family' => 'inet6', 'prefixlen' => '64', 'scope' => 'Link', 'tags' => [] },
@@ -95,7 +95,7 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/,
     context 'Setting controller vxlan_interface to eth0 on compute' do
       cached(:chef_run) { runner.converge(described_recipe) }
       before do
-        node.normal['osl-openstack']['node_type'] = 'compute'
+        node.override['osl-openstack']['node_type'] = 'compute'
         node.automatic['network']['interfaces']['eth0']['addresses'] = {
           '192.168.1.10' => {
             'family' => 'inet',
@@ -113,8 +113,8 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/,
     context 'Setting controller vxlan_interface to eth8 on compute w/ fqdn' do
       cached(:chef_run) { runner.converge(described_recipe) }
       before do
-        node.normal['osl-openstack']['node_type'] = 'compute'
-        node.normal['osl-openstack']['vxlan_interface']['compute'] \
+        node.override['osl-openstack']['node_type'] = 'compute'
+        node.override['osl-openstack']['vxlan_interface']['compute'] \
           ['foo.example.org'] = 'eth8'
         node.automatic['fqdn'] = 'foo.example.org'
         node.automatic['network']['interfaces']['eth8']['addresses'] = {
@@ -145,7 +145,7 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/,
         /^physical_interface_mappings = $/,
       ].each do |line|
         before do
-          node.normal['osl-openstack']['physical_interface_mappings'] = []
+          node.override['osl-openstack']['physical_interface_mappings'] = []
         end
         it do
           expect(chef_run).to render_config_file(file.name)
@@ -167,7 +167,7 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/,
     context 'Create a public:eth2 on controller' do
       cached(:chef_run) { runner.converge(described_recipe) }
       before do
-        node.normal['osl-openstack']['node_type'] = 'controller'
+        node.override['osl-openstack']['node_type'] = 'controller'
       end
       [
         /^physical_interface_mappings = public:eth2$/,
@@ -181,7 +181,7 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/,
     context 'Create a public:eth1,private:eth2' do
       cached(:chef_run) { runner.converge(described_recipe) }
       before do
-        node.normal['osl-openstack']['physical_interface_mappings'] =
+        node.override['osl-openstack']['physical_interface_mappings'] =
           [
             {
               name: 'public',
@@ -216,7 +216,7 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/,
       cached(:chef_run) { runner.converge(described_recipe) }
       before do
         node.automatic['fqdn'] = 'bar.example.org'
-        node.normal['osl-openstack']['physical_interface_mappings'] =
+        node.override['osl-openstack']['physical_interface_mappings'] =
           [
             {
               name: 'public',
@@ -244,8 +244,8 @@ neutron.agent.linux.iptables_firewall.IptablesFirewallDriver$/,
       cached(:chef_run) { runner.converge(described_recipe) }
       before do
         node.automatic['fqdn'] = 'foo.example.org'
-        node.normal['osl-openstack']['node_type'] = 'controller'
-        node.normal['osl-openstack']['physical_interface_mappings'] =
+        node.override['osl-openstack']['node_type'] = 'controller'
+        node.override['osl-openstack']['physical_interface_mappings'] =
           [
             {
               name: 'public',

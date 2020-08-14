@@ -4,7 +4,7 @@ require 'chef/application'
 describe 'osl-openstack::compute' do
   let(:runner) do
     ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-      node.normal['osl-openstack']['physical_interface_mappings'] = { compute: 'eth1' }
+      node.override['osl-openstack']['physical_interface_mappings'] = { compute: 'eth1' }
     end
   end
   let(:node) { runner.node }
@@ -119,7 +119,7 @@ describe 'osl-openstack::compute' do
         sensitive: true,
         user: 'nova',
         group: 'nova',
-        mode: 0600
+        mode: '600'
       )
   end
   it do
@@ -127,7 +127,7 @@ describe 'osl-openstack::compute' do
       .with(
         user: 'nova',
         group: 'nova',
-        mode: 0600,
+        mode: '600',
         content: <<-EOL
 Host *
   StrictHostKeyChecking no
@@ -143,7 +143,7 @@ Host *
   context 'Set ceph' do
     let(:runner) do
       ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-        node.normal['osl-openstack']['ceph'] = true
+        node.override['osl-openstack']['ceph'] = true
         node.automatic['filesystem2']['by_mountpoint']
       end
     end
@@ -225,7 +225,7 @@ Host *
     context 'virsh secret exists' do
       let(:runner) do
         ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-          node.normal['osl-openstack']['ceph'] = true
+          node.override['osl-openstack']['ceph'] = true
           node.automatic['filesystem2']['by_mountpoint']
         end
       end
@@ -256,6 +256,7 @@ Host *
       node.automatic['kernel']['machine'] = 'ppc64le'
       stub_command('lscpu | grep "KVM"').and_return(false)
     end
+
     context 'Setting as openstack guest' do
       cached(:chef_run) { runner.converge(described_recipe) }
       before do
@@ -265,6 +266,7 @@ Host *
         expect(chef_run).to load_kernel_module('kvm_pr')
       end
     end
+
     it 'loads kvm_hv module' do
       expect(chef_run).to load_kernel_module('kvm_hv')
     end
@@ -285,6 +287,7 @@ Host *
     it 'creates /etc/rc.d/rc.local' do
       expect(chef_run).to create_cookbook_file('/etc/rc.d/rc.local')
     end
+
     context 'SMT not enabled' do
       cached(:chef_run) { runner.converge(described_recipe) }
       before do
@@ -295,6 +298,7 @@ Host *
         expect(chef_run).to_not run_execute('ppc64_cpu_smt_off')
       end
     end
+
     context 'SMT already enabled' do
       before do
         stub_command('/sbin/ppc64_cpu --smt 2>&1 | grep -E ' \
@@ -305,6 +309,19 @@ Host *
       end
     end
   end
+
+  context 'setting arch to aarch64' do
+    cached(:chef_run) { runner.converge(described_recipe) }
+    before do
+      node.automatic['kernel']['machine'] = 'aarch64'
+    end
+    %w(yum-kernel-osuosl::install base::grub).each do |r|
+      it do
+        expect(chef_run).to include_recipe(r)
+      end
+    end
+  end
+
   context 'setting arch to x86_64, processor to intel' do
     cached(:chef_run) { runner.converge(described_recipe) }
     before do
@@ -312,16 +329,7 @@ Host *
       node.automatic['dmi']['processor']['manufacturer'] = 'Intel(R) Corporation'
     end
     it do
-      expect(chef_run).to create_file('/etc/modprobe.d/options_kvm-intel.conf')
-        .with(
-          content: 'options kvm-intel nested=1'
-        )
-    end
-    it do
-      expect(chef_run).to delete_file('/etc/modprobe.d/kvm-intel.conf')
-    end
-    it do
-      expect(chef_run).to install_kernel_module('kvm-intel')
+      expect(chef_run).to install_kernel_module('kvm-intel').with(options: %w(nested=1))
     end
     it do
       expect(chef_run).to load_kernel_module('kvm-intel')
@@ -330,6 +338,7 @@ Host *
       expect(chef_run).to_not load_kernel_module('kvm-amd')
     end
   end
+
   context 'setting arch to x86_64, processor to amd' do
     cached(:chef_run) { runner.converge(described_recipe) }
     before do
@@ -337,16 +346,7 @@ Host *
       node.automatic['dmi']['processor']['manufacturer'] = 'AMD'
     end
     it do
-      expect(chef_run).to create_file('/etc/modprobe.d/options_kvm-amd.conf')
-        .with(
-          content: 'options kvm-amd nested=1'
-        )
-    end
-    it do
-      expect(chef_run).to delete_file('/etc/modprobe.d/kvm-amd.conf')
-    end
-    it do
-      expect(chef_run).to install_kernel_module('kvm-amd')
+      expect(chef_run).to install_kernel_module('kvm-amd').with(options: %w(nested=1))
     end
     it do
       expect(chef_run).to load_kernel_module('kvm-amd')

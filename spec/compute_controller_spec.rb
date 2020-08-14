@@ -191,7 +191,7 @@ describe 'osl-openstack::compute_controller' do
     context 'Set ceph' do
       let(:runner) do
         ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-          node.normal['osl-openstack']['ceph'] = true
+          node.override['osl-openstack']['ceph'] = true
           node.automatic['filesystem2']['by_mountpoint']
         end
       end
@@ -228,11 +228,16 @@ describe 'osl-openstack::compute_controller' do
     end
   end
 
-  describe '/etc/httpd/sites-available/nova-placement-api.conf' do
-    let(:file) { chef_run.template('/etc/httpd/sites-available/nova-placement-api.conf') }
+  it do
+    expect(chef_run).to install_apache2_install('openstack').with(
+      listen: %w(10.0.0.2:8774 10.0.0.2:8775 10.0.0.2:8778)
+    )
+  end
+
+  describe '/etc/httpd/sites-available/nova-placement.conf' do
+    let(:file) { chef_run.template('/etc/httpd/sites-available/nova-placement.conf') }
 
     [
-      /^Listen 10.0.0.2:8778$/,
       /^<VirtualHost 10.0.0.2:8778>$/,
     ].each do |line|
       it do

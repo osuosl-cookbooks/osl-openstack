@@ -1,6 +1,5 @@
 require 'chefspec'
 require 'chefspec/berkshelf'
-require_relative 'support/matchers'
 
 REDHAT_OPTS = {
   platform: 'centos',
@@ -11,17 +10,17 @@ REDHAT_OPTS = {
 
 shared_context 'common_stubs' do
   before do
-    node.normal['osl-openstack']['endpoint_hostname'] = '10.0.0.10'
-    node.normal['osl-openstack']['network_hostname'] = '10.0.0.11'
-    node.normal['osl-openstack']['db_hostname'] = '10.0.0.10'
-    node.normal['osl-openstack']['database_suffix'] = 'x86'
-    node.normal['osl-openstack']['databag_suffix'] = 'x86'
-    node.normal['osl-openstack']['credentials']['ceph']['image_token'] = 'image_token'
-    node.normal['osl-openstack']['credentials']['ceph']['block_token'] = 'block_token'
-    node.normal['osl-openstack']['credentials']['ceph']['block_backup_token'] = 'block_backup_token'
-    node.normal['osl-openstack']['credentials']['ceph']['metrics_token'] = 'metrics_token'
-    node.normal['ibm_power']['cpu']['cpu_model'] = nil
-    node.normal['ceph']['fsid-secret'] = '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8'
+    node.override['osl-openstack']['endpoint_hostname'] = '10.0.0.10'
+    node.override['osl-openstack']['network_hostname'] = '10.0.0.11'
+    node.override['osl-openstack']['db_hostname'] = '10.0.0.10'
+    node.override['osl-openstack']['database_suffix'] = 'x86'
+    node.override['osl-openstack']['databag_suffix'] = 'x86'
+    node.override['osl-openstack']['credentials']['ceph']['image_token'] = 'image_token'
+    node.override['osl-openstack']['credentials']['ceph']['block_token'] = 'block_token'
+    node.override['osl-openstack']['credentials']['ceph']['block_backup_token'] = 'block_backup_token'
+    node.override['osl-openstack']['credentials']['ceph']['metrics_token'] = 'metrics_token'
+    node.override['ibm_power']['cpu']['cpu_model'] = nil
+    node.override['ceph']['fsid-secret'] = '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8'
     node.automatic['filesystem2']['by_mountpoint']
   end
 end
@@ -73,16 +72,16 @@ shared_context 'ceph_stubs' do
     stub_search('node', 'tags:ceph-restapi').and_return([{}])
     allow(Chef::EncryptedDataBagItem).to receive(:load)
       .with('ceph', 'openstack')
-      .and_raise(Net::HTTPServerException.new(
+      .and_raise(Net::HTTPClientException.new(
                    'ceph databag not found',
                    Net::HTTPResponse.new('1.1', '404', '')
-      ))
+                 ))
   end
 end
 
 shared_context 'linuxbridge_stubs' do
   before do
-    node.normal['osl-openstack']['physical_interface_mappings'] =
+    node.override['osl-openstack']['physical_interface_mappings'] =
       [
         name: 'public',
         controller: {
@@ -227,7 +226,7 @@ shared_context 'network_stubs' do
   end
   shared_examples 'custom template banner displayer' do
     it 'shows the custom banner' do
-      node.normal['openstack']['network']['custom_template_banner'] =
+      node.override['openstack']['network']['custom_template_banner'] =
         'custom_template_banner_value'
       expect(chef_run).to render_file(file_name)
         .with_content(/^custom_template_banner_value$/)
@@ -235,7 +234,7 @@ shared_context 'network_stubs' do
   end
   shared_examples 'common network attributes displayer' do |plugin|
     it 'displays the interface_driver common attribute' do
-      node.normal['openstack']["network_#{plugin}"]['conf']['DEFAULT'] \
+      node.override['openstack']["network_#{plugin}"]['conf']['DEFAULT'] \
         ['interface_driver'] = 'network_interface_driver_value'
       expect(chef_run).to render_file(file_name)
         .with_content(/^interface_driver = network_interface_driver_value$/)
@@ -251,7 +250,7 @@ shared_context 'network_stubs' do
        enable_metadata_network dnsmasq_lease_max
        dhcp_delete_namespaces).each do |attr|
       it "displays the #{attr} dhcp attribute" do
-        node.normal['openstack']['network_dhcp']['conf']['DEFAULT'][attr] =
+        node.override['openstack']['network_dhcp']['conf']['DEFAULT'][attr] =
           "network_dhcp_#{attr}_value"
         expect(chef_run).to render_file(file_name)
           .with_content(/^#{attr} = network_dhcp_#{attr}_value$/)
@@ -262,7 +261,7 @@ end
 
 shared_context 'compute_stubs' do
   before do
-    node.normal['osl-openstack']['nova_public_key'] = 'ssh public key'
+    node.override['osl-openstack']['nova_public_key'] = 'ssh public key'
     stub_data_bag_item('_secrets', 'nova_migration_key')
       .and_return(nova_migration_key: 'private ssh key')
     allow_any_instance_of(Chef::Recipe).to receive(:rabbit_servers)

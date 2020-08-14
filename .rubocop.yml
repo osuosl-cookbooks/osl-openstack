@@ -1,17 +1,8 @@
-AllCops:
-  Include:
-    - '**/Berksfile'
-    - '**/Cheffile'
-  Exclude:
-    - 'metadata.rb'
-    - 'cookbooks/**/*'
-    - 'vms/*'
-    - 'test/chef-config/knife.rb'
 Metrics/BlockNesting:
   Max: 4
-Style/ClassAndModuleChildren:
-  Enabled: false
-Style/NumericLiteralPrefix:
-  EnforcedOctalStyle: zero_only
-Metrics/BlockLength:
-  Enabled: false
+AllCops:
+  TargetChefVersion: 15.latest
+ChefModernize/FoodcriticComments:
+  Enabled: true
+ChefStyle/CopyrightCommentFormat:
+  Enabled: true

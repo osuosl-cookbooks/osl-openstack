@@ -4,7 +4,7 @@ def openstack_credential_secrets
     node['osl-openstack']['ceph_databag'],
     node['osl-openstack']['ceph_item']
   )
-rescue Net::HTTPServerException => e
+rescue Net::HTTPClientException => e
   databag = "#{node['osl-openstack']['ceph_databag']}:#{node['osl-openstack']['ceph_item']}"
   if e.response.code == '404'
     Chef::Log.warn("Could not find databag '#{databag}'; falling back to default attributes.")

@@ -1,8 +1,8 @@
 #
-# Cookbook Name:: osl-openstack
+# Cookbook:: osl-openstack
 # Recipe:: mon
 #
-# Copyright (C) 2014-2016 Oregon State University
+# Copyright:: 2014-2020, Oregon State University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ kernel_version = node['kernel']['release'].split('-').first
 
 # Only enable the cma graph if this is a compute node and has a 4.14 or newer kernel which exposes the information we
 # need in /proc
-if node['osl-openstack']['node_type'] == 'compute' && # ~FC023 only_if does not work with definitions :(
+if node['osl-openstack']['node_type'] == 'compute' &&
    Gem::Version.new(kernel_version) >= Gem::Version.new('4.14.0')
   munin_plugin 'cma' do
     plugin_dir ::File.join(node['osl-munin']['contrib_path'], 'plugins', 'osuosl')
@@ -100,7 +100,7 @@ if node['osl-openstack']['node_type'] == 'controller'
 
   # Wrapper for using sudo to check openstack services
   file check_openstack do
-    mode 0755
+    mode '755'
     content <<-EOF
 #!/bin/bash
 
