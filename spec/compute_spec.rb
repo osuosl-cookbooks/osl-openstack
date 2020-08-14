@@ -256,6 +256,7 @@ Host *
       node.automatic['kernel']['machine'] = 'ppc64le'
       stub_command('lscpu | grep "KVM"').and_return(false)
     end
+
     context 'Setting as openstack guest' do
       cached(:chef_run) { runner.converge(described_recipe) }
       before do
@@ -265,6 +266,7 @@ Host *
         expect(chef_run).to load_kernel_module('kvm_pr')
       end
     end
+
     it 'loads kvm_hv module' do
       expect(chef_run).to load_kernel_module('kvm_hv')
     end
@@ -285,6 +287,7 @@ Host *
     it 'creates /etc/rc.d/rc.local' do
       expect(chef_run).to create_cookbook_file('/etc/rc.d/rc.local')
     end
+
     context 'SMT not enabled' do
       cached(:chef_run) { runner.converge(described_recipe) }
       before do
@@ -295,6 +298,7 @@ Host *
         expect(chef_run).to_not run_execute('ppc64_cpu_smt_off')
       end
     end
+
     context 'SMT already enabled' do
       before do
         stub_command('/sbin/ppc64_cpu --smt 2>&1 | grep -E ' \
@@ -305,6 +309,19 @@ Host *
       end
     end
   end
+
+  context 'setting arch to aarch64' do
+    cached(:chef_run) { runner.converge(described_recipe) }
+    before do
+      node.automatic['kernel']['machine'] = 'aarch64'
+    end
+    %w(yum-kernel-osuosl::install base::grub).each do |r|
+      it do
+        expect(chef_run).to include_recipe(r)
+      end
+    end
+  end
+
   context 'setting arch to x86_64, processor to intel' do
     cached(:chef_run) { runner.converge(described_recipe) }
     before do
@@ -330,6 +347,7 @@ Host *
       expect(chef_run).to_not load_kernel_module('kvm-amd')
     end
   end
+
   context 'setting arch to x86_64, processor to amd' do
     cached(:chef_run) { runner.converge(described_recipe) }
     before do

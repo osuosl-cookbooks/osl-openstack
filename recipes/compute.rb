@@ -64,6 +64,9 @@ when 'ppc64le'
     not_if '/sbin/ppc64_cpu --smt 2>&1 | ' \
       'grep -E \'SMT is off|Machine is not SMT capable\''
   end
+when 'aarch64'
+  include_recipe 'yum-kernel-osuosl::install'
+  include_recipe 'base::grub'
 when 'x86_64'
   kvm_module =
     if node.deep_fetch('dmi', 'processor', 'manufacturer') == 'AMD'
