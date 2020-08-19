@@ -28,9 +28,6 @@ describe 'osl-openstack::upgrade' do
       end.converge(described_recipe)
     end
     it do
-      expect(chef_run).to include_recipe('openstack-identity::_fernet_tokens')
-    end
-    it do
       expect(chef_run).to create_file('/root/nova-cell-db-uri')
         .with(
           content: 'mysql+pymysql://nova_cell0_:keystone_db_pass@:3306/nova_cell0_?charset=utf8',
