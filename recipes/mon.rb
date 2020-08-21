@@ -44,15 +44,12 @@ if node['osl-openstack']['node_type'] == 'controller'
   include_recipe 'osl-openstack'
   include_recipe 'base::oslrepo'
   include_recipe 'git'
+  include_recipe 'base::python'
 
-  python_runtime 'osc-nagios' do
-    version '2'
-    provider :system
-  end
+  venv = '/opt/osc-nagios'
 
-  python_virtualenv '/opt/osc-nagios' do
-    python 'osc-nagios'
-    system_site_packages true
+  execute "virtualenv #{venv}" do
+    creates "#{venv}/bin/pip"
   end
 
   # Remove old openstack nagios plugins and their checks
@@ -77,16 +74,14 @@ if node['osl-openstack']['node_type'] == 'controller'
   check_openstack = ::File.join(node['nrpe']['plugin_dir'], 'check_openstack')
   tools_dir = ::File.join(Chef::Config[:file_cache_path], 'osops-tools-monitoring')
 
-  python_execute 'monitoring-for-openstack deps' do
-    virtualenv '/opt/osc-nagios'
-    command '-m pip install -r requirements.txt'
+  execute 'monitoring-for-openstack deps' do
+    command "#{venv}/bin/pip install -r requirements.txt"
     cwd ::File.join(tools_dir, 'monitoring-for-openstack')
     action :nothing
   end
 
-  python_execute 'monitoring-for-openstack install' do
-    virtualenv '/opt/osc-nagios'
-    command 'setup.py install'
+  execute 'monitoring-for-openstack install' do
+    command "#{venv}/bin/python setup.py install"
     cwd ::File.join(tools_dir, 'monitoring-for-openstack')
     action :nothing
   end
@@ -94,8 +89,8 @@ if node['osl-openstack']['node_type'] == 'controller'
   git tools_dir do
     revision 'rocky'
     repository 'https://github.com/osuosl/osops-tools-monitoring.git'
-    notifies :run, 'python_execute[monitoring-for-openstack deps]', :immediately
-    notifies :run, 'python_execute[monitoring-for-openstack install]', :immediately
+    notifies :run, 'execute[monitoring-for-openstack deps]', :immediately
+    notifies :run, 'execute[monitoring-for-openstack install]', :immediately
   end
 
   # Wrapper for using sudo to check openstack services
