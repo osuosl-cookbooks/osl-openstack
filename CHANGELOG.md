@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+8.3.2 (2020-08-24)
+------------------
+- Use node['openstack']['release'] for branch
+
 8.3.1 (2020-08-21)
 ------------------
 - Migrate away from using poise to direct execute resources
