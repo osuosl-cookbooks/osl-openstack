@@ -87,7 +87,7 @@ if node['osl-openstack']['node_type'] == 'controller'
   end
 
   git tools_dir do
-    revision 'rocky'
+    revision node['openstack']['release']
     repository 'https://github.com/osuosl/osops-tools-monitoring.git'
     notifies :run, 'execute[monitoring-for-openstack deps]', :immediately
     notifies :run, 'execute[monitoring-for-openstack install]', :immediately
