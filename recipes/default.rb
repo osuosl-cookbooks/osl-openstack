@@ -91,14 +91,13 @@ node.default['openstack']['image_api']['conf'].tap do |conf|
     # [2] https://docs.openstack.org/releasenotes/glance/ocata.html#relnotes-14-0-0-origin-stable-ocata-other-notes
     # [3] https://wiki.openstack.org/wiki/OSSN/OSSN-0065
     conf['DEFAULT']['show_multiple_locations'] = true
-    conf['DEFAULT']['enabled_backends'] = 'cheap:rbd'
     conf['paste_deploy']['flavor'] = 'keystone'
-    conf['glance_store']['default_backend'] = 'cheap'
-    conf['cheap']['store_description'] = 'Cheap rbd backend'
-    conf['cheap']['rbd_store_pool'] = node['osl-openstack']['image']['rbd_store_pool']
-    conf['cheap']['rbd_store_user'] = node['osl-openstack']['image']['rbd_store_user']
-    conf['cheap']['rbd_store_ceph_conf'] = '/etc/ceph/ceph.conf'
-    conf['cheap']['rbd_store_chunk_size'] = 8
+    conf['glance_store']['stores'] = 'rbd'
+    conf['glance_store']['default_store'] = 'rbd'
+    conf['glance_store']['rbd_store_pool'] = node['osl-openstack']['image']['rbd_store_pool']
+    conf['glance_store']['rbd_store_user'] = node['osl-openstack']['image']['rbd_store_user']
+    conf['glance_store']['rbd_store_ceph_conf'] = '/etc/ceph/ceph.conf'
+    conf['glance_store']['rbd_store_chunk_size'] = 8
   end
 end
 node.default['openstack']['compute']['libvirt']['conf'].tap do |conf|

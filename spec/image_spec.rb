@@ -84,7 +84,6 @@ describe 'osl-openstack::image', image: true do
         [
           /^show_image_direct_url = true$/,
           /^show_multiple_locations = true$/,
-          /^enabled_backends = cheap:rbd$/,
         ].each do |line|
           it do
             expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
@@ -98,21 +97,15 @@ describe 'osl-openstack::image', image: true do
           end
         end
         [
-          /^default_backend = cheap$/,
-        ].each do |line|
-          it do
-            expect(chef_run).to render_config_file(file.name).with_section_content('glance_store', line)
-          end
-        end
-        [
-          /^store_description = Cheap rbd backend$/,
+          /^stores = rbd$/,
+          /^default_store = rbd$/,
           /^rbd_store_pool = images$/,
           /^rbd_store_user = glance$/,
           %r{^rbd_store_ceph_conf = /etc/ceph/ceph.conf$},
           /^rbd_store_chunk_size = 8$/,
         ].each do |line|
           it do
-            expect(chef_run).to render_config_file(file.name).with_section_content('cheap', line)
+            expect(chef_run).to render_config_file(file.name).with_section_content('glance_store', line)
           end
         end
         context 'no image_token' do
