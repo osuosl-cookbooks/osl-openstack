@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+8.3.3 (2020-08-26)
+------------------
+- Remove multi-store configuration from glance to fix snapshots
+
 8.3.2 (2020-08-24)
 ------------------
 - Use node['openstack']['release'] for branch
