@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+8.3.4 (2020-09-01)
+------------------
+- Remove nova login execute resource as it's causing issues
+
 8.3.3 (2020-08-26)
 ------------------
 - Remove multi-store configuration from glance to fix snapshots
