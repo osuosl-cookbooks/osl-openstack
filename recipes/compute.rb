@@ -212,3 +212,7 @@ Host *
 end
 
 package 'libguestfs-tools'
+
+# TODO: Remove after rocky
+# This is no longer needed
+delete_resource(:execute, 'enable nova login')
