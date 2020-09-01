@@ -74,3 +74,7 @@ template '/etc/sysconfig/openstack-nova-novncproxy' do
             key: ::File.join(ssl_dir, 'private', novnc['key_file']))
   notifies :restart, proxy_service
 end
+
+# TODO: Remove after rocky
+# This is no longer needed
+delete_resource(:execute, 'enable nova login')
