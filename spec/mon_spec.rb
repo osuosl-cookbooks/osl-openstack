@@ -42,7 +42,7 @@ describe 'osl-openstack::mon' do
       end
     end
     it do
-      expect(chef_run).to run_execute('virtualenv /opt/osc-nagios')
+      expect(chef_run).to run_execute('virtualenv -p python3 /opt/osc-nagios')
         .with(
           creates: '/opt/osc-nagios/bin/pip'
         )

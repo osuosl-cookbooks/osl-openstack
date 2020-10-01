@@ -35,7 +35,7 @@ if node['osl-openstack']['node_type'] == 'controller'
 
   venv = '/opt/osc-nagios'
 
-  execute "virtualenv #{venv}" do
+  execute "virtualenv -p python3 #{venv}" do
     creates "#{venv}/bin/pip"
   end
 
