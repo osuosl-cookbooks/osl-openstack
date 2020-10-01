@@ -22,7 +22,7 @@ include_recipe 'openstack-network'
 node_type = node['osl-openstack']['node_type']
 int_mappings = []
 node['osl-openstack']['physical_interface_mappings'].each do |int|
-  interface = if int[node_type][node['fqdn']]
+  interface = if int[node_type][node['fqdn']] # rubocop:disable Style/RedundantCondition
                 int[node_type][node['fqdn']]
               else
                 int[node_type]['default']
@@ -32,7 +32,7 @@ end
 
 # Get the IP for the interface we're using VXLAN for
 vxlan = node['osl-openstack']['vxlan_interface']
-vxlan_interface = if vxlan[node_type][node['fqdn']]
+vxlan_interface = if vxlan[node_type][node['fqdn']] # rubocop:disable Style/RedundantCondition
                     vxlan[node_type][node['fqdn']]
                   else
                     vxlan[node_type]['default']
