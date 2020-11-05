@@ -70,5 +70,5 @@ ruby_block 'raise_upgrade_exeception' do
   block do
     raise 'Upgrade recipe enabled, stopping futher chef resources from running'
   end
-  not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/rocky-upgrade-done') }
+  not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/stein-upgrade-done') }
 end

@@ -54,7 +54,7 @@ describe 'osl-openstack::upgrade' do
       expect(chef_run).to_not run_ruby_block('raise_upgrade_exeception')
     end
   end
-  context '/root/rocky-upgrade-done exists' do
+  context '/root/stein-upgrade-done exists' do
     cached(:chef_run) do
       ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
         node.automatic['filesystem2']['by_mountpoint']
@@ -62,7 +62,7 @@ describe 'osl-openstack::upgrade' do
     end
     before do
       allow(File).to receive(:exist?).and_call_original
-      allow(File).to receive(:exist?).with('/root/rocky-upgrade-done').and_return(true)
+      allow(File).to receive(:exist?).with('/root/stein-upgrade-done').and_return(true)
     end
     it do
       expect(chef_run).to_not run_ruby_block('raise_upgrade_exeception')
