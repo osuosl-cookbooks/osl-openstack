@@ -17,8 +17,8 @@ yum -y upgrade
 
 set +ex
 
-touch /root/rocky-upgrade-done
+touch /root/stein-upgrade-done
 
 echo
 echo "Run the following command once the controller has been upgraded:"
-echo "  systemctl isolate openstack-services.snapshot"
+echo "  cinc-client"
