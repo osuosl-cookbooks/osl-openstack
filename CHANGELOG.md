@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+8.3.5 (2020-11-07)
+------------------
+- Add prometheus cronjob for listing all projects/instances
+
 8.3.4 (2020-09-01)
 ------------------
 - Remove nova login execute resource as it's causing issues
