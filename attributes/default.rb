@@ -64,3 +64,4 @@ default['osl-openstack']['novnc'] = {
   'key_file' => 'novnc.key',
 }
 default['osl-openstack']['external_networks'] = %w(public)
+default['osl-openstack']['cluster_name'] = nil

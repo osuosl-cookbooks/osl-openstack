@@ -19,6 +19,7 @@ provisioner:
       cluster_role: openstack_tk
       database_suffix: x86
       databag_prefix: x86
+      cluster_name: x86
       endpoint_hostname: controller.example.com
       db_hostname: controller.example.com
       bind_service: 127.0.0.1
