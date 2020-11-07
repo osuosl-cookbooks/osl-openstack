@@ -199,5 +199,34 @@ describe 'osl-openstack::mon' do
       expect(chef_run.link(::File.join(plugin_dir, 'check_neutron_floating_ip'))).to \
         link_to('/usr/libexec/openstack-monitoring/checks/oschecks-check_neutron_floating_ip')
     end
+    it do
+      expect(chef_run).to_not create_file('/usr/local/etc/os_cluster')
+    end
+    it do
+      expect(chef_run).to_not create_cookbook_file('/usr/local/libexec/openstack-prometheus')
+    end
+    it do
+      expect(chef_run).to_not create_cron('openstack-prometheus')
+    end
+    context 'cluster_name set' do
+      cached(:chef_run) do
+        ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
+          node.override['osl-openstack']['cluster_name'] = 'x86'
+          node.override['osl-openstack']['node_type'] = 'controller'
+        end.converge(described_recipe)
+      end
+      it do
+        expect(chef_run).to create_file('/usr/local/etc/os_cluster').with(content: "x86\n")
+      end
+      it do
+        expect(chef_run).to create_cookbook_file('/usr/local/libexec/openstack-prometheus').with(mode: '755')
+      end
+      it do
+        expect(chef_run).to create_cron('openstack-prometheus').with(
+          command: '/usr/local/libexec/openstack-prometheus',
+          minute: '*/10'
+        )
+      end
+    end
   end
 end

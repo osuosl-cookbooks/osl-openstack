@@ -139,4 +139,19 @@ EOF
       parameters "--ext_network_name #{network}"
     end
   end
+
+  unless node['osl-openstack']['cluster_name'].nil?
+    file '/usr/local/etc/os_cluster' do
+      content "#{node['osl-openstack']['cluster_name']}\n"
+    end
+
+    cookbook_file '/usr/local/libexec/openstack-prometheus' do
+      mode '755'
+    end
+
+    cron 'openstack-prometheus' do
+      command '/usr/local/libexec/openstack-prometheus'
+      minute '*/10'
+    end
+  end
 end

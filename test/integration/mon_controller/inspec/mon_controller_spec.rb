@@ -62,3 +62,16 @@ describe file('/etc/nagios/nrpe.d/check_neutron_floating_ip_public.cfg') do
     should match(%r{command\[check_neutron_floating_ip_public\]=/bin/sudo /usr/lib64/nagios/plugins/check_openstack check_neutron_floating_ip --ext_network_name public$})
   end
 end
+
+describe file '/usr/local/etc/os_cluster' do
+  its('content') { should cmp "x86\n" }
+end
+
+describe file '/usr/local/libexec/openstack-prometheus' do
+  it { should be_executable }
+end
+
+describe crontab 'root' do
+  its('commands') { should include '/usr/local/libexec/openstack-prometheus' }
+  its('minutes') { should cmp '*/10' }
+end
