@@ -203,7 +203,13 @@ describe 'osl-openstack::mon' do
       expect(chef_run).to_not create_file('/usr/local/etc/os_cluster')
     end
     it do
+      expect(chef_run).to_not install_chef_gem('prometheus_reporter')
+    end
+    it do
       expect(chef_run).to_not create_cookbook_file('/usr/local/libexec/openstack-prometheus')
+    end
+    it do
+      expect(chef_run).to_not create_cookbook_file('/usr/local/libexec/openstack-prometheus.rb')
     end
     it do
       expect(chef_run).to_not create_cron('openstack-prometheus')
@@ -219,7 +225,13 @@ describe 'osl-openstack::mon' do
         expect(chef_run).to create_file('/usr/local/etc/os_cluster').with(content: "x86\n")
       end
       it do
+        expect(chef_run).to install_chef_gem('prometheus_reporter')
+      end
+      it do
         expect(chef_run).to create_cookbook_file('/usr/local/libexec/openstack-prometheus').with(mode: '755')
+      end
+      it do
+        expect(chef_run).to create_cookbook_file('/usr/local/libexec/openstack-prometheus.rb').with(mode: '755')
       end
       it do
         expect(chef_run).to create_cron('openstack-prometheus').with(

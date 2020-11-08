@@ -64,10 +64,18 @@ describe file('/etc/nagios/nrpe.d/check_neutron_floating_ip_public.cfg') do
 end
 
 describe file '/usr/local/etc/os_cluster' do
-  its('content') { should cmp "x86\n" }
+  its('content') { should cmp "export OS_CLUSTER=x86\n" }
+end
+
+describe gem('prometheus_reporter', '/opt/cinc/embedded/bin/gem') do
+  it { should be_installed }
 end
 
 describe file '/usr/local/libexec/openstack-prometheus' do
+  it { should be_executable }
+end
+
+describe file '/usr/local/libexec/openstack-prometheus.rb' do
   it { should be_executable }
 end
 
