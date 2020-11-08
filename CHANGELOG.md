@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+8.3.6 (2020-11-08)
+------------------
+- Convert prometheus script to ruby to gather more information
+
 8.3.5 (2020-11-07)
 ------------------
 - Add prometheus cronjob for listing all projects/instances
