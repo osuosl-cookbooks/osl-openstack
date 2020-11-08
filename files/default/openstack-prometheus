@@ -1,60 +1,8 @@
 #!/bin/bash
-# Output current projects and instances in Prometheus format
-mkdir -p /var/lib/node_exporter/
-PROM_FILE=/var/lib/node_exporter/openstack.prom
-OS_PROJECTS=/var/lib/node_exporter/openstack-project-$$.txt
-OS_INSTANCES=/var/lib/node_exporter/openstack-instances-$$.txt
-OS_PROJECTS_FILE=/var/lib/node_exporter/openstack-projects-$$.csv
-OS_INSTANCES_FILE=/var/lib/node_exporter/openstack-instances-$$.csv
-OS_CLUSTER="$(cat /usr/local/etc/os_cluster)"
-
-cat << EOF > ${PROM_FILE}.$$
-# HELP openstack_start_time Start timestamp
-# TYPE openstack_start_time gauge
-openstack_start_time $(date +%s)
-EOF
-
-cat << EOF > ${OS_PROJECTS}
-# HELP openstack_projects Enabled projects
-# TYPE openstack_projects gauge
-EOF
-cat << EOF > ${OS_INSTANCES}
-# HELP openstack_instances VM instances
-# TYPE openstack_instances gauge
-EOF
-
+export PATH="/opt/cinc/embedded/bin:$PATH"
 source /root/openrc
-openstack project list -f csv --quote none --long -c ID -c Name -c Enabled | \
-  grep -v "ID,Name,Enabled" > $OS_PROJECTS_FILE
-
-openstack server list -f csv --quote none --all-projects --long -c ID -c Name \
-  -c Status -c Power\ State -c Host | grep -v "ID,Name,Status,Power State,Host" > $OS_INSTANCES_FILE
-
-while IFS=, read -r id name enabled ; do
-  if [ "${enabled}" == "True" ] ; then
-    state="1"
-  else
-    state="0"
-  fi
- echo "openstack_projects{cluster=\"${OS_CLUSTER}\",id=\"${id}\",name=\"${name}\"} $state" >> $OS_PROJECTS
-done < $OS_PROJECTS_FILE
-
-while IFS=, read -r id name status power_state host ; do
-  if [ "${status}" == "ACTIVE" ] ; then
-    state="1"
-  else
-    state="0"
-  fi
- echo "openstack_instances{cluster=\"${OS_CLUSTER}\",id=\"${id}\",name=\"${name}\",power_state=\"${power_state}\",host=\"${host}\"} $state" >> $OS_INSTANCES
-done < $OS_INSTANCES_FILE
-
-cat $OS_PROJECTS $OS_INSTANCES >> ${PROM_FILE}.$$
-
-cat << EOF >> ${PROM_FILE}.$$
-# HELP openstack_completion_time Stop timestamp
-# TYPE openstack_completion_time gauge
-openstack_completion_time $(date +%s)
-EOF
-
+source /usr/local/etc/os_cluster
+PROM_FILE=/var/lib/node_exporter/openstack.prom
+mkdir -p /var/lib/node_exporter/
+/usr/local/libexec/openstack-prometheus.rb > ${PROM_FILE}.$$
 mv ${PROM_FILE}.$$ ${PROM_FILE}
-rm -f $OS_INSTANCES_FILE $OS_PROJECTS_FILE $OS_PROJECTS $OS_INSTANCES

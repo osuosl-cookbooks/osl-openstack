@@ -142,10 +142,16 @@ EOF
 
   unless node['osl-openstack']['cluster_name'].nil?
     file '/usr/local/etc/os_cluster' do
-      content "#{node['osl-openstack']['cluster_name']}\n"
+      content "export OS_CLUSTER=#{node['osl-openstack']['cluster_name']}\n"
     end
 
+    chef_gem 'prometheus_reporter'
+
     cookbook_file '/usr/local/libexec/openstack-prometheus' do
+      mode '755'
+    end
+
+    cookbook_file '/usr/local/libexec/openstack-prometheus.rb' do
       mode '755'
     end
 
