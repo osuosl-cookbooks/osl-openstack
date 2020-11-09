@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+9.0.0 (2020-11-09)
+------------------
+- Stein updates
+
 8.3.6 (2020-11-08)
 ------------------
 - Convert prometheus script to ruby to gather more information
