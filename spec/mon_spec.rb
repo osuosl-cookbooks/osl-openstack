@@ -7,10 +7,8 @@ describe 'osl-openstack::mon' do
   it 'converges successfully' do
     expect { chef_run }.to_not raise_error
   end
-  %w(osl-nrpe::default).each do |r|
-    it do
-      expect(chef_run).to include_recipe(r)
-    end
+  it do
+    expect(chef_run).to include_recipe('osl-nrpe::default')
   end
   context 'Setting arch to ppc64le' do
     cached(:chef_run) do
