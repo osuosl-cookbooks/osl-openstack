@@ -22,21 +22,13 @@ include_recipe 'openstack-network'
 node_type = node['osl-openstack']['node_type']
 int_mappings = []
 node['osl-openstack']['physical_interface_mappings'].each do |int|
-  interface = if int[node_type][node['fqdn']] # rubocop:disable Style/RedundantCondition
-                int[node_type][node['fqdn']]
-              else
-                int[node_type]['default']
-              end
+  interface = int[node_type][node['fqdn']] || int[node_type]['default']
   int_mappings.push("#{int['name']}:#{interface}")
 end
 
 # Get the IP for the interface we're using VXLAN for
 vxlan = node['osl-openstack']['vxlan_interface']
-vxlan_interface = if vxlan[node_type][node['fqdn']] # rubocop:disable Style/RedundantCondition
-                    vxlan[node_type][node['fqdn']]
-                  else
-                    vxlan[node_type]['default']
-                  end
+vxlan_interface = vxlan[node_type][node['fqdn']] || vxlan[node_type]['default']
 vxlan_addrs = node['network']['interfaces'][vxlan_interface]
 vxlan_ip = if vxlan_addrs.nil? || vxlan_addrs['addresses'].empty?
              # Fall back to localhost if the interface has no IP
