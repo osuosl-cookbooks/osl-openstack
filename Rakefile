@@ -4,7 +4,7 @@ client_cfg = "#{current_dir}/test/chef-config"
 task default: ['test']
 
 desc 'Run all tests'
-task test: [:style, :lint, :unit]
+task test: [:style, :unit]
 
 def run_command(command)
   if File.exist?('Gemfile.lock')
@@ -51,11 +51,6 @@ require 'rubocop/rake_task'
 desc 'Run RuboCop (cookstyle) tests'
 RuboCop::RakeTask.new(:style) do |task|
   task.options << '--display-cop-names'
-end
-
-desc 'Run FoodCritic (lint) tests'
-task :lint do
-  run_command('foodcritic --epic-fail any .')
 end
 
 desc 'Run RSpec (unit) tests'

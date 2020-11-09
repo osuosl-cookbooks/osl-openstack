@@ -2,7 +2,7 @@
   describe port(p) do
     it { should be_listening }
     its('protocols') { should include 'tcp' }
-    its('addresses') { should include '0.0.0.0' }
+    its('addresses') { should include '::' }
   end
 end
 

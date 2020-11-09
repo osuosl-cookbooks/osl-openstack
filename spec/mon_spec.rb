@@ -7,10 +7,8 @@ describe 'osl-openstack::mon' do
   it 'converges successfully' do
     expect { chef_run }.to_not raise_error
   end
-  %w(osl-nrpe::default osl-munin::client).each do |r|
-    it do
-      expect(chef_run).to include_recipe(r)
-    end
+  it do
+    expect(chef_run).to include_recipe('osl-nrpe::default')
   end
   context 'Setting arch to ppc64le' do
     cached(:chef_run) do
@@ -24,22 +22,6 @@ describe 'osl-openstack::mon' do
         warning_condition: "#{total_cpu * 5 + 10},#{total_cpu * 5 + 5},#{total_cpu * 5}",
         critical_condition: "#{total_cpu * 8 + 10},#{total_cpu * 8 + 5},#{total_cpu * 8}"
       )
-    end
-  end
-  it do
-    expect(chef_run).to_not create_munin_plugin('cma')
-  end
-  context 'compute node w/ 4.14 kernel' do
-    cached(:chef_run) do
-      ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-        node.override['osl-openstack']['node_type'] = 'compute'
-        node.automatic['kernel']['release'] = '4.14.23-gentoo-osuosl-1.x86_64'
-        node.automatic['filesystem2']['by_mountpoint']
-      end.converge(described_recipe)
-    end
-    include_context 'identity_stubs'
-    it do
-      expect(chef_run).to create_munin_plugin('cma').with(plugin_dir: '/usr/share/munin/contrib/plugins/osuosl')
     end
   end
   context 'controller node' do
@@ -58,7 +40,7 @@ describe 'osl-openstack::mon' do
       end
     end
     it do
-      expect(chef_run).to run_execute('virtualenv /opt/osc-nagios')
+      expect(chef_run).to run_execute('virtualenv -p python3 /opt/osc-nagios')
         .with(
           creates: '/opt/osc-nagios/bin/pip'
         )
@@ -81,7 +63,7 @@ describe 'osl-openstack::mon' do
     it do
       expect(chef_run).to sync_git('/var/chef/cache/osops-tools-monitoring')
         .with(
-          revision: 'rocky',
+          revision: 'stein',
           repository: 'https://github.com/osuosl/osops-tools-monitoring.git'
         )
     end
@@ -222,7 +204,7 @@ describe 'osl-openstack::mon' do
         end.converge(described_recipe)
       end
       it do
-        expect(chef_run).to create_file('/usr/local/etc/os_cluster').with(content: "x86\n")
+        expect(chef_run).to create_file('/usr/local/etc/os_cluster').with(content: "export OS_CLUSTER=x86\n")
       end
       it do
         expect(chef_run).to install_chef_gem('prometheus_reporter')

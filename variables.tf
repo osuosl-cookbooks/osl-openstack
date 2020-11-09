@@ -2,7 +2,7 @@ variable "centos_atomic_image" {
     default = "CentOS Atomic 7.1902"
 }
 variable "centos_image" {
-    default = "CentOS 7.7"
+    default = "CentOS 7.8"
 }
 variable "ssh_key_name" {
     default = "bootstrap"

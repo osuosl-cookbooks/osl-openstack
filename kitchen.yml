@@ -29,21 +29,20 @@ provisioner:
       nova_public_key: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDYOuLkP1F/Sm/dCJAA7kme+ObO4J8x2HrZU40W8QqW4yFqRPKnW5HYLeUpRzIFzWen/LIn6R6lxTfSAnnD8qEEuKbFjH5WRqJYCJeAyaTBTRyU1FHlcTR/EQ/HVZ38TQwCztZgboFb5zmWqYc3/BYBHGA6XeYN5jRcHvZbyaGL+YA1/KPIjpbQfqIPXdHfodoSNX4qQQccYBq2c/rq3Puh7Q9oVph6a2lq0wWsqYyq0vTGHPKFYShVpwDl2Z3c8eB3P7yFRzOR2VNuezJlOgoHz6D/mBObLj1n+yi07bcGbpwAH/rLEyiy4gVdru2qQAcbDL9Yibk96lovim/IH4dV nova-migration
       physical_interface_mappings:
         -
-         name: public
-         controller:
-          default: eth1
-         compute:
-          default: eth1
+          name: public
+          controller:
+            default: eth1
+          compute:
+            default: eth1
     openstack:
+      compute:
+        nova_placement: false
       secret:
         key_path: "/tmp/kitchen/encrypted_data_bag_secret"
     ceph:
       fsid-secret: 'ae3f1d03-bacd-4a90-b869-1a4fabb107f2'
       keyring:
         mon: '/etc/ceph/$cluster.mon.keyring'
-    mariadb:
-      server_root_password: "rootpass"
-      forbid_remote_root: false
     yum:
       epel:
         baseurl: http://epel.osuosl.org/7/$basearch
@@ -69,13 +68,13 @@ suites:
         node_type: controller
   - name: ops_messaging
     driver_config:
-        server_name: "ops-messaging-<%= ENV['USER'] %>"
+      server_name: "ops-messaging-<%= ENV['USER'] %>"
     run_list:
       - role[openstack_tk]
       - recipe[osl-openstack::ops_messaging]
   - name: identity
     driver_config:
-        server_name: "identity-<%= ENV['USER'] %>"
+      server_name: "identity-<%= ENV['USER'] %>"
     run_list:
       - role[openstack_tk]
       - recipe[osl-openstack::ops_database]
@@ -83,7 +82,7 @@ suites:
       - recipe[openstack_test::cacert]
   - name: image
     driver_config:
-        server_name: "image-<%= ENV['USER'] %>"
+      server_name: "image-<%= ENV['USER'] %>"
     run_list:
       - role[ceph]
       - role[ceph_mon]
@@ -95,7 +94,7 @@ suites:
       - recipe[osl-openstack::image]
   - name: network
     driver_config:
-        server_name: "network-<%= ENV['USER'] %>"
+      server_name: "network-<%= ENV['USER'] %>"
     run_list:
       - recipe[openstack_test]
       - role[openstack_tk]
@@ -103,7 +102,7 @@ suites:
       - recipe[osl-openstack::network]
   - name: linuxbridge
     driver_config:
-        server_name: "linuxbridge-<%= ENV['USER'] %>"
+      server_name: "linuxbridge-<%= ENV['USER'] %>"
     run_list:
       - role[openstack_tk]
       - recipe[openstack_test]
@@ -111,14 +110,14 @@ suites:
       - recipe[osl-openstack::linuxbridge]
   - name: compute_controller
     driver_config:
-        server_name: "compute-controller-<%= ENV['USER'] %>"
+      server_name: "compute-controller-<%= ENV['USER'] %>"
     run_list:
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::compute_controller]
   - name: compute
     driver_config:
-        server_name: "compute-<%= ENV['USER'] %>"
+      server_name: "compute-<%= ENV['USER'] %>"
     run_list:
       - role[ceph]
       - role[ceph_mon]
@@ -131,14 +130,14 @@ suites:
       - recipe[osl-openstack::compute]
   - name: dashboard
     driver_config:
-        server_name: "dashboard-<%= ENV['USER'] %>"
+      server_name: "dashboard-<%= ENV['USER'] %>"
     run_list:
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::dashboard]
   - name: block_storage
     driver_config:
-        server_name: "block-storage-<%= ENV['USER'] %>"
+      server_name: "block-storage-<%= ENV['USER'] %>"
     run_list:
       - role[ceph]
       - role[ceph_mon]
@@ -152,14 +151,14 @@ suites:
       - recipe[osl-openstack::block_storage]
   - name: block_storage_controller
     driver_config:
-        server_name: "block-storage-controller-<%= ENV['USER'] %>"
+      server_name: "block-storage-controller-<%= ENV['USER'] %>"
     run_list:
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::block_storage_controller]
   - name: telemetry
     driver_config:
-        server_name: "telemetry-<%= ENV['USER'] %>"
+      server_name: "telemetry-<%= ENV['USER'] %>"
     run_list:
       - role[ceph]
       - role[ceph_mon]
@@ -173,14 +172,14 @@ suites:
       - recipe[osl-openstack::image]
   - name: orchestration
     driver_config:
-        server_name: "orchestration-<%= ENV['USER'] %>"
+      server_name: "orchestration-<%= ENV['USER'] %>"
     run_list:
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::orchestration]
   - name: controller
     driver_config:
-        server_name: "controller-<%= ENV['USER'] %>"
+      server_name: "controller-<%= ENV['USER'] %>"
     run_list:
       - role[ceph]
       - role[ceph_mon]
@@ -221,9 +220,10 @@ suites:
             create_volume_group: true
   - name: upgrade
     driver_config:
-        server_name: "upgrade-<%= ENV['USER'] %>"
+      flavor_ref: 'm1.large'
+      server_name: "upgrade-<%= ENV['USER'] %>"
     driver:
-      image_ref: "openstack-queens-aio"
+      image_ref: "openstack-rocky-aio"
     verifier:
       inspec_tests:
         - path: test/integration/controller/inspec
@@ -235,6 +235,7 @@ suites:
       - role[ceph_setup]
       - recipe[openstack_test::upgrade_start]
       - role[openstack_tk]
+      - recipe[openstack-ops-database::openstack-db]
       - recipe[osl-openstack::upgrade]
       - recipe[openstack_test::upgrade]
       - recipe[openstack_test]

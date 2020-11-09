@@ -62,6 +62,7 @@ resource "openstack_compute_instance_v2" "controller" {
                 }
             }
         EOF
+        client_options  = ["chef_license 'accept'"]
         run_list        = [
             "role[ceph]",
             "role[ceph_mon]",
@@ -83,7 +84,7 @@ resource "openstack_compute_instance_v2" "controller" {
         recreate_client = true
         user_name       = "fakeclient"
         user_key        = "${file("test/chef-config/fakeclient.pem")}"
-        version         = "14"
+        version         = "16"
     }
 }
 
@@ -103,6 +104,7 @@ resource "openstack_compute_instance_v2" "compute" {
         name = "openstack_network"
     }
     provisioner "chef" {
+        client_options  = ["chef_license 'accept'"]
         run_list        = [
             "role[openstack_provisioning]",
             "role[ceph]",
@@ -115,7 +117,7 @@ resource "openstack_compute_instance_v2" "compute" {
         recreate_client = true
         user_name       = "fakeclient"
         user_key        = "${file("test/chef-config/fakeclient.pem")}"
-        version         = "14"
+        version         = "16"
     }
 
     # Run chef-client again

@@ -16,6 +16,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+node.default['osl-apache']['install_resource'] = false
+
 include_recipe 'osl-openstack'
 include_recipe 'memcached'
 include_recipe 'certificate::wildcard'
