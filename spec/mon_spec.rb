@@ -206,7 +206,7 @@ describe 'osl-openstack::mon' do
         end.converge(described_recipe)
       end
       it do
-        expect(chef_run).to create_file('/usr/local/etc/os_cluster').with(content: "x86\n")
+        expect(chef_run).to create_file('/usr/local/etc/os_cluster').with(content: "export OS_CLUSTER=x86\n")
       end
       it do
         expect(chef_run).to install_chef_gem('prometheus_reporter')
