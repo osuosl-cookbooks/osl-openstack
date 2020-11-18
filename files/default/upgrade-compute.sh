@@ -8,7 +8,6 @@ set -ex
 rm -f /etc/cron.d/chef-client
 
 # Stop all OpenStack services
-systemctl snapshot openstack-services
 systemctl stop 'openstack-*'
 systemctl stop 'neutron-*'
 
