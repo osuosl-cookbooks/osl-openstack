@@ -34,3 +34,18 @@ include_recipe 'osl-openstack::orchestration'
 include_recipe 'osl-openstack::telemetry'
 include_recipe 'osl-openstack::dashboard'
 include_recipe 'osl-openstack::mon'
+
+# Ensure apache is installed the OSUOSL Way™
+edit_resource(:apache2_install, 'openstack') do
+  modules osl_apache_default_modules
+  mpm node['osl-apache']['mpm']
+  mpm_conf(
+    maxrequestworkers: node['osl-apache']['maxrequestworkers'] || osl_apache_max_clients,
+    serverlimit: node['osl-apache']['serverlimit'] || osl_apache_max_clients
+  )
+  mod_conf(
+    status: {
+      extended_status: 'On',
+    }
+  )
+end
