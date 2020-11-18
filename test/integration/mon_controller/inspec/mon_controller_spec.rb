@@ -79,7 +79,7 @@ describe file '/usr/local/libexec/openstack-prometheus.rb' do
   it { should be_executable }
 end
 
-describe crontab 'root' do
+describe crontab('root').commands('/usr/local/libexec/openstack-prometheus') do
   its('commands') { should include '/usr/local/libexec/openstack-prometheus' }
   its('minutes') { should cmp '*/10' }
 end
