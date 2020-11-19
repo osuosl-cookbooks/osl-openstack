@@ -106,6 +106,12 @@ node.default['openstack']['compute']['libvirt']['conf'].tap do |conf|
   conf['max_requests'] = '200'
   conf['max_client_requests'] = '50'
 end
+# TODO(ramereth): remove once fixed upstream
+node.default['openstack']['compute']['placement']['threads'] = 1
+node.default['openstack']['compute']['placement']['processes'] = 6
+node.default['openstack']['compute']['metadata']['threads'] = 1
+node.default['openstack']['compute']['metadata']['processes'] = 6
+
 node.default['openstack']['compute']['conf'].tap do |conf|
   conf['filter_scheduler']['enabled_filters'] =
     %w(

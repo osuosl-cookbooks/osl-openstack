@@ -65,6 +65,20 @@ describe 'osl-openstack::controller' do
       end
     end
   end
+  it do
+    expect(chef_run).to install_apache2_install('openstack').with(
+      modules: %w(status alias auth_basic authn_core authn_file authz_core authz_groupfile authz_host authz_user autoindex deflate dir env mime negotiation setenvif log_config logio unixd systemd),
+      mpm_conf: {
+        maxrequestworkers: 10,
+        serverlimit: 10,
+      },
+      mod_conf: {
+        status: {
+          extended_status: 'On',
+        },
+      }
+    )
+  end
   context 'Separate Network Node' do
     cached(:chef_run) { runner.converge(described_recipe) }
     before do

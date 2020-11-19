@@ -234,11 +234,25 @@ describe 'osl-openstack::compute_controller' do
     )
   end
 
+  describe '/etc/httpd/sites-available/nova-metadata.conf' do
+    let(:file) { chef_run.template('/etc/httpd/sites-available/nova-metadata.conf') }
+
+    [
+      /^<VirtualHost 10.0.0.2:8775>$/,
+      /WSGIDaemonProcess nova-metadata processes=6 threads=1/,
+    ].each do |line|
+      it do
+        expect(chef_run).to render_file(file.name).with_content(line)
+      end
+    end
+  end
+
   describe '/etc/httpd/sites-available/nova-placement.conf' do
     let(:file) { chef_run.template('/etc/httpd/sites-available/nova-placement.conf') }
 
     [
       /^<VirtualHost 10.0.0.2:8778>$/,
+      /WSGIDaemonProcess placement-api processes=6 threads=1/,
     ].each do |line|
       it do
         expect(chef_run).to render_file(file.name).with_content(line)
