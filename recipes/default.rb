@@ -638,7 +638,7 @@ yum_repository 'OSL-openpower-openstack' do
 end
 
 include_recipe 'base::packages'
-include_recipe 'yum-epel'
+include_recipe 'osl-repos::epel'
 
 package %w(
   libffi-devel
