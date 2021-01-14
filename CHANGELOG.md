@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+9.0.2 (2021-01-14)
+------------------
+- Cookstyle fixes
+
 9.0.1 (2020-11-19)
 ------------------
 - Misc Stein Fixes
