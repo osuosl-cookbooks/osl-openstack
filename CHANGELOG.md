@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+9.1.0 (2021-02-03)
+------------------
+- Replace any occurrence of yum-centos/yum-epel/yum-elrepo with osl-repos equivalents
+
 9.0.2 (2021-01-14)
 ------------------
 - Cookstyle fixes
