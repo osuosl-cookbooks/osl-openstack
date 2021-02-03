@@ -1,7 +1,7 @@
 Metrics/BlockNesting:
   Max: 4
 AllCops:
-  TargetChefVersion: 15.latest
+  TargetChefVersion: 16.latest
 Chef/Modernize/FoodcriticComments:
   Enabled: true
 Chef/Style/CopyrightCommentFormat:
