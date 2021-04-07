@@ -4,7 +4,7 @@ source_url       'https://github.com/osuosl-cookbooks/osl-openstack'
 maintainer       'Oregon State University'
 maintainer_email 'systems@osuosl.org'
 license          'Apache-2.0'
-chef_version     '>= 14.0'
+chef_version     '>= 16.0'
 description      'Installs/Configures osl-openstack'
 version          '9.1.0'
 
