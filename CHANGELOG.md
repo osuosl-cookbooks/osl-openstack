@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+9.2.0 (2021-04-07)
+------------------
+- Update Chef dependency to >= 16
+
 9.1.0 (2021-02-03)
 ------------------
 - Replace any occurrence of yum-centos/yum-epel/yum-elrepo with osl-repos equivalents
