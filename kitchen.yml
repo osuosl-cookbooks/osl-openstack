@@ -11,6 +11,8 @@ provisioner:
   roles_path: test/integration/roles
   data_bags_path: test/integration/data_bags
   encrypted_data_bag_secret_key_path: test/integration/encrypted_data_bag_secret
+  # enforce_idempotency: true
+  # multiple_converge: 2
   attributes:
     base:
       packages: []

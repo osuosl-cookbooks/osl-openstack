@@ -16,9 +16,6 @@ describe 'osl-openstack::compute' do
   include_context 'network_stubs'
   include_context 'telemetry_stubs'
   %w(
-    firewall
-    firewall::openstack
-    firewall::vnc
     osl-openstack::default
     osl-openstack::linuxbridge
     openstack-compute::compute
@@ -29,6 +26,9 @@ describe 'osl-openstack::compute' do
       expect(chef_run).to include_recipe(r)
     end
   end
+
+  it { expect(chef_run).to accept_osl_firewall_openstack('osl-openstack') }
+  it { expect(chef_run).to accept_osl_firewall_vnc('osl-openstack') }
 
   it do
     expect(chef_run).to edit_delete_lines('remove dhcpbridge on compute')

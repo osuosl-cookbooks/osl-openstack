@@ -20,9 +20,6 @@ describe 'osl-openstack::controller' do
   end
   %w(
     osl-apache::default
-    firewall::openstack
-    firewall::memcached
-    firewall::vnc
     osl-openstack::default
     memcached
     osl-openstack::identity
@@ -37,20 +34,16 @@ describe 'osl-openstack::controller' do
       expect(chef_run).to include_recipe(r)
     end
   end
+
+  it { expect(chef_run).to accept_osl_firewall_openstack('osl-openstack') }
+  it { expect(chef_run).to accept_osl_firewall_vnc('osl-openstack') }
+
   it 'adds cluster nodes ipaddresses' do
-    expect(chef_run).to create_iptables_ng_rule('memcached_ipv4').with(
-      rule:
-        [
-          '--protocol tcp --source 10.0.0.10 --destination-port 11211 --jump ACCEPT',
-          '--protocol udp --source 10.0.0.10 --destination-port 11211 --jump ACCEPT',
-          '--protocol tcp --source 10.0.0.11 --destination-port 11211 --jump ACCEPT',
-          '--protocol udp --source 10.0.0.11 --destination-port 11211 --jump ACCEPT',
-          '--protocol tcp --source 127.0.0.1 --destination-port 11211 --jump ACCEPT',
-          '--protocol udp --source 127.0.0.1 --destination-port 11211 --jump ACCEPT',
-        ],
-      chain: 'memcached'
+    expect(chef_run).to accept_osl_firewall_memcached('osl-openstack').with(
+      allowed_ipv4: %w(10.0.0.10 10.0.0.11 127.0.0.1)
     )
   end
+
   describe '/etc/nova/nova.conf' do
     let(:file) { chef_run.template('/etc/nova/nova.conf') }
 

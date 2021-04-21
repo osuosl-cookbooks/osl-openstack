@@ -17,7 +17,9 @@
 # limitations under the License.
 #
 include_recipe 'osl-openstack'
-include_recipe 'firewall::openstack'
+
+osl_firewall_openstack 'osl-openstack'
+
 include_recipe 'openstack-block-storage::api'
 include_recipe 'openstack-block-storage::scheduler'
 include_recipe 'openstack-block-storage::identity_registration'

@@ -10,7 +10,6 @@ describe 'osl-openstack::network', network: true do
   include_context 'network_stubs'
   %w(
     osl-openstack
-    firewall::openstack
     openstack-network::identity_registration
     openstack-network::ml2_core_plugin
     openstack-network::ml2_linuxbridge
@@ -26,6 +25,9 @@ describe 'osl-openstack::network', network: true do
       expect(chef_run).to include_recipe(r)
     end
   end
+
+  it { expect(chef_run).to accept_osl_firewall_openstack('osl-openstack') }
+
   context 'Set subnet and uuid in physical_interface_mappings' do
     cached(:chef_run) do
       ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|

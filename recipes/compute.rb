@@ -24,9 +24,9 @@ node.default['ceph']['config-sections'].tap do |conf|
   conf['client']['log file'] = '/var/log/ceph/qemu-guest-$pid.log'
 end
 
-include_recipe 'firewall'
-include_recipe 'firewall::openstack'
-include_recipe 'firewall::vnc'
+osl_firewall_openstack 'osl-openstack'
+osl_firewall_vnc 'osl-openstack'
+
 include_recipe 'osl-openstack::default'
 include_recipe 'ibm-power::default'
 

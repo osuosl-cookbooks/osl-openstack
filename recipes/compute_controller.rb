@@ -17,7 +17,9 @@
 # limitations under the License.
 #
 include_recipe 'osl-openstack'
-include_recipe 'firewall::openstack'
+
+osl_firewall_openstack 'osl-openstack'
+
 include_recipe 'openstack-compute::nova-setup'
 include_recipe 'openstack-compute::conductor'
 include_recipe 'openstack-compute::api-os-compute'

@@ -9,7 +9,6 @@ describe 'osl-openstack::image', image: true do
   include_context 'image_stubs'
   %w(
     osl-openstack
-    firewall::openstack
     openstack-image::api
     openstack-image::identity_registration
     openstack-image::image_upload
@@ -18,6 +17,9 @@ describe 'osl-openstack::image', image: true do
       expect(chef_run).to include_recipe(r)
     end
   end
+
+  it { expect(chef_run).to accept_osl_firewall_openstack('osl-openstack') }
+
   %w(api).each do |f|
     describe "/etc/glance/glance-#{f}.conf" do
       let(:file) { chef_run.template("/etc/glance/glance-#{f}.conf") }

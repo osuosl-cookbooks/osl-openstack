@@ -15,5 +15,8 @@ hostsfile_entry controller_ip do
   hostname 'controller.example.com'
 end
 
-node.default['firewall']['range']['osl_managed']['4'] << '10.1.100.0/22'
-node.default['firewall']['range']['memcached']['4'] << '10.1.100.0/22'
+%i(memcached).each do |r|
+  edit_resource(:"osl_firewall_#{r}", 'osl-openstack') do
+    allowed_ipv4 %w(10.1.100.0/22)
+  end
+end

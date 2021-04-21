@@ -44,8 +44,7 @@ vxlan_ip = if vxlan_addrs.nil? || vxlan_addrs['addresses'].empty?
              end
            end
 
-node.default['openstack']['network']['plugins']['linuxbridge']['conf']
-    .tap do |conf|
+node.default['openstack']['network']['plugins']['linuxbridge']['conf'].tap do |conf|
   conf['linux_bridge']['physical_interface_mappings'] = int_mappings.join(',')
   conf['vxlan']['local_ip'] = vxlan_ip
 end
@@ -53,6 +52,7 @@ end
 include_recipe 'openstack-network::ml2_linuxbridge'
 
 systemd_service_drop_in node['openstack']['network']['platform']['neutron_linuxbridge_agent_service'] do
-  unit_part_of "#{node['iptables-ng']['service_ipv4']}.service"
+  extend Iptables::Cookbook::Helpers
+  unit_part_of "#{get_service_name(:ipv4)}.service"
   override "#{node['openstack']['network']['platform']['neutron_linuxbridge_agent_service']}.service"
 end

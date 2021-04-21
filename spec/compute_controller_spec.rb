@@ -10,7 +10,6 @@ describe 'osl-openstack::compute_controller' do
   include_context 'compute_stubs'
   %w(
     osl-openstack
-    firewall::openstack
     openstack-compute::nova-setup
     openstack-compute::conductor
     openstack-compute::scheduler
@@ -24,6 +23,8 @@ describe 'osl-openstack::compute_controller' do
       expect(chef_run).to include_recipe(r)
     end
   end
+
+  it { expect(chef_run).to accept_osl_firewall_openstack('osl-openstack') }
 
   it do
     expect(chef_run).to edit_delete_lines('remove dhcpbridge on controller')

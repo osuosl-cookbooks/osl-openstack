@@ -83,12 +83,12 @@ if node['osl-openstack']['node_type'] == 'controller'
   # Wrapper for using sudo to check openstack services
   file check_openstack do
     mode '755'
-    content <<-EOF
-#!/bin/bash
+    content <<~EOF
+      #!/bin/bash
 
-source /root/openrc
-#{node['nrpe']['plugin_dir']}/${@}
-EOF
+      source /root/openrc
+      #{node['nrpe']['plugin_dir']}/${@}
+    EOF
   end
 
   sudo 'nrpe-openstack' do
