@@ -17,7 +17,9 @@
 # limitations under the License.
 #
 include_recipe 'osl-openstack'
-include_recipe 'firewall::openstack'
+
+osl_firewall_openstack 'osl-openstack'
+
 include_recipe 'openstack-network::identity_registration'
 include_recipe 'openstack-network::ml2_core_plugin'
 include_recipe 'openstack-network'

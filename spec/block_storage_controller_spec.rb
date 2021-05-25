@@ -10,7 +10,6 @@ describe 'osl-openstack::block_storage_controller' do
   include_context 'block_storage_stubs'
   %w(
     osl-openstack
-    firewall::openstack
     openstack-block-storage::api
     openstack-block-storage::scheduler
     openstack-block-storage::identity_registration
@@ -19,6 +18,9 @@ describe 'osl-openstack::block_storage_controller' do
       expect(chef_run).to include_recipe(r)
     end
   end
+
+  it { expect(chef_run).to accept_osl_firewall_openstack('osl-openstack') }
+
   describe '/etc/cinder/cinder.conf' do
     let(:file) { chef_run.template('/etc/cinder/cinder.conf') }
     [

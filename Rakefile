@@ -31,14 +31,10 @@ end
 desc 'Create Chef Key'
 task :create_key do
   unless File.exist?("#{client_cfg}/validator.pem")
-    sh %(chef exec ruby -e "require 'openssl';
-File.binwrite('#{client_cfg}/validator.pem',
-OpenSSL::PKey::RSA.new(2048).to_pem)")
+    File.binwrite("#{client_cfg}/validator.pem", OpenSSL::PKey::RSA.new(2048).to_pem)
   end
   unless File.exist?("#{client_cfg}/fakeclient.pem")
-    sh %(chef exec ruby -e "require 'openssl';
-File.binwrite('#{client_cfg}/fakeclient.pem',
-OpenSSL::PKey::RSA.new(2048).to_pem)")
+    File.binwrite("#{client_cfg}/fakeclient.pem", OpenSSL::PKey::RSA.new(2048).to_pem)
   end
 end
 

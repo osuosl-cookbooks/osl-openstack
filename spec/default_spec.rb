@@ -57,7 +57,6 @@ describe 'osl-openstack::default' do
   end
   %w(
     base::packages
-    firewall
     openstack-common
     openstack-common::client
     openstack-common::logging

@@ -17,6 +17,8 @@
 # limitations under the License.
 #
 include_recipe 'osl-openstack'
-include_recipe 'firewall::mysql'
+
+osl_firewall_port 'mysql'
+
 include_recipe 'openstack-ops-database::server'
 include_recipe 'openstack-ops-database::openstack-db'

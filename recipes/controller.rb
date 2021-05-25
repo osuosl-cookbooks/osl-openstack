@@ -20,9 +20,19 @@ node.default['osl-openstack']['node_type'] = 'controller'
 node.default['osl-apache']['install_resource'] = false
 
 include_recipe 'osl-openstack::default'
-include_recipe 'firewall::openstack'
-include_recipe 'firewall::memcached'
-include_recipe 'firewall::vnc'
+
+osl_firewall_openstack 'osl-openstack'
+osl_firewall_vnc 'osl-openstack'
+
+cluster_hosts = %w(127.0.0.1)
+search(:node, "role:#{node['osl-openstack']['cluster_role']}") do |n|
+  cluster_hosts << n['ipaddress']
+end
+
+osl_firewall_memcached 'osl-openstack' do
+  allowed_ipv4 cluster_hosts.flatten.sort
+end
+
 include_recipe 'memcached'
 include_recipe 'osl-openstack::identity'
 include_recipe 'osl-apache::default'

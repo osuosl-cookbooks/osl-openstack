@@ -17,6 +17,8 @@
 # limitations under the License.
 #
 include_recipe 'osl-openstack'
-include_recipe 'firewall::amqp'
-include_recipe 'firewall::rabbitmq_mgt'
+
+osl_firewall_port 'amqp'
+osl_firewall_port 'rabbitmq_mgt'
+
 include_recipe 'openstack-ops-messaging::rabbitmq-server'

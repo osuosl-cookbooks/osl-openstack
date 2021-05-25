@@ -9,7 +9,6 @@ describe 'osl-openstack::identity', identity: true do
   %w(
     osl-openstack
     osl-openstack::ops_messaging
-    firewall::openstack
     openstack-identity::server-apache
     openstack-identity::registration
   ).each do |r|
@@ -17,6 +16,9 @@ describe 'osl-openstack::identity', identity: true do
       expect(chef_run).to include_recipe(r)
     end
   end
+
+  it { expect(chef_run).to accept_osl_firewall_openstack('osl-openstack') }
+
   describe '/etc/keystone/keystone.conf' do
     let(:file) { chef_run.template('/etc/keystone/keystone.conf') }
     [
