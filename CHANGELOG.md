@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+10.0.0 (2021-05-25)
+-------------------
+- Update to new osl-firewall resources
+
 9.2.0 (2021-04-07)
 ------------------
 - Update Chef dependency to >= 16
