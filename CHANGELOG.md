@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+10.0.1 (2021-05-26)
+-------------------
+- Ensure that https is open for the dashboard
+
 10.0.0 (2021-05-25)
 -------------------
 - Update to new osl-firewall resources
