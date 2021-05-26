@@ -18,6 +18,7 @@
 #
 node.default['osl-openstack']['node_type'] = 'controller'
 node.default['osl-apache']['install_resource'] = false
+node.default['osl-apache']['listen'] = %w(80 443)
 
 include_recipe 'osl-openstack::default'
 
