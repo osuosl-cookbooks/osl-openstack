@@ -17,6 +17,7 @@
 # limitations under the License.
 #
 node.default['osl-apache']['install_resource'] = false
+node.default['osl-apache']['listen'] = %w(80 443)
 
 include_recipe 'osl-openstack'
 include_recipe 'memcached'
