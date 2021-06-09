@@ -1,1 +1,0 @@
-../../identity/inspec/identity_spec.rb

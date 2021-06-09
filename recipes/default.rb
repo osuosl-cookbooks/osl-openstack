@@ -44,6 +44,7 @@ node.default['openstack']['yum']['uri'] =
 node.default['openstack']['yum']['repo-key'] = 'https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Cloud'
 node.default['openstack']['identity']['ssl'].tap do |conf|
   conf['enabled'] = true
+  conf['protocol'] = '-all +TLSv1.2'
   conf['basedir'] = '/etc/pki/tls'
   conf['certfile'] = '/etc/pki/tls/certs/wildcard.pem'
   conf['keyfile'] = '/etc/pki/tls/private/wildcard.key'
@@ -210,6 +211,7 @@ node.default['openstack']['orchestration']['conf'].tap do |conf|
 end
 node.default['openstack']['dashboard'].tap do |conf|
   conf['use_ssl'] = true
+  conf['ssl']['protocol'] = '-all +TLSv1.2'
   conf['ssl']['use_data_bag'] = false
   conf['ssl']['key'] = 'wildcard.key'
   conf['ssl']['cert'] = 'wildcard.pem'

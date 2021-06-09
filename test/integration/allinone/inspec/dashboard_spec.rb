@@ -1,1 +1,0 @@
-../../dashboard/inspec/dashboard_spec.rb
