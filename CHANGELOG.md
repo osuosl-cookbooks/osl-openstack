@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+10.1.0 (2021-06-14)
+-------------------
+- Various SSL/TLS fixes for CISA
+
 10.0.1 (2021-05-26)
 -------------------
 - Ensure that https is open for the dashboard
