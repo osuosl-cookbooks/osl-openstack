@@ -18,8 +18,8 @@ describe 'osl-openstack::ops_messaging', ops_messaging: true do
     end
   end
 
-  it { expect(chef_run).to accept_osl_firewall_port('amqp') }
-  it { expect(chef_run).to accept_osl_firewall_port('rabbitmq_mgt') }
+  it { expect(chef_run).to accept_osl_firewall_port('amqp').with(osl_only: true) }
+  it { expect(chef_run).to accept_osl_firewall_port('rabbitmq_mgt').with(osl_only: true) }
 
   it 'sets rabbitmq attributes' do
     expect(chef_run.node['rabbitmq']['use_distro_version']).to eq(

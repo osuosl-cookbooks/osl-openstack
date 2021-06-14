@@ -1,0 +1,10 @@
+---
+name: identity
+depends:
+  - name: osuosl-baseline
+    git: https://github.com/osuosl/osuosl-baseline.git
+inputs:
+  - name: ssl_port
+    profile: osuosl-baseline
+    value:
+      - 5000

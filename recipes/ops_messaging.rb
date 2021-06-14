@@ -18,7 +18,12 @@
 #
 include_recipe 'osl-openstack'
 
-osl_firewall_port 'amqp'
-osl_firewall_port 'rabbitmq_mgt'
+osl_firewall_port 'amqp' do
+  osl_only true
+end
+
+osl_firewall_port 'rabbitmq_mgt' do
+  osl_only true
+end
 
 include_recipe 'openstack-ops-messaging::rabbitmq-server'
