@@ -1,5 +1,6 @@
 resource_name :osc_nagios_check
 provides :osc_nagios_check
+unified_mode true
 default_action :add
 
 property :parameters, String, default: ''
