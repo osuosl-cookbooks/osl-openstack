@@ -6,7 +6,7 @@ maintainer_email 'systems@osuosl.org'
 license          'Apache-2.0'
 chef_version     '>= 16.0'
 description      'Installs/Configures osl-openstack'
-version          '10.1.0'
+version          '10.2.0'
 
 depends 'apache2'
 depends 'base'

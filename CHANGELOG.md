@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+10.2.0 (2021-06-30)
+-------------------
+- Enable unified_mode
+
 10.1.0 (2021-06-14)
 -------------------
 - Various SSL/TLS fixes for CISA
