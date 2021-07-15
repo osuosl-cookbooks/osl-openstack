@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+10.2.1 (2021-07-15)
+-------------------
+- Replace systemd resource with osl equivilent
+
 10.2.0 (2021-06-30)
 -------------------
 - Enable unified_mode
