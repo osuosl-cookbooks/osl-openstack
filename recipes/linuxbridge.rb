@@ -51,8 +51,12 @@ end
 
 include_recipe 'openstack-network::ml2_linuxbridge'
 
-systemd_service_drop_in node['openstack']['network']['platform']['neutron_linuxbridge_agent_service'] do
+osl_systemd_unit_drop_in node['openstack']['network']['platform']['neutron_linuxbridge_agent_service'] do
   extend Iptables::Cookbook::Helpers
-  unit_part_of "#{get_service_name(:ipv4)}.service"
-  override "#{node['openstack']['network']['platform']['neutron_linuxbridge_agent_service']}.service"
+  content({
+    'Unit' => {
+      'PartOf' => "#{get_service_name(:ipv4)}.service",
+    },
+  })
+  unit_name "#{node['openstack']['network']['platform']['neutron_linuxbridge_agent_service']}.service"
 end
