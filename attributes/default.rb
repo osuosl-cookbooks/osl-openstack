@@ -21,7 +21,9 @@ default['osl-openstack']['data_bags'] = %w(
   user_passwords
 )
 default['osl-openstack']['credentials']['ceph'] = {}
-default['osl-openstack']['ceph'] = false
+default['osl-openstack']['ceph']['image'] = false
+default['osl-openstack']['ceph']['compute'] = false
+default['osl-openstack']['ceph']['volume'] = false
 default['osl-openstack']['ceph_databag'] = 'ceph'
 default['osl-openstack']['ceph_item'] = 'openstack'
 default['osl-openstack']['cluster_role'] = 'openstack'

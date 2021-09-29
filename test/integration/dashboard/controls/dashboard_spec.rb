@@ -1,4 +1,6 @@
-include_controls 'osuosl-baseline'
+require_controls 'osuosl-baseline' do
+  control 'ssl-baseline'
+end
 
 control 'openstack-dashboard' do
   %w(80 443).each do |p|

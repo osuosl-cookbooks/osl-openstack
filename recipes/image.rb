@@ -23,7 +23,7 @@ osl_firewall_openstack 'osl-openstack'
 include_recipe 'openstack-image::api'
 include_recipe 'openstack-image::identity_registration'
 
-if node['osl-openstack']['ceph']
+if node['osl-openstack']['ceph']['image']
   secrets = openstack_credential_secrets
 
   group 'ceph-image' do

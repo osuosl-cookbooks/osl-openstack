@@ -85,7 +85,7 @@ node.default['openstack']['identity']['pipeline']['api_v3'] =
 node.default['openstack']['image_api']['conf'].tap do |conf|
   conf['DEFAULT']['enable_v1_api'] = false
   conf['DEFAULT']['enable_v2_api'] = true
-  if node['osl-openstack']['ceph']
+  if node['osl-openstack']['ceph']['image']
     conf['DEFAULT']['show_image_direct_url'] = true
     # show_multiple_locations will be deprecated soon [1][2][3]
     # [1] https://docs.openstack.org/releasenotes/glance/newton.html#relnotes-13-0-0-origin-stable-newton
@@ -134,7 +134,7 @@ node.default['openstack']['compute']['conf'].tap do |conf|
   conf['DEFAULT']['block_device_allocate_retries'] = 120
   conf['DEFAULT']['compute_monitors'] = 'cpu.virt_driver'
   conf['notifications']['notify_on_state_change'] = 'vm_and_task_state'
-  if node['osl-openstack']['ceph']
+  if node['osl-openstack']['ceph']['compute']
     conf['libvirt']['disk_cachemodes'] = 'network=writeback'
     conf['libvirt']['force_raw_images'] = true
     conf['libvirt']['hw_disk_discard'] = 'unmap'
@@ -390,7 +390,7 @@ node.override['openstack']['block-storage']['conf'].tap do |conf|
   conf['DEFAULT']['volume_group'] = 'openstack'
   conf['DEFAULT']['volume_clear_size'] = 256
   conf['DEFAULT']['enable_v3_api'] = true
-  if node['osl-openstack']['ceph']
+  if node['osl-openstack']['ceph']['volume']
     conf['DEFAULT']['enabled_backends'] = 'ceph,ceph_ssd'
     conf['DEFAULT']['backup_driver'] = 'cinder.backup.drivers.ceph'
     conf['DEFAULT']['backup_ceph_conf'] = '/etc/ceph/ceph.conf'
@@ -670,7 +670,11 @@ package 'python2-urllib3' do
   action :upgrade
 end
 
-include_recipe 'osl-ceph' if node['osl-openstack']['ceph']
+if node['osl-openstack']['ceph']['image'] || \
+   node['osl-openstack']['ceph']['compute'] || \
+   node['osl-openstack']['ceph']['volume']
+  include_recipe 'osl-ceph'
+end
 
 # Needed for accessing neutron when running separate from controller node
 package 'python-memcached'

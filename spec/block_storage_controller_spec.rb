@@ -95,7 +95,7 @@ describe 'osl-openstack::block_storage_controller' do
     context 'Set ceph' do
       let(:runner) do
         ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-          node.override['osl-openstack']['ceph'] = true
+          node.override['osl-openstack']['ceph']['volume'] = true
           node.automatic['filesystem2']['by_mountpoint']
         end
       end
