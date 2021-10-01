@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+10.3.0 (2021-10-01)
+-------------------
+- Split ceph enablement between image, compute and volume services
+
 10.2.1 (2021-07-15)
 -------------------
 - Replace systemd resource with osl equivilent
