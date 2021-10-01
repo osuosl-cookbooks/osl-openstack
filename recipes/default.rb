@@ -134,6 +134,10 @@ node.default['openstack']['compute']['conf'].tap do |conf|
   conf['DEFAULT']['block_device_allocate_retries'] = 120
   conf['DEFAULT']['compute_monitors'] = 'cpu.virt_driver'
   conf['notifications']['notify_on_state_change'] = 'vm_and_task_state'
+  if node['osl-openstack']['ceph']['volume']
+    conf['libvirt']['rbd_secret_uuid'] = node['ceph']['fsid-secret']
+    conf['libvirt']['rbd_user'] = node['osl-openstack']['block']['rbd_store_user']
+  end
   if node['osl-openstack']['ceph']['compute']
     conf['libvirt']['disk_cachemodes'] = 'network=writeback'
     conf['libvirt']['force_raw_images'] = true
@@ -152,8 +156,6 @@ node.default['openstack']['compute']['conf'].tap do |conf|
         VIR_MIGRATE_PERSIST_DEST
         VIR_MIGRATE_TUNNELLED
       ).join(',')
-    conf['libvirt']['rbd_secret_uuid'] = node['ceph']['fsid-secret']
-    conf['libvirt']['rbd_user'] = node['osl-openstack']['block']['rbd_store_user']
   else
     conf['libvirt']['disk_cachemodes'] = 'file=writeback,block=none'
   end
