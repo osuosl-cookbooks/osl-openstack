@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+10.3.1 (2021-10-01)
+-------------------
+- Include _block_ceph recipe if cinder is using ceph
+
 10.3.0 (2021-10-01)
 -------------------
 - Split ceph enablement between image, compute and volume services
