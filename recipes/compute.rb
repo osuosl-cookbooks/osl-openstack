@@ -126,7 +126,9 @@ if node['osl-openstack']['ceph']['compute']
     notifies :restart, 'service[nova-compute]', :immediately
     notifies :restart, 'service[libvirt-bin]', :immediately
   end
+end
 
+if node['osl-openstack']['ceph']['volume'] || node['osl-openstack']['ceph']['compute']
   secrets = openstack_credential_secrets
   secret_uuid = node['ceph']['fsid-secret']
   ceph_user = node['osl-openstack']['block']['rbd_store_user']
