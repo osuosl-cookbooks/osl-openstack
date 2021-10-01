@@ -47,7 +47,7 @@ describe 'osl-openstack::image', image: true do
         next unless f == 'api'
         let(:runner) do
           ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-            node.override['osl-openstack']['ceph'] = true
+            node.override['osl-openstack']['ceph']['image'] = true
             node.automatic['filesystem2']['by_mountpoint']
           end
         end
@@ -114,7 +114,7 @@ describe 'osl-openstack::image', image: true do
           next unless f == 'api'
           let(:runner) do
             ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-              node.override['osl-openstack']['ceph'] = true
+              node.override['osl-openstack']['ceph']['image'] = true
               node.automatic['filesystem2']['by_mountpoint']
             end
           end

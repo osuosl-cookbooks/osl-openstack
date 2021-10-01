@@ -104,7 +104,7 @@ end
 # This resource is causing issues with virsh so remove it
 delete_resource(:execute, 'Deleting default libvirt network')
 
-if node['osl-openstack']['ceph']
+if node['osl-openstack']['ceph']['compute']
   %w(
     /var/run/ceph/guests
     /var/log/ceph

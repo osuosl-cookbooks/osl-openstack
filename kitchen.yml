@@ -17,7 +17,10 @@ provisioner:
     base:
       packages: []
     osl-openstack:
-      ceph: true
+      ceph:
+        image: true
+        compute: true
+        volume: true
       cluster_role: openstack_tk
       database_suffix: x86
       databag_prefix: x86

@@ -1,4 +1,6 @@
-include_controls 'osuosl-baseline'
+require_controls 'osuosl-baseline' do
+  control 'ssl-baseline'
+end
 
 control 'openstack-identity' do
   describe service('httpd') do
