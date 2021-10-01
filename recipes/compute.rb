@@ -104,6 +104,9 @@ end
 # This resource is causing issues with virsh so remove it
 delete_resource(:execute, 'Deleting default libvirt network')
 
+# We still need the ceph keys if we're using it for cinder
+include_recipe 'osl-openstack::_block_ceph' if node['osl-openstack']['ceph']['volume']
+
 if node['osl-openstack']['ceph']['compute']
   %w(
     /var/run/ceph/guests
@@ -114,8 +117,6 @@ if node['osl-openstack']['ceph']['compute']
       group 'libvirt'
     end
   end
-
-  include_recipe 'osl-openstack::_block_ceph'
 
   group 'ceph-compute' do
     group_name 'ceph'
