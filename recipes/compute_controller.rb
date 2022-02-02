@@ -54,8 +54,6 @@ proxy_service = "service[#{platform_options['compute_vncproxy_service']}]"
 ssl_dir = node['osl-openstack']['nova_ssl_dir']
 novnc = node['osl-openstack']['novnc']
 
-directory '/etc/nova/pki'
-
 certificate_manage 'novnc' do
   cert_path ssl_dir
   cert_file novnc['cert_file']
