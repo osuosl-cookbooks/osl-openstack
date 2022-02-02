@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+10.3.4 (2022-02-02)
+-------------------
+- Misc fixes
+
 10.3.3 (2021-10-02)
 -------------------
 - Add ceph secret into libvirt
