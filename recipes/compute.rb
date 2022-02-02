@@ -101,9 +101,6 @@ delete_lines 'remove force_dhcp_release on compute' do
   notifies :restart, 'service[nova-compute]'
 end
 
-# This resource is causing issues with virsh so remove it
-delete_resource(:execute, 'Deleting default libvirt network')
-
 # We still need the ceph keys if we're using it for cinder
 include_recipe 'osl-openstack::_block_ceph' if node['osl-openstack']['ceph']['volume']
 
