@@ -262,10 +262,6 @@ describe 'osl-openstack::compute_controller' do
     end
   end
 
-  it 'creates /etc/nova/pki directory' do
-    expect(chef_run).to create_directory('/etc/nova/pki')
-  end
-
   it 'creates novnc certificate resource' do
     expect(chef_run).to create_certificate_manage('novnc')
   end

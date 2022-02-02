@@ -2,7 +2,7 @@
 # Cookbook:: osl-openstack
 # Recipe:: compute
 #
-# Copyright:: 2014-2021, Oregon State University
+# Copyright:: 2014-2022, Oregon State University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -100,9 +100,6 @@ delete_lines 'remove force_dhcp_release on compute' do
   backup true
   notifies :restart, 'service[nova-compute]'
 end
-
-# This resource is causing issues with virsh so remove it
-delete_resource(:execute, 'Deleting default libvirt network')
 
 # We still need the ceph keys if we're using it for cinder
 include_recipe 'osl-openstack::_block_ceph' if node['osl-openstack']['ceph']['volume']

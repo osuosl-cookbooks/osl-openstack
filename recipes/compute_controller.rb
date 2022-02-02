@@ -2,7 +2,7 @@
 # Cookbook:: osl-openstack
 # Recipe:: compute_controller
 #
-# Copyright:: 2016-2021, Oregon State University
+# Copyright:: 2016-2022, Oregon State University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -53,8 +53,6 @@ platform_options = node['openstack']['compute']['platform']
 proxy_service = "service[#{platform_options['compute_vncproxy_service']}]"
 ssl_dir = node['osl-openstack']['nova_ssl_dir']
 novnc = node['osl-openstack']['novnc']
-
-directory '/etc/nova/pki'
 
 certificate_manage 'novnc' do
   cert_path ssl_dir

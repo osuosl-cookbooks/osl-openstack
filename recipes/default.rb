@@ -2,7 +2,7 @@
 # Cookbook:: osl-openstack
 # Recipe:: default
 #
-# Copyright:: 2014-2021, Oregon State University
+# Copyright:: 2014-2022, Oregon State University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -643,6 +643,10 @@ end
 
 include_recipe 'base::packages'
 include_recipe 'osl-repos::epel'
+
+# TODO: These packages conflict with Stein
+r = resources(osl_repos_epel: 'default')
+r.exclude = [r.exclude, %w(python2-pyngus qpid-proton-c)].flatten
 
 package %w(
   libffi-devel

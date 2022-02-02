@@ -81,6 +81,9 @@ describe 'osl-openstack::default' do
   it do
     expect(chef_run).to install_package('python-memcached')
   end
+  it do
+    expect(chef_run).to add_osl_repos_epel('default').with(exclude: %w(python2-pyngus qpid-proton-c))
+  end
 
   [
     %r{^export OS_CACERT="/etc/ssl/certs/ca-bundle.crt"$},
