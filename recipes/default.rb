@@ -644,6 +644,10 @@ end
 include_recipe 'base::packages'
 include_recipe 'osl-repos::epel'
 
+# TODO: These packages conflict with Stein
+r = resources(osl_repos_epel: 'default')
+r.exclude = [r.exclude, %w(python2-pyngus qpid-proton-c)].flatten
+
 package %w(
   libffi-devel
   openssl-devel
