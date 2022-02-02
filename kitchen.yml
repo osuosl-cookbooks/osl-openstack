@@ -48,11 +48,6 @@ provisioner:
       fsid-secret: 'ae3f1d03-bacd-4a90-b869-1a4fabb107f2'
       keyring:
         mon: '/etc/ceph/$cluster.mon.keyring'
-    yum:
-      epel:
-        baseurl: http://epel.osuosl.org/7/$basearch
-        enabled: true
-        gpgkey: http://epel.osuosl.org/RPM-GPG-KEY-EPEL-7
     omnibus_updater:
       disabled: true
 

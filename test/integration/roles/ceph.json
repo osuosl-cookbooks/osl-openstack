@@ -37,12 +37,6 @@
     },
     "osl-ceph": {
       "create-filesystem-osd": true
-    },
-    "yum": {
-      "epel": {
-        "baseurl": "http://epel.osuosl.org/7/$basearch",
-        "gpgkey": "http://epel.osuosl.org/RPM-GPG-KEY-EPEL-7"
-      }
     }
   },
   "json_class": "Chef::Role",
