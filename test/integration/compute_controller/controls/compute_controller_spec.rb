@@ -1,6 +1,5 @@
 %w(
   openstack-nova-conductor
-  openstack-nova-consoleauth
   openstack-nova-novncproxy
   openstack-nova-scheduler
 ).each do |s|
@@ -14,6 +13,7 @@ end
 %w(
   openstack-nova-api
   openstack-nova-metadata-api
+  openstack-nova-consoleauth
 ).each do |s|
   describe service(s) do
     it { should_not be_enabled }
@@ -45,7 +45,7 @@ describe ini('/etc/nova/nova.conf') do
   its('DEFAULT.compute_monitors') { should cmp 'cpu.virt_driver' }
   its('notifications.notify_on_state_change') { should cmp 'vm_and_task_state' }
   its('filter_scheduler.enabled_filters') do
-    should cmp 'AggregateInstanceExtraSpecsFilter,PciPassthroughFilter,RetryFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter'
+    should cmp 'AggregateInstanceExtraSpecsFilter,PciPassthroughFilter,AvailabilityZoneFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter'
   end
   its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
   its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
@@ -83,22 +83,20 @@ end
 openstack = 'bash -c "source /root/openrc && /usr/bin/openstack'
 
 describe command("#{openstack} compute service list -f value -c Binary -c Status -c State\"") do
-  %w(conductor scheduler consoleauth).each do |s|
+  %w(conductor scheduler).each do |s|
     its('stdout') { should match(/nova-#{s} enabled up/) }
   end
 end
 
 describe command("#{openstack} catalog list -c Endpoints -f value\"") do
-  its('stdout') { should match(%r{public: http://controller.example.com:8778}) }
-  its('stdout') { should match(%r{internal: http://controller.example.com:8778}) }
+  its('stdout') { should match(%r{u'url': u'http://controller.example.com:8778'}) }
 end
 
 describe command('bash -c "source /root/openrc && /bin/nova-status upgrade check"') do
   its('stdout') { should match(/Check: Cells v2.*\n.*Result: Success/) }
   its('stdout') { should match(/Check: Placement API.*\n.*Result: Success/) }
   its('stdout') { should match(/Check: Ironic Flavor Migration.*\n.*Result: Success/) }
-  its('stdout') { should match(/Check: Request Spec Migration.*\n.*Result: Success/) }
-  its('stdout') { should match(/Check: Console Auths.*\n.*Result: Success/) }
+  its('stdout') { should match(/Check: Cinder API.*\n.*Result: Success/) }
 end
 
 describe http('https://controller.example.com:6080', ssl_verify: false) do

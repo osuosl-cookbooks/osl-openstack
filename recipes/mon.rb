@@ -59,10 +59,10 @@ if node['osl-openstack']['node_type'] == 'controller'
   end
 
   check_openstack = ::File.join(node['nrpe']['plugin_dir'], 'check_openstack')
-  tools_dir = ::File.join(Chef::Config[:file_cache_path], 'osops-tools-monitoring')
+  tools_dir = ::File.join(Chef::Config[:file_cache_path], 'osops', 'tools', 'monitoring')
 
   execute 'monitoring-for-openstack deps' do
-    command "#{venv}/bin/pip install -r requirements.txt"
+    command "#{venv}/bin/pip install -c constraints.txt -r requirements.txt"
     cwd ::File.join(tools_dir, 'monitoring-for-openstack')
     action :nothing
   end
@@ -73,9 +73,9 @@ if node['osl-openstack']['node_type'] == 'controller'
     action :nothing
   end
 
-  git tools_dir do
+  git ::File.join(Chef::Config[:file_cache_path], 'osops') do
     revision node['openstack']['release']
-    repository 'https://github.com/osuosl/osops-tools-monitoring.git'
+    repository 'https://github.com/osuosl/osops.git'
     notifies :run, 'execute[monitoring-for-openstack deps]', :immediately
     notifies :run, 'execute[monitoring-for-openstack install]', :immediately
   end

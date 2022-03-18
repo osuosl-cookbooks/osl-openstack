@@ -54,7 +54,6 @@ control 'controller' do
   end
   %w(
     openstack-nova-conductor
-    openstack-nova-consoleauth
     openstack-nova-novncproxy
     openstack-nova-scheduler
   ).each do |s|
@@ -67,6 +66,7 @@ control 'controller' do
   # These are on httpd now via wsgi
   %w(
     openstack-nova-api
+    openstack-nova-consoleauth
     openstack-nova-metadata-api
   ).each do |s|
     describe service(s) do
@@ -92,7 +92,7 @@ control 'controller' do
     its('DEFAULT.block_device_allocate_retries') { should cmp '120' }
     its('notifications.notify_on_state_change') { should cmp 'vm_and_task_state' }
     its('filter_scheduler.enabled_filters') do
-      should cmp 'AggregateInstanceExtraSpecsFilter,PciPassthroughFilter,RetryFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter'
+      should cmp 'AggregateInstanceExtraSpecsFilter,PciPassthroughFilter,AvailabilityZoneFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter'
     end
     its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
     its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
@@ -130,22 +130,20 @@ control 'controller' do
   openstack = 'bash -c "source /root/openrc && /usr/bin/openstack'
 
   describe command("#{openstack} compute service list -f value -c Binary -c Status -c State\"") do
-    %w(conductor scheduler consoleauth).each do |s|
+    %w(conductor scheduler).each do |s|
       its('stdout') { should match(/nova-#{s} enabled up/) }
     end
   end
 
   describe command("#{openstack} catalog list -c Endpoints -f value\"") do
-    its('stdout') { should match(%r{public: http://controller.example.com:8778}) }
-    its('stdout') { should match(%r{internal: http://controller.example.com:8778}) }
+    its('stdout') { should match(%r{u'url': u'http://controller.example.com:8778'}) }
   end
 
   describe command('bash -c "source /root/openrc && /bin/nova-status upgrade check"') do
     its('stdout') { should match(/Check: Cells v2.*\n.*Result: Success/) }
     its('stdout') { should match(/Check: Placement API.*\n.*Result: Success/) }
     its('stdout') { should match(/Check: Ironic Flavor Migration.*\n.*Result: Success/) }
-    its('stdout') { should match(/Check: Request Spec Migration.*\n.*Result: Success/) }
-    its('stdout') { should match(/Check: Console Auths.*\n.*Result: Success/) }
+    its('stdout') { should match(/Check: Cinder API.*\n.*Result: Success/) }
   end
 
   describe http('https://controller.example.com:6080', ssl_verify: false) do
@@ -187,7 +185,8 @@ LAUNCH_INSTANCE_DEFAULTS = {
     its('stdout') { should match(/< HTTP.*200 OK/) }
     its('stdout') { should_not match(/CSRF verification failed. Request aborted./) }
   end
-  describe yum.repo('RDO-stein') do
+
+  describe yum.repo('RDO-train') do
     it { should exist }
     it { should be_enabled }
   end
@@ -299,8 +298,8 @@ export OS_AUTH_TYPE=password})
   end
 
   describe command('bash -c "source /root/openrc && /usr/bin/openstack image show cirros -c properties -f value"') do
-    its('stdout') { should match(/direct_url='rbd:/) }
-    its('stdout') { should match(/locations=/) }
+    its('stdout') { should match(/u'direct_url': u'rbd:/) }
+    its('stdout') { should match(/u'locations':/) }
   end
 
   describe command('rbd ls images') do

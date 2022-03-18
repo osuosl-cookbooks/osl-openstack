@@ -173,37 +173,33 @@ end
 # Not needed on a compute node
 delete_resource(:directory, '/var/run/httpd/ceilometer')
 
-# Setup ssh key for nova migrations between compute nodes
-user_account 'nova' do
-  system_user true
-  home '/var/lib/nova'
-  comment 'OpenStack Nova Daemons'
-  uid 162
-  gid 162
-  shell '/bin/sh'
-  manage_home false
-  ssh_keygen false
-  ssh_keys [node['osl-openstack']['nova_public_key']]
-end
-
 nova_key = data_bag_item(
   "#{node['osl-openstack']['databag_prefix']}_secrets",
   'nova_migration_key'
 )
 
-file '/var/lib/nova/.ssh/id_rsa' do
-  content nova_key['nova_migration_key']
-  sensitive true
-  user 'nova'
-  group 'nova'
-  mode '600'
+# Setup ssh key for nova migrations between compute nodes
+users_manage 'nova' do
+  users [{
+    'id': 'nova',
+    'groups': %w(nova),
+    'system': true,
+    'home': '/var/lib/nova',
+    'comment': 'OpenStack Nova Daemons',
+    'uid': 162,
+    'gid': 162,
+    'shell': '/bin/sh',
+    'manage_home': false,
+    'ssh_private_key': nova_key['nova_migration_key'],
+    'ssh_keys': [node['osl-openstack']['nova_public_key']],
+  }]
 end
 
 file '/var/lib/nova/.ssh/config' do
-  content <<-EOL
-Host *
-  StrictHostKeyChecking no
-  UserKnownHostsFile /dev/null
+  content <<~EOL
+    Host *
+      StrictHostKeyChecking no
+      UserKnownHostsFile /dev/null
   EOL
   user 'nova'
   group 'nova'

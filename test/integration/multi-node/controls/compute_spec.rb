@@ -8,7 +8,7 @@ control 'compute' do
     its('DEFAULT.block_device_allocate_retries') { should cmp '120' }
     its('notifications.notify_on_state_change') { should cmp 'vm_and_task_state' }
     its('filter_scheduler.enabled_filters') do
-      should cmp 'AggregateInstanceExtraSpecsFilter,PciPassthroughFilter,RetryFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter'
+      should cmp 'AggregateInstanceExtraSpecsFilter,PciPassthroughFilter,AvailabilityZoneFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter'
     end
     its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
     its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
@@ -138,7 +138,7 @@ e9o0x8HI89mJd1WejorvSVN1c3IgV5TG10k5PcmOxlv1OhGNFzWgvMXZmvCwwP40
 X0BwCgHRB7FvPAMu0hrDmEIJ87edGd1ziRYXpA9Lke/4VQk249pwzA==
 -----END RSA PRIVATE KEY-----$})
     end
-    its('mode') { should cmp '00600' }
+    its('mode') { should cmp '00400' }
     it { should be_owned_by 'nova' }
     it { should be_grouped_into 'nova' }
   end

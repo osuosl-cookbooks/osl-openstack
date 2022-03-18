@@ -50,29 +50,29 @@ describe 'osl-openstack::mon' do
     end
     it do
       expect(chef_run).to nothing_execute('monitoring-for-openstack deps').with(
-        command: '/opt/osc-nagios/bin/pip install -r requirements.txt',
-        cwd: '/var/chef/cache/osops-tools-monitoring/monitoring-for-openstack'
+        command: '/opt/osc-nagios/bin/pip install -c constraints.txt -r requirements.txt',
+        cwd: '/var/chef/cache/osops/tools/monitoring/monitoring-for-openstack'
       )
     end
     it do
       expect(chef_run).to nothing_execute('monitoring-for-openstack install').with(
         command: '/opt/osc-nagios/bin/python setup.py install',
-        cwd: '/var/chef/cache/osops-tools-monitoring/monitoring-for-openstack'
+        cwd: '/var/chef/cache/osops/tools/monitoring/monitoring-for-openstack'
       )
     end
     it do
-      expect(chef_run).to sync_git('/var/chef/cache/osops-tools-monitoring')
+      expect(chef_run).to sync_git('/var/chef/cache/osops')
         .with(
-          revision: 'stein',
-          repository: 'https://github.com/osuosl/osops-tools-monitoring.git'
+          revision: 'train',
+          repository: 'https://github.com/osuosl/osops.git'
         )
     end
     it do
-      expect(chef_run.git('/var/chef/cache/osops-tools-monitoring')).to \
+      expect(chef_run.git('/var/chef/cache/osops')).to \
         notify('execute[monitoring-for-openstack deps]').immediately
     end
     it do
-      expect(chef_run.git('/var/chef/cache/osops-tools-monitoring')).to \
+      expect(chef_run.git('/var/chef/cache/osops')).to \
         notify('execute[monitoring-for-openstack install]').immediately
     end
     it do

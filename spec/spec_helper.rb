@@ -335,6 +335,9 @@ nova_cell0?charset=utf8').and_return(true)
     allow_any_instance_of(Chef::Recipe).to receive(:rabbit_transport_url)
       .with('compute')
       .and_return('rabbit://openstack:openstack@controller.example.org:5672')
+    allow_any_instance_of(Chef::Recipe).to receive(:rabbit_transport_url)
+      .with('placement')
+      .and_return('rabbit://openstack:openstack@controller.example.org:5672')
   end
 end
 

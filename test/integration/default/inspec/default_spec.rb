@@ -1,12 +1,12 @@
 baseurl =
   case os.arch
   when 'x86_64'
-    'http://centos.osuosl.org/7/cloud/x86_64/openstack-stein/'
+    'http://centos.osuosl.org/7/cloud/x86_64/openstack-train/'
   when 'ppc64le', 'aarch64'
-    'http://centos-altarch.osuosl.org/7/cloud/ppc64le/openstack-stein/'
+    'http://centos-altarch.osuosl.org/7/cloud/ppc64le/openstack-train/'
   end
 
-describe yum.repo('RDO-stein') do
+describe yum.repo('RDO-train') do
   it { should exist }
   it { should be_enabled }
   its('baseurl') { should cmp baseurl }

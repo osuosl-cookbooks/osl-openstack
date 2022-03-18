@@ -27,7 +27,7 @@ cookbook 'yum-qemu-ev', git: 'git@github.com:osuosl-cookbooks/yum-qemu-ev'
 # ).each do |cb|
 #   cookbook "openstack-#{cb}",
 #            github: "osuosl-cookbooks/cookbook-openstack-#{cb}",
-#            branch: 'osuosl/stein'
+#            branch: 'osuosl/train'
 # end
 
 # Openstack git
@@ -47,8 +47,8 @@ cookbook 'yum-qemu-ev', git: 'git@github.com:osuosl-cookbooks/yum-qemu-ev'
 #   -telemetry
 # ).each do |cb|
 #   cookbook "openstack-#{cb}",
-#            github: "openstack/cookbook-openstack#{cb}",
-#            branch: 'stable/stein'
+#            git: "https://opendev.org/openstack/cookbook-openstack#{cb}",
+#            branch: 'stable/train'
 # end
 
 cookbook 'openstack_test', path: 'test/cookbooks/openstack_test'

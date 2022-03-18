@@ -119,7 +119,7 @@ e9o0x8HI89mJd1WejorvSVN1c3IgV5TG10k5PcmOxlv1OhGNFzWgvMXZmvCwwP40
 X0BwCgHRB7FvPAMu0hrDmEIJ87edGd1ziRYXpA9Lke/4VQk249pwzA==
 -----END RSA PRIVATE KEY-----$})
   end
-  its('mode') { should cmp '00600' }
+  its('mode') { should cmp '00400' }
   it { should be_owned_by 'nova' }
   it { should be_grouped_into 'nova' }
 end

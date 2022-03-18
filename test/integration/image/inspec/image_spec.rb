@@ -24,8 +24,8 @@ describe command('bash -c "source /root/openrc && /usr/bin/openstack image list"
 end
 
 describe command('bash -c "source /root/openrc && /usr/bin/openstack image show cirros -c properties -f value"') do
-  its('stdout') { should match(/direct_url='rbd:/) }
-  its('stdout') { should match(/locations=/) }
+  its('stdout') { should match(/u'direct_url': u'rbd:/) }
+  its('stdout') { should match(/u'locations':/) }
 end
 
 describe command('rbd ls images') do

@@ -11,13 +11,13 @@ describe 'osl-openstack::compute_controller' do
   %w(
     osl-openstack
     openstack-compute::nova-setup
+    openstack-compute::identity_registration
     openstack-compute::conductor
     openstack-compute::scheduler
     openstack-compute::api-os-compute
     openstack-compute::api-metadata
     openstack-compute::placement_api
     openstack-compute::vncproxy
-    openstack-compute::identity_registration
   ).each do |r|
     it "includes cookbook #{r}" do
       expect(chef_run).to include_recipe(r)
@@ -47,7 +47,6 @@ describe 'osl-openstack::compute_controller' do
   %w(
     service[apache2]
     service[openstack-nova-novncproxy]
-    service[nova-consoleauth]
     service[nova-scheduler]
   ).each do |service|
     it do
@@ -94,7 +93,7 @@ describe 'osl-openstack::compute_controller' do
       expect(chef_run).to render_config_file(file.name)
         .with_section_content(
           'filter_scheduler',
-          /^enabled_filters = AggregateInstanceExtraSpecsFilter,PciPassthroughFilter,RetryFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter$/
+          /^enabled_filters = AggregateInstanceExtraSpecsFilter,PciPassthroughFilter,AvailabilityZoneFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter$/
         )
     end
     it do
@@ -146,8 +145,6 @@ describe 'osl-openstack::compute_controller' do
 
     [
       %r{^novncproxy_base_url = https://10.0.0.10:6080/vnc_auto.html$},
-      %r{^xvpvncproxy_base_url = http://10.0.0.10:6081/console$},
-      /^xvpvncproxy_host = 10.0.0.2$/,
       /^novncproxy_host = 10.0.0.2$/,
       /^server_listen = 10.0.0.2$/,
       /^server_proxyclient_address = 10.0.0.2$/,
@@ -249,12 +246,12 @@ describe 'osl-openstack::compute_controller' do
     end
   end
 
-  describe '/etc/httpd/sites-available/nova-placement.conf' do
-    let(:file) { chef_run.template('/etc/httpd/sites-available/nova-placement.conf') }
+  describe '/etc/httpd/sites-available/placement.conf' do
+    let(:file) { chef_run.template('/etc/httpd/sites-available/placement.conf') }
 
     [
       /^<VirtualHost 10.0.0.2:8778>$/,
-      /WSGIDaemonProcess placement-api processes=6 threads=1/,
+      /WSGIDaemonProcess placement-api processes=2 threads=1/,
     ].each do |line|
       it do
         expect(chef_run).to render_file(file.name).with_content(line)

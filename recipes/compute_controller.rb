@@ -21,13 +21,13 @@ include_recipe 'osl-openstack'
 osl_firewall_openstack 'osl-openstack'
 
 include_recipe 'openstack-compute::nova-setup'
+include_recipe 'openstack-compute::identity_registration'
 include_recipe 'openstack-compute::conductor'
 include_recipe 'openstack-compute::api-os-compute'
 include_recipe 'openstack-compute::api-metadata'
 include_recipe 'openstack-compute::placement_api'
 include_recipe 'openstack-compute::vncproxy'
 include_recipe 'openstack-compute::scheduler'
-include_recipe 'openstack-compute::identity_registration'
 
 delete_lines 'remove dhcpbridge on controller' do
   path '/usr/share/nova/nova-dist.conf'
@@ -35,7 +35,6 @@ delete_lines 'remove dhcpbridge on controller' do
   backup true
   notifies :restart, 'service[apache2]'
   notifies :restart, 'service[openstack-nova-novncproxy]'
-  notifies :restart, 'service[nova-consoleauth]'
   notifies :restart, 'service[nova-scheduler]'
 end
 
@@ -45,7 +44,6 @@ delete_lines 'remove force_dhcp_release on controller' do
   backup true
   notifies :restart, 'service[apache2]'
   notifies :restart, 'service[openstack-nova-novncproxy]'
-  notifies :restart, 'service[nova-consoleauth]'
   notifies :restart, 'service[nova-scheduler]'
 end
 

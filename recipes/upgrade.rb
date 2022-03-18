@@ -15,7 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-yum_repository 'RDO-rocky' do
+yum_repository 'RDO-stein' do
   action :remove
 end
 
@@ -33,32 +33,6 @@ if node['osl-openstack']['node_type'] == 'controller'
   end
 end
 
-### Stein Upgrade
-# TODO: Remove after Stein
-
-nova_api_pass = get_password 'db', 'nova_api'
-placement_user = node['openstack']['db']['placement']['username']
-placement_pass = get_password 'db', 'placement'
-placement_db_uri = db_uri('placement', placement_user, placement_pass)
-
-template '/root/migrate-db.rc' do
-  mode '600'
-  sensitive true
-  variables(
-    nova_api_pass: nova_api_pass,
-    placement_pass: placement_pass
-  )
-end
-
-package 'openstack-placement-common'
-
-replace_or_add 'placement db' do
-  path '/etc/placement/placement.conf'
-  pattern /^#connection = <None>/
-  line "connection = #{placement_db_uri}"
-  replace_only true
-end
-
 ###
 
 cookbook_file '/root/upgrade.sh' do
@@ -70,5 +44,5 @@ ruby_block 'raise_upgrade_exeception' do
   block do
     raise 'Upgrade recipe enabled, stopping futher chef resources from running'
   end
-  not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/stein-upgrade-done') }
+  not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/train-upgrade-done') }
 end

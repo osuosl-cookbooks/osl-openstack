@@ -84,22 +84,23 @@ describe 'osl-openstack::compute' do
     it { expect(chef_run).to render_file('/etc/libvirt/libvirtd.conf').with_content(line) }
   end
   it do
-    expect(chef_run).to create_user_account('nova')
+    expect(chef_run).to create_users_manage('nova')
       .with(
-        system_user: true,
-        manage_home: false,
-        ssh_keygen: false,
-        ssh_keys: ['ssh public key']
-      )
-  end
-  it do
-    expect(chef_run).to create_file('/var/lib/nova/.ssh/id_rsa')
-      .with(
-        content: 'private ssh key',
-        sensitive: true,
-        user: 'nova',
-        group: 'nova',
-        mode: '600'
+        users: [
+          {
+            id: 'nova',
+            groups: %w(nova),
+            system: true,
+            home: '/var/lib/nova',
+            comment: 'OpenStack Nova Daemons',
+            uid: 162,
+            gid: 162,
+            shell: '/bin/sh',
+            manage_home: false,
+            ssh_private_key: 'private ssh key',
+            ssh_keys: ['ssh public key'],
+          },
+        ]
       )
   end
   it do
@@ -112,7 +113,7 @@ describe 'osl-openstack::compute' do
           Host *
             StrictHostKeyChecking no
             UserKnownHostsFile /dev/null
-                  EOL
+        EOL
       )
   end
   %w(libguestfs-tools python2-wsme).each do |p|

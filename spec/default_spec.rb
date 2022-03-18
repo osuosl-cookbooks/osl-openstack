@@ -8,9 +8,9 @@ describe 'osl-openstack::default' do
   end
   include_context 'identity_stubs'
   it do
-    expect(chef_run).to add_yum_repository('RDO-stein')
+    expect(chef_run).to add_yum_repository('RDO-train')
       .with(
-        baseurl: 'http://centos.osuosl.org/$releasever/cloud/$basearch/openstack-stein',
+        baseurl: 'http://centos.osuosl.org/$releasever/cloud/$basearch/openstack-train',
         gpgkey: 'https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Cloud'
       )
   end
@@ -26,9 +26,9 @@ describe 'osl-openstack::default' do
       end.converge(described_recipe)
     end
     it do
-      expect(chef_run).to add_yum_repository('RDO-stein')
+      expect(chef_run).to add_yum_repository('RDO-train')
         .with(
-          baseurl: 'http://centos-altarch.osuosl.org/$releasever/cloud/$basearch/openstack-stein',
+          baseurl: 'http://centos-altarch.osuosl.org/$releasever/cloud/$basearch/openstack-train',
           gpgkey: 'https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Cloud'
         )
     end
@@ -45,9 +45,9 @@ describe 'osl-openstack::default' do
       end.converge(described_recipe)
     end
     it do
-      expect(chef_run).to add_yum_repository('RDO-stein')
+      expect(chef_run).to add_yum_repository('RDO-train')
         .with(
-          baseurl: 'http://centos-altarch.osuosl.org/$releasever/cloud/$basearch/openstack-stein',
+          baseurl: 'http://centos-altarch.osuosl.org/$releasever/cloud/$basearch/openstack-train',
           gpgkey: 'https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Cloud'
         )
     end
