@@ -1,3 +1,7 @@
+provider "openstack" {
+    version = "~> 1.43.0"
+}
+
 resource "openstack_networking_network_v2" "openstack_network" {
     name            = "openstack_network"
     admin_state_up  = "true"
@@ -40,7 +44,7 @@ resource "openstack_compute_instance_v2" "chef_zero" {
 resource "openstack_compute_instance_v2" "controller" {
     name            = "controller"
     image_name      = "${var.centos_image}"
-    flavor_name     = "m1.large"
+    flavor_name     = "m1.xlarge"
     key_pair        = "${var.ssh_key_name}"
     security_groups = ["default"]
     connection {

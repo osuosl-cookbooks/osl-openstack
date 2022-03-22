@@ -220,13 +220,11 @@ suites:
             create_volume_group: true
   - name: upgrade
     driver_config:
-      flavor_ref: 'm1.large'
+      flavor_ref: 'm1.xlarge'
       server_name: "upgrade-<%= ENV['USER'] %>"
-    driver:
-      image_ref: "openstack-rocky-aio"
     verifier:
       inspec_tests:
-        - path: test/integration/controller/inspec
+        - path: test/integration/controller
     run_list:
       - role[ceph]
       - role[ceph_mon]
@@ -235,8 +233,10 @@ suites:
       - role[ceph_setup]
       - recipe[openstack_test::upgrade_start]
       - role[openstack_tk]
+      - recipe[osl-openstack::ops_database]
+      - recipe[certificate::wildcard]
+      - recipe[openstack_test::cacert]
       - recipe[openstack-ops-database::openstack-db]
-      - recipe[osl-openstack::upgrade]
       - recipe[openstack_test::upgrade]
       - recipe[openstack_test]
       - role[openstack_ops_identity]
@@ -253,29 +253,30 @@ suites:
         node_type: controller
         endpoint_hostname: controller.example.com
         db_hostname: controller.example.com
+        upgrade: <%= ENV['OPENSTACK_UPGRADE'] || true %>
       openstack:
         block-storage:
           volume:
             create_volume_group: true
-#  - name: multi-node
-#    driver:
-#      name: terraform
-#      command_timeout: 3600
-#    provisioner: terraform
-#    verifier:
-#      name: terraform
-#      systems:
-#        - name: controller
-#          backend: ssh
-#          controls:
-#            - controller
-#          hosts_output: controller
-#          user: centos
-#          sudo: true
-#        - name: compute
-#          backend: ssh
-#          controls:
-#            - compute
-#          hosts_output: compute
-#          user: centos
-#          sudo: true
+  - name: multi-node
+    driver:
+      name: terraform
+      command_timeout: 3600
+    provisioner: terraform
+    verifier:
+      name: terraform
+      systems:
+        - name: controller
+          backend: ssh
+          controls:
+            - controller
+          hosts_output: controller
+          user: centos
+          sudo: true
+        - name: compute
+          backend: ssh
+          controls:
+            - compute
+          hosts_output: compute
+          user: centos
+          sudo: true
