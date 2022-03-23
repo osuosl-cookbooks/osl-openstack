@@ -11,8 +11,9 @@ end
 # If controller is empty, this must be the first run on a controller node so use it's local endpoint_ip.
 controller_ip = controller.nil? ? node['ipaddress'] : controller
 
-hostsfile_entry controller_ip do
-  hostname 'controller.example.com'
+append_if_no_line '/etc/hosts' do
+  path '/etc/hosts'
+  line "#{controller_ip} controller.example.com"
 end
 
 %i(memcached).each do |r|
