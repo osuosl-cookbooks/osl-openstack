@@ -1,11 +1,9 @@
-execute '/root/upgrade.sh' do
-  live_stream true
-  creates '/root/stein-upgrade-done'
-end
+if node['osl-openstack']['upgrade']
+  include_recipe 'osl-openstack::upgrade'
 
-%w(mariadb-config mariadb-server).each do |p|
-  rpm_package p do
-    options '--nodeps'
-    action :remove
+  execute '/root/upgrade.sh' do
+    live_stream true
+    creates '/root/stein-upgrade-done'
+    only_if { ::File.exist?('/usr/sbin/httpd') }
   end
 end
