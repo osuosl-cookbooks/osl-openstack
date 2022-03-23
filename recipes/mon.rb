@@ -132,7 +132,10 @@ if node['osl-openstack']['node_type'] == 'controller'
       content "export OS_CLUSTER=#{node['osl-openstack']['cluster_name']}\n"
     end
 
-    chef_gem 'prometheus_reporter'
+    chef_gem 'prometheus_reporter' do
+      # TODO: https://github.com/nattfodd/prometheus_reporter/pull/5
+      source 'https://packagecloud.io/osuosl/prometheus_reporter'
+    end
 
     cookbook_file '/usr/local/libexec/openstack-prometheus' do
       mode '755'

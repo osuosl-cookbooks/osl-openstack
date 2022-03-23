@@ -185,7 +185,9 @@ describe 'osl-openstack::mon' do
       expect(chef_run).to_not create_file('/usr/local/etc/os_cluster')
     end
     it do
-      expect(chef_run).to_not install_chef_gem('prometheus_reporter')
+      expect(chef_run).to_not install_chef_gem('prometheus_reporter').with(
+        source: 'https://packagecloud.io/osuosl/prometheus_reporter'
+      )
     end
     it do
       expect(chef_run).to_not create_cookbook_file('/usr/local/libexec/openstack-prometheus')
