@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+10.3.5 (2022-06-02)
+-------------------
+- Only disable SMT on POWER8
+
 10.3.4 (2022-02-02)
 -------------------
 - Misc fixes
