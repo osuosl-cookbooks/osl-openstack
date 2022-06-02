@@ -7,6 +7,7 @@ driver:
   user_data: userdata.txt
 provisioner:
   name: chef_zero
+  product_version: 16
   deprecations_as_errors: true
   roles_path: test/integration/roles
   data_bags_path: test/integration/data_bags

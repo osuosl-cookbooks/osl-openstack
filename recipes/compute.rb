@@ -50,19 +50,16 @@ when 'ppc64le'
     not_if 'lscpu | grep "KVM"'
   end
 
-  # Turn off smt on boot (required for KVM support)
-  # NOTE: This really should be handled via an rclocal cookbook
+  # TODO: revert back to stock file now that we can use the systemd unit
   cookbook_file '/etc/rc.d/rc.local' do
-    owner 'root'
-    group 'root'
-    mode '755'
+    mode '644'
   end
 
-  # Turn off smt during runtime
-  execute 'ppc64_cpu_smt_off' do
-    command '/sbin/ppc64_cpu --smt=off'
-    not_if '/sbin/ppc64_cpu --smt 2>&1 | grep -E \'SMT is off|Machine is not SMT capable\''
-  end
+  # SMT needs to be on POWER8 systems due to architecture limitations
+  # (unit is part of the powerpc-utils package)
+  service 'smt_off' do
+    action [:enable, :start]
+  end if node.read('ibm_power', 'cpu', 'cpu_model') =~ /power8/
 when 'aarch64'
   include_recipe 'yum-kernel-osuosl::install'
   include_recipe 'base::grub'
