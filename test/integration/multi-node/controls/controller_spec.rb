@@ -92,7 +92,7 @@ control 'controller' do
     its('DEFAULT.block_device_allocate_retries') { should cmp '120' }
     its('notifications.notify_on_state_change') { should cmp 'vm_and_task_state' }
     its('filter_scheduler.enabled_filters') do
-      should cmp 'AggregateInstanceExtraSpecsFilter,RetryFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter'
+      should cmp 'AggregateInstanceExtraSpecsFilter,PciPassthroughFilter,RetryFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter'
     end
     its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
     its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }

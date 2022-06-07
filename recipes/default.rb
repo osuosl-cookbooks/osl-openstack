@@ -117,6 +117,7 @@ node.default['openstack']['compute']['conf'].tap do |conf|
   conf['filter_scheduler']['enabled_filters'] =
     %w(
       AggregateInstanceExtraSpecsFilter
+      PciPassthroughFilter
       RetryFilter
       AvailabilityZoneFilter
       RamFilter
