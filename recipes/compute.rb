@@ -34,6 +34,9 @@ kernel_module 'tun' do
   action :load
 end
 
+# Disable IPv6 autoconf globally
+cookbook_file '/etc/sysconfig/network'
+
 case node['kernel']['machine']
 when 'ppc64le'
   node.default['base']['grub']['cmdline'] << %w(kvm_cma_resv_ratio=15)

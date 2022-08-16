@@ -50,6 +50,7 @@ describe 'osl-openstack::compute' do
   it { expect(chef_run.delete_lines('remove force_dhcp_release on compute')).to notify('service[nova-compute]').to(:restart) }
   it { expect(chef_run).to_not include_recipe('osl-openstack::_block_ceph') }
   it { expect(chef_run).to load_kernel_module('tun') }
+  it { expect(chef_run).to create_cookbook_file('/etc/sysconfig/network') }
   it do
     expect(chef_run).to create_template('/etc/sysconfig/libvirt-guests')
       .with(
