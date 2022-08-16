@@ -13,6 +13,12 @@ describe kernel_module('tun') do
   it { should be_loaded }
 end
 
+describe file '/etc/sysconfig/network' do
+  its('content') { should match /^NETWORKING=yes$/ }
+  its('content') { should match /^NETWORKING_IPV6=yes$/ }
+  its('content') { should match /^IPV6_AUTOCONF=no$/ }
+end
+
 %w(/var/run/ceph/guests /var/log/ceph).each do |d|
   describe file(d) do
     its('owner') { should eq 'qemu' }
