@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+10.4.0 (2022-08-23)
+-------------------
+- Switch to osl-resources
+
 10.3.7 (2022-08-16)
 -------------------
 - Disable IPv6 autoconf on compute nodes
