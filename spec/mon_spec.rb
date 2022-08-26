@@ -34,7 +34,7 @@ describe 'osl-openstack::mon' do
     include_context 'identity_stubs'
     plugin_dir = '/usr/lib64/nagios/plugins'
     check_openstack = ::File.join(plugin_dir, 'check_openstack')
-    %w(osl-openstack base::oslrepo).each do |r|
+    %w(osl-openstack osl-repos::oslrepo).each do |r|
       it do
         expect(chef_run).to include_recipe(r)
       end

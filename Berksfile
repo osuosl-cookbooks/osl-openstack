@@ -19,8 +19,8 @@ cookbook 'osl-rsync', git: 'git@github.com:osuosl-cookbooks/osl-rsync'
 cookbook 'osl-selinux', git: 'git@github.com:osuosl-cookbooks/osl-selinux'
 cookbook 'osl-syslog', git: 'git@github.com:osuosl-cookbooks/osl-syslog'
 cookbook 'resource_from_hash', git: 'git@github.com:osuosl-cookbooks/resource_from_hash'
-cookbook 'yum-kernel-osuosl', git: 'git@github.com:osuosl-cookbooks/yum-kernel-osuosl.git'
-cookbook 'yum-qemu-ev', git: 'git@github.com:osuosl-cookbooks/yum-qemu-ev.git'
+cookbook 'yum-kernel-osuosl', git: 'git@github.com:osuosl-cookbooks/yum-kernel-osuosl'
+cookbook 'yum-qemu-ev', git: 'git@github.com:osuosl-cookbooks/yum-qemu-ev'
 
 # WIP patches
 # %w(
