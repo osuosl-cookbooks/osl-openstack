@@ -29,7 +29,7 @@ end
 
 if node['osl-openstack']['node_type'] == 'controller'
   include_recipe 'osl-openstack'
-  include_recipe 'base::oslrepo'
+  include_recipe 'osl-repos::oslrepo'
   include_recipe 'git'
   include_recipe 'base::python'
 
