@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+10.4.2 (2022-09-29)
+-------------------
+- Add feature to only have some provider networks on specific hosts
+
 10.4.1 (2022-08-26)
 -------------------
 - Switch to osl-repos::oslrepo
