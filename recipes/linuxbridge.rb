@@ -23,7 +23,7 @@ node_type = node['osl-openstack']['node_type']
 int_mappings = []
 node['osl-openstack']['physical_interface_mappings'].each do |int|
   interface = int[node_type][node['fqdn']] || int[node_type]['default']
-  int_mappings.push("#{int['name']}:#{interface}")
+  int_mappings.push("#{int['name']}:#{interface}") unless interface == 'disabled'
 end
 
 # Get the IP for the interface we're using VXLAN for

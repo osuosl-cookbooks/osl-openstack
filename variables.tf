@@ -17,10 +17,10 @@ variable "public_subnet" {
     default = "public2"
 }
 variable "backend_network" {
-    default = "vlan42"
+    default = "backend"
 }
 variable "backend_subnet" {
-    default = "vlan42"
+    default = "backend"
 }
 variable "public_network_id" {
     default = "8dcba61e-5ef8-4e79-953a-ea67a66f32e6"

@@ -40,6 +40,18 @@ provisioner:
             default: eth1
           compute:
             default: eth1
+        -
+          name: private1
+          controller:
+            default: disabled
+          compute:
+            default: disabled
+        -
+          name: private2
+          controller:
+            default: eth2
+          compute:
+            default: disabled
     openstack:
       compute:
         nova_placement: false
