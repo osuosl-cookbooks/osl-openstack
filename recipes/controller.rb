@@ -35,8 +35,8 @@ osl_firewall_memcached 'osl-openstack' do
 end
 
 include_recipe 'memcached'
-include_recipe 'osl-openstack::identity'
 include_recipe 'osl-apache::default'
+include_recipe 'osl-openstack::identity'
 include_recipe 'osl-openstack::image'
 include_recipe 'osl-openstack::network' unless node['osl-openstack']['separate_network_node']
 include_recipe 'osl-openstack::compute_controller'

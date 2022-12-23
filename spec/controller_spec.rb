@@ -60,7 +60,7 @@ describe 'osl-openstack::controller' do
   end
   it do
     expect(chef_run).to install_apache2_install('openstack').with(
-      modules: %w(status alias auth_basic authn_core authn_file authz_core authz_groupfile authz_host authz_user autoindex deflate dir env mime negotiation setenvif log_config logio unixd systemd),
+      modules: %w(status alias auth_basic authn_core authn_file authz_core authz_groupfile authz_host authz_user autoindex deflate dir env negotiation setenvif log_config logio unixd systemd),
       mpm_conf: {
         maxrequestworkers: 10,
         serverlimit: 10,
