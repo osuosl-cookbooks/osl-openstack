@@ -22,5 +22,6 @@ include_recipe 'osl-openstack::ops_messaging'
 osl_firewall_openstack 'osl-openstack'
 
 include_recipe 'certificate::wildcard'
+include_recipe 'osl-apache'
 include_recipe 'openstack-identity::server-apache'
 include_recipe 'openstack-identity::registration'
