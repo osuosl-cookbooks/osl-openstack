@@ -12,9 +12,9 @@ describe yum.repo('RDO-stein') do
   its('baseurl') { should cmp baseurl }
 end
 
-describe yum.repo('OSL-openpower-openstack') do
-  it { should_not exist }
-  it { should_not be_enabled }
+describe yum.repo('OSL-openstack') do
+  it { should exist }
+  it { should be_enabled }
 end
 
 describe file('/root/openrc') do

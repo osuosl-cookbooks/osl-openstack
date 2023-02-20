@@ -631,23 +631,19 @@ end
   end
 end
 
-yum_repository 'OSL-openpower-openstack' do
-  description "OSL Openpower OpenStack repo for #{node['platform']}-#{node['platform_version'].to_i}" \
+package 'yum-plugin-priorities'
+
+yum_repository 'OSL-openstack' do
+  description "OSL OpenStack repo for #{node['platform']}-#{node['platform_version'].to_i}" \
               "/openstack-#{node['openstack']['release']}"
-  gpgkey 'http://ftp.osuosl.org/pub/osl/repos/yum/RPM-GPG-KEY-osuosl'
+  gpgkey 'https://ftp.osuosl.org/pub/osl/repos/yum/RPM-GPG-KEY-osuosl'
   gpgcheck true
-  baseurl "http://ftp.osuosl.org/pub/osl/repos/yum/$releasever/openstack-#{node['openstack']['release']}/$basearch"
-  enabled false
-  only_if { node['kernel']['machine'] == 'ppc64le' }
-  action :remove
+  baseurl "https://ftp.osuosl.org/pub/osl/repos/yum/$releasever/openstack-#{node['openstack']['release']}/$basearch"
+  priority '10'
 end
 
 include_recipe 'base::packages'
 include_recipe 'osl-repos::epel'
-
-# TODO: These packages conflict with Stein
-r = resources(osl_repos_epel: 'default')
-r.exclude = [r.exclude, %w(python2-pyngus qpid-proton-c)].flatten
 
 package %w(
   libffi-devel
@@ -665,6 +661,11 @@ include_recipe 'openstack-common::logging'
 include_recipe 'openstack-common::sysctl'
 include_recipe 'openstack-identity::openrc'
 include_recipe 'openstack-common::client'
+
+# Ensure the RDO repo has priority over anything else by default
+edit_resource(:yum_repository, "RDO-#{node['openstack']['release']}") do
+  priority '20'
+end
 
 # We're now using the packages openstack client
 link '/usr/local/bin/openstack' do

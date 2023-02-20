@@ -11,11 +11,18 @@ describe 'osl-openstack::default' do
     expect(chef_run).to add_yum_repository('RDO-stein')
       .with(
         baseurl: 'http://centos.osuosl.org/$releasever/cloud/$basearch/openstack-stein',
-        gpgkey: 'https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Cloud'
+        gpgkey: 'https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Cloud',
+        priority: '20'
       )
   end
   it do
-    expect(chef_run).to_not remove_yum_repository('OSL-openpower-openstack')
+    expect(chef_run).to create_yum_repository('OSL-openstack').with(
+      description: 'OSL OpenStack repo for centos-7/openstack-stein',
+      gpgkey: 'https://ftp.osuosl.org/pub/osl/repos/yum/RPM-GPG-KEY-osuosl',
+      gpgcheck: true,
+      baseurl: 'https://ftp.osuosl.org/pub/osl/repos/yum/$releasever/openstack-stein/$basearch',
+      priority: '10'
+    )
   end
   context 'setting arch to ppc64le' do
     cached(:chef_run) do
@@ -29,11 +36,9 @@ describe 'osl-openstack::default' do
       expect(chef_run).to add_yum_repository('RDO-stein')
         .with(
           baseurl: 'http://centos-altarch.osuosl.org/$releasever/cloud/$basearch/openstack-stein',
-          gpgkey: 'https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Cloud'
+          gpgkey: 'https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Cloud',
+          priority: '20'
         )
-    end
-    it do
-      expect(chef_run).to remove_yum_repository('OSL-openpower-openstack')
     end
   end
   context 'setting arch to aarch64' do
@@ -48,7 +53,8 @@ describe 'osl-openstack::default' do
       expect(chef_run).to add_yum_repository('RDO-stein')
         .with(
           baseurl: 'http://centos-altarch.osuosl.org/$releasever/cloud/$basearch/openstack-stein',
-          gpgkey: 'https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Cloud'
+          gpgkey: 'https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Cloud',
+          priority: '20'
         )
     end
   end
@@ -80,9 +86,6 @@ describe 'osl-openstack::default' do
   end
   it do
     expect(chef_run).to install_package('python-memcached')
-  end
-  it do
-    expect(chef_run).to add_osl_repos_epel('default').with(exclude: %w(python2-pyngus qpid-proton-c))
   end
 
   [
