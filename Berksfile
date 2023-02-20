@@ -22,6 +22,9 @@ cookbook 'resource_from_hash', git: 'git@github.com:osuosl-cookbooks/resource_fr
 cookbook 'yum-kernel-osuosl', git: 'git@github.com:osuosl-cookbooks/yum-kernel-osuosl'
 cookbook 'yum-qemu-ev', git: 'git@github.com:osuosl-cookbooks/yum-qemu-ev'
 
+# TODO: temporarily lock to the version we have in osl-docker so we can run chefspec
+cookbook 'docker', '~> 7.7.0'
+
 # WIP patches
 # %w(
 # ).each do |cb|
