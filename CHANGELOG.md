@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+10.4.5 (2023-02-21)
+-------------------
+- Move osl-apache to after identity so that it runs properly
+
 10.4.4 (2023-02-21)
 -------------------
 - Misc fixes
