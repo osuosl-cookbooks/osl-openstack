@@ -2,7 +2,7 @@
 # Cookbook:: osl-openstack
 # Recipe:: identity
 #
-# Copyright:: 2016-2022, Oregon State University
+# Copyright:: 2016-2023, Oregon State University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,6 +22,5 @@ include_recipe 'osl-openstack::ops_messaging'
 osl_firewall_openstack 'osl-openstack'
 
 include_recipe 'certificate::wildcard'
-include_recipe 'osl-apache'
 include_recipe 'openstack-identity::server-apache'
 include_recipe 'openstack-identity::registration'

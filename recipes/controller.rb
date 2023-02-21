@@ -2,7 +2,7 @@
 # Cookbook:: osl-openstack
 # Recipe:: controller
 #
-# Copyright:: 2014-2022, Oregon State University
+# Copyright:: 2014-2023, Oregon State University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ include_recipe 'osl-openstack::mon'
 
 # Ensure apache is installed the OSUOSL Way™
 edit_resource(:apache2_install, 'openstack') do
-  modules osl_apache_default_modules
+  modules [osl_apache_default_modules, 'mime'].flatten
   mpm node['osl-apache']['mpm']
   mpm_conf(
     maxrequestworkers: node['osl-apache']['maxrequestworkers'] || osl_apache_max_clients,
