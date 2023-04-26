@@ -6,7 +6,7 @@ solver :ruby, :required
 cookbook 'base', git: 'git@github.com:osuosl-cookbooks/base'
 cookbook 'ceph-chef', github: 'osuosl-cookbooks/ceph-chef'
 cookbook 'ibm-power', git: 'git@github.com:osuosl-cookbooks/ibm-power.git'
-cookbook 'osl-apache', git: 'git@github.com:osuosl-cookbooks/osl-apache'
+cookbook 'osl-apache', git: 'git@github.com:osuosl-cookbooks/osl-apache', branch: 'stable/7.x'
 cookbook 'osl-ceph', git: 'git@github.com:osuosl-cookbooks/osl-ceph'
 cookbook 'osl-firewall', git: 'git@github.com:osuosl-cookbooks/osl-firewall'
 cookbook 'osl-git', git: 'git@github.com:osuosl-cookbooks/osl-git'
