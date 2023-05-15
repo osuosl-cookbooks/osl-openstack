@@ -104,7 +104,7 @@ end
 # We still need the ceph keys if we're using it for cinder
 include_recipe 'osl-openstack::_block_ceph' if node['osl-openstack']['ceph']['volume']
 
-if node['osl-openstack']['ceph']['compute']
+if node['osl-openstack']['ceph']['volume'] || node['osl-openstack']['ceph']['compute']
   %w(
     /var/run/ceph/guests
     /var/log/ceph
@@ -123,9 +123,7 @@ if node['osl-openstack']['ceph']['compute']
     notifies :restart, 'service[nova-compute]', :immediately
     notifies :restart, 'service[libvirt-bin]', :immediately
   end
-end
 
-if node['osl-openstack']['ceph']['volume'] || node['osl-openstack']['ceph']['compute']
   secrets = openstack_credential_secrets
   secret_uuid = node['ceph']['fsid-secret']
   ceph_user = node['osl-openstack']['block']['rbd_store_user']
