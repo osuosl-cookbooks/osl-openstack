@@ -54,7 +54,6 @@ describe 'osl-openstack::image', image: true do
         let(:node) { runner.node }
         cached(:chef_run) { runner.converge(described_recipe) }
         include_context 'common_stubs'
-        include_context 'ceph_stubs'
         it do
           expect(chef_run).to modify_group('ceph-image')
             .with(
@@ -63,26 +62,9 @@ describe 'osl-openstack::image', image: true do
               members: %w(glance)
             )
         end
-        it do
-          expect(chef_run.group('ceph-image')).to notify('service[glance-api]').to(:restart).immediately
-        end
-        it do
-          expect(chef_run).to create_template('/etc/ceph/ceph.client.glance.keyring')
-            .with(
-              source: 'ceph.client.keyring.erb',
-              owner: 'ceph',
-              group: 'ceph',
-              sensitive: true,
-              variables: {
-                ceph_user: 'glance',
-                ceph_token: 'image_token',
-              }
-            )
-        end
-        it do
-          expect(chef_run.template('/etc/ceph/ceph.client.glance.keyring')).to \
-            notify('service[glance-api]').to(:restart)
-        end
+        it { expect(chef_run.group('ceph-image')).to notify('service[glance-api]').to(:restart).immediately }
+        it { expect(chef_run).to create_osl_ceph_keyring('glance').with(key: 'image_token') }
+        it { expect(chef_run.osl_ceph_keyring('glance')).to notify('service[glance-api]').to(:restart) }
         [
           /^show_image_direct_url = true$/,
           /^show_multiple_locations = true$/,
@@ -108,25 +90,6 @@ describe 'osl-openstack::image', image: true do
         ].each do |line|
           it do
             expect(chef_run).to render_config_file(file.name).with_section_content('glance_store', line)
-          end
-        end
-        context 'no image_token' do
-          next unless f == 'api'
-          let(:runner) do
-            ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
-              node.override['osl-openstack']['ceph']['image'] = true
-              node.automatic['filesystem2']['by_mountpoint']
-            end
-          end
-          let(:node) { runner.node }
-          cached(:chef_run) { runner.converge(described_recipe) }
-          include_context 'common_stubs'
-          include_context 'ceph_stubs'
-          before do
-            node.override['osl-openstack']['credentials']['ceph']['image_token'] = nil
-          end
-          it do
-            expect(chef_run).to_not create_template('/etc/ceph/ceph.client.glance.keyring')
           end
         end
       end

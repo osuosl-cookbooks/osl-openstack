@@ -129,7 +129,6 @@ describe 'osl-openstack::compute' do
     let(:node) { runner.node }
     cached(:chef_run) { runner.converge(described_recipe) }
     include_context 'common_stubs'
-    include_context 'ceph_stubs'
     before do
       stub_command('virsh secret-list | grep 8102bb29-f48b-4f6e-81d7-4c59d80ec6b8').and_return(false)
       stub_command('virsh secret-get-value 8102bb29-f48b-4f6e-81d7-4c59d80ec6b8 | grep block_token')
@@ -180,14 +179,16 @@ describe 'osl-openstack::compute' do
     it do
       expect(chef_run).to delete_file('/var/chef/cache/secret.xml')
     end
-    [
-      %r{^admin socket = /var/run/ceph/guests/\$cluster-\$type.\$id.\$pid.\$cctid.asok$},
-      /^rbd concurrent management ops = 20$/,
-      /^rbd cache = true$/,
-      /^rbd cache writethrough until flush = true$/,
-      %r{log file = /var/log/ceph/qemu-guest-\$pid.log$},
-    ].each do |line|
-      it { expect(chef_run).to render_config_file('/etc/ceph/ceph.conf').with_section_content('client', line) }
+    it do
+      expect(chef_run).to create_osl_ceph_config('default').with(
+        client_options: [
+          'admin socket = /var/run/ceph/guests/$cluster-$type.$id.$pid.$cctid.asok',
+          'rbd concurrent management ops = 20',
+          'rbd cache = true',
+          'rbd cache writethrough until flush = true',
+          'log file = /var/log/ceph/qemu-guest-$pid.log',
+        ]
+      )
     end
     context 'virsh secret exists' do
       let(:runner) do
@@ -199,7 +200,6 @@ describe 'osl-openstack::compute' do
       let(:node) { runner.node }
       cached(:chef_run) { runner.converge(described_recipe) }
       include_context 'common_stubs'
-      include_context 'ceph_stubs'
       before do
         stub_command('virsh secret-list | grep 8102bb29-f48b-4f6e-81d7-4c59d80ec6b8').and_return(true)
         stub_command('virsh secret-get-value 8102bb29-f48b-4f6e-81d7-4c59d80ec6b8 | grep block_token')

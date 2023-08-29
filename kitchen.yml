@@ -6,14 +6,14 @@ driver:
   flavor_ref: 'm1.large'
   user_data: userdata.txt
 provisioner:
-  name: chef_zero
+  name: chef_infra
   product_version: 16
   deprecations_as_errors: true
   roles_path: test/integration/roles
   data_bags_path: test/integration/data_bags
   encrypted_data_bag_secret_key_path: test/integration/encrypted_data_bag_secret
   # enforce_idempotency: true
-  # multiple_converge: 2
+  multiple_converge: 2
   attributes:
     base:
       packages: []
@@ -57,12 +57,6 @@ provisioner:
         nova_placement: false
       secret:
         key_path: "/tmp/kitchen/encrypted_data_bag_secret"
-    ceph:
-      fsid-secret: 'ae3f1d03-bacd-4a90-b869-1a4fabb107f2'
-      keyring:
-        mon: '/etc/ceph/$cluster.mon.keyring'
-    omnibus_updater:
-      disabled: true
 
 suites:
   - name: default
@@ -97,12 +91,8 @@ suites:
     driver_config:
       server_name: "image-<%= ENV['USER'] %>"
     run_list:
-      - role[ceph]
-      - role[ceph_mon]
-      - role[ceph_mgr]
-      - role[ceph_osd]
-      - role[ceph_setup]
       - role[openstack_tk]
+      - recipe[openstack_test::ceph]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::image]
   - name: network
@@ -132,13 +122,9 @@ suites:
     driver_config:
       server_name: "compute-<%= ENV['USER'] %>"
     run_list:
-      - role[ceph]
-      - role[ceph_mon]
-      - role[ceph_mgr]
-      - role[ceph_osd]
-      - role[ceph_setup]
       - role[openstack_tk]
       - role[openstack_ops_identity]
+      - recipe[openstack_test::ceph]
       - recipe[osl-openstack::compute_controller]
       - recipe[osl-openstack::compute]
   - name: dashboard
@@ -152,12 +138,8 @@ suites:
     driver_config:
       server_name: "block-storage-<%= ENV['USER'] %>"
     run_list:
-      - role[ceph]
-      - role[ceph_mon]
-      - role[ceph_mgr]
-      - role[ceph_osd]
-      - role[ceph_setup]
       - role[openstack_tk]
+      - recipe[openstack_test::ceph]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::block_storage_controller]
       - recipe[openstack-block-storage::volume_driver_lvm]
@@ -173,12 +155,8 @@ suites:
     driver_config:
       server_name: "telemetry-<%= ENV['USER'] %>"
     run_list:
-      - role[ceph]
-      - role[ceph_mon]
-      - role[ceph_mgr]
-      - role[ceph_osd]
-      - role[ceph_setup]
       - role[openstack_tk]
+      - recipe[openstack_test::ceph]
       - role[openstack_ops_identity]
       - recipe[osl-prometheus::server]
       - recipe[osl-openstack::telemetry]
@@ -193,13 +171,10 @@ suites:
   - name: controller
     driver_config:
       server_name: "controller-<%= ENV['USER'] %>"
+      flavor_ref: 'm1.xlarge'
     run_list:
-      - role[ceph]
-      - role[ceph_mon]
-      - role[ceph_mgr]
-      - role[ceph_osd]
-      - role[ceph_setup]
       - role[openstack_tk]
+      - recipe[openstack_test::ceph]
       - recipe[openstack_test]
       - role[openstack_ops_identity]
       - recipe[osl-prometheus::server]
@@ -211,12 +186,8 @@ suites:
       server_name: "allinone-<%= ENV['USER'] %>"
       flavor_ref: 'm1.xlarge'
     run_list:
-      - role[ceph]
-      - role[ceph_mon]
-      - role[ceph_mgr]
-      - role[ceph_osd]
-      - role[ceph_setup]
       - role[openstack_tk]
+      - recipe[openstack_test::ceph]
       - recipe[openstack_test]
       - role[openstack_ops_identity]
       - recipe[osl-prometheus::server]
@@ -239,13 +210,9 @@ suites:
       inspec_tests:
         - path: test/integration/controller
     run_list:
-      - role[ceph]
-      - role[ceph_mon]
-      - role[ceph_mgr]
-      - role[ceph_osd]
-      - role[ceph_setup]
       - recipe[openstack_test::upgrade_start]
       - role[openstack_tk]
+      - recipe[openstack_test::ceph]
       - recipe[osl-openstack::ops_database]
       - recipe[certificate::wildcard]
       - recipe[openstack_test::cacert]

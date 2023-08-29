@@ -34,15 +34,8 @@ if node['osl-openstack']['ceph']['image']
     notifies :restart, 'service[glance-api]', :immediately
   end
 
-  template "/etc/ceph/ceph.client.#{node['osl-openstack']['image']['rbd_store_user']}.keyring" do
-    source 'ceph.client.keyring.erb'
-    owner node['ceph']['owner']
-    group node['ceph']['group']
-    sensitive true
-    variables(
-      ceph_user: node['osl-openstack']['image']['rbd_store_user'],
-      ceph_token: secrets['ceph']['image_token']
-    )
+  osl_ceph_keyring node['osl-openstack']['image']['rbd_store_user'] do
+    key secrets['ceph']['image_token']
     not_if { secrets['ceph']['image_token'].nil? }
     notifies :restart, 'service[glance-api]'
   end

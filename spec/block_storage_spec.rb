@@ -38,7 +38,6 @@ describe 'osl-openstack::block_storage' do
     let(:node) { runner.node }
     cached(:chef_run) { runner.converge(described_recipe) }
     include_context 'common_stubs'
-    include_context 'ceph_stubs'
     it do
       expect(chef_run).to include_recipe('osl-openstack::_block_ceph')
     end
@@ -53,39 +52,10 @@ describe 'osl-openstack::block_storage' do
           members: %w(cinder)
         )
     end
-    it do
-      expect(chef_run.group('ceph-block')).to notify('service[cinder-volume]').to(:restart).immediately
-    end
-    it do
-      expect(chef_run.template('/etc/ceph/ceph.client.cinder.keyring')).to notify('service[cinder-volume]')
-        .to(:restart).immediately
-    end
-    it do
-      expect(chef_run).to create_template('/etc/ceph/ceph.client.cinder.keyring')
-        .with(
-          source: 'ceph.client.keyring.erb',
-          owner: 'ceph',
-          group: 'ceph',
-          sensitive: true,
-          variables: {
-            ceph_user: 'cinder',
-            ceph_token: 'block_token',
-          }
-        )
-    end
-    it do
-      expect(chef_run).to create_template('/etc/ceph/ceph.client.cinder-backup.keyring')
-        .with(
-          source: 'ceph.client.keyring.erb',
-          owner: 'ceph',
-          group: 'ceph',
-          sensitive: true,
-          variables: {
-            ceph_user: 'cinder-backup',
-            ceph_token: 'block_backup_token',
-          }
-        )
-    end
+    it { expect(chef_run.group('ceph-block')).to notify('service[cinder-volume]').to(:restart).immediately }
+    it { expect(chef_run.osl_ceph_keyring('cinder')).to notify('service[cinder-volume]').to(:restart).immediately }
+    it { expect(chef_run).to create_osl_ceph_keyring('cinder').with(key: 'block_token') }
+    it { expect(chef_run).to create_osl_ceph_keyring('cinder-backup').with(key: 'block_backup_token') }
     it do
       expect(chef_run).to edit_replace_or_add('log-dir storage')
         .with(

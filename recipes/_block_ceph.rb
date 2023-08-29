@@ -10,27 +10,13 @@ group 'ceph-block' do
   notifies :restart, 'service[cinder-volume]', :immediately if node.recipe?('openstack-block-storage::volume')
 end
 
-template "/etc/ceph/ceph.client.#{node['osl-openstack']['block']['rbd_store_user']}.keyring" do
-  source 'ceph.client.keyring.erb'
-  owner node['ceph']['owner']
-  group node['ceph']['group']
-  sensitive true
+osl_ceph_keyring node['osl-openstack']['block']['rbd_store_user'] do
+  key secrets['ceph']['block_token']
   not_if { secrets['ceph']['block_token'].nil? }
-  variables(
-    ceph_user: node['osl-openstack']['block']['rbd_store_user'],
-    ceph_token: secrets['ceph']['block_token']
-  )
   notifies :restart, 'service[cinder-volume]', :immediately if node.recipe?('openstack-block-storage::volume')
 end
 
-template "/etc/ceph/ceph.client.#{node['osl-openstack']['block_backup']['rbd_store_user']}.keyring" do
-  source 'ceph.client.keyring.erb'
-  owner node['ceph']['owner']
-  group node['ceph']['group']
-  sensitive true
+osl_ceph_keyring node['osl-openstack']['block_backup']['rbd_store_user'] do
+  key secrets['ceph']['block_backup_token']
   not_if { secrets['ceph']['block_backup_token'].nil? }
-  variables(
-    ceph_user: node['osl-openstack']['block_backup']['rbd_store_user'],
-    ceph_token: secrets['ceph']['block_backup_token']
-  )
 end

@@ -4,7 +4,6 @@ solver :ruby, :required
 
 # OSL Base deps
 cookbook 'base', git: 'git@github.com:osuosl-cookbooks/base'
-cookbook 'ceph-chef', github: 'osuosl-cookbooks/ceph-chef'
 cookbook 'ibm-power', git: 'git@github.com:osuosl-cookbooks/ibm-power.git'
 cookbook 'osl-apache', git: 'git@github.com:osuosl-cookbooks/osl-apache', branch: 'stable/7.x'
 cookbook 'osl-ceph', git: 'git@github.com:osuosl-cookbooks/osl-ceph'

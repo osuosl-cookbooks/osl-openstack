@@ -22,6 +22,8 @@ class ::Chef::Recipe
   include ::Openstack
 end
 
+fsid = ceph_fsid
+
 node.default['authorization']['sudo']['include_sudoers_d'] = true
 node.default['apache']['contact'] = 'hostmaster@osuosl.org'
 node.default['osl-apache']['server_status_port'] = 80
@@ -136,7 +138,7 @@ node.default['openstack']['compute']['conf'].tap do |conf|
   conf['DEFAULT']['compute_monitors'] = 'cpu.virt_driver'
   conf['notifications']['notify_on_state_change'] = 'vm_and_task_state'
   if node['osl-openstack']['ceph']['volume']
-    conf['libvirt']['rbd_secret_uuid'] = node['ceph']['fsid-secret']
+    conf['libvirt']['rbd_secret_uuid'] = fsid
     conf['libvirt']['rbd_user'] = node['osl-openstack']['block']['rbd_store_user']
   end
   if node['osl-openstack']['ceph']['compute']
@@ -412,7 +414,7 @@ node.override['openstack']['block-storage']['conf'].tap do |conf|
     conf['ceph']['rbd_store_chunk_size'] = 4
     conf['ceph']['rados_connect_timeout'] = -1
     conf['ceph']['rbd_user'] = node['osl-openstack']['block']['rbd_store_user']
-    conf['ceph']['rbd_secret_uuid'] = node['ceph']['fsid-secret']
+    conf['ceph']['rbd_secret_uuid'] = fsid
     conf['ceph_ssd']['volume_driver'] = 'cinder.volume.drivers.rbd.RBDDriver'
     conf['ceph_ssd']['volume_backend_name'] = 'ceph_ssd'
     conf['ceph_ssd']['rbd_pool'] = node['osl-openstack']['block']['rbd_ssd_pool']
@@ -422,9 +424,9 @@ node.override['openstack']['block-storage']['conf'].tap do |conf|
     conf['ceph_ssd']['rbd_store_chunk_size'] = 4
     conf['ceph_ssd']['rados_connect_timeout'] = -1
     conf['ceph_ssd']['rbd_user'] = node['osl-openstack']['block']['rbd_store_user']
-    conf['ceph_ssd']['rbd_secret_uuid'] = node['ceph']['fsid-secret']
+    conf['ceph_ssd']['rbd_secret_uuid'] = fsid
     conf['libvirt']['rbd_user'] = node['osl-openstack']['block']['rbd_store_user']
-    conf['libvirt']['rbd_secret_uuid'] = node['ceph']['fsid-secret']
+    conf['libvirt']['rbd_secret_uuid'] = fsid
   end
 end
 
