@@ -200,7 +200,6 @@ describe 'osl-openstack::compute_controller' do
       let(:node) { runner.node }
       cached(:chef_run) { runner.converge(described_recipe) }
       include_context 'common_stubs'
-      include_context 'ceph_stubs'
       migrate_flags =
         %w(
           VIR_MIGRATE_UNDEFINE_SOURCE

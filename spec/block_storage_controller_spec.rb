@@ -102,7 +102,6 @@ describe 'osl-openstack::block_storage_controller' do
       let(:node) { runner.node }
       cached(:chef_run) { runner.converge(described_recipe) }
       include_context 'common_stubs'
-      include_context 'ceph_stubs'
       [
         /^enabled_backends = ceph,ceph_ssd$/,
         /^backup_driver = cinder.backup.drivers.ceph$/,

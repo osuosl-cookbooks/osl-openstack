@@ -16,19 +16,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-node.default['ceph']['config-sections'].tap do |conf|
-  conf['client']['admin socket'] = '/var/run/ceph/guests/$cluster-$type.$id.$pid.$cctid.asok'
-  conf['client']['rbd concurrent management ops'] = 20
-  conf['client']['rbd cache'] = 'true'
-  conf['client']['rbd cache writethrough until flush'] = 'true'
-  conf['client']['log file'] = '/var/log/ceph/qemu-guest-$pid.log'
-end
-
 osl_firewall_openstack 'osl-openstack'
 osl_firewall_vnc 'osl-openstack'
 
 include_recipe 'osl-openstack::default'
 include_recipe 'ibm-power::default'
+
+edit_resource(:osl_ceph_config, 'default') do
+  client_options [
+    'admin socket = /var/run/ceph/guests/$cluster-$type.$id.$pid.$cctid.asok',
+    'rbd concurrent management ops = 20',
+    'rbd cache = true',
+    'rbd cache writethrough until flush = true',
+    'log file = /var/log/ceph/qemu-guest-$pid.log',
+  ]
+end
 
 kernel_module 'tun' do
   action :load
@@ -125,7 +127,7 @@ if node['osl-openstack']['ceph']['volume'] || node['osl-openstack']['ceph']['com
   end
 
   secrets = openstack_credential_secrets
-  secret_uuid = node['ceph']['fsid-secret']
+  fsid = ceph_fsid
   ceph_user = node['osl-openstack']['block']['rbd_store_user']
   secret_file = ::File.join(Chef::Config[:file_cache_path], 'secret.xml')
 
@@ -135,24 +137,25 @@ if node['osl-openstack']['ceph']['volume'] || node['osl-openstack']['ceph']['com
     group 'root'
     mode '00600'
     variables(
-      uuid: secret_uuid,
+      uuid: fsid,
       client_name: ceph_user
     )
-    not_if "virsh secret-list | grep #{secret_uuid}"
-    not_if { secret_uuid.nil? }
+    not_if "virsh secret-list | grep #{fsid}"
+    not_if { fsid.nil? }
   end
 
   execute "virsh secret-define --file #{secret_file}" do
-    not_if "virsh secret-list | grep #{secret_uuid}"
-    not_if { secret_uuid.nil? }
+    not_if "virsh secret-list | grep #{fsid}"
+    not_if { fsid.nil? }
   end
 
   # this will update the key if necessary
   execute 'update virsh ceph secret' do
-    command "virsh secret-set-value --secret #{secret_uuid} --base64 #{secrets['ceph']['block_token']}"
+    command "virsh secret-set-value --secret #{fsid} --base64 #{secrets['ceph']['block_token']}"
     sensitive true
-    not_if "virsh secret-get-value #{secret_uuid} | grep #{secrets['ceph']['block_token']}"
-    not_if { secret_uuid.nil? || secrets['ceph']['block_token'].nil? }
+    not_if "virsh secret-get-value #{fsid} | grep #{secrets['ceph']['block_token']}"
+    not_if { secrets['ceph']['block_token'].nil? }
+    not_if { fsid.nil? }
   end
 
   file secret_file do
