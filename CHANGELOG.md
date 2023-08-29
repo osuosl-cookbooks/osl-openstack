@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+10.5.0 (2023-08-29)
+-------------------
+- Update to refactored osl-ceph cookbook
+
 10.4.6 (2023-05-15)
 -------------------
 - Ensure we have proper permissions for libvirt on NVMe nodes
