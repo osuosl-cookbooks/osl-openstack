@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+10.6.1 (2023-10-13)
+-------------------
+- Use correct bound interface based on the attribute
+
 10.6.0 (2023-10-13)
 -------------------
 - Refactor mon recipe to use check_http
