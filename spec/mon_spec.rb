@@ -38,56 +38,56 @@ describe 'osl-openstack::mon' do
       expect(chef_run).to add_nrpe_check('check_keystone_api')
         .with(
           command: '/usr/lib64/nagios/plugins/check_http',
-          parameters: '--ssl -I 127.0.0.1 -p 5000'
+          parameters: '--ssl -I 10.0.0.2 -p 5000'
         )
     end
     it do
       expect(chef_run).to add_nrpe_check('check_glance_api')
         .with(
           command: '/usr/lib64/nagios/plugins/check_http',
-          parameters: '-I 127.0.0.1 -p 9292'
+          parameters: '-I 10.0.0.2 -p 9292'
         )
     end
     it do
       expect(chef_run).to add_nrpe_check('check_nova_api')
         .with(
           command: '/usr/lib64/nagios/plugins/check_http',
-          parameters: '-I 127.0.0.1 -p 8774'
+          parameters: '-I 10.0.0.2 -p 8774'
         )
     end
     it do
       expect(chef_run).to add_nrpe_check('check_nova_placement_api')
         .with(
           command: '/usr/lib64/nagios/plugins/check_http',
-          parameters: '-I 127.0.0.1 -p 8778'
+          parameters: '-I 10.0.0.2 -p 8778'
         )
     end
     it do
       expect(chef_run).to add_nrpe_check('check_novnc')
         .with(
           command: '/usr/lib64/nagios/plugins/check_http',
-          parameters: '--ssl -I 127.0.0.1 -p 6080'
+          parameters: '--ssl -I 10.0.0.2 -p 6080'
         )
     end
     it do
       expect(chef_run).to add_nrpe_check('check_neutron_api')
         .with(
           command: '/usr/lib64/nagios/plugins/check_http',
-          parameters: '-I 127.0.0.1 -p 9696'
+          parameters: '-I 10.0.0.2 -p 9696'
         )
     end
     it do
       expect(chef_run).to add_nrpe_check('check_cinder_api')
         .with(
           command: '/usr/lib64/nagios/plugins/check_http',
-          parameters: '-I 127.0.0.1 -p 8776'
+          parameters: '-I 10.0.0.2 -p 8776'
         )
     end
     it do
       expect(chef_run).to add_nrpe_check('check_heat_api')
         .with(
           command: '/usr/lib64/nagios/plugins/check_http',
-          parameters: '-I 127.0.0.1 -p 8004'
+          parameters: '-I 10.0.0.2 -p 8004'
         )
     end
     it do
