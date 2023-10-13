@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+10.6.0 (2023-10-13)
+-------------------
+- Refactor mon recipe to use check_http
+
 10.5.0 (2023-08-29)
 -------------------
 - Update to refactored osl-ceph cookbook
