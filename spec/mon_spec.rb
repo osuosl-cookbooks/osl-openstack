@@ -26,160 +26,69 @@ describe 'osl-openstack::mon' do
   end
   context 'controller node' do
     cached(:chef_run) do
-      ChefSpec::SoloRunner.new(REDHAT_OPTS.dup.merge(step_into: %w(osc_nagios_check))) do |node|
+      ChefSpec::SoloRunner.new(REDHAT_OPTS) do |node|
         node.override['osl-openstack']['node_type'] = 'controller'
         node.automatic['filesystem2']['by_mountpoint']
       end.converge(described_recipe)
     end
     include_context 'identity_stubs'
-    plugin_dir = '/usr/lib64/nagios/plugins'
-    check_openstack = ::File.join(plugin_dir, 'check_openstack')
-    %w(osl-openstack osl-repos::oslrepo).each do |r|
-      it do
-        expect(chef_run).to include_recipe(r)
-      end
-    end
-    it do
-      expect(chef_run).to run_execute('virtualenv -p python3 /opt/osc-nagios')
-        .with(
-          creates: '/opt/osc-nagios/bin/pip'
-        )
-    end
-    it do
-      expect(chef_run).to remove_package('nagios-plugins-openstack')
-    end
-    it do
-      expect(chef_run).to nothing_execute('monitoring-for-openstack deps').with(
-        command: '/opt/osc-nagios/bin/pip install -r requirements.txt',
-        cwd: '/var/chef/cache/osops-tools-monitoring/monitoring-for-openstack'
-      )
-    end
-    it do
-      expect(chef_run).to nothing_execute('monitoring-for-openstack install').with(
-        command: '/opt/osc-nagios/bin/python setup.py install',
-        cwd: '/var/chef/cache/osops-tools-monitoring/monitoring-for-openstack'
-      )
-    end
-    it do
-      expect(chef_run).to sync_git('/var/chef/cache/osops-tools-monitoring')
-        .with(
-          revision: 'stein',
-          repository: 'https://github.com/osuosl/osops-tools-monitoring.git'
-        )
-    end
-    it do
-      expect(chef_run.git('/var/chef/cache/osops-tools-monitoring')).to \
-        notify('execute[monitoring-for-openstack deps]').immediately
-    end
-    it do
-      expect(chef_run.git('/var/chef/cache/osops-tools-monitoring')).to \
-        notify('execute[monitoring-for-openstack install]').immediately
-    end
-    it do
-      expect(chef_run).to create_file(check_openstack)
-    end
-    it do
-      expect(chef_run).to create_sudo('nrpe-openstack')
-        .with(
-          user: ['%nrpe'],
-          nopasswd: true,
-          runas: 'root',
-          commands: [check_openstack]
-        )
-    end
-    %w(
-      check_cinder_api
-      check_cinder_services
-      check_neutron_agents
-      check_neutron_floating_ip
-      check_nova_hypervisors
-      check_nova_images
-      check_nova_services
-    ).each do |check|
-      it do
-        expect(chef_run).to remove_nrpe_check(check)
-      end
-    end
 
-    %w(
-      check_glance_api
-      check_keystone_api
-      check_neutron_api
-    ).each do |check|
-      it do
-        expect(chef_run).to add_osc_nagios_check(check)
-      end
-      it do
-        expect(chef_run.link(::File.join(plugin_dir, check))).to \
-          link_to("/usr/libexec/openstack-monitoring/checks/oschecks-#{check}")
-      end
-      it do
-        expect(chef_run).to add_nrpe_check(check).with(command: "/bin/sudo #{check_openstack} #{check}")
-      end
+    it { expect(chef_run).to install_package('nagios-plugins-http') }
+    it do
+      expect(chef_run).to add_nrpe_check('check_keystone_api')
+        .with(
+          command: '/usr/lib64/nagios/plugins/check_http',
+          parameters: '--ssl -I 127.0.0.1 -p 5000'
+        )
     end
     it do
-      expect(chef_run).to add_osc_nagios_check('check_nova_api').with(parameters: '--os-compute-api-version 2')
-    end
-    it do
-      expect(chef_run.link(::File.join(plugin_dir, 'check_nova_api'))).to \
-        link_to('/usr/libexec/openstack-monitoring/checks/oschecks-check_nova_api')
+      expect(chef_run).to add_nrpe_check('check_glance_api')
+        .with(
+          command: '/usr/lib64/nagios/plugins/check_http',
+          parameters: '-I 127.0.0.1 -p 9292'
+        )
     end
     it do
       expect(chef_run).to add_nrpe_check('check_nova_api')
         .with(
-          command: "/bin/sudo #{check_openstack} check_nova_api",
-          parameters: '--os-compute-api-version 2'
+          command: '/usr/lib64/nagios/plugins/check_http',
+          parameters: '-I 127.0.0.1 -p 8774'
         )
     end
     it do
-      expect(chef_run).to add_osc_nagios_check('check_cinder_api_v2')
+      expect(chef_run).to add_nrpe_check('check_nova_placement_api')
         .with(
-          plugin: 'check_cinder_api',
-          parameters: '--os-volume-api-version 2'
+          command: '/usr/lib64/nagios/plugins/check_http',
+          parameters: '-I 127.0.0.1 -p 8778'
         )
     end
     it do
-      expect(chef_run).to add_nrpe_check('check_cinder_api_v2')
+      expect(chef_run).to add_nrpe_check('check_novnc')
         .with(
-          command: "/bin/sudo #{check_openstack} check_cinder_api",
-          parameters: '--os-volume-api-version 2'
+          command: '/usr/lib64/nagios/plugins/check_http',
+          parameters: '--ssl -I 127.0.0.1 -p 6080'
         )
     end
     it do
-      expect(chef_run.link(::File.join(plugin_dir, 'check_cinder_api'))).to \
-        link_to('/usr/libexec/openstack-monitoring/checks/oschecks-check_cinder_api')
-    end
-    it do
-      expect(chef_run).to add_osc_nagios_check('check_cinder_api_v3')
+      expect(chef_run).to add_nrpe_check('check_neutron_api')
         .with(
-          plugin: 'check_cinder_api',
-          parameters: '--os-volume-api-version 3'
+          command: '/usr/lib64/nagios/plugins/check_http',
+          parameters: '-I 127.0.0.1 -p 9696'
         )
     end
     it do
-      expect(chef_run).to add_nrpe_check('check_cinder_api_v3')
+      expect(chef_run).to add_nrpe_check('check_cinder_api')
         .with(
-          command: "/bin/sudo #{check_openstack} check_cinder_api",
-          parameters: '--os-volume-api-version 3'
+          command: '/usr/lib64/nagios/plugins/check_http',
+          parameters: '-I 127.0.0.1 -p 8776'
         )
     end
     it do
-      expect(chef_run).to add_osc_nagios_check('check_neutron_floating_ip_public')
+      expect(chef_run).to add_nrpe_check('check_heat_api')
         .with(
-          plugin: 'check_neutron_floating_ip',
-          parameters: '--ext_network_name public'
+          command: '/usr/lib64/nagios/plugins/check_http',
+          parameters: '-I 127.0.0.1 -p 8004'
         )
-    end
-    it do
-      expect(chef_run).to add_nrpe_check('check_neutron_floating_ip_public')
-        .with(
-          command: "/bin/sudo #{check_openstack} check_neutron_floating_ip",
-          parameters: '--ext_network_name public'
-        )
-    end
-    it do
-      expect(chef_run.link(::File.join(plugin_dir, 'check_neutron_floating_ip'))).to \
-        link_to('/usr/libexec/openstack-monitoring/checks/oschecks-check_neutron_floating_ip')
     end
     it do
       expect(chef_run).to_not create_file('/usr/local/etc/os_cluster')
