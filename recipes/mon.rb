@@ -28,103 +28,46 @@ if node['kernel']['machine'] == 'ppc64le'
 end
 
 if node['osl-openstack']['node_type'] == 'controller'
-  include_recipe 'osl-openstack'
-  include_recipe 'osl-repos::oslrepo'
-  include_recipe 'git'
-  include_recipe 'base::python'
+  package 'nagios-plugins-http'
 
-  venv = '/opt/osc-nagios'
-
-  execute "virtualenv -p python3 #{venv}" do
-    creates "#{venv}/bin/pip"
+  nrpe_check 'check_keystone_api' do
+    command "#{node['nrpe']['plugin_dir']}/check_http"
+    parameters '--ssl -I 127.0.0.1 -p 5000'
   end
 
-  # Remove old openstack nagios plugins and their checks
-  package 'nagios-plugins-openstack' do
-    action :remove
+  nrpe_check 'check_glance_api' do
+    command "#{node['nrpe']['plugin_dir']}/check_http"
+    parameters '-I 127.0.0.1 -p 9292'
   end
 
-  %w(
-    check_cinder_api
-    check_cinder_services
-    check_neutron_agents
-    check_neutron_floating_ip
-    check_nova_hypervisors
-    check_nova_images
-    check_nova_services
-  ).each do |check|
-    nrpe_check check do
-      action :remove
-    end
+  nrpe_check 'check_nova_api' do
+    command "#{node['nrpe']['plugin_dir']}/check_http"
+    parameters '-I 127.0.0.1 -p 8774'
   end
 
-  check_openstack = ::File.join(node['nrpe']['plugin_dir'], 'check_openstack')
-  tools_dir = ::File.join(Chef::Config[:file_cache_path], 'osops-tools-monitoring')
-
-  execute 'monitoring-for-openstack deps' do
-    command "#{venv}/bin/pip install -r requirements.txt"
-    cwd ::File.join(tools_dir, 'monitoring-for-openstack')
-    action :nothing
+  nrpe_check 'check_nova_placement_api' do
+    command "#{node['nrpe']['plugin_dir']}/check_http"
+    parameters '-I 127.0.0.1 -p 8778'
   end
 
-  execute 'monitoring-for-openstack install' do
-    command "#{venv}/bin/python setup.py install"
-    cwd ::File.join(tools_dir, 'monitoring-for-openstack')
-    action :nothing
+  nrpe_check 'check_novnc' do
+    command "#{node['nrpe']['plugin_dir']}/check_http"
+    parameters '--ssl -I 127.0.0.1 -p 6080'
   end
 
-  git tools_dir do
-    revision node['openstack']['release']
-    repository 'https://github.com/osuosl/osops-tools-monitoring.git'
-    notifies :run, 'execute[monitoring-for-openstack deps]', :immediately
-    notifies :run, 'execute[monitoring-for-openstack install]', :immediately
+  nrpe_check 'check_neutron_api' do
+    command "#{node['nrpe']['plugin_dir']}/check_http"
+    parameters '-I 127.0.0.1 -p 9696'
   end
 
-  # Wrapper for using sudo to check openstack services
-  file check_openstack do
-    mode '755'
-    content <<~EOF
-      #!/bin/bash
-
-      source /root/openrc
-      #{node['nrpe']['plugin_dir']}/${@}
-    EOF
+  nrpe_check 'check_cinder_api' do
+    command "#{node['nrpe']['plugin_dir']}/check_http"
+    parameters '-I 127.0.0.1 -p 8776'
   end
 
-  sudo 'nrpe-openstack' do
-    user '%nrpe'
-    nopasswd true
-    runas 'root'
-    commands [check_openstack]
-  end
-
-  %w(
-    check_glance_api
-    check_keystone_api
-    check_neutron_api
-  ).each do |check|
-    osc_nagios_check check
-  end
-
-  osc_nagios_check 'check_nova_api' do
-    parameters '--os-compute-api-version 2'
-  end
-
-  osc_nagios_check 'check_cinder_api_v2' do
-    plugin 'check_cinder_api'
-    parameters '--os-volume-api-version 2'
-  end
-
-  osc_nagios_check 'check_cinder_api_v3' do
-    plugin 'check_cinder_api'
-    parameters '--os-volume-api-version 3'
-  end
-
-  node['osl-openstack']['external_networks'].each do |network|
-    osc_nagios_check "check_neutron_floating_ip_#{network}" do
-      plugin 'check_neutron_floating_ip'
-      parameters "--ext_network_name #{network}"
-    end
+  nrpe_check 'check_heat_api' do
+    command "#{node['nrpe']['plugin_dir']}/check_http"
+    parameters '-I 127.0.0.1 -p 8004'
   end
 
   unless node['osl-openstack']['cluster_name'].nil?
