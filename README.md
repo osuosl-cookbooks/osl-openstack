@@ -5,7 +5,7 @@ ppc64le compute nodes.
 
 ## Supported Platforms
 
-- OpenStack Pike release
+- OpenStack Stein release
 - CentOS 7
 
 # Multi-host test integration
@@ -15,7 +15,7 @@ various parts of this cookbook in multiple nodes, similar to that in production.
 
 ## Prereqs
 
-- ChefDK 2.5.3 or later
+- Chef/Cinc Workstation
 - Terraform
 - kitchen-terraform
 - OpenStack cluster
@@ -29,7 +29,9 @@ export TF_VAR_ssh_key_name="$OS_SSH_KEYPAIR"
 ## Supported Deployments
 
 - Chef-zero node acting as a Chef Server
-- Controller node (DB, MQ, Neutron, public apis, web interface, etc)
+- Database node
+- Ceph node
+- Controller node (MQ, Neutron, public apis, web interface, etc)
 - Compute node (also includes Cinder volume service)
 
 ## Testing
@@ -39,7 +41,7 @@ First, generate some keys for chef-zero and then simply run the following suite.
 ``` console
 # Only need to run this once
 $ chef exec rake create_key
-$ kitchen test multi-node
+$ KITCHEN_YAML=kitchen.multi-node.yml kitchen test multi-node
 ```
 
 Be patient as this will take a while to converge all of the nodes (approximately 40 minutes).

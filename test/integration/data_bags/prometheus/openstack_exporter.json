@@ -1,0 +1,13 @@
+{
+  "id": "openstack_exporter",
+  "mycloud": {
+    "username": "admin",
+    "user_domain_name": "default",
+    "password": "admin",
+    "project_name": "admin",
+    "project_domain_name": "default",
+    "identity_api_version": 3,
+    "auth_url": "https://controller.example.com:5000/v3",
+    "region_name": "RegionOne"
+  }
+}
