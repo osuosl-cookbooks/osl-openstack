@@ -1,0 +1,18 @@
+{
+    "chef_type": "role",
+    "default_attributes": {},
+    "description": "OpenStack Terraform Common Role",
+    "env_run_lists": {},
+    "json_class": "Chef::Role",
+    "name": "openstack_tf_common",
+    "override_attributes": {},
+    "run_list": [
+      "role[openstack_tf]",
+      "recipe[openstack_test::ceph_tf_config]",
+      "recipe[openstack_test::hosts_tf]",
+      "recipe[openstack_test::compute]",
+      "recipe[openstack_test::cacert]",
+      "recipe[osl-ceph]",
+      "recipe[osl-openstack]"
+    ]
+}

@@ -1,0 +1,34 @@
+---
+provisioner:
+  name: terraform
+
+driver:
+  name: terraform
+  command_timeout: 3600
+
+transport:
+  command_timeout: 3600
+
+verifier:
+  name: terraform
+  systems:
+    - name: controller
+      backend: ssh
+      controls:
+        - controller
+      hosts_output: controller
+      user: centos
+      sudo: true
+    - name: compute
+      backend: ssh
+      controls:
+        - compute
+      hosts_output: compute
+      user: centos
+      sudo: true
+
+platforms:
+  - name: centos-7
+
+suites:
+  - name: multi-node

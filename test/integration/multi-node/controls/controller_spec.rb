@@ -303,7 +303,7 @@ export OS_AUTH_TYPE=password})
     its('stdout') { should match(/locations=/) }
   end
 
-  describe command('rbd ls images') do
+  describe command('rbd --id glance ls images') do
     its('stdout') { should match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/) }
   end
 
@@ -333,75 +333,18 @@ export OS_AUTH_TYPE=password})
     its('securitygroup.firewall_driver') { should cmp 'neutron.agent.linux.iptables_firewall.IptablesFirewallDriver' }
   end
 
-  describe command('systemctl list-dependencies --reverse neutron-linuxbridge-agent') do
-    its('stdout') { should include 'iptables' }
-  end
-  describe package('nagios-plugins-openstack') do
-    it { should_not be_installed }
-  end
-
-  describe file('/usr/lib64/nagios/plugins/check_openstack') do
-    its('content') { should match(%r{/usr/lib64/nagios/plugins/\$\{@\}}) }
-    its('mode') { should cmp '0755' }
-  end
-
-  describe file('/etc/sudoers.d/nrpe-openstack') do
-    its('content') do
-      should match(%r{%nrpe ALL=\(root\) NOPASSWD:/usr/lib64/nagios/plugins/check_openstack})
-    end
-  end
-
   %w(
     check_cinder_api
-    check_cinder_services
-    check_neutron_agents
-    check_neutron_floating_ip
-    check_nova_hypervisors
-    check_nova_images
-    check_nova_services
-  ).each do |check|
-    describe file("/etc/nagios/nrpe.d/#{check}.cfg") do
-      it { should_not exist }
-    end
-  end
-
-  %w(
-    check_cinder_api_v2
-    check_cinder_api_v3
     check_glance_api
+    check_heat_api
     check_keystone_api
+    check_neutron_api
     check_nova_api
+    check_nova_placement_api
+    check_novnc
   ).each do |check|
-    # TODO: These checks are failing due to python errors
-    # check_neutron_api
-    # check_neutron_floating_ip_public
     describe command("/usr/lib64/nagios/plugins/check_nrpe -H localhost -c #{check}") do
       its('exit_status') { should eq 0 }
-    end
-  end
-
-  describe file('/etc/nagios/nrpe.d/check_nova_api.cfg') do
-    its('content') do
-      should match(%r{command\[check_nova_api\]=/bin/sudo /usr/lib64/nagios/plugins/check_openstack check_nova_api \
---os-compute-api-version 2})
-    end
-  end
-
-  describe file('/etc/nagios/nrpe.d/check_cinder_api_v2.cfg') do
-    its('content') do
-      should match(%r{command\[check_cinder_api_v2\]=/bin/sudo /usr/lib64/nagios/plugins/check_openstack check_cinder_api --os-volume-api-version 2$})
-    end
-  end
-
-  describe file('/etc/nagios/nrpe.d/check_cinder_api_v3.cfg') do
-    its('content') do
-      should match(%r{command\[check_cinder_api_v3\]=/bin/sudo /usr/lib64/nagios/plugins/check_openstack check_cinder_api --os-volume-api-version 3$})
-    end
-  end
-
-  describe file('/etc/nagios/nrpe.d/check_neutron_floating_ip_public.cfg') do
-    its('content') do
-      should match(%r{command\[check_neutron_floating_ip_public\]=/bin/sudo /usr/lib64/nagios/plugins/check_openstack check_neutron_floating_ip --ext_network_name public$})
     end
   end
 
@@ -421,6 +364,7 @@ export OS_AUTH_TYPE=password})
       should match(%r{command\[check_load\]=/usr/lib64/nagios/plugins/check_load #{load_thres}})
     end
   end
+
   %w(
     neutron-dhcp-agent
     neutron-l3-agent

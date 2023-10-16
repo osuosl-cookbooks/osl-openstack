@@ -238,25 +238,3 @@ suites:
         block-storage:
           volume:
             create_volume_group: true
-#   - name: multi-node
-#     driver:
-#       name: terraform
-#       command_timeout: 3600
-#     provisioner: terraform
-#     verifier:
-#       name: terraform
-#       systems:
-#         - name: controller
-#           backend: ssh
-#           controls:
-#             - controller
-#           hosts_output: controller
-#           user: centos
-#           sudo: true
-#         - name: compute
-#           backend: ssh
-#           controls:
-#             - compute
-#           hosts_output: compute
-#           user: centos
-#           sudo: true
