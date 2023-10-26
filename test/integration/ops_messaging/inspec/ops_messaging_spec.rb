@@ -3,11 +3,9 @@ describe service('rabbitmq-server') do
   it { should be_running }
 end
 
-%w(5672 15672).each do |p|
-  describe port(p) do
-    it { should be_listening }
-    its('protocols') { should include 'tcp' }
-  end
+describe port 5672 do
+  it { should be_listening }
+  its('protocols') { should include 'tcp' }
 end
 
 describe iptables do
@@ -21,9 +19,5 @@ describe command('rpm -qi rabbitmq-server | grep Signature') do
 end
 
 describe command('rabbitmqctl -q list_users') do
-  its('stdout') { should match(/admin.*[administrator]/) }
-end
-
-describe command('curl -i -u admin:admin http://localhost:15672/api/whoami') do
-  its('stdout') { should match(/{"name":"admin","tags":"administrator"}/) }
+  its('stdout') { should match(/openstack.*\[\]/) }
 end

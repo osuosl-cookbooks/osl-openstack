@@ -7,12 +7,12 @@ driver:
   user_data: userdata.txt
 provisioner:
   name: chef_infra
-  product_version: 16
+  product_version: 17
   deprecations_as_errors: true
   roles_path: test/integration/roles
   data_bags_path: test/integration/data_bags
   encrypted_data_bag_secret_key_path: test/integration/encrypted_data_bag_secret
-  # enforce_idempotency: true
+  enforce_idempotency: true
   multiple_converge: 2
   attributes:
     base:
@@ -24,7 +24,7 @@ provisioner:
         volume: true
       cluster_role: openstack_tk
       database_suffix: x86
-      databag_prefix: x86
+      databag_item: x86
       cluster_name: x86
       endpoint_hostname: controller.example.com
       db_hostname: controller.example.com
@@ -85,6 +85,7 @@ suites:
     run_list:
       - role[openstack_tk]
       - recipe[osl-openstack::ops_database]
+      - recipe[osl-openstack::ops_messaging]
       - recipe[osl-openstack::identity]
       - recipe[openstack_test::cacert]
   - name: image

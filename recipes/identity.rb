@@ -16,11 +16,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-include_recipe 'osl-openstack'
-include_recipe 'osl-openstack::ops_messaging'
 
-osl_firewall_openstack 'osl-openstack'
-
-include_recipe 'certificate::wildcard'
-include_recipe 'openstack-identity::server-apache'
-include_recipe 'openstack-identity::registration'
+osl_openstack_identity 'default'

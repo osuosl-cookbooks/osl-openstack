@@ -1,0 +1,91 @@
+{
+  "id": "x86",
+  "block-storage": {
+    "db": {
+      "user": "cinder",
+      "pass": "cinder"
+    }
+  },
+  "compute_api": {
+    "db": {
+      "user": "nova_api",
+      "pass": "nova_api"
+    }
+  },
+  "compute_cell0": {
+    "db": {
+      "user": "nova_cell0",
+      "pass": "nova_cell0"
+    }
+  },
+  "compute": {
+    "db": {
+      "user": "nova",
+      "pass": "nova"
+    }
+  },
+  "dashboard": {
+    "db": {
+      "user": "horizon",
+      "pass": "horizon"
+    }
+  },
+  "database_server": {
+    "suffix": "x86",
+    "endpoint": "localhost"
+  },
+  "identity": {
+    "endpoint": "controller.example.com",
+    "db": {
+      "user": "keystone",
+      "pass": "keystone"
+    }
+  },
+  "image": {
+    "db": {
+      "user": "glance",
+      "pass": "glance"
+    }
+  },
+  "messaging": {
+    "endpoint": "controller.example.com",
+    "user": "openstack",
+    "pass": "openstack"
+  },
+  "memcached": {
+    "endpoint": "controller.example.com:11211"
+  },
+  "network": {
+    "db": {
+      "user": "neutron",
+      "pass": "neutron"
+    }
+  },
+  "orchestration": {
+    "db": {
+      "user": "heat",
+      "pass": "heat"
+    }
+  },
+  "placement": {
+    "db": {
+      "user": "placement",
+      "pass": "placement"
+    }
+  },
+  "telemetry": {
+    "db": {
+      "user": "ceilometer",
+      "pass": "ceilometer"
+    }
+  },
+  "telemetry_metric": {
+    "db": {
+      "user": "gnocchi",
+      "pass": "gnocchi"
+    }
+  },
+  "users": {
+    "admin": "admin"
+  }
+}

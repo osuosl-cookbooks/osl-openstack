@@ -1,4 +1,3 @@
-
 def openstack_credential_secrets
   data_bag_item(
     node['osl-openstack']['ceph_databag'],

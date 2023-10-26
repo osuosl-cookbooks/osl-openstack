@@ -16,9 +16,49 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-include_recipe 'osl-openstack'
+s = os_secrets
+suffix = s['database_server']['suffix']
 
-osl_firewall_port 'mysql'
+osl_mysql_test "#{suffix}_keystone" do
+  username s['identity']['db']['user']
+  password s['identity']['db']['pass']
+  encoding 'utf8'
+  collation 'utf8_general_ci'
+  version '10.3'
+end
 
-include_recipe 'openstack-ops-database::server'
-include_recipe 'openstack-ops-database::openstack-db'
+mariadb_server_configuration 'openstack' do
+  mysqld_options(
+    'character-set-server' => 'utf8',
+    'collation-server' => 'utf8_general_ci'
+  )
+  notifies :restart, 'service[mariadb]', :immediately
+end
+
+service 'mariadb' do
+  action :nothing
+end
+
+openstack_services.each do |service, db|
+  next if service == 'identity'
+  next if service == 'messaging'
+
+  begin
+    mariadb_database "#{suffix}_#{db}" do
+      password 'osl_mysql_test'
+      encoding 'utf8mb4'
+      collation 'utf8mb4_unicode_ci'
+    end
+
+    mariadb_user s[service]['db']['user'] do
+      ctrl_password 'osl_mysql_test'
+      password s[service]['db']['pass']
+      host '%'
+      privileges [:all]
+      database_name db
+      action [:create, :grant]
+    end
+  rescue NoMethodError
+    Chef::Log.warn("No databag item found for #{service}")
+  end
+end
