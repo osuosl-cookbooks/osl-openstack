@@ -1,8 +1,8 @@
 {
   "heat_domain_admin": {
-    "encrypted_data": "v0eNTZZH4l2iM/nHjajZhT8mPkYXA6jTwKREMsHd/r2DwPGXNadI8wzM0Uyw\nIq7Y\n",
-    "hmac": "eDaBdHcn8IXpoKT5RBjylIbrl/+KmmUHGQlkEv7XZwU=\n",
-    "iv": "Hz9009sme9S2vliku7Zf1w==\n",
+    "encrypted_data": "JYz90zRPEDCt/7AUFvdOIq4ugXTaKpopxoOvVo79MjUWqnK28oL7kzc1BXWU\n+Q7e\n",
+    "hmac": "h0wowB59hIyxpGCSZsVmQpQCDIUD/n/4HvP8NblnW/I=\n",
+    "iv": "OLEyqMFKWmpJR8NKdqr0vw==\n",
     "version": 2,
     "cipher": "aes-256-cbc"
   },

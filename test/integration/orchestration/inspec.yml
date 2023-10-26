@@ -1,0 +1,5 @@
+---
+name: orchestration
+inputs:
+  - name: db_endpoint
+    value: localhost

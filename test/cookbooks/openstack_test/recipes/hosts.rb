@@ -1,4 +1,5 @@
-hostsfile_entry node['osl-openstack']['bind_service'] do
-  hostname 'controller.example.com'
-  action :append
+append_if_no_line node['ipaddress'] do
+  path '/etc/hosts'
+  line "#{node['ipaddress']} controller.example.com"
+  sensitive false
 end

@@ -1,9 +1,9 @@
 {
   "id": "nova_cell0",
   "nova_cell0": {
-    "encrypted_data": "6ojAGUmduvzm4Xp1hOYbppp4fsWNIppq3tYp2zKN4ts=\n",
-    "hmac": "e0pr7vhH07f14xRihSWJXxWJWLJdP+Qs+uwGaEiEdQQ=\n",
-    "iv": "GyW38hdNeOT3lEoiqsy/0Q==\n",
+    "encrypted_data": "4nWz/BqM4CxX+6pJ5iCvIvd0Q7XmgUxSTr14kTh5j+M=\n",
+    "hmac": "g1kzC47j8vHZZOT67n1Ux5RwR2kJQ5s9539V+M1kpyo=\n",
+    "iv": "4fGRM1/+CO5khVEaWh6/nw==\n",
     "version": 2,
     "cipher": "aes-256-cbc"
   }

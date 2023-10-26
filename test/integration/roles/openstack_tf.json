@@ -6,74 +6,18 @@
     "base": {
       "packages": []
     },
-    "openstack": {
-      "mq": {
-        "user": "admin"
-      },
-      "compute": {
-        "metering": true,
-        "platform": {
-          "qemu_compute_packages": [
-            "qemu-system-x86"
-          ]
-        },
-        "conf": {
-          "libvirt": {
-            "virt_type": "qemu",
-            "cpu_mode": "none"
-          }
-        }
-      },
-      "image": {
-        "image_upload": true,
-        "upload_images": [
-          "cirros"
-        ]
-      },
-      "telemetry": {
-        "pipeline": {
-          "publishers": [
-            "prometheus://localhost:9091/metrics/job/ceilometer"
-          ]
-        }
-      }
-    },
     "osl-prometheus": {
       "scrape_configs": false
     }
   },
   "default_attributes": {
-    "mysql": {
-      "server_root_password": "rootpass",
-      "server_debian_password": "debpass",
-      "server_repl_password": "replpass",
-      "allow_remote_root": true,
-      "root_network_acl": [
-        "%"
-      ]
-    },
     "osl-openstack": {
-      "database_suffix": "x86",
-      "databag_prefix": "x86",
+      "databag_item": "multinode",
       "ceph": {
         "image": true,
         "compute": true,
         "volume": true
-      },
-      "endpoint_hostname": "controller.example.com",
-      "db_hostname": "db.example.com",
-      "nova_public_key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDYOuLkP1F/Sm/dCJAA7kme+ObO4J8x2HrZU40W8QqW4yFqRPKnW5HYLeUpRzIFzWen/LIn6R6lxTfSAnnD8qEEuKbFjH5WRqJYCJeAyaTBTRyU1FHlcTR/EQ/HVZ38TQwCztZgboFb5zmWqYc3/BYBHGA6XeYN5jRcHvZbyaGL+YA1/KPIjpbQfqIPXdHfodoSNX4qQQccYBq2c/rq3Puh7Q9oVph6a2lq0wWsqYyq0vTGHPKFYShVpwDl2Z3c8eB3P7yFRzOR2VNuezJlOgoHz6D/mBObLj1n+yi07bcGbpwAH/rLEyiy4gVdru2qQAcbDL9Yibk96lovim/IH4dV nova-migration",
-      "physical_interface_mappings": [
-        {
-          "name": "public",
-          "controller": {
-            "default": "eth1.42"
-          },
-          "compute": {
-            "default": "eth1.42"
-          }
-        }
-      ]
+      }
     }
    },
   "json_class": "Chef::Role",

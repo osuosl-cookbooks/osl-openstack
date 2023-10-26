@@ -1,0 +1,11 @@
+[auth]
+admin_domain_name = Default
+admin_password = <%= @admin_password %>
+admin_project_name = admin
+admin_username = admin
+use_dynamic_credentials = true
+
+[identity]
+auth_version = v3
+disable_ssl_certificate_validation = true
+uri_v3 = https://<%= @auth_endpoint %>:5000/v3

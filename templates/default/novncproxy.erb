@@ -1,7 +1,0 @@
-<%= node["openstack"]["compute"]["custom_template_banner"] %>
-
-<% if node['osl-openstack']['novnc']['use_ssl'] %>
-OPTIONS="--ssl_only --cert <%= @cert %> --key <%= @key %>"
-<% else -%>
-#OPTIONS=""
-<% end -%>

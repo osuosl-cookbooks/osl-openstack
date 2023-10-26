@@ -1,1 +1,0 @@
-../../network/inspec/network_spec.rb

@@ -4,27 +4,39 @@ provisioner:
 
 driver:
   name: terraform
-  command_timeout: 3600
+  command_timeout: 7200
 
 transport:
-  command_timeout: 3600
+  command_timeout: 7200
 
 verifier:
   name: terraform
   systems:
     - name: controller
       backend: ssh
-      controls:
-        - controller
       hosts_output: controller
       user: centos
+      profile_locations:
+        - test/integration/block_storage_controller
+        - test/integration/compute_controller
+        - test/integration/identity
+        - test/integration/image
+        - test/integration/network
+        - test/integration/ops_messaging
+        - test/integration/orchestration
+        - test/integration/telemetry_controller
+      attrs:
+        - test/integration/multi-node/controller.yml
       sudo: true
     - name: compute
       backend: ssh
-      controls:
-        - compute
       hosts_output: compute
       user: centos
+      profile_locations:
+        - test/integration/compute
+        - test/integration/telemetry_compute
+      attrs:
+        - test/integration/multi-node/compute.yml
       sudo: true
 
 platforms:

@@ -239,17 +239,31 @@ resource "null_resource" "ceph" {
 }
 
 resource "null_resource" "controller" {
+    connection {
+        type = "ssh"
+        user = var.ssh_user_name
+        host = openstack_compute_instance_v2.controller.network.0.fixed_ip_v4
+    }
+
     provisioner "local-exec" {
         command = <<-EOF
             knife bootstrap -c test/chef-config/knife.rb \
                 ${var.ssh_user_name}@${openstack_compute_instance_v2.controller.network.0.fixed_ip_v4} \
                 --bootstrap-version ${var.chef_version} -y -N controller --sudo \
-                -r 'role[openstack_tf_common],recipe[openstack_test::prometheus],recipe[osl-prometheus::server],recipe[osl-prometheus::openstack],recipe[osl-openstack::controller],role[openstack_cinder],recipe[openstack_test::orchestration],recipe[openstack_test::tempest],recipe[openstack_test::network]'
+                -r 'role[openstack_tf_common],recipe[openstack_test::prometheus],recipe[osl-openstack::ops_messaging],recipe[osl-openstack::controller],recipe[osl-openstack::block_storage],recipe[openstack_test::image_upload]'
             EOF
         environment = {
             CHEF_SERVER = "${openstack_compute_instance_v2.chef_zero.network.0.fixed_ip_v4}"
         }
     }
+
+    provisioner "remote-exec" {
+        inline = [
+            "sudo cinc-client",
+            "sudo cinc-client",
+        ]
+    }
+
     depends_on = [
         openstack_compute_instance_v2.controller,
         null_resource.database,
@@ -258,6 +272,12 @@ resource "null_resource" "controller" {
 }
 
 resource "null_resource" "compute" {
+    connection {
+        type = "ssh"
+        user = var.ssh_user_name
+        host = openstack_compute_instance_v2.compute.network.0.fixed_ip_v4
+    }
+
     provisioner "local-exec" {
         command = <<-EOF
             knife bootstrap -c test/chef-config/knife.rb \
@@ -269,6 +289,14 @@ resource "null_resource" "compute" {
             CHEF_SERVER = "${openstack_compute_instance_v2.chef_zero.network.0.fixed_ip_v4}"
         }
     }
+
+    provisioner "remote-exec" {
+        inline = [
+            "sudo cinc-client",
+            "sudo cinc-client",
+        ]
+    }
+
     depends_on = [
         openstack_compute_instance_v2.compute,
         null_resource.controller,

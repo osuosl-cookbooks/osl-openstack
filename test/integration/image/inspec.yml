@@ -1,0 +1,5 @@
+---
+name: image
+inputs:
+  - name: db_endpoint
+    value: localhost

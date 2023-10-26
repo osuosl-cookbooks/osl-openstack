@@ -16,11 +16,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-osl_firewall_openstack 'osl-openstack'
+
+osl_repos_openstack 'compute'
+osl_openstack_client 'compute'
+osl_openstack_openrc 'compute'
+osl_firewall_openstack 'compute'
 osl_firewall_vnc 'osl-openstack'
 
-include_recipe 'osl-openstack::default'
-include_recipe 'ibm-power::default'
+s = os_secrets
+c = s['compute']
+b = s['block-storage']
+
+include_recipe 'yum-qemu-ev'
 
 edit_resource(:osl_ceph_config, 'default') do
   client_options [
@@ -33,11 +40,51 @@ edit_resource(:osl_ceph_config, 'default') do
 end
 
 kernel_module 'tun' do
-  action :load
+  action [:install, :load]
 end
 
 # Disable IPv6 autoconf globally
 cookbook_file '/etc/sysconfig/network'
+
+package %w(
+  device-mapper
+  device-mapper-multipath
+  libguestfs-rescue
+  libguestfs-tools
+  libvirt
+  openstack-nova-compute
+  python-libguestfs
+  sg3_utils
+  sysfsutils
+)
+
+link "/usr/bin/qemu-system-#{node['kernel']['machine']}" do
+  to '/usr/libexec/qemu-kvm'
+end
+
+cookbook_file '/etc/libvirt/libvirtd.conf' do
+  notifies :restart, 'service[libvirtd]'
+end
+
+service 'libvirtd' do
+  action [:enable, :start]
+end
+
+execute 'Deleting default libvirt network' do
+  command 'virsh net-destroy default'
+  only_if 'virsh net-list | grep -q default'
+end
+
+include_recipe 'osl-openstack::compute_common'
+
+service 'openstack-nova-compute' do
+  action [:enable, :start]
+  subscribes :restart, 'template[/etc/nova/nova.conf]'
+end
+
+service 'libvirt-guests' do
+  action [:enable, :start]
+end
 
 case node['kernel']['machine']
 when 'ppc64le'
@@ -46,12 +93,12 @@ when 'ppc64le'
   include_recipe 'base::grub'
 
   kernel_module 'kvm_pr' do
-    action :load
+    action [:install, :load]
     only_if 'lscpu | grep "KVM"'
   end
 
   kernel_module 'kvm_hv' do
-    action :load
+    action [:install, :load]
     not_if 'lscpu | grep "KVM"'
   end
 
@@ -64,16 +111,16 @@ when 'ppc64le'
   # (unit is part of the powerpc-utils package)
   service 'smt_off' do
     action [:enable, :start]
-  end if node.read('ibm_power', 'cpu', 'cpu_model') =~ /power8/
+  end if node.read('cpu', 'cpu_model') =~ /POWER8/
 when 'aarch64'
   include_recipe 'yum-kernel-osuosl::install'
   include_recipe 'base::grub'
 when 'x86_64'
   kvm_module =
     if node.read('dmi', 'processor', 'manufacturer') == 'AMD'
-      'kvm-amd'
+      'kvm_amd'
     else
-      'kvm-intel'
+      'kvm_intel'
     end
 
   kernel_module kvm_module do
@@ -82,26 +129,8 @@ when 'x86_64'
   end
 end
 
-# Missing package dep for telemetry
-package 'python2-wsme'
-
-include_recipe 'osl-openstack::linuxbridge'
-include_recipe 'openstack-compute::compute'
-include_recipe 'openstack-telemetry::agent-compute'
-
-delete_lines 'remove dhcpbridge on compute' do
-  path '/usr/share/nova/nova-dist.conf'
-  pattern '^dhcpbridge.*'
-  backup true
-  notifies :restart, 'service[nova-compute]'
-end
-
-delete_lines 'remove force_dhcp_release on compute' do
-  path '/usr/share/nova/nova-dist.conf'
-  pattern '^force_dhcp_release.*'
-  backup true
-  notifies :restart, 'service[nova-compute]'
-end
+include_recipe 'osl-openstack::network'
+include_recipe 'osl-openstack::telemetry_compute'
 
 # We still need the ceph keys if we're using it for cinder
 include_recipe 'osl-openstack::_block_ceph' if node['osl-openstack']['ceph']['volume']
@@ -122,13 +151,12 @@ if node['osl-openstack']['ceph']['volume'] || node['osl-openstack']['ceph']['com
     append true
     members %w(nova qemu)
     action :modify
-    notifies :restart, 'service[nova-compute]', :immediately
-    notifies :restart, 'service[libvirt-bin]', :immediately
+    notifies :restart, 'service[openstack-nova-compute]', :immediately
+    notifies :restart, 'service[libvirtd]', :immediately
   end
 
-  secrets = openstack_credential_secrets
+  ceph_user = b['ceph']['rbd_store_user']
   fsid = ceph_fsid
-  ceph_user = node['osl-openstack']['block']['rbd_store_user']
   secret_file = ::File.join(Chef::Config[:file_cache_path], 'secret.xml')
 
   template secret_file do
@@ -140,22 +168,22 @@ if node['osl-openstack']['ceph']['volume'] || node['osl-openstack']['ceph']['com
       uuid: fsid,
       client_name: ceph_user
     )
-    not_if "virsh secret-list | grep #{fsid}"
     not_if { fsid.nil? }
+    not_if "virsh secret-list | grep #{fsid}"
   end
 
   execute "virsh secret-define --file #{secret_file}" do
-    not_if "virsh secret-list | grep #{fsid}"
     not_if { fsid.nil? }
+    not_if "virsh secret-list | grep #{fsid}"
   end
 
   # this will update the key if necessary
   execute 'update virsh ceph secret' do
-    command "virsh secret-set-value --secret #{fsid} --base64 #{secrets['ceph']['block_token']}"
+    command "virsh secret-set-value --secret #{fsid} --base64 #{b['ceph']['block_token']}"
     sensitive true
-    not_if "virsh secret-get-value #{fsid} | grep #{secrets['ceph']['block_token']}"
-    not_if { secrets['ceph']['block_token'].nil? }
     not_if { fsid.nil? }
+    not_if "virsh secret-get-value #{fsid} | grep #{b['ceph']['block_token']}"
+    not_if { b['ceph']['block_token'].nil? }
   end
 
   file secret_file do
@@ -164,55 +192,29 @@ if node['osl-openstack']['ceph']['volume'] || node['osl-openstack']['ceph']['com
 end
 
 template '/etc/sysconfig/libvirt-guests' do
-  variables(libvirt_guests: node['osl-openstack']['libvirt_guests'])
+  variables(libvirt_guests: c['libvirt_guests'])
 end
 
-service 'libvirt-guests' do
-  action [:enable, :start]
-end
-
-# Not needed on a compute node
-delete_resource(:directory, '/var/run/httpd/ceilometer')
-
-# Setup ssh key for nova migrations between compute nodes
-user_account 'nova' do
-  system_user true
-  home '/var/lib/nova'
-  comment 'OpenStack Nova Daemons'
-  uid 162
-  gid 162
-  shell '/bin/sh'
-  manage_home false
-  ssh_keygen false
-  ssh_keys [node['osl-openstack']['nova_public_key']]
-end
-
-nova_key = data_bag_item(
-  "#{node['osl-openstack']['databag_prefix']}_secrets",
-  'nova_migration_key'
-)
-
-file '/var/lib/nova/.ssh/id_rsa' do
-  content nova_key['nova_migration_key']
-  sensitive true
+osl_authorized_keys 'nova_public_key' do
   user 'nova'
-  group 'nova'
-  mode '600'
+  key c['nova_public_key']
+  dir_path '/var/lib/nova/.ssh'
+end
+
+osl_ssh_key 'nova_migration_key' do
+  content c['nova_migration_key']
+  key_name 'id_rsa'
+  user 'nova'
+  dir_path '/var/lib/nova/.ssh'
 end
 
 file '/var/lib/nova/.ssh/config' do
-  content <<-EOL
-Host *
-  StrictHostKeyChecking no
-  UserKnownHostsFile /dev/null
+  content <<~EOL
+    Host *
+      StrictHostKeyChecking no
+      UserKnownHostsFile /dev/null
   EOL
   user 'nova'
   group 'nova'
   mode '600'
 end
-
-package 'libguestfs-tools'
-
-# TODO: Remove after rocky
-# This is no longer needed
-delete_resource(:execute, 'enable nova login')

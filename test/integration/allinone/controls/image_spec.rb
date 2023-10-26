@@ -1,1 +1,0 @@
-../../image/inspec/image_spec.rb

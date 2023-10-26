@@ -1,10 +1,8 @@
 {
   "ceph": {
-    "encrypted_data": "UvjI0a0aqzH6+is01Er4pIClITRBuFCnOE0sLs1trZxqiY7rObos0OXsabSG\nsM5Mu3OTwOLlSiq1VYpTeVgYa5LrB62JK2OEP8bd7YJRsQ/5pHKHTPWtY8UL\nLeslDOAKw5zeB5dN0Z3r0w+VkmwKX9m34vHX+6MXdEBC8XgE4lzSUR0i7D7R\nUYceKxMRmfVaGx3I2k1Mq38wMRkOEUdaMTA8NlLemlQnbianMrsJf4nR2LZ5\nQHRplSHchqpC17JbVNg+Ppmg+26WycMe4j3fUA==\n",
-    "hmac": "DOyKM/5VnTVyp5kMAJ9bXbdHG4qeiyJAMa+GiqBmiBs=\n",
-    "iv": "rsvURfi3DluKPkhUvzW6og==\n",
-    "version": 2,
-    "cipher": "aes-256-cbc"
+    "block_backup_token": "AQAxbr1ac4ToKhAAeO6+h90GcsukzHicUNvfLg==",
+    "block_token": "AQAjbr1aWv+aNBAAoGfqrwX9iSdNmtuvUkwGhA==",
+    "image_token": "AQANbr1aPR2EIhAASn5EW+qjhoXJAtIqGYE5jQ=="
   },
   "id": "openstack"
 }
