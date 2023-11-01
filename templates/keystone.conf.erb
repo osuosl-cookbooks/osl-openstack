@@ -8,8 +8,8 @@ transport_url = <%= @transport_url %>
 driver = sql
 
 [cache]
-enabled = true
 backend = oslo_cache.memcache_pool
+enabled = true
 memcache_servers = <%= @memcached_endpoint %>
 
 [oslo_messaging_notifications]

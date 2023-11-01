@@ -2,6 +2,7 @@ module OSLOpenstack
   module Cookbook
     module Helpers
       include Chef::Mixin::ShellOut
+      require 'fog/openstack'
 
       def os_secrets
         data_bag_item('openstack', node['osl-openstack']['databag_item'])
@@ -57,6 +58,110 @@ module OSLOpenstack
         db_host = s['database_server']['endpoint']
 
         "mysql+pymysql://#{s[service]['db']['user']}:#{s[service]['db']['pass']}@#{db_host}:3306/#{db_name}"
+      end
+
+      def openstack_vxlan_ip(controller)
+        node_type = controller ? 'controller' : 'compute'
+        vxlan = os_secrets['network']['vxlan_interface']
+        vxlan_interface = vxlan[node_type][node['fqdn']] || vxlan[node_type]['default']
+        vxlan_addrs = node['network']['interfaces'][vxlan_interface]
+
+        if vxlan_addrs.nil? || vxlan_addrs['addresses'].empty?
+          # Fall back to localhost if the interface has no IP
+          '127.0.0.1'
+        else
+          address = vxlan_addrs['addresses'].find do |_, attrs|
+            attrs['family'] == 'inet'
+          end
+          if address.nil?
+            '127.0.0.1'
+          else
+            address[0]
+          end
+        end
+      end
+
+      def openstack_physical_interface_mappings(controller)
+        node_type = controller ? 'controller' : 'compute'
+        int_mappings = []
+        physical_interface_mappings = os_secrets['network']['physical_interface_mappings']
+
+        physical_interface_mappings.each do |int|
+          interface = int[node_type][node['fqdn']] || int[node_type]['default']
+          int_mappings.push("#{int['name']}:#{interface}") unless interface == 'disabled'
+        end
+
+        int_mappings
+      end
+
+      # OpenStack API helpers
+      def os_conn
+        s = os_secrets
+        params = {
+          openstack_auth_url: "https://#{s['identity']['endpoint']}:5000/v3",
+          openstack_username: 'admin',
+          openstack_api_key: s['users']['admin'],
+          openstack_project_name: 'admin',
+          openstack_domain_name: 'default',
+        }
+
+        @connection_cache ||= Fog::OpenStack::Identity.new(params)
+      end
+
+      def os_role(new_resource)
+        os_conn.roles.find { |r| r.name == new_resource.role_name }
+      end
+
+      def os_service(new_resource)
+        os_conn.services.find do |s|
+          s.name == new_resource.service_name
+        end
+      end
+
+      def os_domain(new_resource)
+        os_conn.domains.find { |u| u.id == new_resource.domain_name } ||
+          os_conn.domains.find { |u| u.name == new_resource.domain_name }
+      end
+
+      def os_endpoint(new_resource)
+        service = os_service(new_resource)
+        raise "service_name #{new_resource.service_name} not found" if service.nil?
+        os_conn.endpoints.find do |e|
+          e.service_id == service.id && e.interface == new_resource.interface
+        end
+      end
+
+      def os_project(new_resource)
+        domain = os_domain(new_resource)
+        os_conn.projects.find do |p|
+          (p.name == new_resource.project_name) && (domain ? p.domain_id == domain.id : {})
+        end
+      end
+
+      def os_user(new_resource)
+        domain = os_domain(new_resource)
+        os_conn.users.find_by_name(
+          new_resource.user_name,
+          domain ? { domain_id: domain.id } : {}
+        ).first
+      end
+
+      def os_user_grant_role(new_resource)
+        project = os_project(new_resource)
+        role = os_role(new_resource)
+        user = os_user(new_resource)
+        raise "project_name #{new_resource.project_name} not found" if project.nil?
+        raise "role #{new_resource.role_name} not found" if role.nil?
+        raise "user #{new_resource.user_name} not found" if user.nil?
+        (user.projects.find { |p| p['name'] == new_resource.project_name })
+      end
+
+      def os_user_grant_domain(new_resource)
+        role = os_role(new_resource)
+        user = os_user(new_resource)
+        raise "role #{new_resource.role_name} not found" if role.nil?
+        raise "user #{new_resource.user_name} not found" if user.nil?
+        user.check_role role.id
       end
     end
   end

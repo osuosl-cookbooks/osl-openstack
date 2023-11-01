@@ -57,7 +57,12 @@ action :create do
 
   execute 'keystone: bootstrap' do
     command <<~EOC
-      keystone-manage bootstrap --bootstrap-password #{admin_pass} \
+      keystone-manage bootstrap \
+        --bootstrap-password #{admin_pass} \
+        --bootstrap-username admin \
+        --bootstrap-project-name admin \
+        --bootstrap-role-name admin \
+        --bootstrap-service-name keystone \
         --bootstrap-admin-url https://#{endpoint}:5000/v3/ \
         --bootstrap-internal-url https://#{endpoint}:5000/v3/ \
         --bootstrap-public-url https://#{endpoint}:5000/v3/ \
@@ -73,7 +78,13 @@ action :create do
     server_aliases s['identity']['aliases'] if s['identity']['aliases']
     cookbook 'osl-openstack'
     template 'wsgi-keystone.conf.erb'
-    notifies :reload, 'apache2_service[osuosl]'
+    notifies :reload, 'apache2_service[osuosl]', :immediately
+  end
+
+  osl_openstack_role 'service'
+
+  osl_openstack_project 'service' do
+    domain_name 'default'
   end
 end
 

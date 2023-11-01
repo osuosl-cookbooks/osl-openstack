@@ -1,0 +1,7 @@
+---
+name: network
+inputs:
+  - name: controller
+    value: true
+  - name: compute
+    value: false

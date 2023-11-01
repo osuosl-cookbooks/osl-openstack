@@ -84,10 +84,7 @@ suites:
       server_name: "identity-<%= ENV['USER'] %>"
     run_list:
       - role[openstack_tk]
-      - recipe[osl-openstack::ops_database]
-      - recipe[osl-openstack::ops_messaging]
-      - recipe[osl-openstack::identity]
-      - recipe[openstack_test::cacert]
+      - role[openstack_ops_identity]
   - name: image
     driver_config:
       server_name: "image-<%= ENV['USER'] %>"
@@ -96,6 +93,18 @@ suites:
       - recipe[openstack_test::ceph]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::image]
+      - recipe[openstack_test::image_upload]
+  - name: network_controller
+    driver_config:
+      server_name: "network-controller-<%= ENV['USER'] %>"
+    run_list:
+      - recipe[openstack_test]
+      - role[openstack_tk]
+      - role[openstack_ops_identity]
+      - recipe[osl-openstack::network_controller]
+    verifier:
+      inspec_tests:
+        - test/integration/network
   - name: network
     driver_config:
       server_name: "network-<%= ENV['USER'] %>"
@@ -103,15 +112,7 @@ suites:
       - recipe[openstack_test]
       - role[openstack_tk]
       - role[openstack_ops_identity]
-      - recipe[osl-openstack::network]
-  - name: linuxbridge
-    driver_config:
-      server_name: "linuxbridge-<%= ENV['USER'] %>"
-    run_list:
-      - role[openstack_tk]
-      - recipe[openstack_test]
-      - role[openstack_ops_identity]
-      - recipe[osl-openstack::linuxbridge]
+      - recipe[openstack_test::network]
   - name: compute_controller
     driver_config:
       server_name: "compute-controller-<%= ENV['USER'] %>"

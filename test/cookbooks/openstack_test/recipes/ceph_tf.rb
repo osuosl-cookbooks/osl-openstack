@@ -31,7 +31,7 @@ end
   end
 end
 
-secrets = openstack_credential_secrets
+secrets = openstack_ceph
 
 osl_ceph_client 'glance' do
   caps(

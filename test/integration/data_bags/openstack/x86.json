@@ -1,6 +1,10 @@
 {
   "id": "x86",
   "block-storage": {
+    "ceph": {
+      "block_token": "AQAjbr1aWv+aNBAAoGfqrwX9iSdNmtuvUkwGhA==",
+      "block_backup_token": "AQAxbr1ac4ToKhAAeO6+h90GcsukzHicUNvfLg=="
+    },
     "db": {
       "user": "cinder",
       "pass": "cinder"
@@ -20,6 +24,10 @@
   },
   "compute": {
     "db": {
+      "user": "nova",
+      "pass": "nova"
+    },
+    "service": {
       "user": "nova",
       "pass": "nova"
     }
@@ -42,7 +50,17 @@
     }
   },
   "image": {
+    "endpoint": "controller.example.com",
     "db": {
+      "user": "glance",
+      "pass": "glance"
+    },
+    "ceph": {
+      "image_token": "AQANbr1aPR2EIhAASn5EW+qjhoXJAtIqGYE5jQ==",
+      "rbd_store_pool": "images",
+      "rbd_store_user": "glance"
+    },
+    "service": {
       "user": "glance",
       "pass": "glance"
     }
@@ -56,9 +74,53 @@
     "endpoint": "controller.example.com:11211"
   },
   "network": {
+    "endpoint": "controller.example.com",
     "db": {
       "user": "neutron",
       "pass": "neutron"
+    },
+    "nova_metadata_host": "controller.example.com",
+    "metadata_proxy_shared_secret": "2SJh0RuO67KpZ63z",
+    "physical_interface_mappings": [
+      {
+        "name": "public",
+        "controller": {
+          "default": "eth1"
+        },
+        "compute": {
+          "default": "eth1"
+        }
+      },
+      {
+        "name": "private1",
+        "controller": {
+          "default": "disabled"
+        },
+        "compute": {
+          "default": "disabled"
+        }
+      },
+      {
+        "name": "private2",
+        "controller": {
+          "default": "eth2"
+        },
+        "compute": {
+          "default": "disabled"
+        }
+      }
+    ],
+    "service": {
+      "user": "neutron",
+      "pass": "neutron"
+    },
+    "vxlan_interface": {
+      "controller": {
+        "default": "lo"
+      },
+      "compute": {
+        "default": "lo"
+      }
     }
   },
   "orchestration": {

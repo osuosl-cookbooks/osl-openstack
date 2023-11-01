@@ -40,14 +40,22 @@ service 'mariadb' do
 end
 
 openstack_services.each do |service, db|
-  next if service == 'identity'
   next if service == 'messaging'
 
   begin
     mariadb_database "#{suffix}_#{db}" do
       password 'osl_mysql_test'
-      encoding 'utf8mb4'
-      collation 'utf8mb4_unicode_ci'
+      encoding 'utf8'
+      collation 'utf8_general_ci'
+    end
+
+    mariadb_user "#{s[service]['db']['user']}-localhost" do
+      username s[service]['db']['user']
+      ctrl_password 'osl_mysql_test'
+      password s[service]['db']['pass']
+      privileges [:all]
+      database_name "#{suffix}_#{db}"
+      action [:create, :grant]
     end
 
     mariadb_user s[service]['db']['user'] do
@@ -55,7 +63,7 @@ openstack_services.each do |service, db|
       password s[service]['db']['pass']
       host '%'
       privileges [:all]
-      database_name db
+      database_name "#{suffix}_#{db}"
       action [:create, :grant]
     end
   rescue NoMethodError

@@ -1,8 +1,8 @@
 #
 # Cookbook:: osl-openstack
-# Recipe:: image
+# Recipe:: network_controller
 #
-# Copyright:: 2016-2023, Oregon State University
+# Copyright:: 2015-2023, Oregon State University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,4 +17,6 @@
 # limitations under the License.
 #
 
-osl_openstack_image 'default'
+osl_openstack_network 'default' do
+  controller true
+end

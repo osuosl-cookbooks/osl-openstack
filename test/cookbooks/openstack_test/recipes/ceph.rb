@@ -1,6 +1,4 @@
-osl_ceph_test 'openstack' do
-  create_config false
-end
+osl_ceph_test 'openstack'
 
 %w(
   volumes
@@ -18,14 +16,14 @@ end
   end
 end
 
-secrets = openstack_credential_secrets
+secrets = os_secrets
 
 osl_ceph_client 'glance' do
   caps(
     mon: 'profile rbd',
     osd: 'profile rbd pool=images'
   )
-  key secrets['ceph']['image_token']
+  key secrets['image']['ceph']['image_token']
   keyname 'client.glance'
   filename '/etc/ceph/ceph.client.glance.keyring'
 end
@@ -35,7 +33,7 @@ osl_ceph_client 'cinder' do
     mon: 'profile rbd',
     osd: 'profile rbd pool=volumes, profile rbd pool=vms, profile rbd pool=images, profile rbd pool=volumes_ssd'
   )
-  key secrets['ceph']['block_token']
+  key secrets['block-storage']['ceph']['block_token']
   keyname 'client.cinder'
   filename '/etc/ceph/ceph.client.cinder.keyring'
 end
@@ -45,7 +43,7 @@ osl_ceph_client 'cinder-backup' do
     mon: 'profile rbd',
     osd: 'profile rbd pool=backups'
   )
-  key secrets['ceph']['block_backup_token']
+  key secrets['block-storage']['ceph']['block_backup_token']
   keyname 'client.cinder-backup'
   filename '/etc/ceph/ceph.client.cinder-backup.keyring'
 end
