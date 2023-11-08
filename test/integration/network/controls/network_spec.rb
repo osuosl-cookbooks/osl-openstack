@@ -1,5 +1,5 @@
 controller = input('controller')
-#compute = input('compute')
+# compute = input('compute')
 
 control 'network' do
   %w(

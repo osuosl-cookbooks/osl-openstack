@@ -16,6 +16,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+osl_openstack_compute 'compute' do
+  compute true
+end
+
+return
+
 osl_firewall_openstack 'osl-openstack'
 osl_firewall_vnc 'osl-openstack'
 

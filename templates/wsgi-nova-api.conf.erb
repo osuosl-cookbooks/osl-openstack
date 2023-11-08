@@ -1,0 +1,20 @@
+Listen 8774
+
+<VirtualHost *:8774>
+  WSGIProcessGroup nova-api
+  WSGIApplicationGroup %{GLOBAL}
+  WSGIPassAuthorization On
+  WSGIDaemonProcess nova-api processes=6 threads=1 user=nova group=nova
+  WSGIScriptAlias / /usr/bin/nova-api-wsgi
+
+  ErrorLogFormat "%{cu}t %M"
+
+  ErrorLog "|/usr/sbin/rotatelogs <%= @log_dir %>/nova-api/error/%Y%m%d.log 86400"
+  CustomLog "|/usr/sbin/rotatelogs <%= @log_dir %>/nova-api/access/%Y%m%d.log 86400" combined-osuosl
+
+  <Directory /usr/bin>
+    Require all granted
+  </Directory>
+</VirtualHost>
+
+WSGISocketPrefix /var/lock/subsys

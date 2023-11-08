@@ -12,17 +12,36 @@
   },
   "compute_api": {
     "db": {
-      "user": "nova_api",
-      "pass": "nova_api"
+      "user": "nova",
+      "pass": "nova"
     }
   },
   "compute_cell0": {
     "db": {
-      "user": "nova_cell0",
-      "pass": "nova_cell0"
+      "user": "nova",
+      "pass": "nova"
     }
   },
   "compute": {
+    "endpoint": "controller.example.com",
+    "ceph": {
+      "block_token": "AQAjbr1aWv+aNBAAoGfqrwX9iSdNmtuvUkwGhA==",
+      "images_rbd_pool": "vms",
+      "rbd_user": "cinder"
+    },
+    "disk_allocation_ratio": "1.5",
+    "enabled_filters": [
+      "AggregateInstanceExtraSpecsFilter",
+      "PciPassthroughFilter",
+      "RetryFilter",
+      "AvailabilityZoneFilter",
+      "RamFilter",
+      "ComputeFilter",
+      "ComputeCapabilitiesFilter",
+      "ImagePropertiesFilter",
+      "ServerGroupAntiAffinityFilter",
+      "ServerGroupAffinityFilter"
+    ],
     "db": {
       "user": "nova",
       "pass": "nova"
@@ -130,7 +149,12 @@
     }
   },
   "placement": {
+    "endpoint": "controller.example.com",
     "db": {
+      "user": "placement",
+      "pass": "placement"
+    },
+    "service": {
       "user": "placement",
       "pass": "placement"
     }

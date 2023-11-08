@@ -1,1 +1,0 @@
-../../compute_controller/controls/compute_controller_spec.rb

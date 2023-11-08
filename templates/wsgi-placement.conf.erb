@@ -1,0 +1,27 @@
+Listen 8778
+
+<VirtualHost *:8778>
+  WSGIProcessGroup placement-api
+  WSGIApplicationGroup %{GLOBAL}
+  WSGIPassAuthorization On
+  WSGIDaemonProcess placement-api processes=6 threads=1 user=placement group=placement
+  WSGIScriptAlias / /usr/bin/placement-api
+
+  ErrorLogFormat "%{cu}t %M"
+
+  ErrorLog "|/usr/sbin/rotatelogs <%= @log_dir %>/placement/error/%Y%m%d.log 86400"
+  CustomLog "|/usr/sbin/rotatelogs <%= @log_dir %>/placement/access/%Y%m%d.log 86400" combined-osuosl
+
+  <Directory /usr/bin>
+    Require all granted
+  </Directory>
+</VirtualHost>
+
+Alias /placement-api /usr/bin/placement-api
+<Location /placement-api>
+  SetHandler wsgi-script
+  Options +ExecCGI
+  WSGIProcessGroup placement-api
+  WSGIApplicationGroup %{GLOBAL}
+  WSGIPassAuthorization On
+</Location>

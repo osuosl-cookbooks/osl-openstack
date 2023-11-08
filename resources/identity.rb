@@ -36,6 +36,7 @@ action :create do
       database_connection: openstack_database_connection('identity')
     )
     notifies :run, 'execute[keystone: db_sync]', :immediately
+    notifies :reload, 'apache2_service[osuosl]'
   end
 
   execute 'keystone: db_sync' do

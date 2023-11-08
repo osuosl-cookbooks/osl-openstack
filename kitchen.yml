@@ -117,16 +117,21 @@ suites:
     driver_config:
       server_name: "compute-controller-<%= ENV['USER'] %>"
     run_list:
+      - recipe[openstack_test]
       - role[openstack_tk]
+      - recipe[openstack_test::ceph]
       - role[openstack_ops_identity]
+      - recipe[openstack_test::network]
       - recipe[osl-openstack::compute_controller]
   - name: compute
     driver_config:
       server_name: "compute-<%= ENV['USER'] %>"
     run_list:
+      - recipe[openstack_test]
       - role[openstack_tk]
-      - role[openstack_ops_identity]
       - recipe[openstack_test::ceph]
+      - role[openstack_ops_identity]
+      - recipe[openstack_test::network]
       - recipe[osl-openstack::compute_controller]
       - recipe[osl-openstack::compute]
   - name: dashboard
