@@ -10,7 +10,6 @@ version          '10.6.1'
 
 depends 'base'
 depends 'certificate'
-depends 'ibm-power'
 depends 'line'
 depends 'memcached'
 depends 'osl-apache'

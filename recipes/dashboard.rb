@@ -16,11 +16,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-node.default['osl-apache']['install_resource'] = false
+
+osl_repos_openstack 'identity'
+osl_openstack_client 'identity'
+osl_firewall_openstack 'identity'
+osl_openstack_openrc 'identity'
+
 node.default['osl-apache']['listen'] = %w(80 443)
 
-include_recipe 'osl-openstack'
-include_recipe 'memcached'
 include_recipe 'certificate::wildcard'
+include_recipe 'osl-memcached'
 include_recipe 'osl-apache'
-include_recipe 'openstack-dashboard::horizon'
+include_recipe 'osl-apache::mod_wsgi'
+include_recipe 'osl-apache::mod_ssl'
+
+package 'openstack-dashboard'

@@ -1,8 +1,8 @@
 #
 # Cookbook:: osl-openstack
-# Recipe:: telemetry
+# Recipe:: telemetry_controller
 #
-# Copyright:: 2016-2023, Oregon State University
+# Copyright:: 2023, Oregon State University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,10 +16,49 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-include_recipe 'osl-openstack'
-include_recipe 'openstack-telemetry::agent-central'
-include_recipe 'openstack-telemetry::agent-notification'
-include_recipe 'openstack-telemetry::identity_registration'
+
+osl_repos_openstack 'telemetry'
+osl_openstack_client 'telemetry'
+osl_firewall_openstack 'telemetry'
+
+s = os_secrets
+t = s['telemetry']
+
+osl_openstack_user t['service']['user'] do
+  domain_name 'default'
+  role_name 'admin'
+  project_name 'service'
+  password t['service']['pass']
+  action [:create, :grant_role]
+end
+
+package %w(
+  openstack-ceilometer-central
+  openstack-ceilometer-notification
+)
+
+include_recipe 'osl-openstack::telemetry_common'
+
+template '/etc/ceilometer/pipeline.yaml' do
+  owner 'ceilometer'
+  group 'ceilometer'
+  mode '0640'
+  variables(
+    publishers: t['pipeline']['publishers']
+  )
+  notifies :restart, 'service[openstack-ceilometer-notification]'
+  notifies :restart, 'service[openstack-ceilometer-central]'
+end
+
+%w(
+  openstack-ceilometer-central
+  openstack-ceilometer-notification
+).each do |srv|
+  service srv do
+    action [:enable, :start]
+    subscribes :restart, 'template[/etc/ceilometer/ceilometer.conf]'
+  end
+end
 
 # TODO: Apply upstream patch which fixes [1] use with prometheus
 # [1] https://review.opendev.org/686368
@@ -30,38 +69,14 @@ cookbook_file ::File.join(Chef::Config[:file_cache_path], 'ceilometer-prometheus
 
 execute "patch -p1 < #{::File.join(Chef::Config[:file_cache_path], 'ceilometer-prometheus1.patch')}" do
   cwd '/usr/lib/python2.7/site-packages'
-  notifies :restart, 'service[ceilometer-agent-central]'
-  notifies :restart, 'service[ceilometer-agent-notification]'
-  notifies :restart, 'service[apache2]'
+  notifies :restart, 'service[openstack-ceilometer-central]'
+  notifies :restart, 'service[openstack-ceilometer-notification]'
   not_if 'grep -q curated_sname /usr/lib/python2.7/site-packages/ceilometer/publisher/prometheus.py'
 end
 
 execute "patch -p1 < #{::File.join(Chef::Config[:file_cache_path], 'ceilometer-prometheus2.patch')}" do
   cwd '/usr/lib/python2.7/site-packages'
-  notifies :restart, 'service[ceilometer-agent-central]'
-  notifies :restart, 'service[ceilometer-agent-notification]'
-  notifies :restart, 'service[apache2]'
+  notifies :restart, 'service[openstack-ceilometer-central]'
+  notifies :restart, 'service[openstack-ceilometer-notification]'
   not_if 'grep -q s.project_id /usr/lib/python2.7/site-packages/ceilometer/publisher/prometheus.py'
-end
-
-# TODO: Remove the following after this converges on nodes
-platform = node['openstack']['telemetry']['platform']
-
-service 'gnocchi-metricd' do
-  service_name platform['gnocchi-metricd_service']
-  action [:stop, :disable]
-end
-
-%w(enabled available).each do |dir|
-  file "/etc/httpd/sites-#{dir}/gnocchi-api.conf" do
-    notifies :restart, 'service[apache2]'
-    manage_symlink_source true
-    action :delete
-  end
-end
-
-gnocchi_packages = platform['gnocchi_packages'] + %w(gnocchi-common python-gnocchi)
-
-package gnocchi_packages do
-  action :remove
 end

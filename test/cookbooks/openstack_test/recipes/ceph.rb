@@ -1,4 +1,8 @@
-osl_ceph_test 'openstack'
+include_recipe 'osl-ceph'
+
+osl_ceph_test 'openstack' do
+  create_config false
+end
 
 %w(
   volumes

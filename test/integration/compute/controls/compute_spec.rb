@@ -1,10 +1,10 @@
 control 'compute' do
   %w(
-    openstack-nova-compute
-    openstack-ceilometer-compute
     libvirt-guests
+    openstack-ceilometer-compute
+    openstack-nova-compute
   ).each do |s|
-    describe service(s) do
+    describe service s do
       it { should be_enabled }
       it { should be_running }
     end
@@ -14,10 +14,34 @@ control 'compute' do
     it { should be_loaded }
   end
 
+  describe kernel_module('kvm_intel') do
+    it { should be_loaded }
+  end
+
   describe file '/etc/sysconfig/network' do
     its('content') { should match /^NETWORKING=yes$/ }
     its('content') { should match /^NETWORKING_IPV6=yes$/ }
     its('content') { should match /^IPV6_AUTOCONF=no$/ }
+  end
+
+  %w(
+    device-mapper
+    device-mapper-multipath
+    libguestfs-rescue
+    libguestfs-tools
+    libvirt
+    openstack-nova-compute
+    python-libguestfs
+    sg3_utils
+    sysfsutils
+  ).each do |p|
+    describe package p do
+      it { should be_installed }
+    end
+  end
+
+  describe file '/usr/bin/qemu-system-x86_64' do
+    its('link_path') { should cmp '/usr/libexec/qemu-kvm' }
   end
 
   %w(/var/run/ceph/guests /var/log/ceph).each do |d|
@@ -32,6 +56,14 @@ control 'compute' do
     describe user(u) do
       its('groups') { should include 'ceph' }
     end
+  end
+
+  describe ini('/etc/ceph/ceph.conf') do
+    its('client.admin socket') { should cmp '/var/run/ceph/guests/$cluster-$type.$id.$pid.$cctid.asok' }
+    its('client.rbd concurrent management ops') { should cmp '20' }
+    its('client.rbd cache') { should cmp 'true' }
+    its('client.rbd cache writethrough until flush') { should cmp 'true' }
+    its('client.log file') { should cmp '/var/log/ceph/qemu-guest-$pid.log' }
   end
 
   %w(cinder cinder-backup).each do |key|
@@ -76,15 +108,16 @@ control 'compute' do
     its('content') { should match(/^max_client_requests = 50$/) }
   end
 
+  describe command 'virsh net-list' do
+    its('stdout') { should_not match /default/ }
+  end
+
+  describe file '/etc/modprobe.d/options_kvm_intel.conf' do
+    its('content') { should cmp "options kvm_intel nested=1\n" }
+  end
+
   describe file('/var/lib/nova/.ssh/authorized_keys') do
-    its('content') do
-      should match(%r{^ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDYOuLkP1F/Sm/dCJAA7k\
-me\+ObO4J8x2HrZU40W8QqW4yFqRPKnW5HYLeUpRzIFzWen/LIn6R6lxTfSAnnD8qEEuKbFjH5WRqJY\
-CJeAyaTBTRyU1FHlcTR/EQ/HVZ38TQwCztZgboFb5zmWqYc3/BYBHGA6XeYN5jRcHvZbyaGL\+YA1/K\
-PIjpbQfqIPXdHfodoSNX4qQQccYBq2c/rq3Puh7Q9oVph6a2lq0wWsqYyq0vTGHPKFYShVpwDl2Z3c8\
-eB3P7yFRzOR2VNuezJlOgoHz6D/mBObLj1n\+yi07bcGbpwAH/rLEyiy4gVdru2qQAcbDL9Yibk96lo\
-vim/IH4dV nova-migration$})
-    end
+    its('content') { should cmp "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDYOuLkP1F/Sm/dCJAA7kme+ObO4J8x2HrZU40W8QqW4yFqRPKnW5HYLeUpRzIFzWen/LIn6R6lxTfSAnnD8qEEuKbFjH5WRqJYCJeAyaTBTRyU1FHlcTR/EQ/HVZ38TQwCztZgboFb5zmWqYc3/BYBHGA6XeYN5jRcHvZbyaGL+YA1/KPIjpbQfqIPXdHfodoSNX4qQQccYBq2c/rq3Puh7Q9oVph6a2lq0wWsqYyq0vTGHPKFYShVpwDl2Z3c8eB3P7yFRzOR2VNuezJlOgoHz6D/mBObLj1n+yi07bcGbpwAH/rLEyiy4gVdru2qQAcbDL9Yibk96lovim/IH4dV nova-migration\n" }
     its('mode') { should cmp '00600' }
     it { should be_owned_by 'nova' }
     it { should be_grouped_into 'nova' }
@@ -92,33 +125,33 @@ vim/IH4dV nova-migration$})
 
   describe file('/var/lib/nova/.ssh/id_rsa') do
     its('content') do
-      should match(%r{^-----BEGIN RSA PRIVATE KEY-----
+      should cmp('----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCAQEA2Dri5D9Rf0pv3QiQAO5JnvjmzuCfMdh62VONFvEKluMhakTy
-p1uR2C3lKUcyBc1np/yyJ\+kepcU30gJ5w/KhBLimxYx\+VkaiWAiXgMmkwU0clNRR
-5XE0fxEPx1Wd/E0MAs7WYG6BW\+c5lqmHN/wWARxgOl3mDeY0XB72W8mhi/mANfyj
-yI6W0H6iD13R36HaEjV\+KkEHHGAatnP66tz7oe0PaFaYemtpatMFrKmMqtL0xhzy
-hWEoVacA5dmd3PHgdz\+8hUczkdlTbnsyZToKB8\+g/5gTmy49Z/sotO23Bm6cAB/6
-yxMosuIFXa7tqkAHGwy/WIm5PepaL4pvyB\+HVQIDAQABAoIBAQCgKE2yPewBWoMs
-tpDi/5xsMXPTu7BuXSfxHN\+eJH9xb15qthL9PufxtVzNjDxS6\+dhF9xlj1fx9Pf5
+p1uR2C3lKUcyBc1np/yyJ+kepcU30gJ5w/KhBLimxYx+VkaiWAiXgMmkwU0clNRR
+5XE0fxEPx1Wd/E0MAs7WYG6BW+c5lqmHN/wWARxgOl3mDeY0XB72W8mhi/mANfyj
+yI6W0H6iD13R36HaEjV+KkEHHGAatnP66tz7oe0PaFaYemtpatMFrKmMqtL0xhzy
+hWEoVacA5dmd3PHgdz+8hUczkdlTbnsyZToKB8+g/5gTmy49Z/sotO23Bm6cAB/6
+yxMosuIFXa7tqkAHGwy/WIm5PepaL4pvyB+HVQIDAQABAoIBAQCgKE2yPewBWoMs
+tpDi/5xsMXPTu7BuXSfxHN+eJH9xb15qthL9PufxtVzNjDxS6+dhF9xlj1fx9Pf5
 h3flWStGsfZk0EErajoI9qQw8iokOxd2bSUTyxvVGjATtyjDndXNpqJG3tLV3Zhc
-LclIAGHUBM6JrM8fcGlL6msTZW9QmupEU69ih0rHGR50in2e\+Ofp6TWPbwH2PoRn
-vj3SOyBAOfZMpsTweYwZm/FhkpSY\+lxXbsPgEasJNm0/F46U7CHlQVSUY248Y\+eB
+LclIAGHUBM6JrM8fcGlL6msTZW9QmupEU69ih0rHGR50in2e+Ofp6TWPbwH2PoRn
+vj3SOyBAOfZMpsTweYwZm/FhkpSY+lxXbsPgEasJNm0/F46U7CHlQVSUY248Y+eB
 DzNI7MC5bknqbWg0TDOQtw41RLaGdVUQy9wqC/UlOWb4mteEZXIx3tfNb5W/5V7G
 YedSjwgpAoGBAPQiCzsWTdC7cR9YbF4d8Tv9uKNCmZG1Q4dxTnhQJcSFsBTr2f2a
-ps3Ej3nW0wQZfVOVaU6dUcyQxgm4x2fi\+TqhAVGdRLSA8iSJTpC99RUn/JdAW/UA
-gvGI0iCrkq/BYCjjrKI7ZsHv6urE3I0jnh5\+H969BsZ6XR6IntwmDshrAoGBAOK9
+ps3Ej3nW0wQZfVOVaU6dUcyQxgm4x2fi+TqhAVGdRLSA8iSJTpC99RUn/JdAW/UA
+gvGI0iCrkq/BYCjjrKI7ZsHv6urE3I0jnh5+H969BsZ6XR6IntwmDshrAoGBAOK9
 nzlOEZO54VGTRuBF1m0E3GBsVDhrsoFpZSVcgv3h84MK2idMP0XvEBxvOI/I2hGI
-kVJ23axxWEmpGzWrBNuJrC0sQKD3g6rdwXSwPsGk0OEXyQVrC3LfLZf3iS\+GDSI7
-UYPL01joCXy99fQPCf/dCdpviAlZVO/mlO4Tdd8/AoGAHEQk0L6QW\+6X9m0ifvMw
-jyWdTynS5g/6tZ/k2gFNnidsb7\+vCbHyRjjP8\+dvnzXkUN0nyDZm1iydAVsnm1uo
+kVJ23axxWEmpGzWrBNuJrC0sQKD3g6rdwXSwPsGk0OEXyQVrC3LfLZf3iS+GDSI7
+UYPL01joCXy99fQPCf/dCdpviAlZVO/mlO4Tdd8/AoGAHEQk0L6QW+6X9m0ifvMw
+jyWdTynS5g/6tZ/k2gFNnidsb7+vCbHyRjjP8+dvnzXkUN0nyDZm1iydAVsnm1uo
 R6WEpZJz9gJIBvru4ctcqQpsMIb/Hqrkflq9GZND9J2LKLDTuCTwjNveczg/4QeS
-sy0fO4bfVfOs/HANFKhDZekCgYBnEalyZDGLRIDPEzKxui1Zy07eKgAy0YoIV7\+Z
+sy0fO4bfVfOs/HANFKhDZekCgYBnEalyZDGLRIDPEzKxui1Zy07eKgAy0YoIV7+Z
 ty74d6C5HdLC8F8GzEA3nLtKaRPvynO817m2rKNkgJGU2NPRdAinVClgwoLAxiMt
-hvxQDDrDR4uigeFna1oPbX\+X8cjAmdRZI\+tDy96cLMHEGp4CCBl1iSN\+lHQOxXNH
+hvxQDDrDR4uigeFna1oPbX+X8cjAmdRZI+tDy96cLMHEGp4CCBl1iSN+lHQOxXNH
 seLwAwKBgQDx5QqwZOfmlQ0rx6jf2EoHChbS3JYt1cRJbwzIOakcKh2Jn/agxZJ8
 e9o0x8HI89mJd1WejorvSVN1c3IgV5TG10k5PcmOxlv1OhGNFzWgvMXZmvCwwP40
 X0BwCgHRB7FvPAMu0hrDmEIJ87edGd1ziRYXpA9Lke/4VQk249pwzA==
------END RSA PRIVATE KEY-----$})
+-----END RSA PRIVATE KEY-----')
     end
     its('mode') { should cmp '00600' }
     it { should be_owned_by 'nova' }
@@ -127,16 +160,12 @@ X0BwCgHRB7FvPAMu0hrDmEIJ87edGd1ziRYXpA9Lke/4VQk249pwzA==
 
   describe file('/var/lib/nova/.ssh/config') do
     its('content') do
-      should match(%r{^Host \*
+      should cmp("Host *
   StrictHostKeyChecking no
-  UserKnownHostsFile /dev/null$})
+  UserKnownHostsFile /dev/null\n")
     end
     its('mode') { should cmp '00600' }
     it { should be_owned_by 'nova' }
     it { should be_grouped_into 'nova' }
-  end
-
-  describe package('libguestfs-tools') do
-    it { should be_installed }
   end
 end

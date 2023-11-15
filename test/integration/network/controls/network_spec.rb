@@ -22,7 +22,7 @@ control 'network' do
 
   describe ini('/etc/neutron/plugins/ml2/linuxbridge_agent.ini') do
     its('agent.polling_interval') { should cmp '2' }
-    its('linux_bridge.physical_interface_mappings') { should cmp 'public:eth1,private2:eth2' }
+    its('linux_bridge.physical_interface_mappings') { should cmp 'public:eth1' }
     its('securitygroup.enable_security_group') { should cmp 'true' }
     its('securitygroup.firewall_driver') { should cmp 'neutron.agent.linux.iptables_firewall.IptablesFirewallDriver' }
     its('vlans.network_vlan_ranges') { should cmp '' }

@@ -3,6 +3,10 @@ require_controls 'osuosl-baseline' do
 end
 
 control 'openstack-identity' do
+  describe package 'openstack-keystone' do
+    it { should be_installed }
+  end
+
   describe service('httpd') do
     it { should be_enabled }
     it { should be_running }
@@ -38,16 +42,29 @@ control 'openstack-identity' do
     its('mode') { should cmp '0640' }
   end
 
-  describe file '/etc/keystone/fernet-keys/0' do
-    its('size') { should > 0 }
-  end
-
-  describe file '/etc/keystone/credential-keys/0' do
-    its('size') { should > 0 }
-  end
-
-  describe ini('/etc/keystone/keystone.conf') do
+  describe ini '/etc/keystone/keystone.conf' do
+    its('DEFAULT.public_endpoint') { should cmp 'https://controller.example.com:5000/' }
+    its('DEFAULT.transport_url') { should cmp 'rabbit://openstack:openstack@controller.example.com:5672' }
     its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
+    its('database.connection') { should cmp 'mysql+pymysql://keystone:keystone@localhost:3306/x86_keystone' }
+  end
+
+  %w(
+    credential-keys
+    fernet-keys
+  ).each do |k|
+    %w(0 1).each do |i|
+      describe file "/etc/keystone/#{k}/#{i}" do
+        its('owner') { should eq 'keystone' }
+        its('group') { should eq 'keystone' }
+        its('mode') { should cmp '0600' }
+        its('size') { should > 0 }
+      end
+    end
+  end
+
+  describe file '/etc/keystone/bootstrapped' do
+    it { should exist }
   end
 
   describe apache_conf('/etc/httpd/sites-enabled/keystone.conf') do

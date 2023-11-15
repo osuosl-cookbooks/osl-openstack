@@ -22,41 +22,7 @@ provisioner:
         image: true
         compute: true
         volume: true
-      cluster_role: openstack_tk
-      database_suffix: x86
-      databag_item: x86
-      cluster_name: x86
-      endpoint_hostname: controller.example.com
-      db_hostname: controller.example.com
-      bind_service: 127.0.0.1
-      vxlan_interface:
-        controller:
-          default: lo
-      nova_public_key: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDYOuLkP1F/Sm/dCJAA7kme+ObO4J8x2HrZU40W8QqW4yFqRPKnW5HYLeUpRzIFzWen/LIn6R6lxTfSAnnD8qEEuKbFjH5WRqJYCJeAyaTBTRyU1FHlcTR/EQ/HVZ38TQwCztZgboFb5zmWqYc3/BYBHGA6XeYN5jRcHvZbyaGL+YA1/KPIjpbQfqIPXdHfodoSNX4qQQccYBq2c/rq3Puh7Q9oVph6a2lq0wWsqYyq0vTGHPKFYShVpwDl2Z3c8eB3P7yFRzOR2VNuezJlOgoHz6D/mBObLj1n+yi07bcGbpwAH/rLEyiy4gVdru2qQAcbDL9Yibk96lovim/IH4dV nova-migration
-      physical_interface_mappings:
-        -
-          name: public
-          controller:
-            default: eth1
-          compute:
-            default: eth1
-        -
-          name: private1
-          controller:
-            default: disabled
-          compute:
-            default: disabled
-        -
-          name: private2
-          controller:
-            default: eth2
-          compute:
-            default: disabled
-    openstack:
-      compute:
-        nova_placement: false
-      secret:
-        key_path: "/tmp/kitchen/encrypted_data_bag_secret"
+      node_type: controller
 
 suites:
   - name: default
@@ -70,9 +36,6 @@ suites:
     provisioner: chef_solo
     run_list:
       - recipe[osl-openstack::mon]
-    attributes:
-      osl-openstack:
-        node_type: controller
   - name: ops_messaging
     driver_config:
       server_name: "ops-messaging-<%= ENV['USER'] %>"
@@ -85,6 +48,10 @@ suites:
     run_list:
       - role[openstack_tk]
       - role[openstack_ops_identity]
+    verifier:
+      inspec_tests:
+        - test/integration/identity
+        - test/integration/ops_messaging
   - name: image
     driver_config:
       server_name: "image-<%= ENV['USER'] %>"
@@ -94,6 +61,11 @@ suites:
       - role[openstack_ops_identity]
       - recipe[osl-openstack::image]
       - recipe[openstack_test::image_upload]
+    verifier:
+      inspec_tests:
+        - test/integration/identity
+        - test/integration/image
+        - test/integration/ops_messaging
   - name: network_controller
     driver_config:
       server_name: "network-controller-<%= ENV['USER'] %>"
@@ -104,7 +76,10 @@ suites:
       - recipe[osl-openstack::network_controller]
     verifier:
       inspec_tests:
+        - test/integration/identity
         - test/integration/network
+        - test/integration/network_controller
+        - test/integration/ops_messaging
   - name: network
     driver_config:
       server_name: "network-<%= ENV['USER'] %>"
@@ -113,9 +88,17 @@ suites:
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[openstack_test::network]
+    verifier:
+      inspec_tests:
+        - test/integration/identity
+        - test/integration/network
+        - test/integration/network_controller
+        - test/integration/ops_messaging
   - name: compute_controller
     driver_config:
       server_name: "compute-controller-<%= ENV['USER'] %>"
+    provisioner:
+      multiple_converge: 3
     run_list:
       - recipe[openstack_test]
       - role[openstack_tk]
@@ -123,9 +106,17 @@ suites:
       - role[openstack_ops_identity]
       - recipe[openstack_test::network]
       - recipe[osl-openstack::compute_controller]
+    verifier:
+      inspec_tests:
+        - test/integration/compute_controller
+        - test/integration/identity
+        - test/integration/network
+        - test/integration/ops_messaging
   - name: compute
     driver_config:
       server_name: "compute-<%= ENV['USER'] %>"
+    provisioner:
+      multiple_converge: 3
     run_list:
       - recipe[openstack_test]
       - role[openstack_tk]
@@ -134,13 +125,22 @@ suites:
       - recipe[openstack_test::network]
       - recipe[osl-openstack::compute_controller]
       - recipe[osl-openstack::compute]
+    verifier:
+      inspec_tests:
+        - test/integration/compute
+        - test/integration/compute_controller
+        - test/integration/identity
+        - test/integration/network
+        - test/integration/ops_messaging
+        - test/integration/telemetry_compute
   - name: dashboard
     driver_config:
       server_name: "dashboard-<%= ENV['USER'] %>"
     run_list:
+      - recipe[openstack_test]
       - role[openstack_tk]
       - role[openstack_ops_identity]
-      - recipe[osl-openstack::dashboard]
+      # - recipe[osl-openstack::dashboard]
   - name: block_storage
     driver_config:
       server_name: "block-storage-<%= ENV['USER'] %>"
@@ -158,7 +158,25 @@ suites:
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::block_storage_controller]
-  - name: telemetry
+  - name: telemetry_controller
+    driver_config:
+      server_name: "telemetry-<%= ENV['USER'] %>"
+    run_list:
+      - recipe[openstack_test]
+      - role[openstack_tk]
+      - recipe[openstack_test::ceph]
+      - role[openstack_ops_identity]
+      - recipe[osl-prometheus::server]
+      - recipe[osl-openstack::telemetry_controller]
+      - recipe[osl-openstack::image]
+      - recipe[openstack_test::image_upload]
+    verifier:
+      inspec_tests:
+        - test/integration/image
+        - test/integration/identity
+        - test/integration/ops_messaging
+        - test/integration/telemetry_controller
+  - name: telemetry_compute
     driver_config:
       server_name: "telemetry-<%= ENV['USER'] %>"
     run_list:
@@ -166,8 +184,17 @@ suites:
       - recipe[openstack_test::ceph]
       - role[openstack_ops_identity]
       - recipe[osl-prometheus::server]
-      - recipe[osl-openstack::telemetry]
+      - recipe[osl-openstack::telemetry_controller]
+      - recipe[osl-openstack::telemetry_compute]
       - recipe[osl-openstack::image]
+      - recipe[openstack_test::image_upload]
+    verifier:
+      inspec_tests:
+        - test/integration/image
+        - test/integration/identity
+        - test/integration/ops_messaging
+        - test/integration/telemetry_controller
+        - test/integration/telemetry_compute
   - name: orchestration
     driver_config:
       server_name: "orchestration-<%= ENV['USER'] %>"
@@ -237,7 +264,6 @@ suites:
       - recipe[openstack_test::orchestration]
     attributes:
       osl-openstack:
-        node_type: controller
         endpoint_hostname: controller.example.com
         db_hostname: controller.example.com
         upgrade: <%= ENV['OPENSTACK_UPGRADE'] || true %>

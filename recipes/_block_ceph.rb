@@ -1,4 +1,4 @@
-secrets = openstack_credential_secrets
+s = os_secrets
 
 package 'openstack-cinder'
 
@@ -7,16 +7,16 @@ group 'ceph-block' do
   append true
   members %w(cinder)
   action :modify
-  notifies :restart, 'service[cinder-volume]', :immediately if node.recipe?('openstack-block-storage::volume')
+  notifies :restart, 'service[cinder-volume]', :immediately if node.recipe?('osl-openstack::block_storage')
 end
 
-osl_ceph_keyring node['osl-openstack']['block']['rbd_store_user'] do
-  key secrets['ceph']['block_token']
-  not_if { secrets['ceph']['block_token'].nil? }
-  notifies :restart, 'service[cinder-volume]', :immediately if node.recipe?('openstack-block-storage::volume')
+osl_ceph_keyring s['block-storage']['ceph']['rbd_store_user'] do
+  key s['block-storage']['ceph']['block_token']
+  not_if { s['block-storage']['ceph']['block_token'].nil? }
+  notifies :restart, 'service[cinder-volume]', :immediately if node.recipe?('osl-openstack::block_storage')
 end
 
-osl_ceph_keyring node['osl-openstack']['block_backup']['rbd_store_user'] do
-  key secrets['ceph']['block_backup_token']
-  not_if { secrets['ceph']['block_backup_token'].nil? }
+osl_ceph_keyring s['block-storage']['ceph']['block_backup_rbd_store_user'] do
+  key s['block-storage']['ceph']['block_backup_token']
+  not_if { s['block-storage']['ceph']['block_backup_token'].nil? }
 end

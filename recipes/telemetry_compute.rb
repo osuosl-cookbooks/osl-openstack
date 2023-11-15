@@ -1,6 +1,6 @@
 #
 # Cookbook:: osl-openstack
-# Recipe:: network
+# Recipe:: telemetry
 #
 # Copyright:: 2016-2023, Oregon State University
 #
@@ -17,10 +17,14 @@
 # limitations under the License.
 #
 
-package %w(
-  ebtables
-  ipset
-  openstack-neutron-linuxbridge
-)
+osl_repos_openstack 'telemetry'
+osl_openstack_client 'telemetry'
+osl_firewall_openstack 'telemetry'
 
-include_recipe 'osl-openstack::network_common'
+include_recipe 'osl-openstack::telemetry_common'
+
+package 'openstack-ceilometer-compute'
+
+service 'openstack-ceilometer-compute' do
+  action [:enable, :start]
+end

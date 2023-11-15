@@ -1,8 +1,8 @@
 #
 # Cookbook:: osl-openstack
-# Recipe:: network
+# Recipe:: telemetry_common
 #
-# Copyright:: 2016-2023, Oregon State University
+# Copyright:: 2023, Oregon State University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,10 +17,21 @@
 # limitations under the License.
 #
 
-package %w(
-  ebtables
-  ipset
-  openstack-neutron-linuxbridge
-)
+s = os_secrets
+t = s['telemetry']
+auth_endpoint = s['identity']['endpoint']
 
-include_recipe 'osl-openstack::network_common'
+package 'openstack-ceilometer-common'
+
+template '/etc/ceilometer/ceilometer.conf' do
+  owner 'root'
+  group 'ceilometer'
+  mode '0640'
+  sensitive true
+  variables(
+    auth_endpoint: auth_endpoint,
+    memcached_endpoint: s['memcached']['endpoint'],
+    service_pass: t['service']['pass'],
+    transport_url: openstack_transport_url
+  )
+end

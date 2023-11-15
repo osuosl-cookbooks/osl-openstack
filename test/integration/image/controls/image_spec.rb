@@ -1,13 +1,24 @@
 control 'image' do
-  describe service('openstack-glance-api') do
+  describe service 'openstack-glance-api' do
     it { should be_enabled }
     it { should be_running }
   end
 
-  describe port(9292) do
+  describe port 9292 do
     it { should be_listening }
     its('protocols') { should include 'tcp' }
     its('addresses') { should include '0.0.0.0' }
+  end
+
+  %w(
+    glance-api
+    glance-registry
+  ).each do |f|
+    describe file "/etc/glance/#{f}.conf" do
+      its('owner') { should eq 'root' }
+      its('group') { should eq 'glance' }
+      its('mode') { should cmp '0640' }
+    end
   end
 
   describe ini('/etc/glance/glance-api.conf') do
@@ -15,6 +26,17 @@ control 'image' do
     its('DEFAULT.transport_url') { should cmp 'rabbit://openstack:openstack@controller.example.com:5672' }
     its('glance_store.rbd_store_pool') { should cmp 'images' }
     its('glance_store.rbd_store_user') { should cmp 'glance' }
+    its('keystone_authtoken.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
+    its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
+    its('keystone_authtoken.password') { should cmp 'glance' }
+    its('keystone_authtoken.service_token_roles_required') { should cmp 'true' }
+    its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
+    its('keystone_authtoken.www_authenticate_uri') { should cmp 'https://controller.example.com:5000/v3' }
+  end
+
+  describe ini('/etc/glance/glance-registry.conf') do
+    its('database.connection') { should cmp 'mysql+pymysql://glance:glance@localhost:3306/x86_glance' }
+    its('DEFAULT.transport_url') { should cmp 'rabbit://openstack:openstack@controller.example.com:5672' }
     its('keystone_authtoken.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
     its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
     its('keystone_authtoken.password') { should cmp 'glance' }

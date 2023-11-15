@@ -1,5 +1,5 @@
-append_if_no_line node['osl-openstack']['bind_service'] do
+append_if_no_line node['ipaddress'] do
   path '/etc/hosts'
-  line "#{node['osl-openstack']['bind_service']} controller.example.com"
+  line "#{node['ipaddress']} controller.example.com"
   sensitive false
 end
