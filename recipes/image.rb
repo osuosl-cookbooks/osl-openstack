@@ -69,6 +69,7 @@ template '/etc/glance/glance-registry.conf' do
   )
   notifies :restart, 'service[openstack-glance-registry]'
 end
+
 template '/etc/glance/glance-api.conf' do
   owner 'root'
   group 'glance'

@@ -13,10 +13,10 @@ ALLOWED_HOSTS = ["*"]
 SHOW_OPENRC_FILE = True
 SHOW_OPENSTACK_CLOUDS_YAML = True
 LOCAL_PATH = '/tmp'
-SECRET_KEY='<%= @secret_key %>'
+SECRET_KEY = '<%= @secret_key %>'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 OPENSTACK_HOST = "*"
-OPENSTACK_KEYSTONE_URL = "<%= @auth_url %>"
+OPENSTACK_KEYSTONE_URL = "https://<%= @auth_url %>:5000/"
 OPENSTACK_KEYSTONE_DEFAULT_ROLE = "member"
 OPENSTACK_KEYSTONE_ADMIN_ROLES = ["admin"]
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'

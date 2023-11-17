@@ -3,6 +3,10 @@ require_controls 'osuosl-baseline' do
 end
 
 control 'openstack-dashboard' do
+  describe package 'openstack-dashboard' do
+    it { should be_installed }
+  end
+
   %w(80 443).each do |p|
     describe port(p) do
       it { should be_listening }
@@ -11,15 +15,24 @@ control 'openstack-dashboard' do
     end
   end
 
-  describe file('/etc/openstack-dashboard/local_settings') do
+  describe file '/etc/httpd/conf.d/openstack-dashboard.conf' do
+    it { should_not exist }
+  end
+
+  describe command 'systemctl cat httpd' do
+    its('stdout') { should_not match /collectstatic/ }
+  end
+
+  describe file '/etc/openstack-dashboard/local_settings' do
+    its('content') { should match(/^SECRET_KEY = '-#45g2\*o=8mhe\(10if%\*65@g#z0r#r7m__w6kwq8s9@n%12a11'$/) }
+    its('content') { should match(%r{^OPENSTACK_KEYSTONE_URL = "https://controller\.example\.com:5000/"$}) }
     its('content') { should match(/'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',/) }
-    its('content') { match(/'LOCATION': \[\n\s*'controller.example.com:11211',/) }
-    its('content') do
-      should match(/
-LAUNCH_INSTANCE_DEFAULTS = {
-  'create_volume': False,
-}/)
-    end
+    its('content') { should match(/'LOCATION': \[\n\s*'controller.example.com:11211',/) }
+    its('content') { should match(/LAUNCH_INSTANCE_DEFAULTS = {\n  'create_volume': False,\n}/) }
+  end
+
+  describe apache_conf('/etc/httpd/sites-enabled/horizon.conf') do
+    its('ServerName') { should include 'controller.example.com' }
   end
 
   # Simulate logging into horizon with curl and test the output to ensure the

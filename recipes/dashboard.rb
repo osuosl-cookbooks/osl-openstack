@@ -31,3 +31,58 @@ include_recipe 'osl-apache::mod_wsgi'
 include_recipe 'osl-apache::mod_ssl'
 
 package 'openstack-dashboard'
+
+file '/etc/httpd/conf.d/openstack-dashboard.conf' do
+  action :delete
+  notifies :reload, 'apache2_service[osuosl]'
+  notifies :delete, 'directory[purge distro conf.d]', :immediately
+end
+
+file '/usr/lib/systemd/system/httpd.service.d/openstack-dashboard.conf' do
+  action :delete
+  notifies :run, 'execute[systemctl daemon-reload]', :immediately
+end
+
+execute 'systemctl daemon-reload' do
+  action :nothing
+end
+
+directory 'purge distro conf.d' do
+  path '/etc/httpd/conf.d'
+  recursive true
+  action :nothing
+end
+
+s = os_secrets
+d = s['dashboard']
+auth_endpoint = s['identity']['endpoint']
+
+template '/etc/openstack-dashboard/local_settings' do
+  group 'apache'
+  mode '0640'
+  sensitive true
+  variables(
+    secret_key: d['secret_key'],
+    auth_url: auth_endpoint,
+    memcache_servers: s['memcached']['endpoint']
+  )
+  notifies :run, 'execute[horizon: compress]'
+  notifies :reload, 'apache2_service[osuosl]'
+end
+
+apache_app 'horizon' do
+  cookbook 'osl-openstack'
+  server_name d['endpoint']
+  server_aliases d['aliases'] if d['aliases']
+  template 'wsgi-horizon.conf.erb'
+  notifies :run, 'execute[horizon: compress]'
+  notifies :reload, 'apache2_service[osuosl]'
+end
+
+execute 'horizon: compress' do
+  command <<~EOC
+    /usr/bin/python2 /usr/share/openstack-dashboard/manage.py collectstatic --noinput --clear -v0
+    /usr/bin/python2 /usr/share/openstack-dashboard/manage.py compress --force -v0
+  EOC
+  action :nothing
+end

@@ -2,12 +2,20 @@
   "id": "x86",
   "block-storage": {
     "ceph": {
-      "block_token": "AQAjbr1aWv+aNBAAoGfqrwX9iSdNmtuvUkwGhA==",
+      "backup_ceph_pool": "backups",
+      "block_backup_rbd_store_user": "cinder-backup",
       "block_backup_token": "AQAxbr1ac4ToKhAAeO6+h90GcsukzHicUNvfLg==",
-      "rbd_store_user": "cinder",
-      "block_backup_rbd_store_user": "cinder-backup"
+      "block_rbd_pool": "volumes",
+      "block_ssd_rbd_pool": "volumes_ssd",
+      "block_token": "AQAjbr1aWv+aNBAAoGfqrwX9iSdNmtuvUkwGhA==",
+      "rbd_store_user": "cinder"
     },
     "db": {
+      "user": "cinder",
+      "pass": "cinder"
+    },
+    "endpoint": "controller.example.com",
+    "service": {
       "user": "cinder",
       "pass": "cinder"
     }
@@ -62,10 +70,12 @@
     }
   },
   "dashboard": {
+    "endpoint": "controller.example.com",
     "db": {
       "user": "horizon",
       "pass": "horizon"
-    }
+    },
+    "secret_key": "-#45g2*o=8mhe(10if%*65@g#z0r#r7m__w6kwq8s9@n%12a11"
   },
   "database_server": {
     "suffix": "x86",
@@ -145,6 +155,10 @@
   },
   "orchestration": {
     "db": {
+      "user": "heat",
+      "pass": "heat"
+    },
+    "service": {
       "user": "heat",
       "pass": "heat"
     }

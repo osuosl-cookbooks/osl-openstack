@@ -16,8 +16,6 @@ chef_gem 'excon'
 
 # Make sure ruby knows to use the ca-bundle certs as authority so that our self signed cert gets verified properly.
 # NOTE: This is only needed for testing, not production.
-# ruby_block 'set ca_file' do
-# block do
 require 'net/https'
 require 'excon'
 
@@ -30,5 +28,3 @@ Net::HTTP.class_eval do
   end
 end
 Excon.defaults[:ssl_verify_peer] = false
-# end
-# end

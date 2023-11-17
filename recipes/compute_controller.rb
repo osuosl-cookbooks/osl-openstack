@@ -90,6 +90,7 @@ file '/etc/httpd/conf.d/00-placement-api.conf' do
   notifies :reload, 'apache2_service[compute]'
   notifies :delete, 'directory[purge distro conf.d]', :immediately
 end
+
 directory 'purge distro conf.d' do
   path '/etc/httpd/conf.d'
   recursive true
@@ -174,6 +175,7 @@ apache_app 'nova-api' do
   template 'wsgi-nova-api.conf.erb'
   notifies :reload, 'apache2_service[compute]', :immediately
 end
+
 apache_app 'nova-metadata' do
   cookbook 'osl-openstack'
   template 'wsgi-nova-metadata.conf.erb'

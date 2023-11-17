@@ -16,19 +16,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Missing package dep
-package 'python2-crypto'
 
-include_recipe 'osl-openstack'
-include_recipe 'openstack-block-storage::volume'
-include_recipe 'openstack-block-storage::identity_registration'
+osl_repos_openstack 'block-storage-controller'
+osl_openstack_client 'block-storage-controller'
+osl_firewall_openstack 'block-storage-controller'
+
+include_recipe 'osl-openstack::block_storage_common'
 include_recipe 'osl-openstack::_block_ceph' if node['osl-openstack']['ceph']['volume']
 
-replace_or_add 'log-dir storage' do
-  path '/usr/share/cinder/cinder-dist.conf'
-  pattern '^logdir.*'
-  line 'log-dir = /var/log/cinder'
-  backup true
-  replace_only true
-  notifies :restart, 'service[cinder-volume]'
+service 'openstack-cinder-volume' do
+  action [:enable, :start]
 end

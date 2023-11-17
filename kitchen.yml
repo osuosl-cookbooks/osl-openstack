@@ -140,24 +140,47 @@ suites:
       - recipe[openstack_test]
       - role[openstack_tk]
       - role[openstack_ops_identity]
-      # - recipe[osl-openstack::dashboard]
+      - recipe[osl-openstack::dashboard]
+    verifier:
+      inspec_tests:
+        - test/integration/dashboard
+        - test/integration/identity
+        - test/integration/ops_messaging
   - name: block_storage
     driver_config:
       server_name: "block-storage-<%= ENV['USER'] %>"
     run_list:
+      - recipe[openstack_test]
       - role[openstack_tk]
       - recipe[openstack_test::ceph]
       - role[openstack_ops_identity]
+      - recipe[osl-openstack::image]
+      - recipe[osl-openstack::compute_controller]
       - recipe[osl-openstack::block_storage_controller]
-      - recipe[openstack-block-storage::volume_driver_lvm]
       - recipe[osl-openstack::block_storage]
+      - recipe[openstack_test::image_upload]
+    verifier:
+      inspec_tests:
+        - test/integration/block_storage
+        - test/integration/block_storage_controller
+        - test/integration/compute_controller
+        - test/integration/identity
+        - test/integration/image
+        - test/integration/ops_messaging
   - name: block_storage_controller
     driver_config:
       server_name: "block-storage-controller-<%= ENV['USER'] %>"
     run_list:
+      - recipe[openstack_test]
       - role[openstack_tk]
+      - recipe[openstack_test::ceph]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::block_storage_controller]
+    verifier:
+      inspec_tests:
+        - test/integration/identity
+        - test/integration/ops_messaging
+        - test/integration/block_storage_controller
   - name: telemetry_controller
     driver_config:
       server_name: "telemetry-<%= ENV['USER'] %>"
