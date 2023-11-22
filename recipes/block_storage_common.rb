@@ -21,6 +21,8 @@ s = os_secrets
 b = s['block-storage']
 auth_endpoint = s['identity']['endpoint']
 
+include_recipe 'yum-qemu-ev'
+
 package 'openstack-cinder'
 
 replace_or_add 'log-dir controller' do

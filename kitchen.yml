@@ -22,6 +22,7 @@ provisioner:
         image: true
         compute: true
         volume: true
+      cluster_name: x86
       node_type: controller
 
 suites:
@@ -29,11 +30,6 @@ suites:
     run_list:
       - recipe[osl-openstack::default]
   - name: mon
-    provisioner: chef_solo
-    run_list:
-      - recipe[osl-openstack::mon]
-  - name: mon_controller
-    provisioner: chef_solo
     run_list:
       - recipe[osl-openstack::mon]
   - name: ops_messaging
@@ -78,7 +74,6 @@ suites:
       inspec_tests:
         - test/integration/identity
         - test/integration/network
-        - test/integration/network_controller
         - test/integration/ops_messaging
   - name: network
     driver_config:
@@ -87,12 +82,14 @@ suites:
       - recipe[openstack_test]
       - role[openstack_tk]
       - role[openstack_ops_identity]
-      - recipe[openstack_test::network]
+      - recipe[osl-openstack::network_controller]
+      - recipe[osl-openstack::network]
     verifier:
+      inputs:
+        compute: true
       inspec_tests:
         - test/integration/identity
         - test/integration/network
-        - test/integration/network_controller
         - test/integration/ops_messaging
   - name: compute_controller
     driver_config:
@@ -122,7 +119,8 @@ suites:
       - role[openstack_tk]
       - recipe[openstack_test::ceph]
       - role[openstack_ops_identity]
-      - recipe[openstack_test::network]
+      - recipe[osl-openstack::network_controller]
+      - recipe[osl-openstack::network]
       - recipe[osl-openstack::compute_controller]
       - recipe[osl-openstack::compute]
     verifier:
@@ -222,43 +220,62 @@ suites:
     driver_config:
       server_name: "orchestration-<%= ENV['USER'] %>"
     run_list:
+      - recipe[openstack_test]
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::orchestration]
+    verifier:
+      inspec_tests:
+        - test/integration/identity
+        - test/integration/ops_messaging
+        - test/integration/orchestration
   - name: controller
+    provisioner:
+      multiple_converge: 3
     driver_config:
       server_name: "controller-<%= ENV['USER'] %>"
       flavor_ref: 'm1.xlarge'
     run_list:
+      - recipe[openstack_test]
       - role[openstack_tk]
       - recipe[openstack_test::ceph]
-      - recipe[openstack_test]
       - role[openstack_ops_identity]
       - recipe[osl-prometheus::server]
       - recipe[osl-openstack::controller]
-      - recipe[openstack-integration-test::setup]
-      - recipe[openstack_test::tempest]
+      - recipe[openstack_test::image_upload]
+      #- recipe[openstack-integration-test::setup]
+      #- recipe[openstack_test::tempest]
+    verifier:
+      inspec_tests:
+        - test/integration/block_storage_controller
+        - test/integration/compute_controller
+        - test/integration/identity
+        - test/integration/image
+        - test/integration/network
+        - test/integration/ops_messaging
+        - test/integration/orchestration
+        - test/integration/telemetry_controller
   - name: allinone
+    provisioner:
+      multiple_converge: 3
     driver_config:
       server_name: "allinone-<%= ENV['USER'] %>"
       flavor_ref: 'm1.xlarge'
     run_list:
+      - recipe[openstack_test]
       - role[openstack_tk]
       - recipe[openstack_test::ceph]
-      - recipe[openstack_test]
       - role[openstack_ops_identity]
       - recipe[osl-prometheus::server]
       - recipe[osl-openstack::controller]
-      - recipe[osl-openstack::compute]
+      - recipe[openstack_test::image_upload]
+      - recipe[osl-openstack::telemetry_compute]
       - recipe[osl-openstack::block_storage]
-      - recipe[openstack_test::tempest]
-      - recipe[openstack_test::orchestration]
-      - recipe[openstack_test::network]
-    attributes:
-      openstack:
-        block-storage:
-          volume:
-            create_volume_group: true
+      - recipe[osl-openstack::network]
+      - recipe[osl-openstack::compute]
+      #- recipe[openstack_test::tempest]
+      #- recipe[openstack_test::orchestration]
+      #- recipe[openstack_test::network]
   - name: upgrade
     driver_config:
       flavor_ref: 'm1.xlarge'

@@ -32,42 +32,42 @@ if node['osl-openstack']['node_type'] == 'controller'
 
   nrpe_check 'check_keystone_api' do
     command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "--ssl -I #{node['osl-openstack']['bind_service']} -p 5000"
+    parameters "--ssl -I #{node['ipaddress']} -p 5000"
   end
 
   nrpe_check 'check_glance_api' do
     command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "-I #{node['osl-openstack']['bind_service']} -p 9292"
+    parameters "-I #{node['ipaddress']} -p 9292"
   end
 
   nrpe_check 'check_nova_api' do
     command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "-I #{node['osl-openstack']['bind_service']} -p 8774"
+    parameters "-I #{node['ipaddress']} -p 8774"
   end
 
   nrpe_check 'check_nova_placement_api' do
     command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "-I #{node['osl-openstack']['bind_service']} -p 8778"
+    parameters "-I #{node['ipaddress']} -p 8778"
   end
 
   nrpe_check 'check_novnc' do
     command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "--ssl -I #{node['osl-openstack']['bind_service']} -p 6080"
+    parameters "--ssl -I #{node['ipaddress']} -p 6080"
   end
 
   nrpe_check 'check_neutron_api' do
     command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "-I #{node['osl-openstack']['bind_service']} -p 9696"
+    parameters "-I #{node['ipaddress']} -p 9696"
   end
 
   nrpe_check 'check_cinder_api' do
     command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "-I #{node['osl-openstack']['bind_service']} -p 8776"
+    parameters "-I #{node['ipaddress']} -p 8776"
   end
 
   nrpe_check 'check_heat_api' do
     command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "-I #{node['osl-openstack']['bind_service']} -p 8004"
+    parameters "-I #{node['ipaddress']} -p 8004"
   end
 
   unless node['osl-openstack']['cluster_name'].nil?
@@ -75,7 +75,10 @@ if node['osl-openstack']['node_type'] == 'controller'
       content "export OS_CLUSTER=#{node['osl-openstack']['cluster_name']}\n"
     end
 
-    chef_gem 'prometheus_reporter'
+    chef_gem 'prometheus_reporter' do
+      # TODO: Waiting on new release from upstream
+      source 'https://packagecloud.io/osuosl/prometheus_reporter'
+    end
 
     cookbook_file '/usr/local/libexec/openstack-prometheus' do
       mode '755'

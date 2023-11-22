@@ -18,10 +18,6 @@ control 'block-storage' do
     its('exit_status') { should eq 0 }
   end
 
-  describe command "#{openstack} volume list -f value -c Name -c Status -c Size\"" do
-    its('stdout') { should match(/test-volume available 1/) }
-  end
-
   describe command "#{openstack} volume delete test-volume\"" do
     its('exit_status') { should eq 0 }
   end

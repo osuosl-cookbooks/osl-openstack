@@ -132,6 +132,7 @@ module OSLOpenstack
       end
 
       def os_project(new_resource)
+        # return if new_resource.project_name.nil?
         domain = os_domain(new_resource)
         os_conn.projects.find do |p|
           (p.name == new_resource.project_name) && (domain ? p.domain_id == domain.id : {})

@@ -128,9 +128,6 @@ when 'x86_64'
   end
 end
 
-# TODO: Missing package dep for telemetry
-# package 'python2-wsme'
-
 include_recipe 'osl-openstack::network'
 include_recipe 'osl-openstack::telemetry_compute'
 

@@ -7,7 +7,7 @@ property :user_name, String, name_property: true
 property :email, String
 property :password, String, required: true, sensitive: true
 property :role_name, String, required: [:grant_role]
-property :project_name, String, required: [:grant_role]
+property :project_name, String
 property :domain_name, String
 
 action :create do
@@ -44,6 +44,18 @@ action :grant_role do
     user = os_user(new_resource)
     converge_by("granting role #{new_resource.role_name} to user #{new_resource.user_name} in project #{new_resource.project_name}") do
       project.grant_role_to_user role.id, user.id
+    end
+  end
+end
+
+action :grant_domain do
+  unless os_user_grant_domain(new_resource)
+    domain = os_domain(new_resource)
+    role = os_role(new_resource)
+    user = os_user(new_resource)
+    d_text = " in domain #{domain.name}" if domain
+    converge_by("granting role #{new_resource.role_name} to user #{new_resource.user_name}#{d_text}") do
+      user.grant_role role.id
     end
   end
 end

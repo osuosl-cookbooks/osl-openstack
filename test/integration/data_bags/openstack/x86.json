@@ -154,10 +154,13 @@
     }
   },
   "orchestration": {
+    "auth_encryption_key": "4CFk1URr4Ln37kKRNSypwjI7vv7jfLQE",
     "db": {
       "user": "heat",
       "pass": "heat"
     },
+    "endpoint": "controller.example.com",
+    "heat_domain_admin": "heat_domain_admin",
     "service": {
       "user": "heat",
       "pass": "heat"
