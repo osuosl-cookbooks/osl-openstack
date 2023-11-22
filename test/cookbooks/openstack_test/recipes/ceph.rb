@@ -13,7 +13,7 @@ end
 ).each do |p|
   execute "create pool #{p}" do
     command <<~EOC
-      ceph osd pool create #{p} 64
+      ceph osd pool create #{p} 32
       touch /root/pool-#{p}.done
     EOC
     creates "/root/pool-#{p}.done"
