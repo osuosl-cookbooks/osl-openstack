@@ -130,14 +130,6 @@ execute 'nova: api_db_sync' do
   subscribes :run, 'template[/etc/nova/nova.conf]', :immediately
 end
 
-execute 'nova: db_sync' do
-  command 'nova-manage db sync'
-  user 'nova'
-  group 'nova'
-  action :nothing
-  subscribes :run, 'template[/etc/nova/nova.conf]', :immediately
-end
-
 execute 'nova: register cell0' do
   command 'nova-manage cell_v2 map_cell0'
   user 'nova'
@@ -152,6 +144,14 @@ execute 'nova: create cell1' do
   user 'nova'
   group 'nova'
   not_if 'nova-manage cell_v2 list_cells | grep -q cell1'
+  action :nothing
+  subscribes :run, 'template[/etc/nova/nova.conf]', :immediately
+end
+
+execute 'nova: db_sync' do
+  command 'nova-manage db sync'
+  user 'nova'
+  group 'nova'
   action :nothing
   subscribes :run, 'template[/etc/nova/nova.conf]', :immediately
 end

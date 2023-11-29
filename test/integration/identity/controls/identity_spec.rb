@@ -2,6 +2,8 @@ require_controls 'osuosl-baseline' do
   control 'ssl-baseline'
 end
 
+db_endpoint = input('db_endpoint')
+
 control 'openstack-identity' do
   describe package 'openstack-keystone' do
     it { should be_installed }
@@ -46,7 +48,7 @@ control 'openstack-identity' do
     its('DEFAULT.public_endpoint') { should cmp 'https://controller.example.com:5000/' }
     its('DEFAULT.transport_url') { should cmp 'rabbit://openstack:openstack@controller.example.com:5672' }
     its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
-    its('database.connection') { should cmp 'mysql+pymysql://keystone:keystone@localhost:3306/x86_keystone' }
+    its('database.connection') { should cmp "mysql+pymysql://keystone:keystone@#{db_endpoint}:3306/x86_keystone" }
   end
 
   %w(

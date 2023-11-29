@@ -17,12 +17,15 @@
 # limitations under the License.
 #
 
+node.default['osl-openstack']['node_type'] = 'controller'
+
 include_recipe 'osl-openstack::identity'
-include_recipe 'osl-openstack::telemetry_controller'
 include_recipe 'osl-openstack::image'
 include_recipe 'osl-openstack::network_controller' unless node['osl-openstack']['separate_network_node']
 include_recipe 'osl-openstack::compute_controller'
 include_recipe 'osl-openstack::block_storage_controller'
 include_recipe 'osl-openstack::orchestration'
+include_recipe 'osl-openstack::telemetry_controller'
 include_recipe 'osl-openstack::dashboard'
+include_recipe 'osl-prometheus::openstack'
 include_recipe 'osl-openstack::mon'

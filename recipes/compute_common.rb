@@ -34,7 +34,6 @@ delete_lines 'remove force_dhcp_release' do
 end
 
 template '/etc/nova/nova.conf' do
-  cookbook 'osl-openstack'
   owner 'root'
   group 'nova'
   mode '0640'

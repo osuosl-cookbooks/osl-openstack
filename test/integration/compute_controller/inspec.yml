@@ -1,2 +1,5 @@
 ---
 name: compute-controller
+inputs:
+  - name: db_endpoint
+    value: localhost

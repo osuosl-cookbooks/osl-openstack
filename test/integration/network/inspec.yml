@@ -3,5 +3,7 @@ name: network
 inputs:
   - name: controller
     value: true
-  - name: compute
-    value: false
+  - name: db_endpoint
+    value: localhost
+  - name: physical_interface_mappings
+    value: public:eth1

@@ -6,38 +6,7 @@
     "recipe[openstack_test::cacert]"
   ],
   "chef_type": "role",
-  "override_attributes": {
-    "openstack": {
-      "image": {
-        "image_upload": true
-      },
-      "identity": {
-        "conf": {
-          "keystone_authtoken": {
-            "insecure": true
-          }
-        }
-      },
-      "mq": {
-        "user": "admin"
-      },
-      "compute": {
-        "metering": true,
-        "conf": {
-          "libvirt": {
-            "virt_type": "qemu"
-          }
-        }
-      },
-      "telemetry": {
-        "pipeline": {
-          "publishers": [
-            "prometheus://localhost:9091/metrics/job/ceilometer"
-          ]
-        }
-      }
-    }
-  },
+  "override_attributes": {},
   "default_attributes": {},
   "json_class": "Chef::Role",
   "description": "Openstack x86 Test Kitchen Role",

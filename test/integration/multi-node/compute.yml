@@ -1,0 +1,3 @@
+controller: false
+db_endpoint: db.example.com
+physical_interface_mappings: public:eth1.42

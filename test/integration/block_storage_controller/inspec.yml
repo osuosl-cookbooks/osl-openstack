@@ -1,2 +1,5 @@
 ---
 name: block-storage-controller
+inputs:
+  - name: db_endpoint
+    value: localhost

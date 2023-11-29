@@ -24,6 +24,8 @@ provisioner:
         volume: true
       cluster_name: x86
       node_type: controller
+    osl-prometheus:
+      scrape_configs: false
 
 suites:
   - name: default
@@ -101,13 +103,11 @@ suites:
       - role[openstack_tk]
       - recipe[openstack_test::ceph]
       - role[openstack_ops_identity]
-      - recipe[openstack_test::network]
       - recipe[osl-openstack::compute_controller]
     verifier:
       inspec_tests:
         - test/integration/compute_controller
         - test/integration/identity
-        - test/integration/network
         - test/integration/ops_messaging
   - name: compute
     driver_config:
@@ -144,9 +144,27 @@ suites:
         - test/integration/dashboard
         - test/integration/identity
         - test/integration/ops_messaging
+  - name: block_storage_controller
+    driver_config:
+      server_name: "block-storage-controller-<%= ENV['USER'] %>"
+    provisioner:
+      multiple_converge: 3
+    run_list:
+      - recipe[openstack_test]
+      - role[openstack_tk]
+      - recipe[openstack_test::ceph]
+      - role[openstack_ops_identity]
+      - recipe[osl-openstack::block_storage_controller]
+    verifier:
+      inspec_tests:
+        - test/integration/identity
+        - test/integration/ops_messaging
+        - test/integration/block_storage_controller
   - name: block_storage
     driver_config:
       server_name: "block-storage-<%= ENV['USER'] %>"
+    provisioner:
+      multiple_converge: 3
     run_list:
       - recipe[openstack_test]
       - role[openstack_tk]
@@ -165,29 +183,17 @@ suites:
         - test/integration/identity
         - test/integration/image
         - test/integration/ops_messaging
-  - name: block_storage_controller
-    driver_config:
-      server_name: "block-storage-controller-<%= ENV['USER'] %>"
-    run_list:
-      - recipe[openstack_test]
-      - role[openstack_tk]
-      - recipe[openstack_test::ceph]
-      - role[openstack_ops_identity]
-      - recipe[osl-openstack::block_storage_controller]
-    verifier:
-      inspec_tests:
-        - test/integration/identity
-        - test/integration/ops_messaging
-        - test/integration/block_storage_controller
   - name: telemetry_controller
     driver_config:
       server_name: "telemetry-<%= ENV['USER'] %>"
+    provisioner:
+      multiple_converge: 3
     run_list:
       - recipe[openstack_test]
       - role[openstack_tk]
       - recipe[openstack_test::ceph]
       - role[openstack_ops_identity]
-      - recipe[osl-prometheus::server]
+      - recipe[openstack_test::prometheus]
       - recipe[osl-openstack::telemetry_controller]
       - recipe[osl-openstack::image]
       - recipe[openstack_test::image_upload]
@@ -200,11 +206,13 @@ suites:
   - name: telemetry_compute
     driver_config:
       server_name: "telemetry-<%= ENV['USER'] %>"
+    provisioner:
+      multiple_converge: 3
     run_list:
       - role[openstack_tk]
       - recipe[openstack_test::ceph]
       - role[openstack_ops_identity]
-      - recipe[osl-prometheus::server]
+      - recipe[openstack_test::prometheus]
       - recipe[osl-openstack::telemetry_controller]
       - recipe[osl-openstack::telemetry_compute]
       - recipe[osl-openstack::image]
@@ -240,11 +248,9 @@ suites:
       - role[openstack_tk]
       - recipe[openstack_test::ceph]
       - role[openstack_ops_identity]
-      - recipe[osl-prometheus::server]
+      - recipe[openstack_test::prometheus]
       - recipe[osl-openstack::controller]
       - recipe[openstack_test::image_upload]
-      #- recipe[openstack-integration-test::setup]
-      #- recipe[openstack_test::tempest]
     verifier:
       inspec_tests:
         - test/integration/block_storage_controller
@@ -265,17 +271,14 @@ suites:
       - recipe[openstack_test]
       - role[openstack_tk]
       - recipe[openstack_test::ceph]
-      #- role[openstack_ops_identity]
-      #- recipe[osl-prometheus::server]
-      #- recipe[osl-openstack::controller]
-      #- recipe[openstack_test::image_upload]
-      #- recipe[osl-openstack::telemetry_compute]
-      #- recipe[osl-openstack::block_storage]
-      #- recipe[osl-openstack::network]
-      #- recipe[osl-openstack::compute]
-      #- recipe[openstack_test::tempest]
-      #- recipe[openstack_test::orchestration]
-      #- recipe[openstack_test::network]
+      - role[openstack_ops_identity]
+      - recipe[openstack_test::prometheus]
+      - recipe[osl-openstack::controller]
+      - recipe[osl-openstack::telemetry_compute]
+      - recipe[osl-openstack::block_storage]
+      - recipe[osl-openstack::network]
+      - recipe[osl-openstack::compute]
+      - recipe[openstack_test::image_upload]
     verifier:
       inputs:
         compute: true

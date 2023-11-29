@@ -1,0 +1,3 @@
+db_endpoint: db.example.com
+physical_interface_mappings: public:eth1.42
+prometheus_endpoint: controller.example.com

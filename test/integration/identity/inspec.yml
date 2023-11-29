@@ -8,3 +8,5 @@ inputs:
     profile: osuosl-baseline
     value:
       - 5000
+  - name: db_endpoint
+    value: localhost

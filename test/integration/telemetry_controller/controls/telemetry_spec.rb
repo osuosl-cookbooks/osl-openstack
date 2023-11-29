@@ -1,3 +1,5 @@
+prometheus_endpoint = input('prometheus_endpoint')
+
 control 'telemetry-controller' do
   %w(
     openstack-ceilometer-central
@@ -21,7 +23,7 @@ control 'telemetry-controller' do
   end
 
   describe file '/etc/ceilometer/pipeline.yaml' do
-    its('content') { should match %r{publishers:\n\s+- prometheus://localhost:9091/metrics/job/ceilometer} }
+    its('content') { should match %r{publishers:\n\s+- prometheus://#{prometheus_endpoint}:9091/metrics/job/ceilometer} }
   end
 
   describe ini('/etc/ceilometer/ceilometer.conf') do

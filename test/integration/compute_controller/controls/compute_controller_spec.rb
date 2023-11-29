@@ -1,3 +1,5 @@
+db_endpoint = input('db_endpoint')
+
 control 'compute-controller' do
   %w(
     openstack-nova-conductor
@@ -53,7 +55,7 @@ control 'compute-controller' do
     its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
     its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
     its('keystone_authtoken.www_authenticate_uri') { should cmp 'https://controller.example.com:5000/v3' }
-    its('placement_database.connection') { should cmp 'mysql+pymysql://placement:placement@localhost:3306/x86_placement' }
+    its('placement_database.connection') { should cmp "mysql+pymysql://placement:placement@#{db_endpoint}:3306/x86_placement" }
   end
 
   describe ini('/etc/nova/nova.conf') do
@@ -66,9 +68,9 @@ control 'compute-controller' do
     its('DEFAULT.resume_guests_state_on_host_boot') { should cmp 'True' }
     its('DEFAULT.transport_url') { should cmp 'rabbit://openstack:openstack@controller.example.com:5672' }
     its('DEFAULT.use_neutron') { should_not cmp '' }
-    its('api_database.connection') { should cmp 'mysql+pymysql://nova:nova@localhost:3306/x86_nova_api' }
+    its('api_database.connection') { should cmp "mysql+pymysql://nova:nova@#{db_endpoint}:3306/x86_nova_api" }
     its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
-    its('database.connection') { should cmp 'mysql+pymysql://nova:nova@localhost:3306/x86_nova' }
+    its('database.connection') { should cmp "mysql+pymysql://nova:nova@#{db_endpoint}:3306/x86_nova" }
     its('filter_scheduler.enabled_filters') { should cmp 'AggregateInstanceExtraSpecsFilter,PciPassthroughFilter,RetryFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter' }
     its('glance.api_servers') { should cmp 'http://controller.example.com:9292' }
     its('keystone_authtoken.auth_url') { should cmp 'https://controller.example.com:5000/v3' }

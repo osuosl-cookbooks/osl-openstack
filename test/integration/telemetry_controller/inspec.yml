@@ -1,2 +1,5 @@
 ---
 name: telemetry-controller
+inputs:
+  - name: prometheus_endpoint
+    value: localhost

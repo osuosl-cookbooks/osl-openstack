@@ -1,3 +1,5 @@
+db_endpoint = input('db_endpoint')
+
 control 'image' do
   describe service 'openstack-glance-api' do
     it { should be_enabled }
@@ -22,7 +24,7 @@ control 'image' do
   end
 
   describe ini('/etc/glance/glance-api.conf') do
-    its('database.connection') { should cmp 'mysql+pymysql://glance:glance@localhost:3306/x86_glance' }
+    its('database.connection') { should cmp "mysql+pymysql://glance:glance@#{db_endpoint}:3306/x86_glance" }
     its('DEFAULT.transport_url') { should cmp 'rabbit://openstack:openstack@controller.example.com:5672' }
     its('glance_store.rbd_store_pool') { should cmp 'images' }
     its('glance_store.rbd_store_user') { should cmp 'glance' }
@@ -35,7 +37,7 @@ control 'image' do
   end
 
   describe ini('/etc/glance/glance-registry.conf') do
-    its('database.connection') { should cmp 'mysql+pymysql://glance:glance@localhost:3306/x86_glance' }
+    its('database.connection') { should cmp "mysql+pymysql://glance:glance@#{db_endpoint}:3306/x86_glance" }
     its('DEFAULT.transport_url') { should cmp 'rabbit://openstack:openstack@controller.example.com:5672' }
     its('keystone_authtoken.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
     its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
@@ -56,7 +58,7 @@ control 'image' do
     its('stdout') { should match(/locations=/) }
   end
 
-  describe command('rbd ls images') do
+  describe command('rbd --id glance ls images') do
     its('stdout') { should match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/) }
   end
 

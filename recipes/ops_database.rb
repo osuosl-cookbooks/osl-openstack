@@ -24,10 +24,12 @@ osl_mysql_test "#{suffix}_keystone" do
   password s['identity']['db']['pass']
   encoding 'utf8'
   collation 'utf8_general_ci'
-  version '10.3'
+  version '10.4'
 end
 
 mariadb_server_configuration 'openstack' do
+  mysqld_bind_address '0.0.0.0'
+  mysqld_max_connections 1000
   mysqld_options(
     'character-set-server' => 'utf8',
     'collation-server' => 'utf8_general_ci'

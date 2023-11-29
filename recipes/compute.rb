@@ -19,6 +19,7 @@
 
 osl_repos_openstack 'compute'
 osl_openstack_client 'compute'
+osl_openstack_openrc 'compute'
 osl_firewall_openstack 'compute'
 osl_firewall_vnc 'osl-openstack'
 
@@ -155,6 +156,7 @@ if node['osl-openstack']['ceph']['volume'] || node['osl-openstack']['ceph']['com
   end
 
   ceph_user = b['ceph']['rbd_store_user']
+  fsid = ceph_fsid
   secret_file = ::File.join(Chef::Config[:file_cache_path], 'secret.xml')
 
   template secret_file do
@@ -163,25 +165,25 @@ if node['osl-openstack']['ceph']['volume'] || node['osl-openstack']['ceph']['com
     group 'root'
     mode '00600'
     variables(
-      uuid: ceph_fsid,
+      uuid: fsid,
       client_name: ceph_user
     )
-    not_if "virsh secret-list | grep #{ceph_fsid}"
-    not_if { ceph_fsid.nil? }
+    not_if { fsid.nil? }
+    not_if "virsh secret-list | grep #{fsid}"
   end
 
   execute "virsh secret-define --file #{secret_file}" do
-    not_if "virsh secret-list | grep #{ceph_fsid}"
-    not_if { ceph_fsid.nil? }
+    not_if { fsid.nil? }
+    not_if "virsh secret-list | grep #{fsid}"
   end
 
   # this will update the key if necessary
   execute 'update virsh ceph secret' do
-    command "virsh secret-set-value --secret #{ceph_fsid} --base64 #{b['ceph']['block_token']}"
+    command "virsh secret-set-value --secret #{fsid} --base64 #{b['ceph']['block_token']}"
     sensitive true
-    not_if "virsh secret-get-value #{ceph_fsid} | grep #{b['ceph']['block_token']}"
+    not_if { fsid.nil? }
+    not_if "virsh secret-get-value #{fsid} | grep #{b['ceph']['block_token']}"
     not_if { b['ceph']['block_token'].nil? }
-    not_if { ceph_fsid.nil? }
   end
 
   file secret_file do

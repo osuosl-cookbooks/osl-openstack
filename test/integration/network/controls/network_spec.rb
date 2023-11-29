@@ -1,5 +1,6 @@
 controller = input('controller')
-# compute = input('compute')
+db_endpoint = input('db_endpoint')
+physical_interface_mappings = input('physical_interface_mappings')
 
 control 'network' do
   %w(
@@ -22,7 +23,7 @@ control 'network' do
 
   describe ini('/etc/neutron/plugins/ml2/linuxbridge_agent.ini') do
     its('agent.polling_interval') { should cmp '2' }
-    its('linux_bridge.physical_interface_mappings') { should cmp 'public:eth1' }
+    its('linux_bridge.physical_interface_mappings') { should cmp physical_interface_mappings }
     its('securitygroup.enable_security_group') { should cmp 'true' }
     its('securitygroup.firewall_driver') { should cmp 'neutron.agent.linux.iptables_firewall.IptablesFirewallDriver' }
     its('vlans.network_vlan_ranges') { should cmp '' }
@@ -44,7 +45,7 @@ control 'network' do
 
   describe ini('/etc/neutron/neutron.conf') do
     if controller
-      its('database.connection') { should cmp 'mysql+pymysql://neutron:neutron@localhost:3306/x86_neutron' }
+      its('database.connection') { should cmp "mysql+pymysql://neutron:neutron@#{db_endpoint}:3306/x86_neutron" }
       its('DEFAULT.allow_overlapping_ips') { should cmp 'true' }
       its('DEFAULT.control_exchange') { should cmp 'neutron' }
       its('DEFAULT.core_plugin') { should cmp 'ml2' }

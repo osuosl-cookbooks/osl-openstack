@@ -10,3 +10,5 @@ node.default['prometheus-platform']['components']['prometheus']['config']['scrap
     },
   }
 end
+
+include_recipe 'osl-prometheus::server'
