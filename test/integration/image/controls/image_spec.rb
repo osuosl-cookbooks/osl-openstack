@@ -47,6 +47,10 @@ control 'image' do
     its('keystone_authtoken.www_authenticate_uri') { should cmp 'https://controller.example.com:5000/v3' }
   end
 
+  describe command('/root/image_upload.sh') do
+    its('exit_status') { should eq 0 }
+  end
+
   describe command('bash -c "source /root/openrc && /usr/bin/openstack image list"') do
     its('stdout') do
       should match(/\|\s[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\s\|\scirros.*\s\|\sactive/)

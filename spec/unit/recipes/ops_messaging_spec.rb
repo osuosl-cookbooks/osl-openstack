@@ -1,4 +1,4 @@
-require_relative 'spec_helper'
+require_relative '../../spec_helper'
 
 describe 'osl-openstack::ops_messaging' do
   ALL_PLATFORMS.each do |pltfrm|

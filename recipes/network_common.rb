@@ -23,7 +23,6 @@ auth_endpoint = s['identity']['endpoint']
 controller = node['osl-openstack']['node_type'] == 'controller'
 
 template '/etc/neutron/neutron.conf' do
-  cookbook 'osl-openstack'
   owner 'root'
   group 'neutron'
   mode '0640'
@@ -40,7 +39,6 @@ template '/etc/neutron/neutron.conf' do
 end
 
 cookbook_file '/etc/neutron/plugins/ml2/ml2_conf.ini' do
-  cookbook 'osl-openstack'
   owner 'root'
   group 'neutron'
   mode '0640'
@@ -61,7 +59,6 @@ osl_systemd_unit_drop_in 'part_of_iptables' do
 end
 
 template '/etc/neutron/plugins/ml2/linuxbridge_agent.ini' do
-  cookbook 'osl-openstack'
   owner 'root'
   group 'neutron'
   mode '0640'

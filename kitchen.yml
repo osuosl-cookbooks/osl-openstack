@@ -28,9 +28,6 @@ provisioner:
       scrape_configs: false
 
 suites:
-  - name: default
-    run_list:
-      - recipe[osl-openstack::default]
   - name: mon
     run_list:
       - recipe[osl-openstack::mon]

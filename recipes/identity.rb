@@ -67,6 +67,7 @@ execute 'keystone: credential_setup' do
   command 'keystone-manage credential_setup --keystone-user keystone --keystone-group keystone'
   creates '/etc/keystone/credential-keys/0'
 end
+
 execute 'keystone: bootstrap' do
   command <<~EOC
     keystone-manage bootstrap \

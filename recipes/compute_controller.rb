@@ -98,7 +98,6 @@ directory 'purge distro conf.d' do
 end
 
 template '/etc/placement/placement.conf' do
-  cookbook 'osl-openstack'
   owner 'root'
   group 'placement'
   mode '0640'

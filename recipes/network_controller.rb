@@ -118,9 +118,7 @@ end
   end
 end
 
-controller = node['osl-openstack']['node_type'] == 'controller'
-
-openstack_physical_interface_mappings(controller).each do |network|
+n['physical_interface_mappings'].each do |network|
   next if network['subnet'].nil? || network['uuid'].nil?
   ip_cmd = "ip netns exec qdhcp-#{network['uuid']}"
 
