@@ -19,7 +19,7 @@
 s = os_secrets
 suffix = s['database_server']['suffix']
 
-osl_mysql_test "#{suffix}_keystone" do
+osl_mysql_test "keystone_#{suffix}" do
   username s['identity']['db']['user']
   password s['identity']['db']['pass']
   encoding 'utf8'
@@ -45,7 +45,7 @@ openstack_services.each do |service, db|
   next if service == 'messaging'
 
   begin
-    mariadb_database "#{suffix}_#{db}" do
+    mariadb_database "#{db}_#{suffix}" do
       password 'osl_mysql_test'
       encoding 'utf8'
       collation 'utf8_general_ci'
@@ -56,7 +56,7 @@ openstack_services.each do |service, db|
       ctrl_password 'osl_mysql_test'
       password s[service]['db']['pass']
       privileges [:all]
-      database_name "#{suffix}_#{db}"
+      database_name "#{db}_#{suffix}"
       action [:create, :grant]
     end
 
@@ -65,7 +65,7 @@ openstack_services.each do |service, db|
       password s[service]['db']['pass']
       host '%'
       privileges [:all]
-      database_name "#{suffix}_#{db}"
+      database_name "#{db}_#{suffix}"
       action [:create, :grant]
     end
   rescue NoMethodError

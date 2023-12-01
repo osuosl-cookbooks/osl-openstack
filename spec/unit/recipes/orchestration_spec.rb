@@ -79,7 +79,7 @@ describe 'osl-openstack::orchestration' do
           variables: {
               auth_encryption_key: '4CFk1URr4Ln37kKRNSypwjI7vv7jfLQE',
               auth_endpoint: 'controller.example.com',
-              database_connection: 'mysql+pymysql://heat:heat@localhost:3306/x86_heat',
+              database_connection: 'mysql+pymysql://heat:heat@localhost:3306/heat_x86',
               endpoint: 'controller.example.com',
               heat_domain_admin: 'heat_domain_admin',
               memcached_endpoint: 'controller.example.com:11211',

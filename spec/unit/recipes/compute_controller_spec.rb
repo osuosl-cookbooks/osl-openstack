@@ -89,7 +89,7 @@ describe 'osl-openstack::compute_controller' do
           sensitive: true,
           variables: {
               auth_endpoint: 'controller.example.com',
-              database_connection: 'mysql+pymysql://placement:placement@localhost:3306/x86_placement',
+              database_connection: 'mysql+pymysql://placement:placement@localhost:3306/placement_x86',
               memcached_endpoint: 'controller.example.com:11211',
               service_pass: 'placement',
           }
@@ -122,10 +122,10 @@ describe 'osl-openstack::compute_controller' do
           mode: '0640',
           sensitive: true,
           variables: {
-              api_database_connection: 'mysql+pymysql://nova:nova@localhost:3306/x86_nova_api',
+              api_database_connection: 'mysql+pymysql://nova:nova@localhost:3306/nova_api_x86',
               auth_endpoint: 'controller.example.com',
               cpu_allocation_ratio: nil,
-              database_connection: 'mysql+pymysql://nova:nova@localhost:3306/x86_nova',
+              database_connection: 'mysql+pymysql://nova:nova@localhost:3306/nova_x86',
               disk_allocation_ratio: '1.5',
               endpoint: 'controller.example.com',
               enabled_filters: %w(

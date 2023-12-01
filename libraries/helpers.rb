@@ -54,7 +54,7 @@ module OSLOpenstack
 
       def openstack_database_connection(service)
         s = os_secrets
-        db_name = "#{s['database_server']['suffix']}_#{openstack_services[service]}"
+        db_name = "#{openstack_services[service]}_#{s['database_server']['suffix']}"
         db_host = s['database_server']['endpoint']
 
         "mysql+pymysql://#{s[service]['db']['user']}:#{s[service]['db']['pass']}@#{db_host}:3306/#{db_name}"

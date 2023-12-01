@@ -41,7 +41,7 @@ control 'orchestration' do
     its('DEFAULT.transport_url') { should cmp 'rabbit://openstack:openstack@controller.example.com:5672' }
     its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
     its('clients_keystone.auth_url') { should cmp 'https://controller.example.com:5000' }
-    its('database.connection') { should cmp "mysql+pymysql://heat:heat@#{db_endpoint}:3306/x86_heat" }
+    its('database.connection') { should cmp "mysql+pymysql://heat:heat@#{db_endpoint}:3306/heat_x86" }
     its('keystone_authtoken.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
     its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
     its('keystone_authtoken.password') { should cmp 'heat' }

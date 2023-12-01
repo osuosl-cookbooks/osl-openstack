@@ -24,7 +24,7 @@ control 'image' do
   end
 
   describe ini('/etc/glance/glance-api.conf') do
-    its('database.connection') { should cmp "mysql+pymysql://glance:glance@#{db_endpoint}:3306/x86_glance" }
+    its('database.connection') { should cmp "mysql+pymysql://glance:glance@#{db_endpoint}:3306/glance_x86" }
     its('DEFAULT.transport_url') { should cmp 'rabbit://openstack:openstack@controller.example.com:5672' }
     its('glance_store.rbd_store_pool') { should cmp 'images' }
     its('glance_store.rbd_store_user') { should cmp 'glance' }
@@ -37,7 +37,7 @@ control 'image' do
   end
 
   describe ini('/etc/glance/glance-registry.conf') do
-    its('database.connection') { should cmp "mysql+pymysql://glance:glance@#{db_endpoint}:3306/x86_glance" }
+    its('database.connection') { should cmp "mysql+pymysql://glance:glance@#{db_endpoint}:3306/glance_x86" }
     its('DEFAULT.transport_url') { should cmp 'rabbit://openstack:openstack@controller.example.com:5672' }
     its('keystone_authtoken.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
     its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }

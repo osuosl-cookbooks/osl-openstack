@@ -83,7 +83,7 @@ describe 'osl-openstack::identity' do
               endpoint: 'controller.example.com',
               transport_url: 'rabbit://openstack:openstack@controller.example.com:5672',
               memcached_endpoint: 'controller.example.com:11211',
-              database_connection: 'mysql+pymysql://keystone:keystone@localhost:3306/x86_keystone',
+              database_connection: 'mysql+pymysql://keystone:keystone@localhost:3306/keystone_x86',
           }
         )
       end

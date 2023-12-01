@@ -76,7 +76,7 @@ describe 'osl-openstack::block_storage_controller' do
               block_rbd_pool: 'volumes',
               block_ssd_rbd_pool: 'volumes_ssd',
               compute_pass: 'nova',
-              database_connection: 'mysql+pymysql://cinder:cinder@localhost:3306/x86_cinder',
+              database_connection: 'mysql+pymysql://cinder:cinder@localhost:3306/cinder_x86',
               image_endpoint: 'controller.example.com',
               memcached_endpoint: 'controller.example.com:11211',
               rbd_secret_uuid: '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8',

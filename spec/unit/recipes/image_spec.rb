@@ -49,7 +49,7 @@ describe 'osl-openstack::image' do
           sensitive: true,
           variables: {
               auth_endpoint: 'controller.example.com',
-              database_connection: 'mysql+pymysql://glance:glance@localhost:3306/x86_glance',
+              database_connection: 'mysql+pymysql://glance:glance@localhost:3306/glance_x86',
               memcached_endpoint: 'controller.example.com:11211',
               service_pass: 'glance',
               transport_url: 'rabbit://openstack:openstack@controller.example.com:5672',
@@ -65,7 +65,7 @@ describe 'osl-openstack::image' do
           sensitive: true,
           variables: {
               auth_endpoint: 'controller.example.com',
-              database_connection: 'mysql+pymysql://glance:glance@localhost:3306/x86_glance',
+              database_connection: 'mysql+pymysql://glance:glance@localhost:3306/glance_x86',
               memcached_endpoint: 'controller.example.com:11211',
               rbd_store_pool: 'images',
               rbd_store_user: 'glance',

@@ -45,7 +45,7 @@ control 'network' do
 
   describe ini('/etc/neutron/neutron.conf') do
     if controller
-      its('database.connection') { should cmp "mysql+pymysql://neutron:neutron@#{db_endpoint}:3306/x86_neutron" }
+      its('database.connection') { should cmp "mysql+pymysql://neutron:neutron@#{db_endpoint}:3306/neutron_x86" }
       its('DEFAULT.allow_overlapping_ips') { should cmp 'true' }
       its('DEFAULT.control_exchange') { should cmp 'neutron' }
       its('DEFAULT.core_plugin') { should cmp 'ml2' }

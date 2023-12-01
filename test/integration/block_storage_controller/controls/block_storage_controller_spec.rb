@@ -56,7 +56,7 @@ control 'block-storage-controller' do
     its('ceph_ssd.rbd_user') { should cmp 'cinder' }
     its('ceph_ssd.volume_backend_name') { should cmp 'ceph_ssd' }
     its('ceph_ssd.volume_driver') { should cmp 'cinder.volume.drivers.rbd.RBDDriver' }
-    its('database.connection') { should cmp "mysql+pymysql://cinder:cinder@#{db_endpoint}:3306/x86_cinder" }
+    its('database.connection') { should cmp "mysql+pymysql://cinder:cinder@#{db_endpoint}:3306/cinder_x86" }
     its('keystone_authtoken.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
     its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
     its('keystone_authtoken.password') { should cmp 'cinder' }

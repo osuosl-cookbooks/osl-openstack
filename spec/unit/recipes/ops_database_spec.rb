@@ -12,7 +12,7 @@ describe 'osl-openstack::ops_database' do
       include_context 'common_stubs'
 
       it do
-        is_expected.to create_osl_mysql_test('x86_keystone').with(
+        is_expected.to create_osl_mysql_test('keystone_x86').with(
           username: 'keystone',
           password: 'keystone',
           encoding: 'utf8',
@@ -49,7 +49,7 @@ describe 'osl-openstack::ops_database' do
         'placement' => 'placement',
       }.each do |db, user|
         it do
-          is_expected.to create_mariadb_database("x86_#{db}").with(
+          is_expected.to create_mariadb_database("#{db}_x86").with(
             password: 'osl_mysql_test',
             encoding: 'utf8',
             collation: 'utf8_general_ci'
@@ -61,7 +61,7 @@ describe 'osl-openstack::ops_database' do
             ctrl_password: 'osl_mysql_test',
             password: user,
             privileges: [:all],
-            database_name: "x86_#{user}"
+            database_name: "#{user}_x86"
           )
         end
         it { is_expected.to grant_mariadb_user("#{user}-localhost") }
@@ -71,7 +71,7 @@ describe 'osl-openstack::ops_database' do
             password: user,
             host: '%',
             privileges: [:all],
-            database_name: "x86_#{user}"
+            database_name: "#{user}_x86"
           )
         end
         it { is_expected.to grant_mariadb_user user }
