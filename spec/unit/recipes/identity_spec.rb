@@ -110,9 +110,20 @@ describe 'osl-openstack::identity' do
       end
       it do
         is_expected.to run_execute('keystone: bootstrap').with(
-          command: "keystone-manage bootstrap   --bootstrap-password admin   --bootstrap-username admin   --bootstrap-project-name admin   --bootstrap-role-name admin   --bootstrap-service-name keystone   --bootstrap-admin-url https://controller.example.com:5000/v3/   --bootstrap-internal-url https://controller.example.com:5000/v3/   --bootstrap-public-url https://controller.example.com:5000/v3/   --bootstrap-region-id RegionOne && touch /etc/keystone/bootstrapped\n",
           sensitive: true,
-          creates: '/etc/keystone/bootstrapped'
+          creates: '/etc/keystone/bootstrapped',
+          command: <<~EOC
+            keystone-manage bootstrap \
+              --bootstrap-password admin \
+              --bootstrap-username admin \
+              --bootstrap-project-name admin \
+              --bootstrap-role-name admin \
+              --bootstrap-service-name keystone \
+              --bootstrap-admin-url https://controller.example.com:5000/v3/ \
+              --bootstrap-internal-url https://controller.example.com:5000/v3/ \
+              --bootstrap-public-url https://controller.example.com:5000/v3/ \
+              --bootstrap-region-id RegionOne && touch /etc/keystone/bootstrapped
+            EOC
         )
       end
       it do

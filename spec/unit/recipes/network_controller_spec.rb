@@ -110,7 +110,9 @@ describe 'osl-openstack::network_controller' do
         is_expected.to nothing_execute('neutron: db_sync').with(
           user: 'neutron',
           group: 'neutron',
-          command: "neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini upgrade head\n"
+          command: <<~EOC
+            neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini upgrade head
+          EOC
         )
       end
       it do
@@ -153,7 +155,10 @@ describe 'osl-openstack::network_controller' do
       end
       it do
         is_expected.to run_bash('block external dns on public').with(
-          code: "ip netns exec qdhcp-8df74e06-c4aa-4eb2-b312-0e915bf8f97f iptables -A INPUT -p tcp --dport 53 ! -s 10.0.0.0/24 -j DROP\nip netns exec qdhcp-8df74e06-c4aa-4eb2-b312-0e915bf8f97f iptables -A INPUT -p udp --dport 53 ! -s 10.0.0.0/24 -j DROP\n"
+          code: <<~EOC
+            ip netns exec qdhcp-8df74e06-c4aa-4eb2-b312-0e915bf8f97f iptables -A INPUT -p tcp --dport 53 ! -s 10.0.0.0/24 -j DROP
+            ip netns exec qdhcp-8df74e06-c4aa-4eb2-b312-0e915bf8f97f iptables -A INPUT -p udp --dport 53 ! -s 10.0.0.0/24 -j DROP
+          EOC
         )
       end
       it { is_expected.to_not run_bash 'block external dns on private1' }

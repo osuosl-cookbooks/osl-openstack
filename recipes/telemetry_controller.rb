@@ -17,9 +17,9 @@
 # limitations under the License.
 #
 
-osl_repos_openstack 'telemetry'
-osl_openstack_client 'telemetry'
-osl_firewall_openstack 'telemetry'
+osl_repos_openstack 'telemetry-controller'
+osl_openstack_client 'telemetry-controller'
+osl_firewall_openstack 'telemetry-controller'
 
 s = os_secrets
 t = s['telemetry']

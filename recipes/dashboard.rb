@@ -17,10 +17,10 @@
 # limitations under the License.
 #
 
-osl_repos_openstack 'identity'
-osl_openstack_client 'identity'
-osl_firewall_openstack 'identity'
-osl_openstack_openrc 'identity'
+osl_repos_openstack 'dashboard'
+osl_openstack_client 'dashboard'
+osl_firewall_openstack 'dashboard'
+osl_openstack_openrc 'dashboard'
 
 node.default['osl-apache']['listen'] = %w(80 443)
 
@@ -62,9 +62,9 @@ template '/etc/openstack-dashboard/local_settings' do
   mode '0640'
   sensitive true
   variables(
-    secret_key: d['secret_key'],
     auth_url: auth_endpoint,
-    memcache_servers: s['memcached']['endpoint']
+    memcache_servers: s['memcached']['endpoint'],
+    secret_key: d['secret_key']
   )
   notifies :run, 'execute[horizon: compress]'
   notifies :reload, 'apache2_service[osuosl]'

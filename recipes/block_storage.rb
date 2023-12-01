@@ -17,13 +17,14 @@
 # limitations under the License.
 #
 
-osl_repos_openstack 'block-storage-controller'
-osl_openstack_client 'block-storage-controller'
-osl_firewall_openstack 'block-storage-controller'
+osl_repos_openstack 'block-storage'
+osl_openstack_client 'block-storage'
+osl_firewall_openstack 'block-storage'
 
 include_recipe 'osl-openstack::block_storage_common'
 include_recipe 'osl-openstack::_block_ceph' if node['osl-openstack']['ceph']['volume']
 
 service 'openstack-cinder-volume' do
   action [:enable, :start]
+  subscribes :restart, 'template[/etc/cinder/cinder.conf]'
 end

@@ -238,3 +238,10 @@ shared_context 'compute_stubs' do
     stub_command('lscpu | grep "KVM"').and_return(false)
   end
 end
+
+shared_context 'telemetry_stubs' do
+  before do
+    stub_command('grep -q curated_sname /usr/lib/python2.7/site-packages/ceilometer/publisher/prometheus.py')
+    stub_command('grep -q s.project_id /usr/lib/python2.7/site-packages/ceilometer/publisher/prometheus.py')
+  end
+end

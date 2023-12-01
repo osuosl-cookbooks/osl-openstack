@@ -31,8 +31,6 @@ replace_or_add 'log-dir controller' do
   line 'log-dir = /var/log/cinder'
   backup true
   replace_only true
-  notifies :reload, 'apache2_service[block_storage]'
-  notifies :restart, 'service[openstack-cinder-scheduler]'
 end
 
 template '/etc/cinder/cinder.conf' do

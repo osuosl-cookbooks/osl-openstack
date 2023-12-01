@@ -15,9 +15,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-osl_repos_openstack 'block-storage-controller'
-osl_openstack_client 'block-storage-controller'
-osl_firewall_openstack 'block-storage-controller'
+osl_repos_openstack 'orchestration'
+osl_openstack_client 'orchestration'
+osl_firewall_openstack 'orchestration'
 
 s = os_secrets
 o = s['orchestration']
@@ -80,7 +80,6 @@ package %w(
 )
 
 template '/etc/heat/heat.conf' do
-  cookbook 'osl-openstack'
   owner 'root'
   group 'heat'
   mode '0640'

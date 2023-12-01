@@ -1,101 +1,112 @@
 require_relative '../../spec_helper'
 
 describe 'osl-openstack::orchestration' do
-  let(:runner) do
-    ChefSpec::SoloRunner.new(REDHAT_OPTS)
-  end
-  let(:node) { runner.node }
-  cached(:chef_run) { runner.converge(described_recipe) }
-  include_context 'common_stubs'
-  include_context 'identity_stubs'
-  include_context 'orchestration_stubs'
-  it 'converges successfully' do
-    expect { chef_run }.to_not raise_error
-  end
-  describe '/etc/heat/heat.conf' do
-    let(:file) { chef_run.template('/etc/heat/heat.conf') }
+  ALL_PLATFORMS.each do |pltfrm|
+    context "#{pltfrm[:platform]} #{pltfrm[:version]}" do
+      cached(:chef_run) do
+        ChefSpec::SoloRunner.new(pltfrm) do |node|
+          node.normal['osl-openstack']['cluster_name'] = 'x86'
+        end.converge(described_recipe)
+      end
 
-    [
-      %r{^heat_metadata_server_url = http://10.0.0.10:8000$},
-      %r{^heat_waitcondition_server_url = http://10.0.0.10:8000/v1/waitcondition$},
-      %r{^transport_url = rabbit://openstack:openstack@10.0.0.10:5672$},
-    ].each do |line|
-      it do
-        expect(chef_run).to render_config_file(file.name).with_section_content('DEFAULT', line)
-      end
-    end
-    it do
-      expect(chef_run).to render_config_file(file.name).with_section_content('trustee', /^auth_type = v3password$/)
-    end
-    it do
-      expect(chef_run).to_not render_config_file(file.name).with_section_content('trustee', /^auth_plugin =/)
-    end
-    %w(heat_api heat_api_cfn).each do |service|
-      it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content(
-            service,
-            /^bind_host = 10.0.0.2$/
-          )
-      end
-    end
-
-    context 'Set bind_service' do
-      let(:runner) do
-        ChefSpec::SoloRunner.new(REDHAT_OPTS)
-      end
-      let(:node) { runner.node }
-      cached(:chef_run) { runner.converge(described_recipe) }
       include_context 'common_stubs'
-      %w(heat_api heat_api_cfn).each do |service|
+
+      it { is_expected.to add_osl_repos_openstack 'orchestration' }
+      it { is_expected.to create_osl_openstack_client 'orchestration' }
+      it { is_expected.to accept_osl_firewall_openstack 'orchestration' }
+      it do
+        is_expected.to create_osl_openstack_user('heat').with(
+          domain_name: 'default',
+          role_name: 'admin',
+          project_name: 'service',
+          password: 'heat'
+        )
+      end
+      it { is_expected.to grant_role_osl_openstack_user 'heat' }
+      it { is_expected.to create_osl_openstack_service('heat').with(type: 'orchestration') }
+      it { is_expected.to create_osl_openstack_service('heat-cfn').with(type: 'cloudformation') }
+      it { is_expected.to create_osl_openstack_domain('heat') }
+      it do
+        is_expected.to create_osl_openstack_user('heat_domain_admin').with(
+          domain_name: 'heat',
+          role_name: 'admin',
+          project_name: nil,
+          password: 'heat_domain_admin'
+        )
+      end
+      it { is_expected.to grant_domain_osl_openstack_user 'heat_domain_admin' }
+      it { is_expected.to create_osl_openstack_role('heat_stack_owner') }
+      it { is_expected.to create_osl_openstack_role('heat_stack_user') }
+      %w(
+        admin
+        internal
+        public
+      ).each do |int|
         it do
-          node.override['osl-openstack']['bind_service'] = '192.168.1.1'
-          expect(chef_run).to render_config_file(file.name)
-            .with_section_content(
-              service,
-              /^bind_host = 192.168.1.1$/
-            )
+          is_expected.to create_osl_openstack_endpoint("orchestration-#{int}").with(
+            endpoint_name: 'orchestration',
+            service_name: 'heat',
+            interface: int,
+            url: 'http://controller.example.com:8004/v1/%(tenant_id)s',
+            region: 'RegionOne'
+          )
+        end
+        it do
+          is_expected.to create_osl_openstack_endpoint("cloudformation-#{int}").with(
+            endpoint_name: 'cloudformation',
+            service_name: 'heat-cfn',
+            interface: int,
+            url: 'http://controller.example.com:8000/v1',
+            region: 'RegionOne'
+          )
         end
       end
-    end
-
-    it do
-      expect(chef_run).to render_config_file(file.name)
-        .with_section_content(
-          'oslo_messaging_notifications',
-          /^driver = messagingv2$/
+      it do
+        is_expected.to install_package(
+          %w(
+            openstack-heat-api
+            openstack-heat-api-cfn
+            openstack-heat-engine
+          )
         )
-    end
-    [
-      /^backend = oslo_cache.memcache_pool$/,
-      /^enabled = true$/,
-      /^memcache_servers = 10.0.0.10:11211$/,
-    ].each do |line|
-      it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('cache', line)
       end
-    end
-
-    [
-      /^memcached_servers = 10.0.0.10:11211$/,
-      %r{^auth_url = https://10.0.0.10:5000/v3$},
-      %r{^www_authenticate_uri = https://10.0.0.10:5000/v3$},
-      /^service_token_roles_required = True$/,
-      /^service_token_roles = admin$/,
-    ].each do |line|
       it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('keystone_authtoken', line)
+        is_expected.to create_template('/etc/heat/heat.conf').with(
+          owner: 'root',
+          group: 'heat',
+          mode: '0640',
+          sensitive: true,
+          variables: {
+              auth_encryption_key: '4CFk1URr4Ln37kKRNSypwjI7vv7jfLQE',
+              auth_endpoint: 'controller.example.com',
+              database_connection: 'mysql+pymysql://heat:heat@localhost:3306/x86_heat',
+              endpoint: 'controller.example.com',
+              heat_domain_admin: 'heat_domain_admin',
+              memcached_endpoint: 'controller.example.com:11211',
+              service_pass: 'heat',
+              transport_url: 'rabbit://openstack:openstack@controller.example.com:5672',
+          }
+        )
       end
-    end
-
-    [
-      %r{^connection = mysql\+pymysql://heat_x86:heat@10.0.0.10:3306/heat_x86\?charset=utf8$},
-    ].each do |line|
+      it { expect(chef_run.template('/etc/heat/heat.conf')).to notify('execute[heat: db_sync]').to(:run).immediately }
       it do
-        expect(chef_run).to render_config_file(file.name)
-          .with_section_content('database', line)
+        is_expected.to nothing_execute('heat: db_sync').with(
+          command: 'heat-manage db_sync',
+          user: 'heat',
+          group: 'heat'
+        )
+      end
+      %w(
+        openstack-heat-api
+        openstack-heat-api-cfn
+        openstack-heat-engine
+      ).each do |srv|
+        it { is_expected.to enable_service srv }
+        it { is_expected.to start_service srv }
+        it do
+          expect(chef_run.service(srv)).to \
+            subscribe_to('template[/etc/heat/heat.conf]').on(:restart)
+        end
       end
     end
   end
