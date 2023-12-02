@@ -13,7 +13,7 @@ describe 'osl-openstack::ops_database' do
 
       it do
         is_expected.to create_osl_mysql_test('keystone_x86').with(
-          username: 'keystone',
+          username: 'keystone_x86',
           password: 'keystone',
           encoding: 'utf8',
           collation: 'utf8_general_ci',
@@ -48,33 +48,37 @@ describe 'osl-openstack::ops_database' do
         'nova_cell0' => 'nova',
         'placement' => 'placement',
       }.each do |db, user|
+        db_name = "#{db}_x86"
+        db_user = "#{user}_x86"
+
         it do
-          is_expected.to create_mariadb_database("#{db}_x86").with(
+          is_expected.to create_mariadb_database(db_name).with(
             password: 'osl_mysql_test',
             encoding: 'utf8',
             collation: 'utf8_general_ci'
           )
         end
         it do
-          is_expected.to create_mariadb_user("#{user}-localhost").with(
-            username: user,
+          is_expected.to create_mariadb_user("#{db_user}-#{db_name}-localhost").with(
+            username: db_user,
             ctrl_password: 'osl_mysql_test',
             password: user,
             privileges: [:all],
-            database_name: "#{user}_x86"
+            database_name: db_name
           )
         end
-        it { is_expected.to grant_mariadb_user("#{user}-localhost") }
+        it { is_expected.to grant_mariadb_user("#{db_user}-#{db_name}-localhost") }
         it do
-          is_expected.to create_mariadb_user(user).with(
+          is_expected.to create_mariadb_user("#{db_user}-#{db_name}").with(
+            username: db_user,
             ctrl_password: 'osl_mysql_test',
             password: user,
             host: '%',
             privileges: [:all],
-            database_name: "#{user}_x86"
+            database_name: db_name
           )
         end
-        it { is_expected.to grant_mariadb_user user }
+        it { is_expected.to grant_mariadb_user "#{db_user}-#{db_name}" }
       end
     end
   end

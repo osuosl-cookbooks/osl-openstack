@@ -48,7 +48,7 @@ control 'openstack-identity' do
     its('DEFAULT.public_endpoint') { should cmp 'https://controller.example.com:5000/' }
     its('DEFAULT.transport_url') { should cmp 'rabbit://openstack:openstack@controller.example.com:5672' }
     its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
-    its('database.connection') { should cmp "mysql+pymysql://keystone:keystone@#{db_endpoint}:3306/keystone_x86" }
+    its('database.connection') { should cmp "mysql+pymysql://keystone_x86:keystone@#{db_endpoint}:3306/keystone_x86" }
   end
 
   %w(

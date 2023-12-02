@@ -61,7 +61,7 @@ describe 'osl-openstack::network_controller' do
               auth_endpoint: 'controller.example.com',
               compute_pass: 'nova',
               controller: true,
-              database_connection: 'mysql+pymysql://neutron:neutron@localhost:3306/neutron_x86',
+              database_connection: 'mysql+pymysql://neutron_x86:neutron@localhost:3306/neutron_x86',
               memcached_endpoint: 'controller.example.com:11211',
               service_pass: 'neutron',
               transport_url: 'rabbit://openstack:openstack@controller.example.com:5672',

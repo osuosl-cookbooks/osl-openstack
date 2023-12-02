@@ -20,7 +20,7 @@ s = os_secrets
 suffix = s['database_server']['suffix']
 
 osl_mysql_test "keystone_#{suffix}" do
-  username s['identity']['db']['user']
+  username "#{s['identity']['db']['user']}_#{suffix}"
   password s['identity']['db']['pass']
   encoding 'utf8'
   collation 'utf8_general_ci'
@@ -45,27 +45,31 @@ openstack_services.each do |service, db|
   next if service == 'messaging'
 
   begin
-    mariadb_database "#{db}_#{suffix}" do
+    db_user = "#{s[service]['db']['user']}_#{suffix}"
+    db_name = "#{db}_#{suffix}"
+
+    mariadb_database db_name do
       password 'osl_mysql_test'
       encoding 'utf8'
       collation 'utf8_general_ci'
     end
 
-    mariadb_user "#{s[service]['db']['user']}-localhost" do
-      username s[service]['db']['user']
+    mariadb_user "#{db_user}-#{db_name}-localhost" do
+      username db_user
       ctrl_password 'osl_mysql_test'
       password s[service]['db']['pass']
       privileges [:all]
-      database_name "#{db}_#{suffix}"
+      database_name db_name
       action [:create, :grant]
     end
 
-    mariadb_user s[service]['db']['user'] do
+    mariadb_user "#{db_user}-#{db_name}" do
+      username db_user
       ctrl_password 'osl_mysql_test'
       password s[service]['db']['pass']
       host '%'
       privileges [:all]
-      database_name "#{db}_#{suffix}"
+      database_name db_name
       action [:create, :grant]
     end
   rescue NoMethodError
