@@ -169,7 +169,8 @@ describe 'osl-openstack::compute_controller' do
       end
       it do
         is_expected.to nothing_execute('nova: register cell0').with(
-          command: 'nova-manage cell_v2 map_cell0',
+          command: 'nova-manage cell_v2 map_cell0 --database_connection mysql+pymysql://nova_x86:nova@localhost:3306/nova_cell0_x86',
+          sensitive: true,
           user: 'nova',
           group: 'nova'
         )
