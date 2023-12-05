@@ -102,7 +102,7 @@ driver = messagingv2
 
 [pci]
 alias = <%= @pci_alias %>
-<% if @compute -%>
+<% if @pci_passthrough_whitelist -%>
 passthrough_whitelist = <%= @pci_passthrough_whitelist %>
 <% end -%>
 <% end -%>

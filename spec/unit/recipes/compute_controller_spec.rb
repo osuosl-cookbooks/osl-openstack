@@ -162,40 +162,6 @@ describe 'osl-openstack::compute_controller' do
         is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/^alias =/)
         is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/^passthrough_whitelist =/)
       end
-
-      context 'pci passthrough' do
-        cached(:chef_run) do
-          ChefSpec::SoloRunner.new(pltfrm) do |node|
-            node.normal['osl-openstack']['cluster_name'] = 'x86'
-            node.normal['osl-openstack']['node_type'] = 'controller'
-          end.converge(described_recipe)
-        end
-
-        include_context 'extra_settings_stubs'
-
-        it 'is expected to render pci config' do
-          is_expected.to render_file('/etc/nova/nova.conf').with_content('[pci]')
-          is_expected.to render_file('/etc/nova/nova.conf').with_content('alias = { "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }')
-          is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/^passthrough_whitelist =/)
-        end
-
-        context 'compute node' do
-          cached(:chef_run) do
-            ChefSpec::SoloRunner.new(pltfrm) do |node|
-              node.normal['osl-openstack']['cluster_name'] = 'x86'
-              node.normal['osl-openstack']['node_type'] = 'compute'
-            end.converge(described_recipe)
-          end
-
-          include_context 'extra_settings_stubs'
-
-          it 'is expected to render pci config' do
-            is_expected.to render_file('/etc/nova/nova.conf').with_content('[pci]')
-            is_expected.to render_file('/etc/nova/nova.conf').with_content('alias = { "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }')
-            is_expected.to render_file('/etc/nova/nova.conf').with_content('passthrough_whitelist = { "vendor_id": "10de", "product_id": "1db5" }')
-          end
-        end
-      end
       it do
         is_expected.to nothing_execute('placement: db_sync').with(
           command: 'placement-manage db sync',
@@ -301,6 +267,36 @@ describe 'osl-openstack::compute_controller' do
       it do
         expect(chef_run.template('/etc/sysconfig/openstack-nova-novncproxy')).to \
           notify('service[openstack-nova-novncproxy]').to(:restart)
+      end
+
+      context 'pci passthrough' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm) do |node|
+            node.normal['osl-openstack']['cluster_name'] = 'x86'
+            node.automatic['fqdn'] = 'controller2.example.com'
+          end.converge(described_recipe)
+        end
+
+        it 'is expected to render pci config' do
+          is_expected.to render_file('/etc/nova/nova.conf').with_content('[pci]')
+          is_expected.to render_file('/etc/nova/nova.conf').with_content('alias = { "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }')
+          is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/^passthrough_whitelist =/)
+        end
+
+        context 'compute node' do
+          cached(:chef_run) do
+            ChefSpec::SoloRunner.new(pltfrm) do |node|
+              node.normal['osl-openstack']['cluster_name'] = 'x86'
+              node.automatic['fqdn'] = 'node1.example.com'
+            end.converge(described_recipe)
+          end
+
+          it 'is expected to render pci config' do
+            is_expected.to render_file('/etc/nova/nova.conf').with_content('[pci]')
+            is_expected.to render_file('/etc/nova/nova.conf').with_content('alias = { "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }')
+            is_expected.to render_file('/etc/nova/nova.conf').with_content('passthrough_whitelist = { "vendor_id": "10de", "product_id": "1db5" }')
+          end
+        end
       end
     end
   end

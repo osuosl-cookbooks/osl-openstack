@@ -83,6 +83,20 @@ module OSLOpenstack
         end
       end
 
+      def openstack_pci_alias
+        pci_alias = os_secrets['compute']['pci_alias']
+        if pci_alias
+          pci_alias[node['fqdn']] || nil
+        end
+      end
+
+      def openstack_pci_passthrough_whitelist
+        pci_passthrough_whitelist = os_secrets['compute']['pci_passthrough_whitelist']
+        if pci_passthrough_whitelist
+          pci_passthrough_whitelist[node['fqdn']] || nil
+        end
+      end
+
       def openstack_physical_interface_mappings(controller)
         node_type = controller ? 'controller' : 'compute'
         int_mappings = []
