@@ -142,9 +142,11 @@ shared_context 'common_stubs' do
             'uuid': '8df74e06-c4aa-4eb2-b312-0e915bf8f97f',
             'controller' => {
               "default": 'eth1',
+              "controller2.example.com": 'p1p2',
             },
             'compute' => {
               "default": 'eth1',
+              "node1.example.com": 'eno1',
             },
           },
           {
@@ -164,9 +166,11 @@ shared_context 'common_stubs' do
         'vxlan_interface' => {
           'controller' => {
             "default": 'lo',
+            "controller2.example.com": 'p2p1',
           },
           'compute' => {
             "default": 'lo',
+            "node1.example.com": 'eno2',
           },
         },
       },
