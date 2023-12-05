@@ -2,6 +2,9 @@
 # Any changes will be overwritten
 
 [DEFAULT]
+<% if @allow_resize_to_same_host -%>
+allow_resize_to_same_host = <%= @allow_resize_to_same_host %>
+<% end -%>
 block_device_allocate_retries = 120
 compute_driver = libvirt.LibvirtDriver
 compute_monitors = cpu.virt_driver
@@ -95,6 +98,14 @@ lock_path = /var/lib/nova/tmp
 
 [oslo_messaging_notifications]
 driver = messagingv2
+<% if @pci_alias -%>
+
+[pci]
+alias = <%= @pci_alias %>
+<% if @compute -%>
+passthrough_whitelist = <%= @pci_passthrough_whitelist %>
+<% end -%>
+<% end -%>
 
 [placement]
 auth_type = password
