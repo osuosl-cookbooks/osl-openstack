@@ -5,7 +5,6 @@ describe 'osl-openstack::compute_controller' do
     context "#{pltfrm[:platform]} #{pltfrm[:version]}" do
       cached(:chef_run) do
         ChefSpec::SoloRunner.new(pltfrm) do |node|
-          node.normal['osl-openstack']['cluster_name'] = 'x86'
           node.normal['osl-openstack']['node_type'] = 'controller'
         end.converge(described_recipe)
       end
@@ -144,6 +143,7 @@ describe 'osl-openstack::compute_controller' do
               ),
               image_endpoint: 'controller.example.com',
               images_rbd_pool: 'vms',
+              local_storage: false,
               memcached_endpoint: 'controller.example.com:11211',
               metadata_proxy_shared_secret: '2SJh0RuO67KpZ63z',
               neutron_pass: 'neutron',
@@ -162,6 +162,7 @@ describe 'osl-openstack::compute_controller' do
         is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/^alias =/)
         is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/^passthrough_whitelist =/)
       end
+      it { is_expected.to render_file('/etc/nova/nova.conf').with_content('images_rbd_pool = vms') }
       it do
         is_expected.to nothing_execute('placement: db_sync').with(
           command: 'placement-manage db sync',
@@ -272,7 +273,6 @@ describe 'osl-openstack::compute_controller' do
       context 'pci passthrough' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm) do |node|
-            node.normal['osl-openstack']['cluster_name'] = 'x86'
             node.automatic['fqdn'] = 'controller2.example.com'
           end.converge(described_recipe)
         end
@@ -283,10 +283,9 @@ describe 'osl-openstack::compute_controller' do
           is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/^passthrough_whitelist =/)
         end
 
-        context 'compute node' do
+        context 'compute node & local storage' do
           cached(:chef_run) do
             ChefSpec::SoloRunner.new(pltfrm) do |node|
-              node.normal['osl-openstack']['cluster_name'] = 'x86'
               node.automatic['fqdn'] = 'node1.example.com'
             end.converge(described_recipe)
           end
@@ -296,6 +295,7 @@ describe 'osl-openstack::compute_controller' do
             is_expected.to render_file('/etc/nova/nova.conf').with_content('alias = { "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }')
             is_expected.to render_file('/etc/nova/nova.conf').with_content('passthrough_whitelist = { "vendor_id": "10de", "product_id": "1db5" }')
           end
+          it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content('images_rbd_pool = vms') }
         end
       end
     end

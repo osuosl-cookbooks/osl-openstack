@@ -22,6 +22,8 @@ c = s['compute']
 auth_endpoint = s['identity']['endpoint']
 compute = node['osl-openstack']['node_type'] == 'compute'
 
+include_recipe 'osl-ceph'
+
 delete_lines 'remove dhcpbridge' do
   path '/usr/share/nova/nova-dist.conf'
   pattern '^dhcpbridge.*'
@@ -51,6 +53,7 @@ template '/etc/nova/nova.conf' do
     enabled_filters: c['enabled_filters'],
     image_endpoint: s['image']['endpoint'],
     images_rbd_pool: c['ceph']['images_rbd_pool'],
+    local_storage: openstack_local_storage,
     memcached_endpoint: s['memcached']['endpoint'],
     metadata_proxy_shared_secret: s['network']['metadata_proxy_shared_secret'],
     neutron_pass: s['network']['service']['pass'],

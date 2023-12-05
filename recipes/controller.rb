@@ -22,7 +22,7 @@ node.default['osl-prometheus']['openstack']['cloud'] = prometheus_cloud
 
 include_recipe 'osl-openstack::identity'
 include_recipe 'osl-openstack::image'
-include_recipe 'osl-openstack::network_controller' unless node['osl-openstack']['separate_network_node']
+include_recipe 'osl-openstack::network_controller'
 include_recipe 'osl-openstack::compute_controller'
 include_recipe 'osl-openstack::block_storage_controller'
 include_recipe 'osl-openstack::orchestration'

@@ -20,25 +20,17 @@ module OSLOpenstack
 
       def openstack_services
         {
-          'aodh' => 'aodh',
-          'application_catalog' => 'murano',
-          'baremetal' => 'ironic',
           'block-storage' => 'cinder',
           'compute_api' => 'nova_api',
           'compute_cell0' => 'nova_cell0',
           'compute' => 'nova',
           'dashboard' => 'horizon',
-          'database' => 'trove',
-          'dns' => 'designate',
           'identity' => 'keystone',
           'image' => 'glance',
-          'load_balancer' => 'octavia',
           'network' => 'neutron',
-          'object_storage' => 'swift',
           'orchestration' => 'heat',
           'placement' => 'placement',
           'telemetry' => 'ceilometer',
-          'telemetry_metric' => 'gnocchi',
         }
       end
 
@@ -94,6 +86,15 @@ module OSLOpenstack
         pci_passthrough_whitelist = os_secrets['compute']['pci_passthrough_whitelist']
         if pci_passthrough_whitelist
           pci_passthrough_whitelist[node['fqdn']] || nil
+        end
+      end
+
+      def openstack_local_storage
+        local_storage = os_secrets['compute']['local_storage']
+        if local_storage
+          local_storage[node['fqdn']] || false
+        else
+          false
         end
       end
 

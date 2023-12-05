@@ -132,63 +132,70 @@ end
 include_recipe 'osl-openstack::network'
 include_recipe 'osl-openstack::telemetry_compute'
 
-# We still need the ceph keys if we're using it for cinder
-include_recipe 'osl-openstack::_block_ceph' if node['osl-openstack']['ceph']['volume']
+package 'openstack-cinder'
 
-if node['osl-openstack']['ceph']['volume'] || node['osl-openstack']['ceph']['compute']
-  %w(
-    /var/run/ceph/guests
-    /var/log/ceph
-  ).each do |d|
-    directory d do
-      owner 'qemu'
-      group 'libvirt'
-    end
+osl_ceph_keyring b['ceph']['rbd_store_user'] do
+  key b['ceph']['block_token']
+  not_if { b['ceph']['block_token'].nil? }
+end
+
+osl_ceph_keyring b['ceph']['block_backup_rbd_store_user'] do
+  key b['ceph']['block_backup_token']
+  not_if { b['ceph']['block_backup_token'].nil? }
+end
+
+%w(
+  /var/run/ceph/guests
+  /var/log/ceph
+).each do |d|
+  directory d do
+    owner 'qemu'
+    group 'libvirt'
   end
+end
 
-  group 'ceph-compute' do
-    group_name 'ceph'
-    append true
-    members %w(nova qemu)
-    action :modify
-    notifies :restart, 'service[openstack-nova-compute]', :immediately
-    notifies :restart, 'service[libvirtd]', :immediately
-  end
+group 'ceph-compute' do
+  group_name 'ceph'
+  append true
+  members %w(cinder nova qemu)
+  action :modify
+  notifies :restart, 'service[openstack-nova-compute]', :immediately
+  notifies :restart, 'service[libvirtd]', :immediately
+end
 
-  ceph_user = b['ceph']['rbd_store_user']
-  fsid = ceph_fsid
-  secret_file = ::File.join(Chef::Config[:file_cache_path], 'secret.xml')
+ceph_user = b['ceph']['rbd_store_user']
+fsid = ceph_fsid
+secret_file = ::File.join(Chef::Config[:file_cache_path], 'secret.xml')
 
-  template secret_file do
-    source 'secret.xml.erb'
-    user 'root'
-    group 'root'
-    mode '00600'
-    variables(
-      uuid: fsid,
-      client_name: ceph_user
-    )
-    not_if { fsid.nil? }
-    not_if "virsh secret-list | grep #{fsid}"
-  end
+template secret_file do
+  source 'secret.xml.erb'
+  user 'root'
+  group 'root'
+  mode '00600'
+  variables(
+    uuid: fsid,
+    client_name: ceph_user
+  )
+  not_if { fsid.nil? }
+  not_if "virsh secret-list | grep #{fsid}"
+end
 
-  execute "virsh secret-define --file #{secret_file}" do
-    not_if { fsid.nil? }
-    not_if "virsh secret-list | grep #{fsid}"
-  end
+execute "virsh secret-define --file #{secret_file}" do
+  not_if { fsid.nil? }
+  not_if "virsh secret-list | grep #{fsid}"
+end
 
-  # this will update the key if necessary
-  execute 'update virsh ceph secret' do
-    command "virsh secret-set-value --secret #{fsid} --base64 #{b['ceph']['block_token']}"
-    sensitive true
-    not_if { fsid.nil? }
-    not_if "virsh secret-get-value #{fsid} | grep #{b['ceph']['block_token']}"
-    not_if { b['ceph']['block_token'].nil? }
-  end
+# this will update the key if necessary
+execute 'update virsh ceph secret' do
+  command "virsh secret-set-value --secret #{fsid} --base64 #{b['ceph']['block_token']}"
+  sensitive true
+  not_if { fsid.nil? }
+  not_if "virsh secret-get-value #{fsid} | grep #{b['ceph']['block_token']}"
+  not_if { b['ceph']['block_token'].nil? }
+end
 
-  file secret_file do
-    action :delete
-  end
+file secret_file do
+  action :delete
 end
 
 template '/etc/sysconfig/libvirt-guests' do

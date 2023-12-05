@@ -6,9 +6,7 @@ describe 'osl-openstack::identity' do
       cached(:chef_run) do
         ChefSpec::SoloRunner.new(pltfrm.dup.merge(
           step_into: %w(osl_openstack_openrc osl_openstack_client)
-        )) do |node|
-          node.normal['osl-openstack']['cluster_name'] = 'x86'
-        end.converge(described_recipe)
+        )).converge(described_recipe)
       end
 
       include_context 'common_stubs'
@@ -36,9 +34,9 @@ describe 'osl-openstack::identity' do
 
         context 'versionlock set' do
           cached(:chef_run) do
-            ChefSpec::SoloRunner.new(pltfrm.dup.merge(step_into: %w(osl_openstack_client))) do |node|
-              node.normal['osl-openstack']['cluster_name'] = 'x86'
-            end.converge(described_recipe)
+            ChefSpec::SoloRunner.new(pltfrm.dup.merge(
+              step_into: %w(osl_openstack_client)
+            )).converge(described_recipe)
           end
 
           before do

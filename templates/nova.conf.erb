@@ -63,6 +63,10 @@ www_authenticate_uri = https://<%= @auth_endpoint %>:5000/v3
 <% if node['kernel']['machine'] == 'x86_64' -%>
 cpu_model_extra_flags = VMX
 <% end -%>
+rbd_secret_uuid = <%= @rbd_secret_uuid %>
+rbd_user = <%= @rbd_user %>
+virt_type = kvm
+<% unless @local_storage -%>
 disk_cachemodes = network=writeback
 force_raw_images = true
 hw_disk_discard = unmap
@@ -73,9 +77,7 @@ inject_key = false
 inject_partition = -2
 inject_password = false
 live_migration_flag = VIR_MIGRATE_UNDEFINE_SOURCE,VIR_MIGRATE_PEER2PEER,VIR_MIGRATE_LIVE,VIR_MIGRATE_PERSIST_DEST,VIR_MIGRATE_TUNNELLED
-rbd_secret_uuid = <%= @rbd_secret_uuid %>
-rbd_user = <%= @rbd_user %>
-virt_type = kvm
+<% end -%>
 
 [neutron]
 auth_type = password

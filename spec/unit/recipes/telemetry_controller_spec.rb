@@ -4,9 +4,7 @@ describe 'osl-openstack::telemetry_controller' do
   ALL_PLATFORMS.each do |pltfrm|
     context "#{pltfrm[:platform]} #{pltfrm[:version]}" do
       cached(:chef_run) do
-        ChefSpec::SoloRunner.new(pltfrm) do |node|
-          node.normal['osl-openstack']['cluster_name'] = 'x86'
-        end.converge(described_recipe)
+        ChefSpec::SoloRunner.new(pltfrm).converge(described_recipe)
       end
 
       include_context 'common_stubs'
@@ -92,9 +90,7 @@ describe 'osl-openstack::telemetry_controller' do
 
       context 'already patched' do
         cached(:chef_run) do
-          ChefSpec::SoloRunner.new(pltfrm) do |node|
-            node.normal['osl-openstack']['cluster_name'] = 'x86'
-          end.converge(described_recipe)
+          ChefSpec::SoloRunner.new(pltfrm).converge(described_recipe)
         end
         before do
           stub_command('grep -q curated_sname /usr/lib/python2.7/site-packages/ceilometer/publisher/prometheus.py').and_return(true)

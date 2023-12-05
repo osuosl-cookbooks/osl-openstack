@@ -21,8 +21,27 @@ osl_repos_openstack 'block-storage'
 osl_openstack_client 'block-storage'
 osl_firewall_openstack 'block-storage'
 
+s = os_secrets['block-storage']['ceph']
 include_recipe 'osl-openstack::block_storage_common'
-include_recipe 'osl-openstack::_block_ceph' if node['osl-openstack']['ceph']['volume']
+
+group 'ceph-block' do
+  group_name 'ceph'
+  append true
+  members %w(cinder)
+  action :modify
+  notifies :restart, 'service[openstack-cinder-volume]', :immediately
+end
+
+osl_ceph_keyring s['rbd_store_user'] do
+  key s['block_token']
+  not_if { s['block_token'].nil? }
+  notifies :restart, 'service[openstack-cinder-volume]', :immediately
+end
+
+osl_ceph_keyring s['block_backup_rbd_store_user'] do
+  key s['block_backup_token']
+  not_if { s['block_backup_token'].nil? }
+end
 
 service 'openstack-cinder-volume' do
   action [:enable, :start]

@@ -4,9 +4,9 @@ describe 'osl-openstack::ops_messaging' do
   ALL_PLATFORMS.each do |pltfrm|
     context "#{pltfrm[:platform]} #{pltfrm[:version]}" do
       cached(:chef_run) do
-        ChefSpec::SoloRunner.new(pltfrm.dup.merge(step_into: %w(osl_openstack_messaging))) do |node|
-          node.normal['osl-openstack']['cluster_name'] = 'x86'
-        end.converge(described_recipe)
+        ChefSpec::SoloRunner.new(pltfrm.dup.merge(
+          step_into: %w(osl_openstack_messaging)
+        )).converge(described_recipe)
       end
 
       include_context 'common_stubs'
@@ -41,9 +41,9 @@ describe 'osl-openstack::ops_messaging' do
 
       context 'user created' do
         cached(:chef_run) do
-          ChefSpec::SoloRunner.new(pltfrm.dup.merge(step_into: %w(osl_openstack_messaging))) do |node|
-            node.normal['osl-openstack']['cluster_name'] = 'x86'
-          end.converge(described_recipe)
+          ChefSpec::SoloRunner.new(pltfrm.dup.merge(
+            step_into: %w(osl_openstack_messaging)
+          )).converge(described_recipe)
         end
 
         before do

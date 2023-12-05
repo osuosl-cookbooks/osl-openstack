@@ -22,6 +22,7 @@ b = s['block-storage']
 auth_endpoint = s['identity']['endpoint']
 
 include_recipe 'yum-qemu-ev'
+include_recipe 'osl-ceph'
 
 package 'openstack-cinder'
 

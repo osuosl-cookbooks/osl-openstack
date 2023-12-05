@@ -12,12 +12,7 @@
   },
   "default_attributes": {
     "osl-openstack": {
-      "databag_item": "multinode",
-      "ceph": {
-        "image": true,
-        "compute": true,
-        "volume": true
-      }
+      "databag_item": "multinode"
     }
    },
   "json_class": "Chef::Role",

@@ -5,7 +5,6 @@ describe 'osl-openstack::network_controller' do
     context "#{pltfrm[:platform]} #{pltfrm[:version]}" do
       cached(:chef_run) do
         ChefSpec::SoloRunner.new(pltfrm) do |node|
-          node.normal['osl-openstack']['cluster_name'] = 'x86'
           node.normal['osl-openstack']['node_type'] = 'controller'
         end.converge(described_recipe)
       end
@@ -166,7 +165,6 @@ describe 'osl-openstack::network_controller' do
       context 'fqdn controller' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm) do |node|
-            node.normal['osl-openstack']['cluster_name'] = 'x86'
             node.normal['osl-openstack']['node_type'] = 'controller'
             node.automatic['fqdn'] = 'controller2.example.com'
             node.automatic['network']['interfaces']['p2p1']['addresses'] = {
@@ -192,7 +190,6 @@ describe 'osl-openstack::network_controller' do
       context 'fqdn compute' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm) do |node|
-            node.normal['osl-openstack']['cluster_name'] = 'x86'
             node.normal['osl-openstack']['node_type'] = 'compute'
             node.automatic['fqdn'] = 'node1.example.com'
             node.automatic['network']['interfaces']['eno2']['addresses'] = {

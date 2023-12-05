@@ -4,9 +4,7 @@ describe 'osl-openstack::compute' do
   ALL_PLATFORMS.each do |pltfrm|
     context "#{pltfrm[:platform]} #{pltfrm[:version]}" do
       cached(:chef_run) do
-        ChefSpec::SoloRunner.new(pltfrm) do |node|
-          node.normal['osl-openstack']['cluster_name'] = 'x86'
-        end.converge(described_recipe)
+        ChefSpec::SoloRunner.new(pltfrm).converge(described_recipe)
       end
 
       include_context 'common_stubs'
@@ -59,8 +57,48 @@ describe 'osl-openstack::compute' do
       it { is_expected.to install_kernel_module('kvm_intel').with(options: %w(nested=1)) }
       it { is_expected.to include_recipe 'osl-openstack::network' }
       it { is_expected.to include_recipe 'osl-openstack::telemetry_compute' }
-      it { is_expected.to_not include_recipe 'osl-openstack::_block_ceph' }
-      it { is_expected.to_not create_directory('/var/run/ceph/guests') }
+      it { is_expected.to install_package 'openstack-cinder' }
+      it { is_expected.to create_osl_ceph_keyring('cinder').with(key: 'AQAjbr1aWv+aNBAAoGfqrwX9iSdNmtuvUkwGhA==') }
+      it do
+        is_expected.to create_osl_ceph_keyring('cinder-backup').with(key: 'AQAxbr1ac4ToKhAAeO6+h90GcsukzHicUNvfLg==')
+      end
+      it { is_expected.to create_directory('/var/run/ceph/guests').with(owner: 'qemu', group: 'libvirt') }
+      it { is_expected.to create_directory('/var/log/ceph').with(owner: 'qemu', group: 'libvirt') }
+      it do
+        is_expected.to modify_group('ceph-compute').with(
+          group_name: 'ceph',
+          append: true,
+          members: %w(cinder nova qemu)
+        )
+      end
+      it do
+        expect(chef_run.group('ceph-compute')).to \
+          notify('service[openstack-nova-compute]').to(:restart).immediately
+      end
+      it do
+        expect(chef_run.group('ceph-compute')).to \
+          notify('service[libvirtd]').to(:restart).immediately
+      end
+      it do
+        is_expected.to create_template('/var/chef/cache/secret.xml').with(
+          source: 'secret.xml.erb',
+          user: 'root',
+          group: 'root',
+          mode: '00600',
+          variables: {
+            uuid: '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8',
+            client_name: 'cinder',
+          }
+        )
+      end
+      it { is_expected.to run_execute('virsh secret-define --file /var/chef/cache/secret.xml') }
+      it do
+        is_expected.to run_execute('update virsh ceph secret').with(
+          command: 'virsh secret-set-value --secret 8102bb29-f48b-4f6e-81d7-4c59d80ec6b8 --base64 AQAjbr1aWv+aNBAAoGfqrwX9iSdNmtuvUkwGhA==',
+          sensitive: true
+        )
+      end
+      it { is_expected.to delete_file '/var/chef/cache/secret.xml' }
       it do
         is_expected.to create_template('/etc/sysconfig/libvirt-guests').with(
           variables: {
@@ -99,7 +137,6 @@ describe 'osl-openstack::compute' do
       context 'AMD' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm) do |node|
-            node.normal['osl-openstack']['cluster_name'] = 'x86'
             node.automatic['dmi']['processor']['manufacturer'] = 'AMD'
           end.converge(described_recipe)
         end
@@ -109,7 +146,6 @@ describe 'osl-openstack::compute' do
       context 'ppc64le' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm) do |node|
-            node.normal['osl-openstack']['cluster_name'] = 'x86'
             node.automatic['kernel']['machine'] = 'ppc64le'
           end.converge(described_recipe)
         end
@@ -127,7 +163,6 @@ describe 'osl-openstack::compute' do
         context 'power8' do
           cached(:chef_run) do
             ChefSpec::SoloRunner.new(pltfrm) do |node|
-              node.normal['osl-openstack']['cluster_name'] = 'x86'
               node.automatic['kernel']['machine'] = 'ppc64le'
               node.automatic['cpu']['cpu_model'] = 'POWER8E (raw), altivec supported'
             end.converge(described_recipe)
@@ -139,7 +174,6 @@ describe 'osl-openstack::compute' do
       context 'aarch64' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm) do |node|
-            node.normal['osl-openstack']['cluster_name'] = 'x86'
             node.automatic['kernel']['machine'] = 'aarch64'
           end.converge(described_recipe)
         end
