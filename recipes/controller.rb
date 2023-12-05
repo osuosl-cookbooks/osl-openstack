@@ -16,8 +16,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
+prometheus_cloud = os_secrets['database_server']['suffix']
 node.default['osl-openstack']['node_type'] = 'controller'
+node.default['osl-prometheus']['openstack']['cloud'] = prometheus_cloud
 
 include_recipe 'osl-openstack::identity'
 include_recipe 'osl-openstack::image'

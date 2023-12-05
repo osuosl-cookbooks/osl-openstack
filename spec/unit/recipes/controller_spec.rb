@@ -17,7 +17,7 @@ describe 'osl-openstack::controller' do
       before do
         stub_data_bag_item('prometheus', 'openstack_exporter')
           .and_return(
-            mycloud: {
+            x86: {
               username: 'admin',
               user_domain_name: 'default',
               password: 'admin',
@@ -40,6 +40,11 @@ describe 'osl-openstack::controller' do
       it { is_expected.to include_recipe 'osl-openstack::dashboard' }
       it { is_expected.to include_recipe 'osl-prometheus::openstack' }
       it { is_expected.to include_recipe 'osl-openstack::mon' }
+      it do
+        is_expected.to render_file('/etc/sysconfig/prometheus-openstack-exporter').with_content(
+          'OS_AUTH_URL=https://controller.example.org:5000/v3'
+        )
+        end
     end
   end
 end
