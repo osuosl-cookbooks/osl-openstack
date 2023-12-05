@@ -107,7 +107,15 @@ module OSLOpenstack
           openstack_domain_name: 'default',
         }
 
-        @connection_cache ||= Fog::OpenStack::Identity.new(params)
+        count = 0
+        begin
+          @connection_cache ||= Fog::OpenStack::Identity.new(params)
+        rescue Errno::ECONNRESET
+          count += 1
+          Chef::Log.warn("Unable to connect to controller, retry ##{count}")
+          sleep(1)
+          retry unless count > 10
+        end
       end
 
       def os_role(new_resource)
