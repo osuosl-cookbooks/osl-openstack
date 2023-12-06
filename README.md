@@ -1,7 +1,6 @@
 # osl-openstack Cookbook
 
-OSL wrapper cookbook for upstream [openstack cookbooks](https://wiki.openstack.org/wiki/Chef). Also includes support for
-ppc64le compute nodes.
+Cookbook for deploying OpenStack at the OSUOSL
 
 ## Supported Platforms
 

@@ -1,1 +1,0 @@
-../../mon_controller/inspec/mon_controller_spec.rb

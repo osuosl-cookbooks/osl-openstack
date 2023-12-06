@@ -16,14 +16,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-include_recipe 'osl-openstack'
+s = os_secrets['messaging']
 
-osl_firewall_port 'amqp' do
-  osl_only true
+osl_openstack_messaging 'default' do
+  user s['user']
+  pass s['pass']
 end
-
-osl_firewall_port 'rabbitmq_mgt' do
-  osl_only true
-end
-
-include_recipe 'openstack-ops-messaging::rabbitmq-server'

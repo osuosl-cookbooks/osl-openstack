@@ -16,19 +16,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Missing package dep
-package 'python2-crypto'
 
-include_recipe 'osl-openstack'
-include_recipe 'openstack-block-storage::volume'
-include_recipe 'openstack-block-storage::identity_registration'
-include_recipe 'osl-openstack::_block_ceph' if node['osl-openstack']['ceph']['volume']
+osl_repos_openstack 'block-storage'
+osl_openstack_client 'block-storage'
+osl_firewall_openstack 'block-storage'
 
-replace_or_add 'log-dir storage' do
-  path '/usr/share/cinder/cinder-dist.conf'
-  pattern '^logdir.*'
-  line 'log-dir = /var/log/cinder'
-  backup true
-  replace_only true
-  notifies :restart, 'service[cinder-volume]'
+s = os_secrets['block-storage']['ceph']
+include_recipe 'osl-openstack::block_storage_common'
+
+group 'ceph-block' do
+  group_name 'ceph'
+  append true
+  members %w(cinder)
+  action :modify
+  notifies :restart, 'service[openstack-cinder-volume]', :immediately
+end
+
+osl_ceph_keyring s['rbd_store_user'] do
+  key s['block_token']
+  not_if { s['block_token'].nil? }
+  notifies :restart, 'service[openstack-cinder-volume]', :immediately
+end
+
+osl_ceph_keyring s['block_backup_rbd_store_user'] do
+  key s['block_backup_token']
+  not_if { s['block_backup_token'].nil? }
+end
+
+service 'openstack-cinder-volume' do
+  action [:enable, :start]
+  subscribes :restart, 'template[/etc/cinder/cinder.conf]'
 end

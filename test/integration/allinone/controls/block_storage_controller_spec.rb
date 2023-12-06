@@ -1,1 +1,0 @@
-../../block_storage_controller/inspec/block_storage_controller_spec.rb

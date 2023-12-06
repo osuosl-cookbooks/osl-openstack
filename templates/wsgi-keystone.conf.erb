@@ -1,0 +1,43 @@
+Listen 5000
+WSGISocketPrefix /var/lock/subsys
+
+<VirtualHost *:5000>
+  ServerName <%= @server_name %>
+  <% unless @server_aliases.empty? -%>
+  ServerAlias <%= @server_aliases.flatten.join(" ") %>
+  <% end %>
+
+  SSLEngine On
+  SSLCertificateFile /etc/pki/tls/certs/wildcard.pem
+  SSLCertificateKeyFile /etc/pki/tls/private/wildcard.key
+  SSLCACertificatePath /etc/pki/tls/certs
+  SSLCertificateChainFile /etc/pki/tls/certs/wildcard-bundle.crt
+  SSLProtocol -all +TLSv1.2
+
+  WSGIDaemonProcess keystone-public processes=5 threads=1 user=keystone group=keystone display-name=%{GROUP}
+  WSGIProcessGroup keystone-public
+  WSGIScriptAlias / /usr/bin/keystone-wsgi-public
+  WSGIApplicationGroup %{GLOBAL}
+  WSGIPassAuthorization On
+  LimitRequestBody 114688
+
+  LogLevel info
+  ErrorLogFormat "%{cu}t %M"
+
+  ErrorLog "|/usr/sbin/rotatelogs <%= @log_dir %>/keystone/error/%Y%m%d.log 86400"
+  CustomLog "|/usr/sbin/rotatelogs <%= @log_dir %>/keystone/access/%Y%m%d.log 86400" combined-osuosl
+
+  <Directory /usr/bin>
+    Require all granted
+  </Directory>
+</VirtualHost>
+
+Alias /identity /usr/bin/keystone-wsgi-public
+<Location /identity>
+  SetHandler wsgi-script
+  Options +ExecCGI
+
+  WSGIProcessGroup keystone-public
+  WSGIApplicationGroup %{GLOBAL}
+  WSGIPassAuthorization On
+</Location>

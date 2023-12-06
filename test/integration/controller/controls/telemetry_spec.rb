@@ -1,1 +1,0 @@
-../../telemetry/inspec/telemetry_spec.rb

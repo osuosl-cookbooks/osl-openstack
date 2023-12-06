@@ -21,5 +21,3 @@ append_if_no_line '10.1.2.4' do
   line '10.1.2.4 compute.example.com'
   sensitive false
 end
-
-node.default['osl-openstack']['bind_service'] = '0.0.0.0'

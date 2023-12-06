@@ -1,1 +1,0 @@
-../../default/inspec/default_spec.rb

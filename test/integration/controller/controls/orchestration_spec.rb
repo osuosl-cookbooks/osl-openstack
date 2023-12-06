@@ -1,1 +1,0 @@
-../../orchestration/inspec/orchestration_spec.rb
