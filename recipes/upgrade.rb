@@ -15,51 +15,43 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-yum_repository 'RDO-rocky' do
-  action :remove
+
+package 'crudini'
+
+service 'yum-cron' do
+  action [:stop, :disable]
+  not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/train-upgrade-done') }
 end
 
-include_recipe 'osl-openstack'
+service 'dnf-automatic.timer' do
+  action [:stop, :disable]
+  not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/train-upgrade-done') }
+end
+
+osl_repos_openstack 'upgrade'
+osl_firewall_openstack 'upgrade'
 
 if node['osl-openstack']['node_type'] == 'controller'
-  db_user = node['openstack']['db']['compute_cell0']['username']
-  db_password = get_password('db', 'nova_cell0')
-  uri = db_uri('compute_cell0', db_user, db_password)
+  osl_firewall_memcached 'upgrade'
+  osl_firewall_port 'amqp' do
+    osl_only true
+  end
+
+  osl_firewall_port 'rabbitmq_mgt' do
+    osl_only true
+  end
+
+  osl_firewall_port 'http' do
+    ports %w(80 443)
+  end
 
   file '/root/nova-cell-db-uri' do
-    content uri
+    content openstack_database_connection('compute_cell0')
     mode '600'
     sensitive true
+    not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/train-upgrade-done') }
   end
 end
-
-### Stein Upgrade
-# TODO: Remove after Stein
-
-nova_api_pass = get_password 'db', 'nova_api'
-placement_user = node['openstack']['db']['placement']['username']
-placement_pass = get_password 'db', 'placement'
-placement_db_uri = db_uri('placement', placement_user, placement_pass)
-
-template '/root/migrate-db.rc' do
-  mode '600'
-  sensitive true
-  variables(
-    nova_api_pass: nova_api_pass,
-    placement_pass: placement_pass
-  )
-end
-
-package 'openstack-placement-common'
-
-replace_or_add 'placement db' do
-  path '/etc/placement/placement.conf'
-  pattern /^#connection = <None>/
-  line "connection = #{placement_db_uri}"
-  replace_only true
-end
-
-###
 
 cookbook_file '/root/upgrade.sh' do
   source "upgrade-#{node['osl-openstack']['node_type']}.sh"
@@ -70,5 +62,5 @@ ruby_block 'raise_upgrade_exeception' do
   block do
     raise 'Upgrade recipe enabled, stopping futher chef resources from running'
   end
-  not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/stein-upgrade-done') }
+  not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/train-upgrade-done') }
 end

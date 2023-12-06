@@ -41,6 +41,39 @@ verifier:
 
 platforms:
   - name: centos-7
+  - name: almalinux-8
+    driver:
+      variables:
+        os_image: "AlmaLinux 8"
+        ssh_user_name: "almalinux"
+    verifier:
+      systems:
+        - name: controller
+          backend: ssh
+          hosts_output: controller
+          user: almalinux
+          profile_locations:
+            - test/integration/block_storage_controller
+            - test/integration/compute_controller
+            - test/integration/identity
+            - test/integration/image
+            - test/integration/network
+            - test/integration/ops_messaging
+            - test/integration/orchestration
+            - test/integration/telemetry_controller
+          attrs:
+            - test/integration/multi-node/controller.yml
+          sudo: true
+        - name: compute
+          backend: ssh
+          hosts_output: compute
+          user: almalinux
+          profile_locations:
+            - test/integration/compute
+            - test/integration/telemetry_compute
+          attrs:
+            - test/integration/multi-node/compute.yml
+          sudo: true
 
 suites:
   - name: multi-node

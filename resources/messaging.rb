@@ -17,6 +17,16 @@ action :create do
     osl_only true
   end
 
+  if node['platform_version'].to_i >= 8
+    package 'centos-release-messaging'
+
+    yum_repository 'centos-rabbitmq' do
+      description 'CentOS $releasever - RabbitMQ'
+      baseurl 'https://centos.osuosl.org/$releasever-stream/messaging/$basearch/rabbitmq-38'
+      gpgkey 'file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-SIG-Messaging'
+    end
+  end
+
   package 'rabbitmq-server'
 
   service 'rabbitmq-server' do

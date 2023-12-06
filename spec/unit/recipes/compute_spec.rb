@@ -29,18 +29,35 @@ describe 'osl-openstack::compute' do
       it { is_expected.to install_kernel_module 'tun' }
       it { is_expected.to load_kernel_module 'tun' }
       it { is_expected.to create_cookbook_file '/etc/sysconfig/network' }
-      it do
-        is_expected.to install_package %w(
-          device-mapper
-          device-mapper-multipath
-          libguestfs-rescue
-          libguestfs-tools
-          libvirt
-          openstack-nova-compute
-          python-libguestfs
-          sg3_utils
-          sysfsutils
-        )
+      case pltfrm
+      when CENTOS_7
+        it do
+          is_expected.to install_package %w(
+            device-mapper
+            device-mapper-multipath
+            libguestfs-rescue
+            libguestfs-tools
+            libvirt
+            openstack-nova-compute
+            python-libguestfs
+            sg3_utils
+            sysfsutils
+          )
+        end
+      when ALMA_8
+        it do
+          is_expected.to install_package %w(
+            device-mapper
+            device-mapper-multipath
+            libguestfs-rescue
+            libguestfs-tools
+            libvirt
+            openstack-nova-compute
+            python3-libguestfs
+            sg3_utils
+            sysfsutils
+          )
+        end
       end
       it { expect(chef_run.link('/usr/bin/qemu-system-x86_64')).to link_to('/usr/libexec/qemu-kvm') }
       it { is_expected.to create_cookbook_file '/etc/libvirt/libvirtd.conf' }
@@ -150,7 +167,12 @@ describe 'osl-openstack::compute' do
           end.converge(described_recipe)
         end
 
-        it { is_expected.to include_recipe 'yum-kernel-osuosl::install' }
+        case pltfrm
+        when CENTOS_7
+          it { is_expected.to include_recipe 'yum-kernel-osuosl::install' }
+        when ALMA_8
+          it { is_expected.to_not include_recipe 'yum-kernel-osuosl::install' }
+        end
         it { is_expected.to include_recipe 'base::grub' }
         it { is_expected.to_not install_kernel_module('kvm_pr') }
         it { is_expected.to_not load_kernel_module('kvm_pr') }
@@ -178,7 +200,12 @@ describe 'osl-openstack::compute' do
           end.converge(described_recipe)
         end
 
-        it { is_expected.to include_recipe 'yum-kernel-osuosl::install' }
+        case pltfrm
+        when CENTOS_7
+          it { is_expected.to include_recipe 'yum-kernel-osuosl::install' }
+        when ALMA_8
+          it { is_expected.to_not include_recipe 'yum-kernel-osuosl::install' }
+        end
         it { is_expected.to include_recipe 'base::grub' }
       end
     end

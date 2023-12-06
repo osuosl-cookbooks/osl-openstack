@@ -16,7 +16,7 @@ yum -y upgrade
 
 set +ex
 
-touch /root/stein-upgrade-done
+touch /root/train-upgrade-done
 
 echo
 echo "Run the following command once the controller has been upgraded:"

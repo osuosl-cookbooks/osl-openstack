@@ -75,15 +75,7 @@ end
   end
 end
 
-package %w(
-  openstack-nova-api
-  openstack-nova-conductor
-  openstack-nova-console
-  openstack-nova-novncproxy
-  openstack-nova-scheduler
-  openstack-placement-api
-  python2-osc-placement
-)
+package openstack_compute_controller_pkgs
 
 file '/etc/httpd/conf.d/00-placement-api.conf' do
   action :delete
@@ -191,7 +183,6 @@ end
 
 %w(
   openstack-nova-conductor
-  openstack-nova-consoleauth
   openstack-nova-novncproxy
   openstack-nova-scheduler
 ).each do |srv|

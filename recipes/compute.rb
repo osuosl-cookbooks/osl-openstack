@@ -46,17 +46,7 @@ end
 # Disable IPv6 autoconf globally
 cookbook_file '/etc/sysconfig/network'
 
-package %w(
-  device-mapper
-  device-mapper-multipath
-  libguestfs-rescue
-  libguestfs-tools
-  libvirt
-  openstack-nova-compute
-  python-libguestfs
-  sg3_utils
-  sysfsutils
-)
+package openstack_compute_pkgs
 
 link "/usr/bin/qemu-system-#{node['kernel']['machine']}" do
   to '/usr/libexec/qemu-kvm'
@@ -89,7 +79,7 @@ end
 case node['kernel']['machine']
 when 'ppc64le'
   node.default['base']['grub']['cmdline'] << %w(kvm_cma_resv_ratio=15)
-  include_recipe 'yum-kernel-osuosl::install'
+  include_recipe 'yum-kernel-osuosl::install' if node['platform_version'].to_i < 8
   include_recipe 'base::grub'
 
   kernel_module 'kvm_pr' do
@@ -113,7 +103,7 @@ when 'ppc64le'
     action [:enable, :start]
   end if node.read('cpu', 'cpu_model') =~ /POWER8/
 when 'aarch64'
-  include_recipe 'yum-kernel-osuosl::install'
+  include_recipe 'yum-kernel-osuosl::install' if node['platform_version'].to_i < 8
   include_recipe 'base::grub'
 when 'x86_64'
   kvm_module =
@@ -161,6 +151,7 @@ group 'ceph-compute' do
   action :modify
   notifies :restart, 'service[openstack-nova-compute]', :immediately
   notifies :restart, 'service[libvirtd]', :immediately
+  notifies :run, 'execute[Deleting default libvirt network]', :immediately
 end
 
 ceph_user = b['ceph']['rbd_store_user']

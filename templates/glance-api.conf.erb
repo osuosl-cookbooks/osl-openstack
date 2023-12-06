@@ -4,17 +4,21 @@
 [DEFAULT]
 enable_v1_api = false
 enable_v2_api = true
+enabled_backends = rbd:rbd,http:http
 show_image_direct_url = true
 show_multiple_locations = true
 transport_url = <%= @transport_url %>
 
 [glance_store]
+default_backend = rbd
 default_store = rbd
+stores = rbd
+
+[rbd]
 rbd_store_ceph_conf = /etc/ceph/ceph.conf
 rbd_store_chunk_size = 8
 rbd_store_pool = <%= @rbd_store_pool %>
 rbd_store_user = <%= @rbd_store_user %>
-stores = rbd
 
 [paste_deploy]
 flavor = keystone

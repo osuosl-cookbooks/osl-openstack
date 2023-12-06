@@ -1,6 +1,13 @@
 require 'chefspec'
 require 'chefspec/berkshelf'
 
+ALMA_8 = {
+  platform: 'almalinux',
+  version: '8',
+  file_cache_path: '/var/chef/cache',
+  log_level: :warn,
+}.freeze
+
 CENTOS_7 = {
   platform: 'centos',
   version: '7',
@@ -9,6 +16,7 @@ CENTOS_7 = {
 }.freeze
 
 ALL_PLATFORMS = [
+  ALMA_8,
   CENTOS_7,
 ].freeze
 
@@ -61,9 +69,7 @@ shared_context 'common_stubs' do
         'enabled_filters' => %w(
           AggregateInstanceExtraSpecsFilter
           PciPassthroughFilter
-          RetryFilter
           AvailabilityZoneFilter
-          RamFilter
           ComputeFilter
           ComputeCapabilitiesFilter
           ImagePropertiesFilter
@@ -264,6 +270,8 @@ end
 shared_context 'telemetry_stubs' do
   before do
     stub_command('grep -q curated_sname /usr/lib/python2.7/site-packages/ceilometer/publisher/prometheus.py')
+    stub_command('grep -q curated_sname /usr/lib/python3.6/site-packages/ceilometer/publisher/prometheus.py')
     stub_command('grep -q s.project_id /usr/lib/python2.7/site-packages/ceilometer/publisher/prometheus.py')
+    stub_command('grep -q s.project_id /usr/lib/python3.6/site-packages/ceilometer/publisher/prometheus.py')
   end
 end

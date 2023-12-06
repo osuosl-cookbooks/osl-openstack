@@ -46,9 +46,7 @@
     "enabled_filters": [
       "AggregateInstanceExtraSpecsFilter",
       "PciPassthroughFilter",
-      "RetryFilter",
       "AvailabilityZoneFilter",
-      "RamFilter",
       "ComputeFilter",
       "ComputeCapabilitiesFilter",
       "ImagePropertiesFilter",

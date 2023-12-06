@@ -25,5 +25,6 @@ depends 'yum-kernel-osuosl'
 depends 'yum-qemu-ev'
 
 supports 'centos', '~> 7.0'
+supports 'almalinux', '~> 8.0'
 
 gem 'fog-openstack', '~> 1.1'
