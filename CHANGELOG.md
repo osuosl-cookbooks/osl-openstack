@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+11.0.1 (2023-12-06)
+-------------------
+- Rescue on any error
+
 11.0.0 (2023-12-06)
 -------------------
 - Refactor all code to no longer use upstream Openstack cookbooks
