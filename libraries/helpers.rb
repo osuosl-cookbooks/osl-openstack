@@ -125,7 +125,7 @@ module OSLOpenstack
         count = 0
         begin
           @connection_cache ||= Fog::OpenStack::Identity.new(params)
-        rescue Errno::ECONNRESET
+        rescue
           count += 1
           Chef::Log.warn("Unable to connect to controller, retry ##{count}")
           sleep(1)
