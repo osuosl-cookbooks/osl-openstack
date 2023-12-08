@@ -163,6 +163,7 @@ describe 'osl-openstack::compute_controller' do
         is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/^passthrough_whitelist =/)
       end
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content('images_rbd_pool = vms') }
+      it { is_expected.to render_file('/etc/nova/nova.conf').with_content('server_listen = 10.0.0.2') }
       it do
         is_expected.to nothing_execute('placement: db_sync').with(
           command: 'placement-manage db sync',
