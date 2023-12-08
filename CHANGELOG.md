@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+11.0.2 (2023-12-08)
+-------------------
+- Set novnc server address to primary host IP address
+
 11.0.1 (2023-12-06)
 -------------------
 - Rescue on any error
