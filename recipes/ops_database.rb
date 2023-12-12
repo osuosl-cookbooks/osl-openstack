@@ -22,17 +22,17 @@ suffix = s['database_server']['suffix']
 osl_mysql_test "keystone_#{suffix}" do
   username "#{s['identity']['db']['user']}_#{suffix}"
   password s['identity']['db']['pass']
-  encoding 'utf8'
-  collation 'utf8_general_ci'
-  version '10.4'
+  encoding 'utf8mb3'
+  collation 'utf8mb3_general_ci'
+  version '10.11'
 end
 
 mariadb_server_configuration 'openstack' do
   mysqld_bind_address '0.0.0.0'
   mysqld_max_connections 1000
   mysqld_options(
-    'character-set-server' => 'utf8',
-    'collation-server' => 'utf8_general_ci'
+    'character-set-server' => 'utf8mb3',
+    'collation-server' => 'utf8mb3_general_ci'
   )
   notifies :restart, 'service[mariadb]', :immediately
 end
@@ -50,8 +50,8 @@ openstack_services.each do |service, db|
 
     mariadb_database db_name do
       password 'osl_mysql_test'
-      encoding 'utf8'
-      collation 'utf8_general_ci'
+      encoding 'utf8mb3'
+      collation 'utf8mb3_general_ci'
     end
 
     mariadb_user "#{db_user}-#{db_name}-localhost" do
