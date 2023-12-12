@@ -13,9 +13,9 @@ describe 'osl-openstack::ops_database' do
         is_expected.to create_osl_mysql_test('keystone_x86').with(
           username: 'keystone_x86',
           password: 'keystone',
-          encoding: 'utf8',
-          collation: 'utf8_general_ci',
-          version: '10.4'
+          encoding: 'utf8mb3',
+          collation: 'utf8mb3_general_ci',
+          version: '10.11'
         )
       end
       it do
@@ -23,8 +23,8 @@ describe 'osl-openstack::ops_database' do
           mysqld_bind_address: '0.0.0.0',
           mysqld_max_connections: 1000,
           mysqld_options: {
-            'character-set-server' => 'utf8',
-            'collation-server' => 'utf8_general_ci',
+            'character-set-server' => 'utf8mb3',
+            'collation-server' => 'utf8mb3_general_ci',
           }
         )
       end
@@ -52,8 +52,8 @@ describe 'osl-openstack::ops_database' do
         it do
           is_expected.to create_mariadb_database(db_name).with(
             password: 'osl_mysql_test',
-            encoding: 'utf8',
-            collation: 'utf8_general_ci'
+            encoding: 'utf8mb3',
+            collation: 'utf8mb3_general_ci'
           )
         end
         it do
