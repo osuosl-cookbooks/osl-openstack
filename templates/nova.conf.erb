@@ -138,5 +138,5 @@ username = nova
 [vnc]
 enabled = true
 novncproxy_base_url = https://<%= @endpoint %>:6080/vnc_auto.html
-server_listen = <%= node['ipaddress'] %>
+server_listen = 0.0.0.0
 server_proxyclient_address = <%= node['ipaddress'] %>
