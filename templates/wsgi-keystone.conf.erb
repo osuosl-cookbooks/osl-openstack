@@ -30,14 +30,14 @@ WSGISocketPrefix /var/lock/subsys
   <Directory /usr/bin>
     Require all granted
   </Directory>
+
+  Alias /identity /usr/bin/keystone-wsgi-public
+  <Location /identity>
+    SetHandler wsgi-script
+    Options +ExecCGI
+
+    WSGIProcessGroup keystone-public
+    WSGIApplicationGroup %{GLOBAL}
+    WSGIPassAuthorization On
+  </Location>
 </VirtualHost>
-
-Alias /identity /usr/bin/keystone-wsgi-public
-<Location /identity>
-  SetHandler wsgi-script
-  Options +ExecCGI
-
-  WSGIProcessGroup keystone-public
-  WSGIApplicationGroup %{GLOBAL}
-  WSGIPassAuthorization On
-</Location>
