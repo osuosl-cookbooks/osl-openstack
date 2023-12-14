@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+11.0.6 (2023-12-14)
+-------------------
+- Move alias config into vhost
+
 11.0.5 (2023-12-13)
 -------------------
 - Have novnc listen on all IPs
