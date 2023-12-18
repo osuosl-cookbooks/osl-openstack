@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+11.0.7 (2023-12-18)
+-------------------
+- Redirect to primary endpoint for keystone and horizon
+
 11.0.6 (2023-12-14)
 -------------------
 - Move alias config into vhost
