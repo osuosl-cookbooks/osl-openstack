@@ -7,8 +7,11 @@ WSGISocketPrefix /var/lock/subsys
   <% end %>
 
   RewriteEngine On
+  RewriteCond "%{HTTP_HOST}" "!^<%= Regexp.escape(@server_name) %>" [NC]
+  RewriteCond "%{HTTP_HOST}" "!^$"
+  RewriteRule "^/?(.*)"      "https://<%= @server_name %>/$1" [L,R=permanent,NE]
   RewriteCond %{HTTPS} off
-  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R]
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=permanent]
 
   LogLevel info
   ErrorLogFormat "%{cu}t %M"
@@ -22,6 +25,11 @@ WSGISocketPrefix /var/lock/subsys
   <% unless @server_aliases.empty? -%>
   ServerAlias <%= @server_aliases.flatten.join(" ") %>
   <% end %>
+
+  RewriteEngine On
+  RewriteCond "%{HTTP_HOST}" "!^<%= Regexp.escape(@server_name) %>" [NC]
+  RewriteCond "%{HTTP_HOST}" "!^$"
+  RewriteRule "^/?(.*)"      "https://<%= @server_name %>/$1" [L,R=permanent,NE]
 
   WSGIApplicationGroup %{GLOBAL}
   WSGIScriptAlias / /usr/share/openstack-dashboard/openstack_dashboard/wsgi.py

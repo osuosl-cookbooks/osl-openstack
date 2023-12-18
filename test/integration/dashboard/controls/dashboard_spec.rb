@@ -15,6 +15,39 @@ control 'openstack-dashboard' do
     end
   end
 
+  describe http(
+    'http://127.0.0.1:80',
+    headers: { 'Host' => 'controller1.example.com' }
+  ) do
+    its('status') { should cmp 301 }
+    its('headers.location') { should cmp 'https://controller.example.com/' }
+  end
+
+  describe http(
+    'https://127.0.0.1:443',
+    headers: { 'Host' => 'controller1.example.com' },
+    ssl_verify: false
+  ) do
+    its('status') { should cmp 301 }
+    its('headers.location') { should cmp 'https://controller.example.com/' }
+  end
+
+  describe http(
+    'http://127.0.0.1:80',
+    headers: { 'Host' => 'controller.example.com' }
+  ) do
+    its('status') { should cmp 301 }
+    its('headers.location') { should cmp 'https://controller.example.com/' }
+  end
+
+  describe http(
+    'https://127.0.0.1:443/auth/login/',
+    headers: { 'Host' => 'controller.example.com' },
+    ssl_verify: false
+  ) do
+    its('status') { should cmp 200 }
+  end
+
   describe file '/etc/httpd/conf.d/openstack-dashboard.conf' do
     it { should_not exist }
   end
@@ -35,17 +68,19 @@ control 'openstack-dashboard' do
     its('ServerName') { should include 'controller.example.com' }
   end
 
+  resolve = '--resolve controller.example.com:443:127.0.0.1'
+
   # Simulate logging into horizon with curl and test the output to ensure the
   # application is running correctly
   horizon_command =
     # 1. Get initial cookbooks for curl
     # 2. Grab the CSRF token
     # 3. Try logging into the site with the token
-    'curl -so /dev/null -k -c c.txt -b c.txt https://localhost/auth/login/ && ' \
+    "curl -so /dev/null -k -c c.txt -b c.txt #{resolve} https://controller.example.com/auth/login/ && " \
     'token=$(grep csrftoken c.txt | cut -f7) &&' \
-    'curl -H \'Referer:https://localhost/auth/login/\' -k -c c.txt -b c.txt -d ' \
+    'curl -H \'Referer:https://controller.example.com/auth/login/\' -k -c c.txt -b c.txt -d ' \
     '"login=admin&password=admin&csrfmiddlewaretoken=${token}" -v ' \
-    'https://localhost/auth/login/ 2>&1'
+    "#{resolve} https://controller.example.com/auth/login/ 2>&1"
 
   describe command(horizon_command) do
     its('stdout') { should match(/subject: CN=\*.example.com/) }

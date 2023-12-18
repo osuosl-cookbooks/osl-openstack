@@ -4,7 +4,9 @@ describe 'osl-openstack::dashboard' do
   ALL_PLATFORMS.each do |pltfrm|
     context "#{pltfrm[:platform]} #{pltfrm[:version]}" do
       cached(:chef_run) do
-        ChefSpec::SoloRunner.new(pltfrm).converge(described_recipe)
+        ChefSpec::SoloRunner.new(pltfrm.dup.merge(
+          step_into: %w(apache_app)
+        )).converge(described_recipe)
       end
 
       include_context 'common_stubs'
@@ -62,8 +64,13 @@ describe 'osl-openstack::dashboard' do
         is_expected.to create_apache_app('horizon').with(
           cookbook: 'osl-openstack',
           server_name: 'controller.example.com',
-          server_aliases: [],
+          server_aliases: %w(controller1.example.com),
           template: 'wsgi-horizon.conf.erb'
+        )
+      end
+      it do
+        is_expected.to render_file('/etc/httpd/sites-available/horizon.conf').with_content(
+          'RewriteCond "%{HTTP_HOST}" "!^controller\.example\.com" [NC]'
         )
       end
       it { expect(chef_run.apache_app('horizon')).to notify('execute[horizon: compress]').to(:run) }

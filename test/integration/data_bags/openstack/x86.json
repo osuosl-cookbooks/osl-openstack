@@ -73,6 +73,9 @@
     }
   },
   "dashboard": {
+    "aliases":[
+      "controller1.example.com"
+    ],
     "endpoint": "controller.example.com",
     "db": {
       "user": "horizon",
@@ -85,6 +88,9 @@
     "endpoint": "localhost"
   },
   "identity": {
+    "aliases":[
+      "controller1.example.com"
+    ],
     "endpoint": "controller.example.com",
     "db": {
       "user": "keystone",
