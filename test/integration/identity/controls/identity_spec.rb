@@ -25,6 +25,25 @@ control 'openstack-identity' do
     its('addresses') { should include '::' }
   end
 
+  describe json(
+    content: http(
+      'https://127.0.0.1:5000/v3',
+      headers: { 'Host' => 'controller.example.com' },
+      ssl_verify: false
+    ).body
+  ) do
+    its(%w(version status)) { should cmp 'stable' }
+  end
+
+  describe http(
+    'https://127.0.0.1:5000',
+    headers: { 'Host' => 'controller1.example.com' },
+    ssl_verify: false
+  ) do
+    its('status') { should cmp 301 }
+    its('headers.location') { should cmp 'https://controller.example.com:5000/' }
+  end
+
   describe port(11211) do
     it { should be_listening }
     its('protocols') { should include 'udp' }

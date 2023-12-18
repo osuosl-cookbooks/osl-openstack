@@ -95,6 +95,9 @@ shared_context 'common_stubs' do
         },
       },
       'dashboard' => {
+        "aliases": [
+          'controller1.example.com',
+        ],
         "endpoint": 'controller.example.com',
         'db' => {
           "user": 'horizon',
@@ -107,6 +110,9 @@ shared_context 'common_stubs' do
         "endpoint": 'localhost',
       },
       'identity' => {
+        "aliases": [
+          'controller1.example.com',
+        ],
         "endpoint": 'controller.example.com',
         'db' => {
           "user": 'keystone',

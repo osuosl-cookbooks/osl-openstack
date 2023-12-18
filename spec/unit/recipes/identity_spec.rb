@@ -5,7 +5,7 @@ describe 'osl-openstack::identity' do
     context "#{pltfrm[:platform]} #{pltfrm[:version]}" do
       cached(:chef_run) do
         ChefSpec::SoloRunner.new(pltfrm.dup.merge(
-          step_into: %w(osl_openstack_openrc osl_openstack_client)
+          step_into: %w(apache_app osl_openstack_openrc osl_openstack_client)
         )).converge(described_recipe)
       end
 
@@ -127,9 +127,14 @@ describe 'osl-openstack::identity' do
       it do
         is_expected.to create_apache_app('keystone').with(
           server_name: 'controller.example.com',
-          server_aliases: [],
+          server_aliases: %w(controller1.example.com),
           cookbook: 'osl-openstack',
           template: 'wsgi-keystone.conf.erb'
+        )
+      end
+      it do
+        is_expected.to render_file('/etc/httpd/sites-available/keystone.conf').with_content(
+          'RewriteCond "%{HTTP_HOST}" "!^controller\.example\.com" [NC]'
         )
       end
       it { expect(chef_run.apache_app('keystone')).to notify('apache2_service[osuosl]').to(:reload) }
