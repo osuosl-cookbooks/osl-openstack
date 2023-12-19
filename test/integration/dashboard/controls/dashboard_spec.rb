@@ -2,6 +2,8 @@ require_controls 'osuosl-baseline' do
   control 'ssl-baseline'
 end
 
+os_release = os.release.to_i
+
 control 'openstack-dashboard' do
   describe package 'openstack-dashboard' do
     it { should be_installed }
@@ -11,7 +13,12 @@ control 'openstack-dashboard' do
     describe port(p) do
       it { should be_listening }
       its('protocols') { should include 'tcp' }
-      its('addresses') { should include '::' }
+      case os_release
+      when 7
+        its('addresses') { should include '::' }
+      when 8
+        its('addresses') { should include '0.0.0.0' }
+      end
     end
   end
 
@@ -83,7 +90,7 @@ control 'openstack-dashboard' do
     "#{resolve} https://controller.example.com/auth/login/ 2>&1"
 
   describe command(horizon_command) do
-    its('stdout') { should match(/subject: CN=\*.example.com/) }
+    its('stdout') { should match(/subject:.*CN=\*.example.com/) }
     its('stdout') { should match(/< HTTP.*200 OK/) }
     its('stdout') { should_not match(/CSRF verification failed. Request aborted./) }
   end

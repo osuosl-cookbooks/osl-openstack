@@ -25,6 +25,21 @@ describe 'osl-openstack::ops_messaging' do
       it { is_expected.to enable_service 'rabbitmq-server' }
       it { is_expected.to start_service 'rabbitmq-server' }
 
+      case pltfrm
+      when CENTOS_7
+        it { is_expected.to_not install_package 'centos-release-messaging' }
+        it { is_expected.to_not create_yum_repository('centos-rabbitmq') }
+      when ALMA_8
+        it { is_expected.to install_package 'centos-release-messaging' }
+        it do
+          is_expected.to create_yum_repository('centos-rabbitmq').with(
+            description: 'CentOS $releasever - RabbitMQ',
+            baseurl: 'https://centos.osuosl.org/$releasever-stream/messaging/$basearch/rabbitmq-38',
+            gpgkey: 'file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-SIG-Messaging'
+          )
+        end
+      end
+
       it do
         is_expected.to run_execute('rabbitmq: add user openstack').with(
           command: 'rabbitmqctl add_user openstack openstack',

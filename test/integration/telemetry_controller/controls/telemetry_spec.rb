@@ -1,4 +1,5 @@
 prometheus_endpoint = input('prometheus_endpoint')
+python_ver = os.release.to_i == 7 ? 'python2.7' : 'python3.6'
 
 control 'telemetry-controller' do
   %w(
@@ -33,7 +34,7 @@ control 'telemetry-controller' do
     its('service_credentials.password') { should cmp 'ceilometer' }
   end
 
-  describe file '/usr/lib/python2.7/site-packages/ceilometer/publisher/prometheus.py' do
+  describe file "/usr/lib/#{python_ver}/site-packages/ceilometer/publisher/prometheus.py" do
     its('content') { should match /curated_sname/ }
     its('content') { should match /s\.project_id/ }
   end

@@ -68,15 +68,15 @@ cookbook_file ::File.join(Chef::Config[:file_cache_path], 'ceilometer-prometheus
 cookbook_file ::File.join(Chef::Config[:file_cache_path], 'ceilometer-prometheus2.patch')
 
 execute "patch -p1 < #{::File.join(Chef::Config[:file_cache_path], 'ceilometer-prometheus1.patch')}" do
-  cwd '/usr/lib/python2.7/site-packages'
+  cwd "#{openstack_python_lib}/site-packages"
   notifies :restart, 'service[openstack-ceilometer-central]'
   notifies :restart, 'service[openstack-ceilometer-notification]'
-  not_if 'grep -q curated_sname /usr/lib/python2.7/site-packages/ceilometer/publisher/prometheus.py'
+  not_if "grep -q curated_sname #{openstack_python_lib}/site-packages/ceilometer/publisher/prometheus.py"
 end
 
 execute "patch -p1 < #{::File.join(Chef::Config[:file_cache_path], 'ceilometer-prometheus2.patch')}" do
-  cwd '/usr/lib/python2.7/site-packages'
+  cwd "#{openstack_python_lib}/site-packages"
   notifies :restart, 'service[openstack-ceilometer-central]'
   notifies :restart, 'service[openstack-ceilometer-notification]'
-  not_if 'grep -q s.project_id /usr/lib/python2.7/site-packages/ceilometer/publisher/prometheus.py'
+  not_if "grep -q s.project_id #{openstack_python_lib}/site-packages/ceilometer/publisher/prometheus.py"
 end

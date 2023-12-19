@@ -1,4 +1,5 @@
 db_endpoint = input('db_endpoint')
+os_release = os.release.to_i
 
 control 'image' do
   describe service 'openstack-glance-api' do
@@ -26,8 +27,8 @@ control 'image' do
   describe ini('/etc/glance/glance-api.conf') do
     its('database.connection') { should cmp "mysql+pymysql://glance_x86:glance@#{db_endpoint}:3306/glance_x86" }
     its('DEFAULT.transport_url') { should cmp 'rabbit://openstack:openstack@controller.example.com:5672' }
-    its('glance_store.rbd_store_pool') { should cmp 'images' }
-    its('glance_store.rbd_store_user') { should cmp 'glance' }
+    its('rbd.rbd_store_pool') { should cmp 'images' }
+    its('rbd.rbd_store_user') { should cmp 'glance' }
     its('keystone_authtoken.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
     its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
     its('keystone_authtoken.password') { should cmp 'glance' }
@@ -58,8 +59,14 @@ control 'image' do
   end
 
   describe command('bash -c "source /root/openrc && /usr/bin/openstack image show cirros -c properties -f value"') do
-    its('stdout') { should match(/direct_url='rbd:/) }
-    its('stdout') { should match(/locations=/) }
+    case os_release
+    when 7
+      its('stdout') { should match(/direct_url': u'rbd:/) }
+      its('stdout') { should match(/u'locations':/) }
+    when 8
+      its('stdout') { should match(/direct_url': 'rbd:/) }
+      its('stdout') { should match(/'locations':/) }
+    end
   end
 
   describe command('rbd --id glance ls images') do

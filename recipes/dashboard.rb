@@ -81,8 +81,8 @@ end
 
 execute 'horizon: compress' do
   command <<~EOC
-    /usr/bin/python2 /usr/share/openstack-dashboard/manage.py collectstatic --noinput --clear -v0
-    /usr/bin/python2 /usr/share/openstack-dashboard/manage.py compress --force -v0
+    #{openstack_python_bin} /usr/share/openstack-dashboard/manage.py collectstatic --noinput --clear -v0
+    #{openstack_python_bin} /usr/share/openstack-dashboard/manage.py compress --force -v0
   EOC
   action :nothing
 end

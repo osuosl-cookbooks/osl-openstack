@@ -88,8 +88,6 @@ suites:
   - name: compute_controller
     driver_config:
       server_name: "compute-controller-<%= ENV['USER'] %>"
-    provisioner:
-      multiple_converge: 3
     run_list:
       - recipe[openstack_test]
       - role[openstack_tk]
@@ -104,8 +102,6 @@ suites:
   - name: compute
     driver_config:
       server_name: "compute-<%= ENV['USER'] %>"
-    provisioner:
-      multiple_converge: 3
     run_list:
       - recipe[openstack_test]
       - role[openstack_tk]
@@ -139,8 +135,6 @@ suites:
   - name: block_storage_controller
     driver_config:
       server_name: "block-storage-controller-<%= ENV['USER'] %>"
-    provisioner:
-      multiple_converge: 3
     run_list:
       - recipe[openstack_test]
       - role[openstack_tk]
@@ -155,8 +149,6 @@ suites:
   - name: block_storage
     driver_config:
       server_name: "block-storage-<%= ENV['USER'] %>"
-    provisioner:
-      multiple_converge: 3
     run_list:
       - recipe[openstack_test]
       - role[openstack_tk]
@@ -178,8 +170,6 @@ suites:
   - name: telemetry_controller
     driver_config:
       server_name: "telemetry-<%= ENV['USER'] %>"
-    provisioner:
-      multiple_converge: 3
     run_list:
       - recipe[openstack_test]
       - role[openstack_tk]
@@ -198,8 +188,6 @@ suites:
   - name: telemetry_compute
     driver_config:
       server_name: "telemetry-<%= ENV['USER'] %>"
-    provisioner:
-      multiple_converge: 3
     run_list:
       - role[openstack_tk]
       - recipe[openstack_test::ceph]
@@ -230,8 +218,6 @@ suites:
         - test/integration/ops_messaging
         - test/integration/orchestration
   - name: controller
-    provisioner:
-      multiple_converge: 3
     driver_config:
       server_name: "controller-<%= ENV['USER'] %>"
       flavor_ref: 'm1.xlarge'
@@ -254,8 +240,6 @@ suites:
         - test/integration/orchestration
         - test/integration/telemetry_controller
   - name: allinone
-    provisioner:
-      multiple_converge: 3
     driver_config:
       server_name: "allinone-<%= ENV['USER'] %>"
       flavor_ref: 'm1.xlarge'

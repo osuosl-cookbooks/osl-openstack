@@ -75,13 +75,25 @@ describe 'osl-openstack::dashboard' do
       end
       it { expect(chef_run.apache_app('horizon')).to notify('execute[horizon: compress]').to(:run) }
       it { expect(chef_run.apache_app('horizon')).to notify('apache2_service[osuosl]').to(:reload) }
-      it do
-        is_expected.to nothing_execute('horizon: compress').with(
-          command: <<~EOC
-            /usr/bin/python2 /usr/share/openstack-dashboard/manage.py collectstatic --noinput --clear -v0
-            /usr/bin/python2 /usr/share/openstack-dashboard/manage.py compress --force -v0
-          EOC
-        )
+      case pltfrm
+      when CENTOS_7
+        it do
+          is_expected.to nothing_execute('horizon: compress').with(
+            command: <<~EOC
+              /usr/bin/python2 /usr/share/openstack-dashboard/manage.py collectstatic --noinput --clear -v0
+              /usr/bin/python2 /usr/share/openstack-dashboard/manage.py compress --force -v0
+            EOC
+          )
+        end
+      when ALMA_8
+        it do
+          is_expected.to nothing_execute('horizon: compress').with(
+            command: <<~EOC
+              /usr/bin/python3 /usr/share/openstack-dashboard/manage.py collectstatic --noinput --clear -v0
+              /usr/bin/python3 /usr/share/openstack-dashboard/manage.py compress --force -v0
+            EOC
+          )
+        end
       end
     end
   end

@@ -1,9 +1,9 @@
 db_endpoint = input('db_endpoint')
+os_release = os.release.to_i
 
 control 'compute-controller' do
   %w(
     openstack-nova-conductor
-    openstack-nova-consoleauth
     openstack-nova-novncproxy
     openstack-nova-scheduler
   ).each do |s|
@@ -32,7 +32,12 @@ control 'compute-controller' do
     describe port(p) do
       it { should be_listening }
       its('protocols') { should include 'tcp' }
-      its('addresses') { should include '::' }
+      case os_release
+      when 7
+        its('addresses') { should include '::' }
+      when 8
+        its('addresses') { should include '0.0.0.0' }
+      end
     end
   end
 
@@ -71,7 +76,7 @@ control 'compute-controller' do
     its('api_database.connection') { should cmp "mysql+pymysql://nova_x86:nova@#{db_endpoint}:3306/nova_api_x86" }
     its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
     its('database.connection') { should cmp "mysql+pymysql://nova_x86:nova@#{db_endpoint}:3306/nova_x86" }
-    its('filter_scheduler.enabled_filters') { should cmp 'AggregateInstanceExtraSpecsFilter,PciPassthroughFilter,RetryFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter' }
+    its('filter_scheduler.enabled_filters') { should cmp 'AggregateInstanceExtraSpecsFilter,PciPassthroughFilter,AvailabilityZoneFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter' }
     its('glance.api_servers') { should cmp 'http://controller.example.com:9292' }
     its('keystone_authtoken.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
     its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
@@ -122,12 +127,12 @@ control 'compute-controller' do
   openstack = 'bash -c "source /root/openrc && /usr/bin/openstack'
 
   describe command("#{openstack} compute service list -f value -c Binary -c Status -c State\"") do
-    %w(conductor scheduler consoleauth).each do |s|
+    %w(conductor scheduler).each do |s|
       its('stdout') { should match(/nova-#{s} enabled up/) }
     end
   end
 
-  describe command("#{openstack} catalog list -c Endpoints -f value\"") do
+  describe command("#{openstack} catalog list -c Endpoints\"") do
     its('stdout') { should match(%r{public: http://controller.example.com:8778}) }
     its('stdout') { should match(%r{internal: http://controller.example.com:8778}) }
   end
@@ -173,10 +178,9 @@ control 'compute-controller' do
 
   describe command('bash -c "source /root/openrc && /bin/nova-status upgrade check"') do
     its('stdout') { should match(/Check: Cells v2.*\n.*Result: Success/) }
-    its('stdout') { should match(/Check: Console Auths.*\n.*Result: Success/) }
     its('stdout') { should match(/Check: Ironic Flavor Migration.*\n.*Result: Success/) }
     its('stdout') { should match(/Check: Placement API.*\n.*Result: Success/) }
-    its('stdout') { should match(/Check: Request Spec Migration.*\n.*Result: Success/) }
+    its('stdout') { should match(/Check: Cinder API.*\n.*Result: Success/) }
   end
 
   describe http('https://controller.example.com:6080', ssl_verify: false) do

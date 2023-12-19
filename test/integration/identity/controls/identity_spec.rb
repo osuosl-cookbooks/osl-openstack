@@ -3,6 +3,7 @@ require_controls 'osuosl-baseline' do
 end
 
 db_endpoint = input('db_endpoint')
+os_release = os.release.to_i
 
 control 'openstack-identity' do
   describe package 'openstack-keystone' do
@@ -22,7 +23,12 @@ control 'openstack-identity' do
   describe port(5000) do
     it { should be_listening }
     its('protocols') { should include 'tcp' }
-    its('addresses') { should include '::' }
+    case os_release
+    when 7
+      its('addresses') { should include '::' }
+    when 8
+      its('addresses') { should include '0.0.0.0' }
+    end
   end
 
   describe json(
