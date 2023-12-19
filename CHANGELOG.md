@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+12.0.0 (2023-12-19)
+-------------------
+- Update to Train release
+
 11.0.7 (2023-12-18)
 -------------------
 - Redirect to primary endpoint for keystone and horizon
