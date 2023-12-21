@@ -170,10 +170,11 @@ describe 'osl-openstack::compute' do
         case pltfrm
         when CENTOS_7
           it { is_expected.to include_recipe 'yum-kernel-osuosl::install' }
+          it { is_expected.to include_recipe 'base::grub' }
         when ALMA_8
           it { is_expected.to_not include_recipe 'yum-kernel-osuosl::install' }
+          it { is_expected.to_not include_recipe 'base::grub' }
         end
-        it { is_expected.to include_recipe 'base::grub' }
         it { is_expected.to_not install_kernel_module('kvm_pr') }
         it { is_expected.to_not load_kernel_module('kvm_pr') }
         it { is_expected.to install_kernel_module('kvm_hv') }
@@ -203,10 +204,11 @@ describe 'osl-openstack::compute' do
         case pltfrm
         when CENTOS_7
           it { is_expected.to include_recipe 'yum-kernel-osuosl::install' }
+          it { is_expected.to include_recipe 'base::grub' }
         when ALMA_8
           it { is_expected.to_not include_recipe 'yum-kernel-osuosl::install' }
+          it { is_expected.to_not include_recipe 'base::grub' }
         end
-        it { is_expected.to include_recipe 'base::grub' }
       end
     end
   end
