@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+12.0.1 (2023-12-21)
+-------------------
+- Do not include base::grub on AlmaLinux 8
+
 12.0.0 (2023-12-19)
 -------------------
 - Update to Train release
