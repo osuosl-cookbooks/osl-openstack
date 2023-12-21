@@ -78,9 +78,11 @@ end
 
 case node['kernel']['machine']
 when 'ppc64le'
-  node.default['base']['grub']['cmdline'] << %w(kvm_cma_resv_ratio=15)
-  include_recipe 'yum-kernel-osuosl::install' if node['platform_version'].to_i < 8
-  include_recipe 'base::grub'
+  if node['platform_version'].to_i < 8
+    node.default['base']['grub']['cmdline'] << %w(kvm_cma_resv_ratio=15)
+    include_recipe 'yum-kernel-osuosl::install'
+    include_recipe 'base::grub'
+  end
 
   kernel_module 'kvm_pr' do
     action [:install, :load]
@@ -103,8 +105,10 @@ when 'ppc64le'
     action [:enable, :start]
   end if node.read('cpu', 'cpu_model') =~ /POWER8/
 when 'aarch64'
-  include_recipe 'yum-kernel-osuosl::install' if node['platform_version'].to_i < 8
-  include_recipe 'base::grub'
+  if node['platform_version'].to_i < 8
+    include_recipe 'yum-kernel-osuosl::install'
+    include_recipe 'base::grub'
+  end
 when 'x86_64'
   kvm_module =
     if node.read('dmi', 'processor', 'manufacturer') == 'AMD'
