@@ -29,6 +29,16 @@ action :create do
 
   package 'rabbitmq-server'
 
+  osl_systemd_unit_drop_in 'ulimit' do
+    content({
+      'Unit' => {
+        'LimitNOFILE' => 300000,
+      },
+    })
+    unit_name 'rabbitmq-server.service'
+    notifies :restart, 'service[rabbitmq-server]'
+  end
+
   service 'rabbitmq-server' do
     action [:enable, :start]
   end

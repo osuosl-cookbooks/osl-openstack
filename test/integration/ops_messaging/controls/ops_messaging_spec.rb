@@ -28,4 +28,8 @@ control 'ops_messaging' do
   describe command('rabbitmqctl -q list_users') do
     its('stdout') { should match(/openstack.*\[\]/) }
   end
+
+  describe command 'systemctl cat rabbitmq-server' do
+    its('stdout') { should match /^LimitNOFILE = 300000$/ }
+  end
 end
