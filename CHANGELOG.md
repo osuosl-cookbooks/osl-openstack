@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+12.0.2 (2024-01-06)
+-------------------
+- Increase ulimit for number of files for rabbitmq-server
+
 12.0.1 (2023-12-21)
 -------------------
 - Do not include base::grub on AlmaLinux 8
