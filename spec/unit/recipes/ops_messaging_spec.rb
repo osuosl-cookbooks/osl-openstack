@@ -22,6 +22,18 @@ describe 'osl-openstack::ops_messaging' do
       it { is_expected.to accept_osl_firewall_port('amqp').with(osl_only: true) }
       it { is_expected.to accept_osl_firewall_port('rabbitmq_mgt').with(osl_only: true) }
       it { is_expected.to install_package 'rabbitmq-server' }
+
+      it do
+        is_expected.to create_osl_systemd_unit_drop_in('ulimit').with(
+          content: {
+            'Unit' => {
+              'LimitNOFILE' => 300000,
+            },
+          },
+          unit_name: 'rabbitmq-server.service'
+        )
+      end
+
       it { is_expected.to enable_service 'rabbitmq-server' }
       it { is_expected.to start_service 'rabbitmq-server' }
 
