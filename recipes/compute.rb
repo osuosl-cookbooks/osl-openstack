@@ -57,8 +57,14 @@ cookbook_file '/etc/libvirt/libvirtd.conf' do
 end
 
 service 'libvirtd' do
+  service_name openstack_libvirt_service_name
   action [:enable, :start]
 end
+
+service 'libvirtd-tcp.socket' do
+  action [:enable, :start]
+  subscribes :restart, 'cookbook_file[/etc/libvirt/libvirtd.conf]'
+end if node['platform_version'].to_i >= 8
 
 execute 'Deleting default libvirt network' do
   command 'virsh net-destroy default'

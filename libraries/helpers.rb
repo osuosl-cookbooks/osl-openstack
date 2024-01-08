@@ -115,6 +115,15 @@ module OSLOpenstack
         end
       end
 
+      def openstack_libvirt_service_name
+        case node['platform_version'].to_i
+        when 7
+          'libvirtd.service'
+        when 8
+          'libvirtd.socket'
+        end
+      end
+
       def openstack_transport_url
         m = os_secrets['messaging']
 

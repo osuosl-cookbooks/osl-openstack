@@ -12,6 +12,28 @@ control 'compute' do
     end
   end
 
+  if os_release >= 8
+    describe service 'libvirtd.socket' do
+      it { should be_enabled }
+      it { should be_running }
+    end
+    describe service 'libvirtd-tcp.socket' do
+      it { should be_enabled }
+      it { should be_running }
+    end
+  else
+    describe service 'libvirtd.service' do
+      it { should be_enabled }
+      it { should be_running }
+    end
+  end
+
+  describe port 16509 do
+    it { should be_listening }
+    its('protocols') { should cmp 'tcp' }
+    its('addresses') { should cmp '0.0.0.0' }
+  end
+
   describe kernel_module('tun') do
     it { should be_loaded }
   end
