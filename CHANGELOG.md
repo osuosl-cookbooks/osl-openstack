@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+12.0.3 (2024-01-08)
+-------------------
+- Fix libvirtd listening on tcp on AlmaLinux 8
+
 12.0.2 (2024-01-06)
 -------------------
 - Increase ulimit for number of files for rabbitmq-server
