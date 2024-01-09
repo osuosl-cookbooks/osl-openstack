@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+12.0.4 (2024-01-09)
+-------------------
+- Switch back to libvirtd.service
+
 12.0.3 (2024-01-08)
 -------------------
 - Fix libvirtd listening on tcp on AlmaLinux 8
