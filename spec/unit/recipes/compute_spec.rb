@@ -44,8 +44,6 @@ describe 'osl-openstack::compute' do
             sysfsutils
           )
         end
-        it { is_expected.to enable_service('libvirtd').with(service_name: 'libvirtd.service') }
-        it { is_expected.to start_service('libvirtd').with(service_name: 'libvirtd.service') }
         it { is_expected.to_not enable_service 'libvirtd-tcp.socket' }
         it { is_expected.to_not start_service 'libvirtd-tcp.socket' }
       when ALMA_8
@@ -62,8 +60,6 @@ describe 'osl-openstack::compute' do
             sysfsutils
           )
         end
-        it { is_expected.to enable_service('libvirtd').with(service_name: 'libvirtd.socket') }
-        it { is_expected.to start_service('libvirtd').with(service_name: 'libvirtd.socket') }
         it { is_expected.to enable_service 'libvirtd-tcp.socket' }
         it { is_expected.to start_service 'libvirtd-tcp.socket' }
         it do
@@ -74,6 +70,8 @@ describe 'osl-openstack::compute' do
       it { expect(chef_run.link('/usr/bin/qemu-system-x86_64')).to link_to('/usr/libexec/qemu-kvm') }
       it { is_expected.to create_cookbook_file '/etc/libvirt/libvirtd.conf' }
       it { expect(chef_run.cookbook_file('/etc/libvirt/libvirtd.conf')).to notify('service[libvirtd]').to(:restart) }
+      it { is_expected.to enable_service 'libvirtd' }
+      it { is_expected.to start_service 'libvirtd' }
       it { is_expected.to run_execute('Deleting default libvirt network').with(command: 'virsh net-destroy default') }
       it { is_expected.to include_recipe 'osl-openstack::compute_common' }
       it { is_expected.to enable_service 'openstack-nova-compute' }
