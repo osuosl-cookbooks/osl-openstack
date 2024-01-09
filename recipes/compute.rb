@@ -56,14 +56,14 @@ cookbook_file '/etc/libvirt/libvirtd.conf' do
   notifies :restart, 'service[libvirtd]'
 end
 
-service 'libvirtd' do
-  action [:enable, :start]
-end
-
 service 'libvirtd-tcp.socket' do
   action [:enable, :start]
   subscribes :restart, 'cookbook_file[/etc/libvirt/libvirtd.conf]'
 end if node['platform_version'].to_i >= 8
+
+service 'libvirtd' do
+  action [:enable, :start]
+end
 
 execute 'Deleting default libvirt network' do
   command 'virsh net-destroy default'
