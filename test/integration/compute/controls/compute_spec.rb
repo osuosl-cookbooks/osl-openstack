@@ -17,7 +17,7 @@ control 'compute' do
     it { should be_running }
   end if os_release >= 8
 
-  describe service 'libvirtd.' do
+  describe service 'libvirtd' do
     it { should be_enabled }
     it { should be_running }
   end
