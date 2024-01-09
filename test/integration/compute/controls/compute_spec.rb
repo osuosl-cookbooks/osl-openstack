@@ -12,20 +12,14 @@ control 'compute' do
     end
   end
 
-  if os_release >= 8
-    describe service 'libvirtd.socket' do
-      it { should be_enabled }
-      it { should be_running }
-    end
-    describe service 'libvirtd-tcp.socket' do
-      it { should be_enabled }
-      it { should be_running }
-    end
-  else
-    describe service 'libvirtd.service' do
-      it { should be_enabled }
-      it { should be_running }
-    end
+  describe service 'libvirtd-tcp.socket' do
+    it { should be_enabled }
+    it { should be_running }
+  end if os_release >= 8
+
+  describe service 'libvirtd.' do
+    it { should be_enabled }
+    it { should be_running }
   end
 
   describe port 16509 do

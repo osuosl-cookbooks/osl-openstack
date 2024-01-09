@@ -57,7 +57,6 @@ cookbook_file '/etc/libvirt/libvirtd.conf' do
 end
 
 service 'libvirtd' do
-  service_name openstack_libvirt_service_name
   action [:enable, :start]
 end
 
