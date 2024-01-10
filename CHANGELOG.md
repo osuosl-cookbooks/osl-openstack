@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+12.0.6 (2024-01-10)
+-------------------
+- Do not restart libvirtd-tcp.socket
+
 12.0.5 (2024-01-09)
 -------------------
 - Start libvirtd-tcp before libvirtd
