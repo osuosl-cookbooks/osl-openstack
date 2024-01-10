@@ -58,7 +58,6 @@ end
 
 service 'libvirtd-tcp.socket' do
   action [:enable, :start]
-  subscribes :restart, 'cookbook_file[/etc/libvirt/libvirtd.conf]'
 end if node['platform_version'].to_i >= 8
 
 service 'libvirtd' do

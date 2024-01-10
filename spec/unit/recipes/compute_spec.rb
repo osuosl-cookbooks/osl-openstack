@@ -62,10 +62,6 @@ describe 'osl-openstack::compute' do
         end
         it { is_expected.to enable_service 'libvirtd-tcp.socket' }
         it { is_expected.to start_service 'libvirtd-tcp.socket' }
-        it do
-          expect(chef_run.service('libvirtd-tcp.socket')).to \
-            subscribe_to('cookbook_file[/etc/libvirt/libvirtd.conf]').on(:restart)
-        end
       end
       it { expect(chef_run.link('/usr/bin/qemu-system-x86_64')).to link_to('/usr/libexec/qemu-kvm') }
       it { is_expected.to create_cookbook_file '/etc/libvirt/libvirtd.conf' }
