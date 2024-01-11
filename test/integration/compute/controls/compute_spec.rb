@@ -12,6 +12,10 @@ control 'compute' do
     end
   end
 
+  describe user 'nova' do
+    its('shell') { should cmp '/bin/sh' }
+  end
+
   describe service 'libvirtd-tcp.socket' do
     it { should be_enabled }
     it { should be_running }
