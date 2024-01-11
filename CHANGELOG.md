@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+12.0.7 (2024-01-11)
+-------------------
+- Set nova user shell on compute nodes
+
 12.0.6 (2024-01-10)
 -------------------
 - Do not restart libvirtd-tcp.socket
