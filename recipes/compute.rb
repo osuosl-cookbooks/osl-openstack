@@ -71,6 +71,12 @@ end
 
 include_recipe 'osl-openstack::compute_common'
 
+# Modify shell so migrations work properly with ssh
+user 'nova' do
+  shell '/bin/sh'
+  action :modify
+end
+
 service 'openstack-nova-compute' do
   action [:enable, :start]
   subscribes :restart, 'template[/etc/nova/nova.conf]'

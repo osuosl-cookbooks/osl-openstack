@@ -70,6 +70,7 @@ describe 'osl-openstack::compute' do
       it { is_expected.to start_service 'libvirtd' }
       it { is_expected.to run_execute('Deleting default libvirt network').with(command: 'virsh net-destroy default') }
       it { is_expected.to include_recipe 'osl-openstack::compute_common' }
+      it { is_expected.to modify_user('nova').with(shell: '/bin/sh') }
       it { is_expected.to enable_service 'openstack-nova-compute' }
       it { is_expected.to start_service 'openstack-nova-compute' }
       it { expect(chef_run.service('openstack-nova-compute')).to subscribe_to('template[/etc/nova/nova.conf]').on(:restart) }
