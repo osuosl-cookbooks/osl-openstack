@@ -18,24 +18,7 @@ describe 'osl-openstack::identity' do
 
       describe 'osl_openstack_openrc' do
         it { is_expected.to add_osl_repos_openstack 'default' }
-        case pltfrm
-        when CENTOS_7
-          it do
-            is_expected.to install_package(
-              %w(
-                python
-                python-devel
-                python-libs
-                tkinter
-                yum-plugin-versionlock
-              )
-            )
-          end
-          it { is_expected.to run_execute 'downgrade to python-2.7.5-93.el7_9' }
-          it { is_expected.to install_package 'python-openstackclient' }
-        when ALMA_8
-          it { is_expected.to install_package 'python3-openstackclient' }
-        end
+        it { is_expected.to install_package 'python3-openstackclient' }
 
         context 'versionlock set' do
           cached(:chef_run) do
@@ -47,13 +30,6 @@ describe 'osl-openstack::identity' do
           before do
             allow(File).to receive(:readlines).and_call_original
             allow(File).to receive(:readlines).with('/etc/yum/pluginconf.d/versionlock.list').and_return(%w(python))
-          end
-
-          case pltfrm
-          when CENTOS_7
-            it { is_expected.to nothing_execute 'downgrade to python-2.7.5-93.el7_9' }
-          when ALMA_8
-            it { is_expected.to_not nothing_execute 'downgrade to python-2.7.5-93.el7_9' }
           end
         end
       end

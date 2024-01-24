@@ -77,46 +77,24 @@ describe 'osl-openstack::telemetry_controller' do
           subscribe_to('template[/etc/ceilometer/ceilometer.conf]').on(:restart)
       end
       it { is_expected.to install_package 'patch' }
-      case pltfrm
-      when CENTOS_7
-        it do
-          is_expected.to run_execute('patch -p1 < /var/chef/cache/ceilometer-prometheus1.patch').with(
-            cwd: '/usr/lib/python2.7/site-packages'
-          )
-        end
-        it do
-          is_expected.to run_execute('patch -p1 < /var/chef/cache/ceilometer-prometheus2.patch').with(
-            cwd: '/usr/lib/python2.7/site-packages'
-          )
-        end
-      when ALMA_8
-        it do
-          is_expected.to run_execute('patch -p1 < /var/chef/cache/ceilometer-prometheus1.patch').with(
-            cwd: '/usr/lib/python3.6/site-packages'
-          )
-        end
-        it do
-          is_expected.to run_execute('patch -p1 < /var/chef/cache/ceilometer-prometheus2.patch').with(
-            cwd: '/usr/lib/python3.6/site-packages'
-          )
-        end
+      it do
+        is_expected.to run_execute('patch -p1 < /var/chef/cache/ceilometer-prometheus1.patch').with(
+          cwd: '/usr/lib/python3.6/site-packages'
+        )
+      end
+      it do
+        is_expected.to run_execute('patch -p1 < /var/chef/cache/ceilometer-prometheus2.patch').with(
+          cwd: '/usr/lib/python3.6/site-packages'
+        )
       end
 
       context 'already patched' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm).converge(described_recipe)
         end
-        case pltfrm
-        when CENTOS_7
-          before do
-            stub_command('grep -q curated_sname /usr/lib/python2.7/site-packages/ceilometer/publisher/prometheus.py').and_return(true)
-            stub_command('grep -q s.project_id /usr/lib/python2.7/site-packages/ceilometer/publisher/prometheus.py').and_return(true)
-          end
-        when ALMA_8
-          before do
-            stub_command('grep -q curated_sname /usr/lib/python3.6/site-packages/ceilometer/publisher/prometheus.py').and_return(true)
-            stub_command('grep -q s.project_id /usr/lib/python3.6/site-packages/ceilometer/publisher/prometheus.py').and_return(true)
-          end
+        before do
+          stub_command('grep -q curated_sname /usr/lib/python3.6/site-packages/ceilometer/publisher/prometheus.py').and_return(true)
+          stub_command('grep -q s.project_id /usr/lib/python3.6/site-packages/ceilometer/publisher/prometheus.py').and_return(true)
         end
         it { is_expected.to_not run_execute('patch -p1 < /var/chef/cache/ceilometer-prometheus1.patch') }
         it { is_expected.to_not run_execute('patch -p1 < /var/chef/cache/ceilometer-prometheus2.patch') }

@@ -1,5 +1,5 @@
 prometheus_endpoint = input('prometheus_endpoint')
-python_ver = os.release.to_i == 7 ? 'python2.7' : 'python3.6'
+python_ver = 'python3.6'
 
 control 'telemetry-controller' do
   %w(

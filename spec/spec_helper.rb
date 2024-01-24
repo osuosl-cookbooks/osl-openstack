@@ -8,16 +8,8 @@ ALMA_8 = {
   log_level: :warn,
 }.freeze
 
-CENTOS_7 = {
-  platform: 'centos',
-  version: '7',
-  file_cache_path: '/var/chef/cache',
-  log_level: :warn,
-}.freeze
-
 ALL_PLATFORMS = [
   ALMA_8,
-  CENTOS_7,
 ].freeze
 
 shared_context 'common_stubs' do

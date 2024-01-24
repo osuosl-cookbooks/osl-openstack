@@ -1,5 +1,3 @@
-os_release = os.release.to_i
-
 control 'compute' do
   %w(
     libvirt-guests
@@ -19,7 +17,7 @@ control 'compute' do
   describe service 'libvirtd-tcp.socket' do
     it { should be_enabled }
     it { should be_running }
-  end if os_release >= 8
+  end
 
   describe service 'libvirtd' do
     it { should be_enabled }
@@ -47,32 +45,17 @@ control 'compute' do
   end
 
   os_pkgs =
-   case os_release
-   when 7
-     %w(
-       device-mapper
-       device-mapper-multipath
-       libguestfs-rescue
-       libguestfs-tools
-       libvirt
-       openstack-nova-compute
-       python-libguestfs
-       sg3_utils
-       sysfsutils
-     )
-   when 8
-     %w(
-       device-mapper
-       device-mapper-multipath
-       libguestfs-rescue
-       libguestfs-tools
-       libvirt
-       openstack-nova-compute
-       python3-libguestfs
-       sg3_utils
-       sysfsutils
-     )
-   end
+    %w(
+      device-mapper
+      device-mapper-multipath
+      libguestfs-rescue
+      libguestfs-tools
+      libvirt
+      openstack-nova-compute
+      python3-libguestfs
+      sg3_utils
+      sysfsutils
+    )
 
   os_pkgs.each do |p|
     describe package p do
