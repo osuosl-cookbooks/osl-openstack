@@ -15,7 +15,7 @@ verifier:
     - name: controller
       backend: ssh
       hosts_output: controller
-      user: centos
+      user: almalinux
       profile_locations:
         - test/integration/block_storage_controller
         - test/integration/compute_controller
@@ -31,7 +31,7 @@ verifier:
     - name: compute
       backend: ssh
       hosts_output: compute
-      user: centos
+      user: almalinux
       profile_locations:
         - test/integration/compute
         - test/integration/telemetry_compute
@@ -40,12 +40,7 @@ verifier:
       sudo: true
 
 platforms:
-  - name: centos-7
   - name: almalinux-8
-    driver:
-      variables:
-        os_image: "AlmaLinux 8"
-        ssh_user_name: "almalinux"
     verifier:
       systems:
         - name: controller

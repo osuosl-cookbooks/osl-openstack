@@ -36,8 +36,6 @@ module OSLOpenstack
 
       def openstack_python_bin
         case node['platform_version'].to_i
-        when 7
-          '/usr/bin/python2'
         when 8
           '/usr/bin/python3'
         end
@@ -45,8 +43,6 @@ module OSLOpenstack
 
       def openstack_python_lib
         case node['platform_version'].to_i
-        when 7
-          '/usr/lib/python2.7'
         when 8
           '/usr/lib/python3.6'
         end
@@ -54,8 +50,6 @@ module OSLOpenstack
 
       def openstack_client_pkg
         case node['platform_version'].to_i
-        when 7
-          'python-openstackclient'
         when 8
           'python3-openstackclient'
         end
@@ -63,16 +57,6 @@ module OSLOpenstack
 
       def openstack_compute_controller_pkgs
         case node['platform_version'].to_i
-        when 7
-          %w(
-            openstack-nova-api
-            openstack-nova-conductor
-            openstack-nova-console
-            openstack-nova-novncproxy
-            openstack-nova-scheduler
-            openstack-placement-api
-            python2-osc-placement
-          )
         when 8
           %w(
             openstack-nova-api
@@ -88,18 +72,6 @@ module OSLOpenstack
 
       def openstack_compute_pkgs
         case node['platform_version'].to_i
-        when 7
-          %w(
-            device-mapper
-            device-mapper-multipath
-            libguestfs-rescue
-            libguestfs-tools
-            libvirt
-            openstack-nova-compute
-            python-libguestfs
-            sg3_utils
-            sysfsutils
-          )
         when 8
           %w(
             device-mapper

@@ -1,5 +1,4 @@
 db_endpoint = input('db_endpoint')
-os_release = os.release.to_i
 
 control 'block-storage-controller' do
   describe package 'openstack-cinder' do
@@ -14,12 +13,7 @@ control 'block-storage-controller' do
   describe port 8776 do
     it { should be_listening }
     its('protocols') { should include 'tcp' }
-    case os_release
-    when 7
-      its('addresses') { should include '::' }
-    when 8
-      its('addresses') { should include '0.0.0.0' }
-    end
+    its('addresses') { should include '0.0.0.0' }
   end
 
   describe ini '/usr/share/cinder/cinder-dist.conf' do

@@ -58,7 +58,7 @@ end
 
 service 'libvirtd-tcp.socket' do
   action [:enable, :start]
-end if node['platform_version'].to_i >= 8
+end
 
 service 'libvirtd' do
   action [:enable, :start]
@@ -88,12 +88,6 @@ end
 
 case node['kernel']['machine']
 when 'ppc64le'
-  if node['platform_version'].to_i < 8
-    node.default['base']['grub']['cmdline'] << %w(kvm_cma_resv_ratio=15)
-    include_recipe 'yum-kernel-osuosl::install'
-    include_recipe 'base::grub'
-  end
-
   kernel_module 'kvm_pr' do
     action [:install, :load]
     only_if 'lscpu | grep "KVM"'
@@ -114,11 +108,6 @@ when 'ppc64le'
   service 'smt_off' do
     action [:enable, :start]
   end if node.read('cpu', 'cpu_model') =~ /POWER8/
-when 'aarch64'
-  if node['platform_version'].to_i < 8
-    include_recipe 'yum-kernel-osuosl::install'
-    include_recipe 'base::grub'
-  end
 when 'x86_64'
   kvm_module =
     if node.read('dmi', 'processor', 'manufacturer') == 'AMD'

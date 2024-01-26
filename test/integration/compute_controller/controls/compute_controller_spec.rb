@@ -1,5 +1,4 @@
 db_endpoint = input('db_endpoint')
-os_release = os.release.to_i
 
 control 'compute-controller' do
   %w(
@@ -32,12 +31,7 @@ control 'compute-controller' do
     describe port(p) do
       it { should be_listening }
       its('protocols') { should include 'tcp' }
-      case os_release
-      when 7
-        its('addresses') { should include '::' }
-      when 8
-        its('addresses') { should include '0.0.0.0' }
-      end
+      its('addresses') { should include '0.0.0.0' }
     end
   end
 

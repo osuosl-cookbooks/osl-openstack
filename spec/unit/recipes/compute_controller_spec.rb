@@ -60,31 +60,16 @@ describe 'osl-openstack::compute_controller' do
           )
         end
       end
-      case pltfrm
-      when CENTOS_7
-        it do
-          is_expected.to install_package %w(
-            openstack-nova-api
-            openstack-nova-conductor
-            openstack-nova-console
-            openstack-nova-novncproxy
-            openstack-nova-scheduler
-            openstack-placement-api
-            python2-osc-placement
-          )
-        end
-      when ALMA_8
-        it do
-          is_expected.to install_package %w(
-            openstack-nova-api
-            openstack-nova-conductor
-            openstack-nova-console
-            openstack-nova-novncproxy
-            openstack-nova-scheduler
-            openstack-placement-api
-            python3-osc-placement
-          )
-        end
+      it do
+        is_expected.to install_package %w(
+          openstack-nova-api
+          openstack-nova-conductor
+          openstack-nova-console
+          openstack-nova-novncproxy
+          openstack-nova-scheduler
+          openstack-placement-api
+          python3-osc-placement
+        )
       end
       it { is_expected.to delete_file('/etc/httpd/conf.d/00-placement-api.conf') }
       it do

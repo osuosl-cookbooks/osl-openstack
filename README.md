@@ -4,8 +4,8 @@ Cookbook for deploying OpenStack at the OSUOSL
 
 ## Supported Platforms
 
-- OpenStack Stein release
-- CentOS 7
+- OpenStack Train release
+- AlmaLinux 8
 
 # Multi-host test integration
 
@@ -52,8 +52,8 @@ manually. To see what their IP addresses are, just run ``terraform output`` whic
 
 ``` bash
 # You can run the following commands to login to each node
-$ ssh centos@$(terraform output controller)
-$ ssh centos@$(terraform output compute)
+$ ssh almalinux@$(terraform output controller)
+$ ssh almalinux@$(terraform output compute)
 
 # Or you can look at the IPs for all for all of the nodes at once
 $ terraform output
