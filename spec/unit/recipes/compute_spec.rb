@@ -14,7 +14,6 @@ describe 'osl-openstack::compute' do
       it { is_expected.to create_osl_openstack_client 'compute' }
       it { is_expected.to create_osl_openstack_openrc 'compute' }
       it { is_expected.to accept_osl_firewall_openstack 'compute' }
-      it { is_expected.to include_recipe 'yum-qemu-ev' }
       it do
         is_expected.to create_osl_ceph_config('default').with(
           client_options: [
@@ -51,6 +50,10 @@ describe 'osl-openstack::compute' do
       it { is_expected.to start_service 'libvirtd' }
       it { is_expected.to run_execute('Deleting default libvirt network').with(command: 'virsh net-destroy default') }
       it { is_expected.to include_recipe 'osl-openstack::compute_common' }
+      it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/force_raw_images = False/) }
+      it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/cpu_mode = none/) }
+      it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/disk_cachemodes = file=writeback/) }
+      it { is_expected.to_not include_recipe 'yum-kernel-osuosl::install' }
       it { is_expected.to modify_user('nova').with(shell: '/bin/sh') }
       it { is_expected.to enable_service 'openstack-nova-compute' }
       it { is_expected.to start_service 'openstack-nova-compute' }
@@ -165,11 +168,31 @@ describe 'osl-openstack::compute' do
           cached(:chef_run) do
             ChefSpec::SoloRunner.new(pltfrm) do |node|
               node.automatic['kernel']['machine'] = 'ppc64le'
-              node.automatic['cpu']['cpu_model'] = 'POWER8E (raw), altivec supported'
+              node.automatic['cpu']['model_name'] = 'POWER8E (raw), altivec supported'
             end.converge(described_recipe)
           end
           it { is_expected.to enable_service 'smt_off' }
           it { is_expected.to start_service 'smt_off' }
+        end
+
+        context 'power10' do
+          cached(:chef_run) do
+            ChefSpec::SoloRunner.new(pltfrm) do |node|
+              node.automatic['kernel']['machine'] = 'ppc64le'
+              node.automatic['cpu']['model_name'] = 'POWER10 (raw), altivec supported'
+              node.automatic['cpu']['hypervisor_vendor'] = 'pHyp'
+            end.converge(described_recipe)
+          end
+          it { is_expected.to include_recipe 'yum-kernel-osuosl::install' }
+          it { is_expected.to_not install_kernel_module('kvm_pr') }
+          it { is_expected.to_not load_kernel_module('kvm_pr') }
+          it { is_expected.to_not install_kernel_module('kvm_hv') }
+          it { is_expected.to_not load_kernel_module('kvm_hv') }
+          it { is_expected.to_not enable_service 'smt_off' }
+          it { is_expected.to_not start_service 'smt_off' }
+          it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/force_raw_images = False/) }
+          it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/cpu_mode = none/) }
+          it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/disk_cachemodes = file=writeback/) }
         end
       end
     end

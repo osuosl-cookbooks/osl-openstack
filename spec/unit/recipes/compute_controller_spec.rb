@@ -148,6 +148,7 @@ describe 'osl-openstack::compute_controller' do
               pci_alias: nil,
               pci_passthrough_whitelist: nil,
               placement_pass: 'placement',
+              power10: false,
               rbd_secret_uuid: '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8',
               rbd_user: 'cinder',
               service_pass: 'nova',

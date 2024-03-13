@@ -15,6 +15,9 @@ cpu_allocation_ratio = <%= @cpu_allocation_ratio %>
 disk_allocation_ratio = <%= @disk_allocation_ratio %>
 <% end -%>
 enabled_apis = osapi_compute,metadata
+<% if @power10 -%>
+force_raw_images = False
+<% end -%>
 instances_path = /var/lib/nova/instances
 instance_usage_audit_period = hour
 instance_usage_audit = True
@@ -60,6 +63,10 @@ username = nova
 www_authenticate_uri = https://<%= @auth_endpoint %>:5000/v3
 
 [libvirt]
+<% if @power10 -%>
+cpu_mode = none
+disk_cachemodes = file=writeback
+<% end -%>
 <% if node['kernel']['machine'] == 'x86_64' -%>
 cpu_model_extra_flags = VMX
 <% end -%>

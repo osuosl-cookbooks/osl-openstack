@@ -253,7 +253,6 @@ end
 shared_context 'compute_stubs' do
   before do
     stub_command('virsh net-list | grep -q default').and_return(true)
-    stub_command('lscpu | grep "KVM"').and_return(false)
     stub_command('virsh secret-list | grep 8102bb29-f48b-4f6e-81d7-4c59d80ec6b8')
     stub_command('virsh secret-get-value 8102bb29-f48b-4f6e-81d7-4c59d80ec6b8 | grep AQAjbr1aWv+aNBAAoGfqrwX9iSdNmtuvUkwGhA==')
   end

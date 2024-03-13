@@ -22,7 +22,6 @@ depends 'osl-prometheus'
 depends 'osl-repos'
 depends 'osl-resources'
 depends 'yum-kernel-osuosl'
-depends 'yum-qemu-ev'
 
 supports 'almalinux', '~> 8.0'
 

@@ -50,7 +50,6 @@ describe 'osl-openstack::block_storage_controller' do
         end
       end
       it { is_expected.to include_recipe 'osl-openstack::block_storage_common' }
-      it { is_expected.to include_recipe 'yum-qemu-ev' }
       it { is_expected.to install_package 'openstack-cinder' }
       it do
         is_expected.to edit_replace_or_add('log-dir controller').with(
