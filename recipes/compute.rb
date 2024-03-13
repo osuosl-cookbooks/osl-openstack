@@ -27,8 +27,6 @@ s = os_secrets
 c = s['compute']
 b = s['block-storage']
 
-include_recipe 'yum-qemu-ev'
-
 edit_resource(:osl_ceph_config, 'default') do
   client_options [
     'admin socket = /var/run/ceph/guests/$cluster-$type.$id.$pid.$cctid.asok',
@@ -88,14 +86,16 @@ end
 
 case node['kernel']['machine']
 when 'ppc64le'
+  include_recipe 'yum-kernel-osuosl::install' if openstack_power10?
+
   kernel_module 'kvm_pr' do
     action [:install, :load]
-    only_if 'lscpu | grep "KVM"'
+    only_if { node.read('cpu', 'hypervisor_vendor').to_s.match?(/KVM/) }
   end
 
   kernel_module 'kvm_hv' do
     action [:install, :load]
-    not_if 'lscpu | grep "KVM"'
+    not_if { node.read('cpu', 'hypervisor_vendor').to_s.match?(/KVM|pHyp/) }
   end
 
   # TODO: revert back to stock file now that we can use the systemd unit
@@ -107,7 +107,7 @@ when 'ppc64le'
   # (unit is part of the powerpc-utils package)
   service 'smt_off' do
     action [:enable, :start]
-  end if node.read('cpu', 'cpu_model') =~ /POWER8/
+  end if openstack_power8?
 when 'x86_64'
   kvm_module =
     if node.read('dmi', 'processor', 'manufacturer') == 'AMD'

@@ -1,7 +1,6 @@
 Metrics/BlockNesting:
   Max: 4
 AllCops:
-  TargetChefVersion: 16.latest
   Exclude:
     - "cookbooks/**/*"
 Chef/Modernize/FoodcriticComments:

@@ -62,6 +62,7 @@ control 'compute-controller' do
     its('DEFAULT.compute_monitors') { should cmp 'cpu.virt_driver' }
     its('DEFAULT.cpu_allocation_ratio') { should_not cmp '' }
     its('DEFAULT.disk_allocation_ratio') { should cmp '1.5' }
+    its('DEFAULT.force_raw_images') { should cmp 'true' }
     its('DEFAULT.instance_usage_audit') { should cmp 'True' }
     its('DEFAULT.instance_usage_audit_period') { should cmp 'hour' }
     its('DEFAULT.resume_guests_state_on_host_boot') { should cmp 'True' }
@@ -80,7 +81,6 @@ control 'compute-controller' do
     its('keystone_authtoken.www_authenticate_uri') { should cmp 'https://controller.example.com:5000/v3' }
     its('libvirt.cpu_model_extra_flags') { should cmp 'VMX' }
     its('libvirt.disk_cachemodes') { should cmp 'network=writeback' }
-    its('libvirt.force_raw_images') { should cmp 'true' }
     its('libvirt.hw_disk_discard') { should cmp 'unmap' }
     its('libvirt.images_rbd_ceph_conf') { should cmp '/etc/ceph/ceph.conf' }
     its('libvirt.images_rbd_pool') { should cmp 'vms' }

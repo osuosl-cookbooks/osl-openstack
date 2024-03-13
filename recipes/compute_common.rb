@@ -60,6 +60,7 @@ template '/etc/nova/nova.conf' do
     placement_pass: s['placement']['service']['pass'],
     pci_alias: openstack_pci_alias,
     pci_passthrough_whitelist: openstack_pci_passthrough_whitelist,
+    power10: openstack_power10?,
     rbd_secret_uuid: ceph_fsid,
     rbd_user: c['ceph']['rbd_user'],
     service_pass: c['service']['pass'],

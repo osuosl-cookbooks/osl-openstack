@@ -160,6 +160,14 @@ module OSLOpenstack
         int_mappings
       end
 
+      def openstack_power8?
+        node.read('cpu', 'model_name').to_s.match?(/POWER8/)
+      end
+
+      def openstack_power10?
+        node.read('cpu', 'model_name').to_s.match?(/POWER10/)
+      end
+
       # OpenStack API helpers
       def os_conn
         s = os_secrets

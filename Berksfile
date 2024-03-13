@@ -22,7 +22,6 @@ cookbook 'osl-selinux', git: 'git@github.com:osuosl-cookbooks/osl-selinux'
 cookbook 'osl-syslog', git: 'git@github.com:osuosl-cookbooks/osl-syslog'
 cookbook 'resource_from_hash', git: 'git@github.com:osuosl-cookbooks/resource_from_hash'
 cookbook 'yum-kernel-osuosl', git: 'git@github.com:osuosl-cookbooks/yum-kernel-osuosl'
-cookbook 'yum-qemu-ev', git: 'git@github.com:osuosl-cookbooks/yum-qemu-ev'
 
 cookbook 'openstack_test', path: 'test/cookbooks/openstack_test'
 
