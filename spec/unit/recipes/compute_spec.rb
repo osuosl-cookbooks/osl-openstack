@@ -190,7 +190,7 @@ describe 'osl-openstack::compute' do
           it { is_expected.to_not load_kernel_module('kvm_hv') }
           it { is_expected.to_not enable_service 'smt_off' }
           it { is_expected.to_not start_service 'smt_off' }
-          it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/force_raw_images = False/) }
+          it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/force_raw_images = false/) }
           it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/cpu_mode = none/) }
           it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/disk_cachemodes = file=writeback/) }
         end

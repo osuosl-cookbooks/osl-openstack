@@ -16,7 +16,9 @@ disk_allocation_ratio = <%= @disk_allocation_ratio %>
 <% end -%>
 enabled_apis = osapi_compute,metadata
 <% if @power10 -%>
-force_raw_images = False
+force_raw_images = false
+<% else -%>
+force_raw_images = true
 <% end -%>
 instances_path = /var/lib/nova/instances
 instance_usage_audit_period = hour
@@ -75,7 +77,6 @@ rbd_user = <%= @rbd_user %>
 virt_type = kvm
 <% unless @local_storage -%>
 disk_cachemodes = network=writeback
-force_raw_images = true
 hw_disk_discard = unmap
 images_rbd_ceph_conf = /etc/ceph/ceph.conf
 images_rbd_pool = <%= @images_rbd_pool %>
