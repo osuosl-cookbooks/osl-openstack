@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+12.2.0 (2024-03-13)
+-------------------
+- Add support for POWER10
+
 12.1.0 (2024-01-26)
 -------------------
 - Remove support for CentOS 7
