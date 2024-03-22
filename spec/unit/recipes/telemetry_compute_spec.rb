@@ -20,6 +20,14 @@ describe 'osl-openstack::telemetry_compute' do
         expect(chef_run.service('openstack-ceilometer-compute')).to \
           subscribe_to('template[/etc/ceilometer/ceilometer.conf]').on(:restart)
       end
+      it do
+        expect(chef_run.service('openstack-ceilometer-compute')).to \
+          subscribe_to('template[/etc/ceilometer/pipeline.yaml]').on(:restart)
+      end
+      it do
+        expect(chef_run.service('openstack-ceilometer-compute')).to \
+          subscribe_to('cookbook_file[/etc/ceilometer/polling.yaml]').on(:restart)
+      end
     end
   end
 end
