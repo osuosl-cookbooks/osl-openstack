@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+12.2.1 (2024-03-22)
+-------------------
+- Add missing polling.yaml file to fix metrics
+
 12.2.0 (2024-03-13)
 -------------------
 - Add support for POWER10
