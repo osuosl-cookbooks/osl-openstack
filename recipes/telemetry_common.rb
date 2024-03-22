@@ -35,3 +35,18 @@ template '/etc/ceilometer/ceilometer.conf' do
     transport_url: openstack_transport_url
   )
 end
+
+template '/etc/ceilometer/pipeline.yaml' do
+  owner 'ceilometer'
+  group 'ceilometer'
+  mode '0640'
+  variables(
+    publishers: t['pipeline']['publishers']
+  )
+end
+
+cookbook_file '/etc/ceilometer/polling.yaml' do
+  owner 'ceilometer'
+  group 'ceilometer'
+  mode '0640'
+end

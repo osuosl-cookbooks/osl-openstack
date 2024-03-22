@@ -28,4 +28,6 @@ package 'openstack-ceilometer-compute'
 service 'openstack-ceilometer-compute' do
   action [:enable, :start]
   subscribes :restart, 'template[/etc/ceilometer/ceilometer.conf]'
+  subscribes :restart, 'template[/etc/ceilometer/pipeline.yaml]'
+  subscribes :restart, 'cookbook_file[/etc/ceilometer/polling.yaml]'
 end

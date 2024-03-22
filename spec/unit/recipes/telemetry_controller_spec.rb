@@ -57,6 +57,13 @@ describe 'osl-openstack::telemetry_controller' do
         )
       end
       it do
+        is_expected.to create_cookbook_file('/etc/ceilometer/polling.yaml').with(
+          owner: 'ceilometer',
+          group: 'ceilometer',
+          mode: '0640'
+        )
+      end
+      it do
         expect(chef_run.template('/etc/ceilometer/pipeline.yaml')).to \
           notify('service[openstack-ceilometer-notification]').to(:restart)
       end
@@ -73,8 +80,24 @@ describe 'osl-openstack::telemetry_controller' do
           subscribe_to('template[/etc/ceilometer/ceilometer.conf]').on(:restart)
       end
       it do
+        expect(chef_run.service('openstack-ceilometer-central')).to \
+          subscribe_to('template[/etc/ceilometer/pipeline.yaml]').on(:restart)
+      end
+      it do
+        expect(chef_run.service('openstack-ceilometer-central')).to \
+          subscribe_to('cookbook_file[/etc/ceilometer/polling.yaml]').on(:restart)
+      end
+      it do
         expect(chef_run.service('openstack-ceilometer-notification')).to \
           subscribe_to('template[/etc/ceilometer/ceilometer.conf]').on(:restart)
+      end
+      it do
+        expect(chef_run.service('openstack-ceilometer-notification')).to \
+          subscribe_to('template[/etc/ceilometer/pipeline.yaml]').on(:restart)
+      end
+      it do
+        expect(chef_run.service('openstack-ceilometer-notification')).to \
+          subscribe_to('cookbook_file[/etc/ceilometer/polling.yaml]').on(:restart)
       end
       it { is_expected.to install_package 'patch' }
       it do

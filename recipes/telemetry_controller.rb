@@ -39,17 +39,6 @@ package %w(
 
 include_recipe 'osl-openstack::telemetry_common'
 
-template '/etc/ceilometer/pipeline.yaml' do
-  owner 'ceilometer'
-  group 'ceilometer'
-  mode '0640'
-  variables(
-    publishers: t['pipeline']['publishers']
-  )
-  notifies :restart, 'service[openstack-ceilometer-notification]'
-  notifies :restart, 'service[openstack-ceilometer-central]'
-end
-
 %w(
   openstack-ceilometer-central
   openstack-ceilometer-notification
@@ -57,6 +46,8 @@ end
   service srv do
     action [:enable, :start]
     subscribes :restart, 'template[/etc/ceilometer/ceilometer.conf]'
+    subscribes :restart, 'template[/etc/ceilometer/pipeline.yaml]'
+    subscribes :restart, 'cookbook_file[/etc/ceilometer/polling.yaml]'
   end
 end
 
