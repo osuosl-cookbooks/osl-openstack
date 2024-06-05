@@ -21,7 +21,7 @@ action :create do
 
   yum_repository 'centos-rabbitmq' do
     description 'CentOS $releasever - RabbitMQ'
-    baseurl 'https://centos.osuosl.org/$releasever-stream/messaging/$basearch/rabbitmq-38'
+    baseurl 'https://ftp.osuosl.org/pub/osl/vault/$releasever-stream/messaging/$basearch/rabbitmq-38'
     gpgkey 'file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-SIG-Messaging'
   end
 
