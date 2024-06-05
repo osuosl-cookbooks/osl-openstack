@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+12.2.2 (2024-06-05)
+-------------------
+- Update messaging repo to local due to CentOS Stream 8 EOL
+
 12.2.1 (2024-03-22)
 -------------------
 - Add missing polling.yaml file to fix metrics
