@@ -23,7 +23,6 @@ osl_openstack_openrc 'identity'
 
 node.default['osl-apache']['listen'] = %w(80 443)
 
-include_recipe 'certificate::wildcard'
 include_recipe 'osl-memcached'
 include_recipe 'osl-apache'
 include_recipe 'osl-apache::mod_wsgi'
@@ -32,6 +31,14 @@ include_recipe 'osl-apache::mod_ssl'
 package 'openstack-keystone'
 
 s = os_secrets
+
+certificate_manage 'wildcard-identity' do
+  search_id 'wildcard'
+  cert_file 'wildcard.pem'
+  key_file 'wildcard.key'
+  chain_file 'wildcard-bundle.crt'
+  notifies :reload, 'apache2_service[osuosl]'
+end
 
 endpoint = s['identity']['endpoint']
 admin_pass = s['users']['admin']

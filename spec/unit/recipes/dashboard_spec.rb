@@ -15,7 +15,6 @@ describe 'osl-openstack::dashboard' do
       it { is_expected.to create_osl_openstack_client 'dashboard' }
       it { is_expected.to accept_osl_firewall_openstack 'dashboard' }
       %w(
-        certificate::wildcard
         osl-memcached
         osl-apache
         osl-apache::mod_wsgi
@@ -24,6 +23,18 @@ describe 'osl-openstack::dashboard' do
         it { is_expected.to include_recipe r }
       end
       it { is_expected.to install_package 'openstack-dashboard' }
+      it do
+        is_expected.to create_certificate_manage('wildcard-dashboard').with(
+          search_id: 'wildcard',
+          cert_file: 'wildcard.pem',
+          key_file: 'wildcard.key',
+          chain_file: 'wildcard-bundle.crt'
+        )
+      end
+      it do
+        expect(chef_run.certificate_manage('wildcard-dashboard')).to \
+          notify('apache2_service[osuosl]').to(:reload)
+      end
       it { is_expected.to delete_file '/etc/httpd/conf.d/openstack-dashboard.conf' }
       it do
         expect(chef_run.file('/etc/httpd/conf.d/openstack-dashboard.conf')).to \
