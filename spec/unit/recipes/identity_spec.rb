@@ -48,7 +48,6 @@ describe 'osl-openstack::identity' do
       end
 
       %w(
-        certificate::wildcard
         osl-memcached
         osl-apache
         osl-apache::mod_wsgi
@@ -57,6 +56,18 @@ describe 'osl-openstack::identity' do
         it { is_expected.to include_recipe r }
       end
       it { is_expected.to install_package 'openstack-keystone' }
+      it do
+        is_expected.to create_certificate_manage('wildcard-identity').with(
+          search_id: 'wildcard',
+          cert_file: 'wildcard.pem',
+          key_file: 'wildcard.key',
+          chain_file: 'wildcard-bundle.crt'
+        )
+      end
+      it do
+        expect(chef_run.certificate_manage('wildcard-identity')).to \
+          notify('apache2_service[osuosl]').to(:reload)
+      end
       it do
         is_expected.to create_template('/etc/keystone/keystone.conf').with(
           owner: 'root',

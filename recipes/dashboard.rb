@@ -24,13 +24,20 @@ osl_openstack_openrc 'dashboard'
 
 node.default['osl-apache']['listen'] = %w(80 443)
 
-include_recipe 'certificate::wildcard'
 include_recipe 'osl-memcached'
 include_recipe 'osl-apache'
 include_recipe 'osl-apache::mod_wsgi'
 include_recipe 'osl-apache::mod_ssl'
 
 package 'openstack-dashboard'
+
+certificate_manage 'wildcard-dashboard' do
+  search_id 'wildcard'
+  cert_file 'wildcard.pem'
+  key_file 'wildcard.key'
+  chain_file 'wildcard-bundle.crt'
+  notifies :reload, 'apache2_service[osuosl]'
+end
 
 file '/etc/httpd/conf.d/openstack-dashboard.conf' do
   action :delete
