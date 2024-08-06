@@ -23,7 +23,11 @@ force_raw_images = true
 instances_path = /var/lib/nova/instances
 instance_usage_audit_period = hour
 instance_usage_audit = True
+<% if @ram_allocation_ratio -%>
+ram_allocation_ratio = <%= @ram_allocation_ratio %>
+<% else -%>
 ram_allocation_ratio = 1
+<% end -%>
 resume_guests_state_on_host_boot = True
 transport_url = <%= @transport_url %>
 

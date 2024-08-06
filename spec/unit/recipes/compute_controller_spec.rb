@@ -149,6 +149,7 @@ describe 'osl-openstack::compute_controller' do
               pci_passthrough_whitelist: nil,
               placement_pass: 'placement',
               power10: false,
+              ram_allocation_ratio: nil,
               rbd_secret_uuid: '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8',
               rbd_user: 'cinder',
               service_pass: 'nova',
@@ -162,6 +163,7 @@ describe 'osl-openstack::compute_controller' do
         is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/^passthrough_whitelist =/)
       end
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content('images_rbd_pool = vms') }
+      it { is_expected.to render_file('/etc/nova/nova.conf').with_content('ram_allocation_ratio = 1') }
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content('server_listen = 0.0.0.0') }
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content('server_proxyclient_address = 10.0.0.2') }
       it do

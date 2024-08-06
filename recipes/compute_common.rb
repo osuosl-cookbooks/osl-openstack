@@ -61,6 +61,7 @@ template '/etc/nova/nova.conf' do
     pci_alias: openstack_pci_alias,
     pci_passthrough_whitelist: openstack_pci_passthrough_whitelist,
     power10: openstack_power10?,
+    ram_allocation_ratio: c['ram_allocation_ratio'],
     rbd_secret_uuid: ceph_fsid,
     rbd_user: c['ceph']['rbd_user'],
     service_pass: c['service']['pass'],
