@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+12.2.4 (2024-08-06)
+-------------------
+- Add ability to set ram_allocation_ratio
+
 12.2.3 (2024-07-15)
 -------------------
 - Reload apache when the wildcard cert is updated
