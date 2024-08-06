@@ -61,6 +61,7 @@ control 'compute-controller' do
     its('DEFAULT.block_device_allocate_retries') { should cmp '120' }
     its('DEFAULT.compute_monitors') { should cmp 'cpu.virt_driver' }
     its('DEFAULT.cpu_allocation_ratio') { should_not cmp '' }
+    its('DEFAULT.ram_allocation_ratio') { should cmp '1' }
     its('DEFAULT.disk_allocation_ratio') { should cmp '1.5' }
     its('DEFAULT.force_raw_images') { should cmp 'true' }
     its('DEFAULT.instance_usage_audit') { should cmp 'True' }

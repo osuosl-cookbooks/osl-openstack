@@ -14,5 +14,5 @@ variable "network" {
     default = "backend"
 }
 variable "chef_version" {
-    default = "17"
+    default = "18"
 }
