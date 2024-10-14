@@ -149,6 +149,19 @@ describe 'osl-openstack::compute' do
         it { is_expected.to install_kernel_module('kvm_amd').with(options: %w(nested=1)) }
       end
 
+      it { is_expected.to_not add_osl_repos_centos_kmods 'osl-openstack' }
+      it { is_expected.to_not upgrade_package 'kernel' }
+
+      context 'pci passthrough' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm) do |node|
+            node.automatic['fqdn'] = 'node1.example.com'
+          end.converge(described_recipe)
+        end
+        it { is_expected.to add_osl_repos_centos_kmods('osl-openstack').with(kernel_6_6: true) }
+        it { is_expected.to upgrade_package 'kernel' }
+      end
+
       context 'ppc64le' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm) do |node|

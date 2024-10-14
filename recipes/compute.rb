@@ -84,6 +84,17 @@ service 'libvirt-guests' do
   action [:enable, :start]
 end
 
+# Newer kernels are needed on AlmaLinux 8 to get pci-passthrough to work
+if openstack_pci_alias
+  osl_repos_centos_kmods 'osl-openstack' do
+    kernel_6_6 true
+  end
+
+  package 'kernel' do
+    action :upgrade
+  end
+end
+
 case node['kernel']['machine']
 when 'ppc64le'
   include_recipe 'yum-kernel-osuosl::install' if openstack_power10?
