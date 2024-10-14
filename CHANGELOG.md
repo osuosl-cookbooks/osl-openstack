@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+12.2.5 (2024-10-14)
+-------------------
+- Install kernel-6.6 on nodes using pci-passthrough
+
 12.2.4 (2024-08-06)
 -------------------
 - Add ability to set ram_allocation_ratio
