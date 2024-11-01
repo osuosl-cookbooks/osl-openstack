@@ -19,9 +19,10 @@
 
 osl_repos_openstack 'image'
 osl_openstack_client 'image'
+osl_openstack_openrc 'image'
 osl_firewall_openstack 'image'
 
-include_recipe 'osl-ceph'
+include_recipe 'osl-ceph' unless openstack_local_storage_image
 
 s = os_secrets
 i = s['image']
@@ -49,7 +50,7 @@ end
     service_name 'glance'
     interface int
     url "http://#{i['endpoint']}:9292"
-    region 'RegionOne'
+    region i['region']
   end
 end
 
@@ -78,9 +79,10 @@ template '/etc/glance/glance-api.conf' do
   variables(
     auth_endpoint: auth_endpoint,
     database_connection: openstack_database_connection('image'),
+    local_storage: openstack_local_storage_image,
     memcached_endpoint: s['memcached']['endpoint'],
-    rbd_store_pool: i['ceph']['rbd_store_pool'],
-    rbd_store_user: i['ceph']['rbd_store_user'],
+    rbd_store_pool: safe_dig(i, 'ceph', 'rbd_store_pool'),
+    rbd_store_user: safe_dig(i, 'ceph', 'rbd_store_user'),
     service_pass: i['service']['pass'],
     transport_url: openstack_transport_url
   )
@@ -101,13 +103,13 @@ group 'ceph-image' do
   members %w(glance)
   action :modify
   notifies :restart, 'service[openstack-glance-api]', :immediately
-end
+end unless openstack_local_storage_image
 
 osl_ceph_keyring i['ceph']['rbd_store_user'] do
   key i['ceph']['image_token']
   not_if { i['ceph']['image_token'].nil? }
   notifies :restart, 'service[openstack-glance-api]'
-end
+end unless openstack_local_storage_image
 
 %w(
   openstack-glance-api

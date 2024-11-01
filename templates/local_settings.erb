@@ -28,6 +28,13 @@ CACHES = {
     ]
   }
 }
+<% if @regions -%>
+DEFAULT_SERVICE_REGIONS = [
+<% @regions.each do |region, keystone_url| -%>
+  ('<%= keystone_url %>', '<%= region %>'),
+<% end -%>
+]
+<% end -%>
 OPENSTACK_KEYSTONE_BACKEND = {
   'name': 'native',
   'can_edit_user': True,

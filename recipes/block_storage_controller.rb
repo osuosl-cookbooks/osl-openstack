@@ -53,7 +53,7 @@ end
     service_name 'cinderv2'
     interface int
     url "http://#{b['endpoint']}:8776/v2/%(project_id)s"
-    region 'RegionOne'
+    region b['region']
   end
 
   osl_openstack_endpoint "volumev3-#{int}" do
@@ -61,7 +61,7 @@ end
     service_name 'cinderv3'
     interface int
     url "http://#{b['endpoint']}:8776/v3/%(project_id)s"
-    region 'RegionOne'
+    region b['region']
   end
 end
 

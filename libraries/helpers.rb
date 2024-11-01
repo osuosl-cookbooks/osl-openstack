@@ -138,8 +138,26 @@ module OSLOpenstack
         end
       end
 
-      def openstack_local_storage
+      def openstack_local_storage_compute
         local_storage = os_secrets['compute']['local_storage']
+        if local_storage
+          local_storage[node['fqdn']] || false
+        else
+          false
+        end
+      end
+
+      def openstack_cinder_disabled?
+        cinder_disabled = os_secrets['compute']['cinder_disabled']
+        if cinder_disabled
+          cinder_disabled[node['fqdn']] || false
+        else
+          false
+        end
+      end
+
+      def openstack_local_storage_image
+        local_storage = os_secrets['image']['local_storage']
         if local_storage
           local_storage[node['fqdn']] || false
         else
@@ -209,7 +227,7 @@ module OSLOpenstack
         service = os_service(new_resource)
         raise "service_name #{new_resource.service_name} not found" if service.nil?
         os_conn.endpoints.find do |e|
-          e.service_id == service.id && e.interface == new_resource.interface
+          e.service_id == service.id && e.interface == new_resource.interface && e.region == new_resource.region
         end
       end
 
@@ -245,6 +263,14 @@ module OSLOpenstack
         raise "role #{new_resource.role_name} not found" if role.nil?
         raise "user #{new_resource.user_name} not found" if user.nil?
         user.check_role role.id
+      end
+
+      private
+
+      def safe_dig(hash, *keys)
+        keys.reduce(hash) do |acc, key|
+          acc.is_a?(Hash) ? acc[key] : nil
+        end
       end
     end
   end

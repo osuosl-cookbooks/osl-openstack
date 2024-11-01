@@ -1,3 +1,17 @@
+module "region2" {
+    chef_version = var.chef_version
+    chef_zero_id = openstack_compute_instance_v2.chef_zero.id
+    chef_zero_ip = openstack_compute_instance_v2.chef_zero.network.0.fixed_ip_v4
+    count  = var.region2 ? 1: 0
+    network_id = data.openstack_networking_network_v2.network.id
+    openstack_network_id = openstack_networking_network_v2.openstack_network.id
+    os_image = var.os_image
+    source = "./modules/region2"
+    ssh_key_name = var.ssh_key_name
+    ssh_user_name = var.ssh_user_name
+    subnet_id = openstack_networking_subnet_v2.openstack_subnet.id
+}
+
 resource "openstack_networking_network_v2" "openstack_network" {
     name            = "openstack_network"
     admin_state_up  = "true"
@@ -18,12 +32,12 @@ resource "openstack_networking_port_v2" "chef_zero" {
 
 resource "openstack_compute_instance_v2" "chef_zero" {
     name            = "chef-zero"
-    image_name      = var.centos_atomic_image
-    flavor_name     = "m1.small"
+    image_name      = var.docker_image
+    flavor_name     = "m1.medium"
     key_pair        = var.ssh_key_name
     security_groups = ["default"]
     connection {
-        user = "centos"
+        user = var.ssh_user_name
         host = openstack_networking_port_v2.chef_zero.all_fixed_ips.0
     }
     network {

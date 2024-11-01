@@ -69,6 +69,30 @@ platforms:
           attrs:
             - test/integration/multi-node/compute.yml
           sudo: true
+<% if ENV['TF_VAR_region2'] == '1' %>
+        - name: controller_region2
+          backend: ssh
+          hosts_output: controller_region2
+          user: almalinux
+          profile_locations:
+            - test/integration/compute_controller
+            - test/integration/image
+            - test/integration/network
+            - test/integration/ops_messaging
+          attrs:
+            - test/integration/multi-node/controller_region2.yml
+          sudo: true
+        - name: compute_region3
+          backend: ssh
+          hosts_output: compute_region2
+          user: almalinux
+          profile_locations:
+            - test/integration/compute
+            - test/integration/telemetry_compute
+          attrs:
+            - test/integration/multi-node/compute_region2.yml
+          sudo: true
+<% end %>
 
 suites:
   - name: multi-node

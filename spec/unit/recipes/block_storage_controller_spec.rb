@@ -78,6 +78,7 @@ describe 'osl-openstack::block_storage_controller' do
               memcached_endpoint: 'controller.example.com:11211',
               rbd_secret_uuid: '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8',
               rbd_user: 'cinder',
+              region: 'RegionOne',
               service_pass: 'cinder',
               transport_url: 'rabbit://openstack:openstack@controller.example.com:5672',
           }

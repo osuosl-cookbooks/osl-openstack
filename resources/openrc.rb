@@ -7,13 +7,15 @@ action :create do
   s = os_secrets
   endpoint = s['identity']['endpoint']
   admin_pass = s['users']['admin']
+  region = s['openrc']['region']
 
   template '/root/openrc' do
     mode '0750'
     sensitive true
     variables(
       endpoint: endpoint,
-      pass: admin_pass
+      pass: admin_pass,
+      region: region
     )
   end
 end

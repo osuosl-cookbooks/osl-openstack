@@ -1,5 +1,6 @@
 controller = input('controller')
 db_endpoint = input('db_endpoint')
+controller_endpoint = input('controller_endpoint')
 physical_interface_mappings = input('physical_interface_mappings')
 
 control 'network' do
@@ -55,9 +56,9 @@ control 'network' do
       its('nova.password') { should cmp 'nova' }
     end
     its('DEFAULT.auth_strategy') { should cmp 'keystone' }
-    its('DEFAULT.transport_url') { should cmp 'rabbit://openstack:openstack@controller.example.com:5672' }
+    its('DEFAULT.transport_url') { should cmp "rabbit://openstack:openstack@#{controller_endpoint}:5672" }
     its('keystone_authtoken.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
-    its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
+    its('keystone_authtoken.memcached_servers') { should cmp "#{controller_endpoint}:11211" }
     its('keystone_authtoken.password') { should cmp 'neutron' }
     its('keystone_authtoken.service_token_roles_required') { should cmp 'true' }
     its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
@@ -75,11 +76,11 @@ control 'network' do
   end if controller
 
   describe ini('/etc/neutron/metadata_agent.ini') do
-    its('DEFAULT.nova_metadata_host') { should cmp 'controller.example.com' }
+    its('DEFAULT.nova_metadata_host') { should cmp controller_endpoint }
     its('DEFAULT.metadata_proxy_shared_secret') { should cmp '2SJh0RuO67KpZ63z' }
     its('cache.backend') { should cmp 'dogpile.cache.memcached' }
     its('cache.enabled') { should cmp 'true' }
-    its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
+    its('cache.memcache_servers') { should cmp "#{controller_endpoint}:11211" }
   end if controller
 
   describe ini('/etc/neutron/metering_agent.ini') do

@@ -81,6 +81,7 @@ describe 'osl-openstack::orchestration' do
               endpoint: 'controller.example.com',
               heat_domain_admin: 'heat_domain_admin',
               memcached_endpoint: 'controller.example.com:11211',
+              region: 'RegionOne',
               service_pass: 'heat',
               transport_url: 'rabbit://openstack:openstack@controller.example.com:5672',
           }

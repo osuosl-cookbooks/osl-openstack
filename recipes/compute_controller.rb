@@ -63,7 +63,7 @@ end
     service_name 'placement'
     interface int
     url "http://#{p['endpoint']}:8778"
-    region 'RegionOne'
+    region c['region']
   end
 
   osl_openstack_endpoint "compute-#{int}" do
@@ -71,7 +71,7 @@ end
     service_name 'nova'
     interface int
     url "http://#{p['endpoint']}:8774/v2.1"
-    region 'RegionOne'
+    region c['region']
   end
 end
 

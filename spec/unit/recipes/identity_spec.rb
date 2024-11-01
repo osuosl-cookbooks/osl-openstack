@@ -42,6 +42,7 @@ describe 'osl-openstack::identity' do
             variables: {
               endpoint: 'controller.example.com',
               pass: 'admin',
+              region: 'RegionOne',
             }
           )
         end

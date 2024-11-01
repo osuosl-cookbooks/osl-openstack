@@ -41,9 +41,11 @@ connection = <%= @api_database_connection %>
 memcache_servers = <%= @memcached_endpoint %>
 enabled = true
 backend = dogpile.cache.memcached
+<% unless @cinder_disabled -%>
 
 [cinder]
-os_region_name = RegionOne
+os_region_name = <%= @region %>
+<% end -%>
 
 [database]
 connection = <%= @database_connection %>
@@ -76,8 +78,10 @@ disk_cachemodes = file=writeback
 <% if node['kernel']['machine'] == 'x86_64' -%>
 cpu_model_extra_flags = VMX
 <% end -%>
+<% unless @cinder_disabled -%>
 rbd_secret_uuid = <%= @rbd_secret_uuid %>
 rbd_user = <%= @rbd_user %>
+<% end -%>
 virt_type = kvm
 <% unless @local_storage -%>
 disk_cachemodes = network=writeback
@@ -99,7 +103,7 @@ metadata_proxy_shared_secret = <%= @metadata_proxy_shared_secret %>
 password = <%= @neutron_pass %>
 project_domain_name = Default
 project_name = service
-region_name = RegionOne
+region_name = <%= @region %>
 service_metadata_proxy = true
 user_domain_name = Default
 username = neutron
@@ -127,7 +131,7 @@ auth_url = https://<%= @auth_endpoint %>:5000/v3
 password = <%= @placement_pass %>
 project_domain_name = Default
 project_name = service
-region_name = RegionOne
+region_name = <%= @region %>
 user_domain_name = Default
 username = placement
 
