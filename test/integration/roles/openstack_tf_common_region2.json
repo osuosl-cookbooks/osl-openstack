@@ -1,0 +1,15 @@
+{
+    "chef_type": "role",
+    "default_attributes": {},
+    "description": "OpenStack Terraform Common Role (region2)",
+    "env_run_lists": {},
+    "json_class": "Chef::Role",
+    "name": "openstack_tf_common_region2",
+    "override_attributes": {},
+    "run_list": [
+      "role[openstack_tf_region2]",
+      "recipe[openstack_test::hosts_tf]",
+      "recipe[openstack_test::compute]",
+      "recipe[openstack_test::cacert]"
+    ]
+}

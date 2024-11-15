@@ -124,6 +124,7 @@ describe 'osl-openstack::compute_controller' do
               allow_resize_to_same_host: nil,
               api_database_connection: 'mysql+pymysql://nova_x86:nova@localhost:3306/nova_api_x86',
               auth_endpoint: 'controller.example.com',
+              cinder_disabled: false,
               compute: false,
               cpu_allocation_ratio: nil,
               database_connection: 'mysql+pymysql://nova_x86:nova@localhost:3306/nova_x86',
@@ -152,6 +153,7 @@ describe 'osl-openstack::compute_controller' do
               ram_allocation_ratio: nil,
               rbd_secret_uuid: '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8',
               rbd_user: 'cinder',
+              region: 'RegionOne',
               service_pass: 'nova',
               transport_url: 'rabbit://openstack:openstack@controller.example.com:5672',
           }
@@ -298,6 +300,62 @@ describe 'osl-openstack::compute_controller' do
             is_expected.to render_file('/etc/nova/nova.conf').with_content('passthrough_whitelist = { "vendor_id": "10de", "product_id": "1db5" }')
           end
           it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content('images_rbd_pool = vms') }
+        end
+      end
+
+      context 'region2' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm) do |node|
+            node.automatic['fqdn'] = 'node1.example.com'
+            node.normal['osl-openstack']['node_type'] = 'controller'
+          end.converge(described_recipe)
+        end
+
+        include_context 'region2_stubs'
+        it do
+          is_expected.to create_template('/etc/nova/nova.conf').with(
+            owner: 'root',
+            group: 'nova',
+            mode: '0640',
+            sensitive: true,
+            variables: {
+                allow_resize_to_same_host: nil,
+                api_database_connection: 'mysql+pymysql://nova_x86:nova@localhost_region2:3306/nova_api_x86',
+                auth_endpoint: 'controller.example.com',
+                cinder_disabled: true,
+                compute: false,
+                cpu_allocation_ratio: nil,
+                database_connection: 'mysql+pymysql://nova_x86:nova@localhost_region2:3306/nova_x86',
+                disk_allocation_ratio: '1.5',
+                endpoint: 'controller_region2.example.com',
+                enabled_filters: %w(
+                  AggregateInstanceExtraSpecsFilter
+                  PciPassthroughFilter
+                  AvailabilityZoneFilter
+                  ComputeFilter
+                  ComputeCapabilitiesFilter
+                  ImagePropertiesFilter
+                  ServerGroupAntiAffinityFilter
+                  ServerGroupAffinityFilter
+                ),
+                image_endpoint: 'controller_region2.example.com',
+                images_rbd_pool: nil,
+                local_storage: true,
+                memcached_endpoint: 'controller_region2.example.com:11211',
+                metadata_proxy_shared_secret: '2SJh0RuO67KpZ63z',
+                neutron_pass: 'neutron',
+                pci_alias: '{ "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }',
+                pci_passthrough_whitelist: '{ "vendor_id": "10de", "product_id": "1db5" }',
+                placement_pass: 'placement',
+                power10: false,
+                ram_allocation_ratio: nil,
+                rbd_secret_uuid: nil,
+                rbd_user: nil,
+                region: 'RegionTwo',
+                service_pass: 'nova',
+                transport_url: 'rabbit://openstack:openstack@controller_region2.example.com:5672',
+            }
+          )
         end
       end
     end

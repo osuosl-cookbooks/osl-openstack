@@ -1,2 +1,5 @@
 ---
 name: compute
+inputs:
+  - name: local_storage
+    value: false

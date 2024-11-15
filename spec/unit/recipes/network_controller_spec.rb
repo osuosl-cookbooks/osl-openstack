@@ -62,6 +62,7 @@ describe 'osl-openstack::network_controller' do
               controller: true,
               database_connection: 'mysql+pymysql://neutron_x86:neutron@localhost:3306/neutron_x86',
               memcached_endpoint: 'controller.example.com:11211',
+              region: 'RegionOne',
               service_pass: 'neutron',
               transport_url: 'rabbit://openstack:openstack@controller.example.com:5672',
           }
@@ -207,6 +208,64 @@ describe 'osl-openstack::network_controller' do
             variables: {
               local_ip: '192.168.1.101',
               physical_interface_mappings: %w(public:eno1),
+            }
+          )
+        end
+      end
+      context 'region2' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm) do |node|
+            node.normal['osl-openstack']['node_type'] = 'controller'
+            node.automatic['fqdn'] = 'node1.example.com'
+          end.converge(described_recipe)
+        end
+
+        include_context 'region2_stubs'
+        %w(
+          admin
+          internal
+          public
+        ).each do |int|
+          it do
+            is_expected.to create_osl_openstack_endpoint("network-#{int}").with(
+              endpoint_name: 'network',
+              service_name: 'neutron',
+              interface: int,
+              url: 'http://controller_region2.example.com:9696',
+              region: 'RegionTwo'
+            )
+          end
+        end
+
+        it do
+          is_expected.to create_template('/etc/neutron/neutron.conf').with(
+            owner: 'root',
+            group: 'neutron',
+            mode: '0640',
+            sensitive: true,
+            variables: {
+                auth_endpoint: 'controller.example.com',
+                compute_pass: 'nova',
+                controller: true,
+                database_connection: 'mysql+pymysql://neutron_x86:neutron@localhost_region2:3306/neutron_x86',
+                memcached_endpoint: 'controller_region2.example.com:11211',
+                region: 'RegionTwo',
+                service_pass: 'neutron',
+                transport_url: 'rabbit://openstack:openstack@controller_region2.example.com:5672',
+            }
+          )
+        end
+
+        it do
+          is_expected.to create_template('/etc/neutron/metadata_agent.ini').with(
+            owner: 'root',
+            group: 'neutron',
+            mode: '0640',
+            sensitive: true,
+            variables: {
+              memcached_endpoint: 'controller_region2.example.com:11211',
+              metadata_proxy_shared_secret: '2SJh0RuO67KpZ63z',
+              nova_metadata_host: 'controller_region2.example.com',
             }
           )
         end

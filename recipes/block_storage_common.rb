@@ -48,6 +48,7 @@ template '/etc/cinder/cinder.conf' do
     database_connection: openstack_database_connection('block-storage'),
     image_endpoint: s['image']['endpoint'],
     memcached_endpoint: s['memcached']['endpoint'],
+    region: b['region'],
     rbd_secret_uuid: ceph_fsid,
     rbd_user: b['ceph']['rbd_store_user'],
     service_pass: b['service']['pass'],

@@ -22,7 +22,7 @@ c = s['compute']
 auth_endpoint = s['identity']['endpoint']
 compute = node['osl-openstack']['node_type'] == 'compute'
 
-include_recipe 'osl-ceph'
+include_recipe 'osl-ceph' unless openstack_cinder_disabled?
 
 delete_lines 'remove dhcpbridge' do
   path '/usr/share/nova/nova-dist.conf'
@@ -46,14 +46,15 @@ template '/etc/nova/nova.conf' do
     allow_resize_to_same_host: c['allow_resize_to_same_host'],
     auth_endpoint: auth_endpoint,
     cpu_allocation_ratio: c['cpu_allocation_ratio'],
+    cinder_disabled: openstack_cinder_disabled?,
     compute: compute,
     database_connection: openstack_database_connection('compute'),
     disk_allocation_ratio: c['disk_allocation_ratio'],
     endpoint: c['endpoint'],
     enabled_filters: c['enabled_filters'],
     image_endpoint: s['image']['endpoint'],
-    images_rbd_pool: c['ceph']['images_rbd_pool'],
-    local_storage: openstack_local_storage,
+    images_rbd_pool: safe_dig(c, 'ceph', 'images_rbd_pool'),
+    local_storage: openstack_local_storage_compute,
     memcached_endpoint: s['memcached']['endpoint'],
     metadata_proxy_shared_secret: s['network']['metadata_proxy_shared_secret'],
     neutron_pass: s['network']['service']['pass'],
@@ -62,8 +63,9 @@ template '/etc/nova/nova.conf' do
     pci_passthrough_whitelist: openstack_pci_passthrough_whitelist,
     power10: openstack_power10?,
     ram_allocation_ratio: c['ram_allocation_ratio'],
+    region: c['region'],
     rbd_secret_uuid: ceph_fsid,
-    rbd_user: c['ceph']['rbd_user'],
+    rbd_user: safe_dig(c, 'ceph', 'rbd_user'),
     service_pass: c['service']['pass'],
     transport_url: openstack_transport_url
   )

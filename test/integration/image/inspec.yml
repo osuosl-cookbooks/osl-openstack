@@ -3,3 +3,7 @@ name: image
 inputs:
   - name: db_endpoint
     value: localhost
+  - name: controller_endpoint
+    value: controller.example.com
+  - name: local_storage
+    value: false

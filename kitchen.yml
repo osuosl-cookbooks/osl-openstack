@@ -56,6 +56,22 @@ suites:
         - test/integration/identity
         - test/integration/image
         - test/integration/ops_messaging
+  - name: image-local-storage
+    driver_config:
+      server_name: "image-local-storage<%= ENV['USER'] %>"
+      user_data: userdata-node1.txt
+    run_list:
+      - role[openstack_tk]
+      - role[openstack_ops_identity]
+      - recipe[osl-openstack::image]
+      - recipe[openstack_test::image_upload]
+    verifier:
+      inputs:
+        local_storage: true
+      inspec_tests:
+        - test/integration/identity
+        - test/integration/image
+        - test/integration/ops_messaging
   - name: network_controller
     driver_config:
       server_name: "network-controller-<%= ENV['USER'] %>"
@@ -99,6 +115,22 @@ suites:
         - test/integration/compute_controller
         - test/integration/identity
         - test/integration/ops_messaging
+  - name: compute_controller_local_storage
+    driver_config:
+      server_name: "compute-controller-<%= ENV['USER'] %>"
+      user_data: userdata-node1.txt
+    run_list:
+      - recipe[openstack_test]
+      - role[openstack_tk]
+      - role[openstack_ops_identity]
+      - recipe[osl-openstack::compute_controller]
+    verifier:
+      inputs:
+        local_storage: true
+      inspec_tests:
+        - test/integration/compute_controller
+        - test/integration/identity
+        - test/integration/ops_messaging
   - name: compute
     driver_config:
       server_name: "compute-<%= ENV['USER'] %>"
@@ -112,6 +144,28 @@ suites:
       - recipe[osl-openstack::compute_controller]
       - recipe[osl-openstack::compute]
     verifier:
+      inspec_tests:
+        - test/integration/compute
+        - test/integration/compute_controller
+        - test/integration/identity
+        - test/integration/network
+        - test/integration/ops_messaging
+        - test/integration/telemetry_compute
+  - name: compute-local-storage
+    driver_config:
+      server_name: "compute-<%= ENV['USER'] %>"
+      user_data: userdata-node1.txt
+    run_list:
+      - recipe[openstack_test]
+      - role[openstack_tk]
+      - role[openstack_ops_identity]
+      - recipe[osl-openstack::network_controller]
+      - recipe[osl-openstack::network]
+      - recipe[osl-openstack::compute_controller]
+      - recipe[osl-openstack::compute]
+    verifier:
+      inputs:
+        local_storage: true
       inspec_tests:
         - test/integration/compute
         - test/integration/compute_controller

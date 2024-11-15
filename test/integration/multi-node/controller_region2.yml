@@ -1,0 +1,5 @@
+db_endpoint: db-region2.example.com
+controller_endpoint: controller-region2.example.com
+physical_interface_mappings: public:eth1.42
+prometheus_endpoint: controller.example.com
+local_storage: true

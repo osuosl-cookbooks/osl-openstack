@@ -1,0 +1,19 @@
+{
+    "chef_type": "role",
+    "default_attributes": {},
+    "description": "OpenStack Controller Role (Region2)",
+    "env_run_lists": {},
+    "json_class": "Chef::Role",
+    "name": "openstack_controller_region2",
+    "override_attributes": {
+      "osl-openstack": {
+        "node_type": "controller"
+      }
+    },
+    "run_list": [
+      "recipe[osl-openstack::image]",
+      "recipe[osl-openstack::network_controller]",
+      "recipe[osl-openstack::compute_controller]",
+      "recipe[osl-openstack::mon]"
+    ]
+}

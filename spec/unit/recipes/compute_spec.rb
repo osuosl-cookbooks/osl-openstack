@@ -14,6 +14,7 @@ describe 'osl-openstack::compute' do
       it { is_expected.to create_osl_openstack_client 'compute' }
       it { is_expected.to create_osl_openstack_openrc 'compute' }
       it { is_expected.to accept_osl_firewall_openstack 'compute' }
+      it { is_expected.to include_recipe 'osl-ceph' }
       it do
         is_expected.to create_osl_ceph_config('default').with(
           client_options: [
@@ -50,6 +51,53 @@ describe 'osl-openstack::compute' do
       it { is_expected.to start_service 'libvirtd' }
       it { is_expected.to run_execute('Deleting default libvirt network').with(command: 'virsh net-destroy default') }
       it { is_expected.to include_recipe 'osl-openstack::compute_common' }
+
+      it do
+        is_expected.to create_template('/etc/nova/nova.conf').with(
+          owner: 'root',
+          group: 'nova',
+          mode: '0640',
+          sensitive: true,
+          variables: {
+            allow_resize_to_same_host: nil,
+            api_database_connection: 'mysql+pymysql://nova_x86:nova@localhost:3306/nova_api_x86',
+            auth_endpoint: 'controller.example.com',
+            cinder_disabled: false,
+            compute: true,
+            cpu_allocation_ratio: nil,
+            database_connection: 'mysql+pymysql://nova_x86:nova@localhost:3306/nova_x86',
+            disk_allocation_ratio: '1.5',
+            enabled_filters: %w(
+              AggregateInstanceExtraSpecsFilter
+              PciPassthroughFilter
+              AvailabilityZoneFilter
+              ComputeFilter
+              ComputeCapabilitiesFilter
+              ImagePropertiesFilter
+              ServerGroupAntiAffinityFilter
+              ServerGroupAffinityFilter
+            ),
+            endpoint: 'controller.example.com',
+            image_endpoint: 'controller.example.com',
+            images_rbd_pool: 'vms',
+            local_storage: false,
+            memcached_endpoint: 'controller.example.com:11211',
+            metadata_proxy_shared_secret: '2SJh0RuO67KpZ63z',
+            neutron_pass: 'neutron',
+            pci_alias: nil,
+            pci_passthrough_whitelist: nil,
+            placement_pass: 'placement',
+            power10: false,
+            ram_allocation_ratio: nil,
+            rbd_secret_uuid: '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8',
+            rbd_user: 'cinder',
+            region: 'RegionOne',
+            service_pass: 'nova',
+            transport_url: 'rabbit://openstack:openstack@controller.example.com:5672',
+          }
+        )
+      end
+
       it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/force_raw_images = False/) }
       it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/cpu_mode = none/) }
       it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/disk_cachemodes = file=writeback/) }
@@ -206,6 +254,97 @@ describe 'osl-openstack::compute' do
           it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/force_raw_images = false/) }
           it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/cpu_mode = none/) }
           it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/disk_cachemodes = file=writeback/) }
+        end
+      end
+
+      context 'region2 w/o ceph' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm.dup.merge(
+            step_into: %w(osl_openstack_openrc)
+          )) do |node|
+            node.automatic['fqdn'] = 'node1.example.com'
+          end.converge(described_recipe)
+        end
+
+        include_context 'region2_stubs'
+
+        it { is_expected.to_not include_recipe 'osl-ceph' }
+        it { is_expected.to_not create_osl_ceph_config 'default' }
+        it { is_expected.to_not install_package 'openstack-cinder' }
+        it { is_expected.to_not create_osl_ceph_keyring 'cinder' }
+        it { is_expected.to_not create_osl_ceph_keyring 'cinder-backup' }
+        it { is_expected.to_not create_directory '/var/run/ceph/guests' }
+        it { is_expected.to_not create_directory '/var/log/ceph' }
+        it { is_expected.to_not modify_group 'ceph-compute' }
+
+        it do
+          is_expected.to create_template('/root/openrc').with(
+            mode: '0750',
+            sensitive: true,
+            variables: {
+              endpoint: 'controller.example.com',
+              pass: 'admin',
+              region: 'RegionTwo',
+            }
+          )
+        end
+
+        it do
+          expect(chef_run.group('ceph-compute')).to_not \
+            notify('service[openstack-nova-compute]').to(:restart).immediately
+        end
+        it do
+          expect(chef_run.group('ceph-compute')).to_not notify('service[libvirtd]').to(:restart).immediately
+        end
+        it { is_expected.to_not create_template '/var/chef/cache/secret.xml' }
+        it { is_expected.to_not run_execute 'virsh secret-define --file /var/chef/cache/secret.xml' }
+        it { is_expected.to_not run_execute 'update virsh ceph secret' }
+        it { is_expected.to_not delete_file '/var/chef/cache/secret.xml' }
+
+        it do
+          is_expected.to create_template('/etc/nova/nova.conf').with(
+            owner: 'root',
+            group: 'nova',
+            mode: '0640',
+            sensitive: true,
+            variables: {
+              allow_resize_to_same_host: nil,
+              api_database_connection: 'mysql+pymysql://nova_x86:nova@localhost_region2:3306/nova_api_x86',
+              auth_endpoint: 'controller.example.com',
+              cinder_disabled: true,
+              compute: true,
+              cpu_allocation_ratio: nil,
+              database_connection: 'mysql+pymysql://nova_x86:nova@localhost_region2:3306/nova_x86',
+              disk_allocation_ratio: '1.5',
+              enabled_filters: %w(
+                AggregateInstanceExtraSpecsFilter
+                PciPassthroughFilter
+                AvailabilityZoneFilter
+                ComputeFilter
+                ComputeCapabilitiesFilter
+                ImagePropertiesFilter
+                ServerGroupAntiAffinityFilter
+                ServerGroupAffinityFilter
+              ),
+              endpoint: 'controller_region2.example.com',
+              image_endpoint: 'controller_region2.example.com',
+              images_rbd_pool: nil,
+              local_storage: true,
+              memcached_endpoint: 'controller_region2.example.com:11211',
+              metadata_proxy_shared_secret: '2SJh0RuO67KpZ63z',
+              neutron_pass: 'neutron',
+              pci_alias: '{ "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }',
+              pci_passthrough_whitelist: '{ "vendor_id": "10de", "product_id": "1db5" }',
+              placement_pass: 'placement',
+              power10: false,
+              ram_allocation_ratio: nil,
+              rbd_secret_uuid: nil,
+              rbd_user: nil,
+              region: 'RegionTwo',
+              service_pass: 'nova',
+              transport_url: 'rabbit://openstack:openstack@controller_region2.example.com:5672',
+            }
+          )
         end
       end
     end

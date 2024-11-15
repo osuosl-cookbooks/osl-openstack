@@ -1,0 +1,21 @@
+{
+  "env_run_lists": {},
+  "run_list": [],
+  "chef_type": "role",
+  "override_attributes": {
+    "base": {
+      "packages": []
+    },
+    "osl-prometheus": {
+      "scrape_configs": false
+    }
+  },
+  "default_attributes": {
+    "osl-openstack": {
+      "databag_item": "multinode_region2"
+    }
+   },
+  "json_class": "Chef::Role",
+  "description": "Openstack x86 Terraform Role (region2)",
+  "name": "openstack_tf_region2"
+}

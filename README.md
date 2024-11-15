@@ -43,6 +43,13 @@ $ chef exec rake create_key
 $ KITCHEN_YAML=kitchen.multi-node.yml kitchen test multi-node
 ```
 
+If you want to test multi-regions, you need to do the following instead:
+
+``` console
+$ export TF_VAR_region2=1
+$ KITCHEN_YAML=kitchen.multi-node.yml kitchen test multi-node
+```
+
 Be patient as this will take a while to converge all of the nodes (approximately 40 minutes).
 
 ## Access the nodes
@@ -54,6 +61,9 @@ manually. To see what their IP addresses are, just run ``terraform output`` whic
 # You can run the following commands to login to each node
 $ ssh almalinux@$(terraform output controller)
 $ ssh almalinux@$(terraform output compute)
+# If you're testing multi-regions
+$ ssh almalinux@$(terraform output controller_region2)
+$ ssh almalinux@$(terraform output compute_region2)
 
 # Or you can look at the IPs for all for all of the nodes at once
 $ terraform output
@@ -71,7 +81,7 @@ compute
 $ CHEF_SERVER="$(terraform output chef_zero)" knife node edit -c test/chef-config/knife.rb
 ```
 
-In addition, on any node that has been deployed, you can re-run ``chef-client`` like you normally would on a production
+In addition, on any node that has been deployed, you can re-run ``cinc-client`` like you normally would on a production
 system. This should allow you to do development on your multi-node environment as needed. **Just make sure you include
 the knife config otherwise you will be interacting with our production chef server!**
 

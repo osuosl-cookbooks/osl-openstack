@@ -5,7 +5,7 @@
 auth_encryption_key = <%= @auth_encryption_key %>
 heat_metadata_server_url = http://<%= @endpoint %>:8000
 heat_waitcondition_server_url = http://<%= @endpoint %>:8000/v1/waitcondition
-region_name_for_services = RegionOne
+region_name_for_services = <%= @region %>
 stack_domain_admin = heat_domain_admin
 stack_domain_admin_password = <%= @heat_domain_admin %>
 stack_user_domain_name = heat

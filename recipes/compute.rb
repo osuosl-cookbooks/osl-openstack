@@ -35,7 +35,7 @@ edit_resource(:osl_ceph_config, 'default') do
     'rbd cache writethrough until flush = true',
     'log file = /var/log/ceph/qemu-guest-$pid.log',
   ]
-end
+end unless openstack_cinder_disabled?
 
 kernel_module 'tun' do
   action [:install, :load]
@@ -136,71 +136,73 @@ end
 include_recipe 'osl-openstack::network'
 include_recipe 'osl-openstack::telemetry_compute'
 
-package 'openstack-cinder'
+unless openstack_cinder_disabled?
+  package 'openstack-cinder'
 
-osl_ceph_keyring b['ceph']['rbd_store_user'] do
-  key b['ceph']['block_token']
-  not_if { b['ceph']['block_token'].nil? }
-end
-
-osl_ceph_keyring b['ceph']['block_backup_rbd_store_user'] do
-  key b['ceph']['block_backup_token']
-  not_if { b['ceph']['block_backup_token'].nil? }
-end
-
-%w(
-  /var/run/ceph/guests
-  /var/log/ceph
-).each do |d|
-  directory d do
-    owner 'qemu'
-    group 'libvirt'
+  osl_ceph_keyring b['ceph']['rbd_store_user'] do
+    key b['ceph']['block_token']
+    not_if { b['ceph']['block_token'].nil? }
   end
-end
 
-group 'ceph-compute' do
-  group_name 'ceph'
-  append true
-  members %w(cinder nova qemu)
-  action :modify
-  notifies :restart, 'service[openstack-nova-compute]', :immediately
-  notifies :restart, 'service[libvirtd]', :immediately
-  notifies :run, 'execute[Deleting default libvirt network]', :immediately
-end
+  osl_ceph_keyring b['ceph']['block_backup_rbd_store_user'] do
+    key b['ceph']['block_backup_token']
+    not_if { b['ceph']['block_backup_token'].nil? }
+  end
 
-ceph_user = b['ceph']['rbd_store_user']
-fsid = ceph_fsid
-secret_file = ::File.join(Chef::Config[:file_cache_path], 'secret.xml')
+  %w(
+    /var/run/ceph/guests
+    /var/log/ceph
+  ).each do |d|
+    directory d do
+      owner 'qemu'
+      group 'libvirt'
+    end
+  end
 
-template secret_file do
-  source 'secret.xml.erb'
-  user 'root'
-  group 'root'
-  mode '00600'
-  variables(
-    uuid: fsid,
-    client_name: ceph_user
-  )
-  not_if { fsid.nil? }
-  not_if "virsh secret-list | grep #{fsid}"
-end
+  group 'ceph-compute' do
+    group_name 'ceph'
+    append true
+    members %w(cinder nova qemu)
+    action :modify
+    notifies :restart, 'service[openstack-nova-compute]', :immediately
+    notifies :restart, 'service[libvirtd]', :immediately
+    notifies :run, 'execute[Deleting default libvirt network]', :immediately
+  end
 
-execute "virsh secret-define --file #{secret_file}" do
-  not_if { fsid.nil? }
-  not_if "virsh secret-list | grep #{fsid}"
-end
+  ceph_user = b['ceph']['rbd_store_user']
+  fsid = ceph_fsid
+  secret_file = ::File.join(Chef::Config[:file_cache_path], 'secret.xml')
 
-# this will update the key if necessary
-execute 'update virsh ceph secret' do
-  command "virsh secret-set-value --secret #{fsid} --base64 #{b['ceph']['block_token']}"
-  sensitive true
-  not_if { fsid.nil? }
-  not_if "virsh secret-get-value #{fsid} | grep #{b['ceph']['block_token']}"
-  not_if { b['ceph']['block_token'].nil? }
-end
+  template secret_file do
+    source 'secret.xml.erb'
+    user 'root'
+    group 'root'
+    mode '00600'
+    variables(
+      uuid: fsid,
+      client_name: ceph_user
+    )
+    not_if { fsid.nil? }
+    not_if "virsh secret-list | grep #{fsid}"
+  end
 
-file secret_file do
-  action :delete
+  execute "virsh secret-define --file #{secret_file}" do
+    not_if { fsid.nil? }
+    not_if "virsh secret-list | grep #{fsid}"
+  end
+
+  # this will update the key if necessary
+  execute 'update virsh ceph secret' do
+    command "virsh secret-set-value --secret #{fsid} --base64 #{b['ceph']['block_token']}"
+    sensitive true
+    not_if { fsid.nil? }
+    not_if "virsh secret-get-value #{fsid} | grep #{b['ceph']['block_token']}"
+    not_if { b['ceph']['block_token'].nil? }
+  end
+
+  file secret_file do
+    action :delete
+  end
 end
 
 template '/etc/sysconfig/libvirt-guests' do

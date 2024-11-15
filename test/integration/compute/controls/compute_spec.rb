@@ -1,3 +1,5 @@
+local_storage = input('local_storage')
+
 control 'compute' do
   %w(
     libvirt-guests
@@ -73,13 +75,13 @@ control 'compute' do
       its('group') { should include 'libvirt' }
       its('type') { should eq :directory }
     end
-  end
+  end unless local_storage
 
   %w(nova cinder qemu).each do |u|
     describe user(u) do
       its('groups') { should include 'ceph' }
     end
-  end
+  end unless local_storage
 
   describe ini('/etc/ceph/ceph.conf') do
     its('client.admin socket') { should cmp '/var/run/ceph/guests/$cluster-$type.$id.$pid.$cctid.asok' }
@@ -87,7 +89,7 @@ control 'compute' do
     its('client.rbd cache') { should cmp 'true' }
     its('client.rbd cache writethrough until flush') { should cmp 'true' }
     its('client.log file') { should cmp '/var/log/ceph/qemu-guest-$pid.log' }
-  end
+  end unless local_storage
 
   %w(cinder cinder-backup).each do |key|
     describe file("/etc/ceph/ceph.client.#{key}.keyring") do
@@ -95,7 +97,7 @@ control 'compute' do
       its('group') { should include 'ceph' }
       its('content') { should match(%r{key = [A-Za-z0-9+/].*==$}) }
     end
-  end
+  end unless local_storage
 
   openstack = 'bash -c "source /root/openrc && /usr/bin/openstack'
 
@@ -107,15 +109,15 @@ control 'compute' do
     its('stdout') do
       should match(/ae3f1d03-bacd-4a90-b869-1a4fabb107f2\s.+ceph client.cinder secret/)
     end
-  end
+  end unless local_storage
 
   describe command('virsh secret-get-value ae3f1d03-bacd-4a90-b869-1a4fabb107f2') do
     its('stdout') { should match(/^[A-Za-z0-9+].*==$/) }
-  end
+  end unless local_storage
 
   describe file('/tmp/kitchen/cache/secret.xml') do
     it { should_not exist }
-  end
+  end unless local_storage
 
   describe file('/etc/sysconfig/libvirt-guests') do
     its('content') { should match(/^ON_BOOT=ignore$/) }

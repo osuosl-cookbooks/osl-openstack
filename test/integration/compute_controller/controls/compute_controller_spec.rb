@@ -1,4 +1,6 @@
 db_endpoint = input('db_endpoint')
+controller_endpoint = input('controller_endpoint')
+local_storage = input('local_storage')
 
 control 'compute-controller' do
   %w(
@@ -49,7 +51,7 @@ control 'compute-controller' do
 
   describe ini('/etc/placement/placement.conf') do
     its('keystone_authtoken.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
-    its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
+    its('keystone_authtoken.memcached_servers') { should cmp "#{controller_endpoint}:11211" }
     its('keystone_authtoken.password') { should cmp 'placement' }
     its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
     its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
@@ -67,31 +69,33 @@ control 'compute-controller' do
     its('DEFAULT.instance_usage_audit') { should cmp 'True' }
     its('DEFAULT.instance_usage_audit_period') { should cmp 'hour' }
     its('DEFAULT.resume_guests_state_on_host_boot') { should cmp 'True' }
-    its('DEFAULT.transport_url') { should cmp 'rabbit://openstack:openstack@controller.example.com:5672' }
+    its('DEFAULT.transport_url') { should cmp "rabbit://openstack:openstack@#{controller_endpoint}:5672" }
     its('DEFAULT.use_neutron') { should_not cmp '' }
     its('api_database.connection') { should cmp "mysql+pymysql://nova_x86:nova@#{db_endpoint}:3306/nova_api_x86" }
-    its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
+    its('cache.memcache_servers') { should cmp "#{controller_endpoint}:11211" }
     its('database.connection') { should cmp "mysql+pymysql://nova_x86:nova@#{db_endpoint}:3306/nova_x86" }
     its('filter_scheduler.enabled_filters') { should cmp 'AggregateInstanceExtraSpecsFilter,PciPassthroughFilter,AvailabilityZoneFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter' }
-    its('glance.api_servers') { should cmp 'http://controller.example.com:9292' }
+    its('glance.api_servers') { should cmp "http://#{controller_endpoint}:9292" }
     its('keystone_authtoken.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
-    its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
+    its('keystone_authtoken.memcached_servers') { should cmp "#{controller_endpoint}:11211" }
     its('keystone_authtoken.password') { should cmp 'nova' }
     its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
     its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
     its('keystone_authtoken.www_authenticate_uri') { should cmp 'https://controller.example.com:5000/v3' }
     its('libvirt.cpu_model_extra_flags') { should cmp 'VMX' }
-    its('libvirt.disk_cachemodes') { should cmp 'network=writeback' }
-    its('libvirt.hw_disk_discard') { should cmp 'unmap' }
-    its('libvirt.images_rbd_ceph_conf') { should cmp '/etc/ceph/ceph.conf' }
-    its('libvirt.images_rbd_pool') { should cmp 'vms' }
-    its('libvirt.images_type') { should cmp 'rbd' }
-    its('libvirt.inject_key') { should cmp 'false' }
-    its('libvirt.inject_partition') { should cmp '-2' }
-    its('libvirt.inject_password') { should cmp 'false' }
-    its('libvirt.live_migration_flag') { should cmp 'VIR_MIGRATE_UNDEFINE_SOURCE,VIR_MIGRATE_PEER2PEER,VIR_MIGRATE_LIVE,VIR_MIGRATE_PERSIST_DEST,VIR_MIGRATE_TUNNELLED' }
-    its('libvirt.rbd_secret_uuid') { should cmp 'ae3f1d03-bacd-4a90-b869-1a4fabb107f2' }
-    its('libvirt.rbd_user') { should cmp 'cinder' }
+    unless local_storage
+      its('libvirt.disk_cachemodes') { should cmp 'network=writeback' }
+      its('libvirt.hw_disk_discard') { should cmp 'unmap' }
+      its('libvirt.images_rbd_ceph_conf') { should cmp '/etc/ceph/ceph.conf' }
+      its('libvirt.images_rbd_pool') { should cmp 'vms' }
+      its('libvirt.images_type') { should cmp 'rbd' }
+      its('libvirt.inject_key') { should cmp 'false' }
+      its('libvirt.inject_partition') { should cmp '-2' }
+      its('libvirt.inject_password') { should cmp 'false' }
+      its('libvirt.live_migration_flag') { should cmp 'VIR_MIGRATE_UNDEFINE_SOURCE,VIR_MIGRATE_PEER2PEER,VIR_MIGRATE_LIVE,VIR_MIGRATE_PERSIST_DEST,VIR_MIGRATE_TUNNELLED' }
+      its('libvirt.rbd_secret_uuid') { should cmp 'ae3f1d03-bacd-4a90-b869-1a4fabb107f2' }
+      its('libvirt.rbd_user') { should cmp 'cinder' }
+    end
     its('neutron.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
     its('neutron.metadata_proxy_shared_secret') { should cmp '2SJh0RuO67KpZ63z' }
     its('neutron.password') { should cmp 'neutron' }
@@ -99,10 +103,10 @@ control 'compute-controller' do
     its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
     its('placement.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
     its('placement.password') { should cmp 'placement' }
-    its('serial_console.base_url') { should cmp 'ws://controller.example.com:6083' }
+    its('serial_console.base_url') { should cmp "ws://#{controller_endpoint}:6083" }
     its('service_user.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
     its('service_user.password') { should cmp 'nova' }
-    its('vnc.novncproxy_base_url') { should cmp 'https://controller.example.com:6080/vnc_auto.html' }
+    its('vnc.novncproxy_base_url') { should cmp "https://#{controller_endpoint}:6080/vnc_auto.html" }
   end
 
   %w(

@@ -33,6 +33,7 @@ template '/etc/neutron/neutron.conf' do
     controller: controller,
     database_connection: openstack_database_connection('network'),
     memcached_endpoint: s['memcached']['endpoint'],
+    region: n['region'],
     service_pass: n['service']['pass'],
     transport_url: openstack_transport_url
   )

@@ -5,5 +5,7 @@ inputs:
     value: true
   - name: db_endpoint
     value: localhost
+  - name: controller_endpoint
+    value: controller.example.com
   - name: physical_interface_mappings
     value: public:eth1

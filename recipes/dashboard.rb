@@ -71,6 +71,7 @@ template '/etc/openstack-dashboard/local_settings' do
   variables(
     auth_url: auth_endpoint,
     memcache_servers: s['memcached']['endpoint'],
+    regions: d['regions'],
     secret_key: d['secret_key']
   )
   notifies :run, 'execute[horizon: compress]'

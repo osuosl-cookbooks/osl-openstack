@@ -59,6 +59,10 @@ describe 'osl-openstack::dashboard' do
           variables: {
             auth_url: 'controller.example.com',
             memcache_servers: 'controller.example.com:11211',
+            regions: {
+              'RegionOne' => 'https://controller.example.com:5000/v3',
+              'RegionTwo' => 'https://controller.example.com:5000/v3',
+            },
             secret_key: '-#45g2*o=8mhe(10if%*65@g#z0r#r7m__w6kwq8s9@n%12a11',
           }
         )
@@ -70,6 +74,16 @@ describe 'osl-openstack::dashboard' do
       it do
         expect(chef_run.template('/etc/openstack-dashboard/local_settings')).to \
           notify('apache2_service[osuosl]').to(:reload)
+      end
+      it do
+        is_expected.to render_file('/etc/openstack-dashboard/local_settings').with_content(
+        <<~EOF
+          DEFAULT_SERVICE_REGIONS = [
+            ('https://controller.example.com:5000/v3', 'RegionOne'),
+            ('https://controller.example.com:5000/v3', 'RegionTwo'),
+          ]
+        EOF
+      )
       end
       it do
         is_expected.to create_apache_app('horizon').with(
@@ -93,6 +107,30 @@ describe 'osl-openstack::dashboard' do
             /usr/bin/python3 /usr/share/openstack-dashboard/manage.py compress --force -v0
           EOC
         )
+      end
+
+      context 'no region set' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm).converge(described_recipe)
+        end
+
+        include_context 'dashboard_noregion_stubs'
+        it do
+          is_expected.to create_template('/etc/openstack-dashboard/local_settings').with(
+            group: 'apache',
+            mode: '0640',
+            sensitive: true,
+            variables: {
+              auth_url: 'controller.example.com',
+              memcache_servers: 'controller.example.com:11211',
+              regions: nil,
+              secret_key: '-#45g2*o=8mhe(10if%*65@g#z0r#r7m__w6kwq8s9@n%12a11',
+            }
+          )
+        end
+        it do
+          is_expected.to_not render_file('/etc/openstack-dashboard/local_settings').with_content('DEFAULT_SERVICE_REGIONS')
+        end
       end
     end
   end

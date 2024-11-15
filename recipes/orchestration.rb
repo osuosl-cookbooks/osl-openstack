@@ -91,6 +91,7 @@ template '/etc/heat/heat.conf' do
     endpoint: o['endpoint'],
     heat_domain_admin: o['heat_domain_admin'],
     memcached_endpoint: s['memcached']['endpoint'],
+    region: o['region'],
     service_pass: o['service']['pass'],
     transport_url: openstack_transport_url
   )

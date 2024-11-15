@@ -46,7 +46,7 @@ end
     service_name 'neutron'
     interface int
     url "http://#{n['endpoint']}:9696"
-    region 'RegionOne'
+    region n['region']
   end
 end
 

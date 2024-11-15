@@ -63,6 +63,7 @@ describe 'osl-openstack::image' do
           sensitive: true,
           variables: {
               auth_endpoint: 'controller.example.com',
+              local_storage: false,
               database_connection: 'mysql+pymysql://glance_x86:glance@localhost:3306/glance_x86',
               memcached_endpoint: 'controller.example.com:11211',
               rbd_store_pool: 'images',
@@ -99,6 +100,70 @@ describe 'osl-openstack::image' do
       it { is_expected.to start_service 'openstack-glance-api' }
       it { is_expected.to enable_service 'openstack-glance-registry' }
       it { is_expected.to start_service 'openstack-glance-registry' }
+
+      context 'region2 w/o ceph' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm) do |node|
+            node.automatic['fqdn'] = 'node1.example.com'
+          end.converge(described_recipe)
+        end
+
+        include_context 'region2_stubs'
+
+        %w(
+          admin
+          internal
+          public
+        ).each do |int|
+          it do
+            is_expected.to create_osl_openstack_endpoint("image-#{int}").with(
+              endpoint_name: 'image',
+              service_name: 'glance',
+              interface: int,
+              url: 'http://controller_region2.example.com:9292',
+              region: 'RegionTwo'
+            )
+          end
+        end
+
+        it do
+          is_expected.to create_template('/etc/glance/glance-registry.conf').with(
+            owner: 'root',
+            group: 'glance',
+            mode: '0640',
+            sensitive: true,
+            variables: {
+                auth_endpoint: 'controller.example.com',
+                database_connection: 'mysql+pymysql://glance_x86:glance@localhost_region2:3306/glance_x86',
+                memcached_endpoint: 'controller_region2.example.com:11211',
+                service_pass: 'glance',
+                transport_url: 'rabbit://openstack:openstack@controller_region2.example.com:5672',
+            }
+          )
+        end
+
+        it do
+          is_expected.to create_template('/etc/glance/glance-api.conf').with(
+            owner: 'root',
+            group: 'glance',
+            mode: '0640',
+            sensitive: true,
+            variables: {
+                auth_endpoint: 'controller.example.com',
+                local_storage: true,
+                database_connection: 'mysql+pymysql://glance_x86:glance@localhost_region2:3306/glance_x86',
+                memcached_endpoint: 'controller_region2.example.com:11211',
+                rbd_store_pool: nil,
+                rbd_store_user: nil,
+                service_pass: 'glance',
+                transport_url: 'rabbit://openstack:openstack@controller_region2.example.com:5672',
+            }
+          )
+        end
+
+        it { is_expected.to_not create_group 'ceph-image' }
+        it { is_expected.to_not create_osl_ceph_keyring 'glance' }
+      end
     end
   end
 end
