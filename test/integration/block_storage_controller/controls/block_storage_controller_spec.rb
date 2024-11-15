@@ -16,11 +16,6 @@ control 'block-storage-controller' do
     its('addresses') { should include '0.0.0.0' }
   end
 
-  describe ini '/usr/share/cinder/cinder-dist.conf' do
-    its('DEFAULT.logdir') { should cmp nil }
-    its('DEFAULT.log-dir') { should cmp '/var/log/cinder' }
-  end
-
   describe ini('/etc/cinder/cinder.conf') do
     its('DEFAULT.backup_ceph_chunk_size') { should cmp '134217728' }
     its('DEFAULT.backup_ceph_conf') { should cmp '/etc/ceph/ceph.conf' }
@@ -68,10 +63,6 @@ control 'block-storage-controller' do
     its('nova.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
     its('nova.password') { should cmp 'nova' }
     its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
-  end
-
-  describe ini('/usr/share/cinder/cinder-dist.conf') do
-    its('DEFAULT.log-dir') { should cmp '/var/log/cinder' }
   end
 
   openstack = 'bash -c "source /root/openrc && /usr/bin/openstack'

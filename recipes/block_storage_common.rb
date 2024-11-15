@@ -25,14 +25,6 @@ include_recipe 'osl-ceph'
 
 package 'openstack-cinder'
 
-replace_or_add 'log-dir controller' do
-  path '/usr/share/cinder/cinder-dist.conf'
-  pattern '^logdir.*'
-  line 'log-dir = /var/log/cinder'
-  backup true
-  replace_only true
-end
-
 template '/etc/cinder/cinder.conf' do
   owner 'root'
   group 'cinder'

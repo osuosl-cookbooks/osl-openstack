@@ -12,41 +12,41 @@ rm -f /etc/cron.d/chef-client
 # Stop all OpenStack services
 systemctl stop 'openstack-*'
 systemctl stop 'neutron-*'
-yum -y upgrade openstack-selinux
+dnf -y install openstack-selinux
 systemctl stop httpd
 
 # Upgrade Keystone
-yum -y upgrade \*keystone\*
-yum -y upgrade \*horizon\*
+dnf -y upgrade \*keystone\*
+dnf -y upgrade \*horizon\* \*django\*
 su -s /bin/sh -c "keystone-manage db_sync" keystone
+rm -rfv /usr/lib/systemd/system/httpd.service.d/openstack-dashboard.conf
+systemctl daemon-reload
 systemctl start httpd
 
 # Upgrade Glance
 systemctl stop '*glance*'
-yum -y upgrade \*glance\*
+dnf -y upgrade \*glance\*
 su -s /bin/sh -c "glance-manage db_sync" glance
 
 # Upgrade Cinder
 systemctl stop '*cinder*'
-yum -y upgrade \*cinder\*
+dnf -y upgrade \*cinder\*
 su -s /bin/sh -c "cinder-manage db sync" cinder
 su -s /bin/sh -c "cinder-manage db online_data_migrations" cinder
 
 # Upgrade Heat
 systemctl stop '*heat*'
-yum -y upgrade \*heat\*
+dnf -y upgrade \*heat\*
 su -s /bin/sh -c "heat-manage db_sync" heat
 
 # Upgrade Ceilometer
 systemctl stop '*ceilometer*'
-yum -y upgrade \*ceilometer\*
+dnf -y upgrade \*ceilometer\*
 
 # Upgrade nova
 crudini --set /etc/nova/nova.conf upgrade_levels compute auto
 systemctl stop '*nova*'
-systemctl disable openstack-nova-consoleauth
-yum -y upgrade \*nova\*
-cell_db_uri=$(cat /root/nova-cell-db-uri)
+dnf -y upgrade \*nova\* --best --allowerasing
 su -s /bin/sh -c "nova-manage api_db sync" nova
 su -s /bin/sh -c "nova-manage db sync" nova
 su -s /bin/sh -c "nova-manage db online_data_migrations" nova
@@ -57,11 +57,10 @@ crudini --del /etc/nova/nova.conf upgrade_levels compute
 
 # Upgrade neutron
 systemctl stop '*neutron*'
-yum -y upgrade \*neutron\*
+dnf -y upgrade \*neutron\*
 su -s /bin/sh -c "neutron-db-manage upgrade heads" neutron
 
 # Upgrade the rest of the packages
-yum -y upgrade
+dnf -y upgrade --best --allowerasing
 
-rm -f /root/nova-cell-db-uri
-touch /root/train-upgrade-done
+touch /root/ussuri-upgrade-done

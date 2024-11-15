@@ -18,7 +18,7 @@ describe 'osl-openstack::identity' do
 
       describe 'osl_openstack_openrc' do
         it { is_expected.to add_osl_repos_openstack 'default' }
-        it { is_expected.to install_package 'python3-openstackclient' }
+        it { is_expected.to install_package %w(openstack-selinux python3-openstackclient) }
 
         context 'versionlock set' do
           cached(:chef_run) do

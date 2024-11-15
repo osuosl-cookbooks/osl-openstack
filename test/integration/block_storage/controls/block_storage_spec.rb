@@ -12,7 +12,7 @@ control 'block-storage' do
   end
 
   # Make sure we can create a volume, it exists and delete it
-  openstack = 'bash -c "source /root/openrc && /usr/bin/openstack'
+  openstack = 'bash -c "source /root/openrc && sleep 5 && /usr/bin/openstack'
 
   describe command "#{openstack} volume create --size 1 test-volume\"" do
     its('exit_status') { should eq 0 }

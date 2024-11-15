@@ -40,13 +40,6 @@ describe 'osl-openstack::upgrade' do
         it { is_expected.to accept_osl_firewall_port('rabbitmq_mgt').with(osl_only: true) }
         it { is_expected.to accept_osl_firewall_port('http').with(ports: %w(80 443)) }
         it do
-          is_expected.to create_file('/root/nova-cell-db-uri').with(
-            content: 'mysql+pymysql://nova_x86:nova@localhost:3306/nova_cell0_x86',
-            mode: '600',
-            sensitive: true
-          )
-        end
-        it do
           is_expected.to create_cookbook_file('/root/upgrade.sh').with(
             source: 'upgrade-controller.sh',
             mode: '755'
@@ -54,27 +47,19 @@ describe 'osl-openstack::upgrade' do
         end
       end
 
-      context '/root/train-upgrade-done' do
+      context '/root/ussuri-upgrade-done' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm).converge(described_recipe)
         end
         before do
           allow(File).to receive(:exist?).and_call_original
-          allow(File).to receive(:exist?).with('/root/train-upgrade-done').and_return(true)
+          allow(File).to receive(:exist?).with('/root/ussuri-upgrade-done').and_return(true)
         end
         it { is_expected.to_not run_ruby_block 'raise_upgrade_exeception' }
         it { is_expected.to_not stop_service 'yum-cron' }
         it { is_expected.to_not disable_service 'yum-cron' }
         it { is_expected.to_not stop_service 'dnf-automatic.timer' }
         it { is_expected.to_not disable_service 'dnf-automatic.timer' }
-        context 'controller' do
-          cached(:chef_run) do
-            ChefSpec::SoloRunner.new(pltfrm) do |node|
-              node.normal['osl-openstack']['node_type'] = 'controller'
-            end.converge(described_recipe)
-          end
-          it { is_expected.to_not create_file '/root/nova-cell-db-uri' }
-        end
       end
     end
   end

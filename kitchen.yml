@@ -334,23 +334,14 @@ suites:
         - path: test/integration/controller
     run_list:
       - recipe[openstack_test::upgrade_start]
+      - recipe[openstack_test]
       - role[openstack_tk]
       - recipe[openstack_test::ceph]
-      - recipe[osl-openstack::ops_database]
-      - recipe[certificate::wildcard]
-      - recipe[openstack_test::cacert]
-      - recipe[openstack-ops-database::openstack-db]
       - recipe[openstack_test::upgrade]
-      - recipe[openstack_test]
       - role[openstack_ops_identity]
-      - recipe[osl-prometheus::server]
+      - recipe[openstack_test::prometheus]
       - recipe[osl-openstack::controller]
-      - recipe[osl-openstack::compute]
-      - recipe[openstack-block-storage::volume_driver_lvm]
-      - recipe[osl-openstack::block_storage]
-      - recipe[openstack-integration-test::setup]
-      - recipe[openstack_test::tempest]
-      - recipe[openstack_test::orchestration]
+      - recipe[openstack_test::image_upload]
     attributes:
       osl-openstack:
         endpoint_hostname: controller.example.com

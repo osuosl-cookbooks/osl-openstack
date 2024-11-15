@@ -1,6 +1,7 @@
 {
   "env_run_lists": {},
   "run_list": [
+    "recipe[osl-selinux]",
     "recipe[openstack_test::hosts]",
     "recipe[openstack_test::ceph_config]",
     "recipe[openstack_test::cacert]"
