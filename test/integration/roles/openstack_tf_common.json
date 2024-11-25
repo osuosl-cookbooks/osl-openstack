@@ -8,6 +8,7 @@
     "override_attributes": {},
     "run_list": [
       "role[openstack_tf]",
+      "recipe[osl-selinux]",
       "recipe[openstack_test::ceph_tf_config]",
       "recipe[openstack_test::hosts_tf]",
       "recipe[openstack_test::compute]",

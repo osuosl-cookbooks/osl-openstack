@@ -64,7 +64,6 @@ describe 'osl-openstack::compute_controller' do
         is_expected.to install_package %w(
           openstack-nova-api
           openstack-nova-conductor
-          openstack-nova-console
           openstack-nova-novncproxy
           openstack-nova-scheduler
           openstack-placement-api

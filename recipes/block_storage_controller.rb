@@ -84,11 +84,9 @@ end
 apache2_service 'block_storage' do
   action :nothing
   subscribes :reload, 'template[/etc/cinder/cinder.conf]'
-  subscribes :reload, 'replace_or_add[log-dir controller]'
 end
 
 service 'openstack-cinder-scheduler' do
   action [:enable, :start]
   subscribes :restart, 'template[/etc/cinder/cinder.conf]'
-  subscribes :restart, 'replace_or_add[log-dir controller]'
 end

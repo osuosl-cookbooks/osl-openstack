@@ -20,12 +20,12 @@ package 'crudini'
 
 service 'yum-cron' do
   action [:stop, :disable]
-  not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/train-upgrade-done') }
+  not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/ussuri-upgrade-done') }
 end
 
 service 'dnf-automatic.timer' do
   action [:stop, :disable]
-  not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/train-upgrade-done') }
+  not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/ussuri-upgrade-done') }
 end
 
 osl_repos_openstack 'upgrade'
@@ -44,13 +44,6 @@ if node['osl-openstack']['node_type'] == 'controller'
   osl_firewall_port 'http' do
     ports %w(80 443)
   end
-
-  file '/root/nova-cell-db-uri' do
-    content openstack_database_connection('compute_cell0')
-    mode '600'
-    sensitive true
-    not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/train-upgrade-done') }
-  end
 end
 
 cookbook_file '/root/upgrade.sh' do
@@ -62,5 +55,5 @@ ruby_block 'raise_upgrade_exeception' do
   block do
     raise 'Upgrade recipe enabled, stopping futher chef resources from running'
   end
-  not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/train-upgrade-done') }
+  not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/ussuri-upgrade-done') }
 end

@@ -52,15 +52,6 @@ describe 'osl-openstack::block_storage_controller' do
       it { is_expected.to include_recipe 'osl-openstack::block_storage_common' }
       it { is_expected.to install_package 'openstack-cinder' }
       it do
-        is_expected.to edit_replace_or_add('log-dir controller').with(
-          path: '/usr/share/cinder/cinder-dist.conf',
-          pattern: '^logdir.*',
-          line: 'log-dir = /var/log/cinder',
-          backup: true,
-          replace_only: true
-        )
-      end
-      it do
         is_expected.to create_template('/etc/cinder/cinder.conf').with(
           owner: 'root',
           group: 'cinder',
@@ -109,19 +100,11 @@ describe 'osl-openstack::block_storage_controller' do
         expect(chef_run.apache2_service('block_storage')).to \
           subscribe_to('template[/etc/cinder/cinder.conf]').on(:reload)
       end
-      it do
-        expect(chef_run.apache2_service('block_storage')).to \
-          subscribe_to('replace_or_add[log-dir controller]').on(:reload)
-      end
       it { is_expected.to enable_service 'openstack-cinder-scheduler' }
       it { is_expected.to start_service 'openstack-cinder-scheduler' }
       it do
         expect(chef_run.service('openstack-cinder-scheduler')).to \
           subscribe_to('template[/etc/cinder/cinder.conf]').on(:restart)
-      end
-      it do
-        expect(chef_run.service('openstack-cinder-scheduler')).to \
-          subscribe_to('replace_or_add[log-dir controller]').on(:restart)
       end
     end
   end

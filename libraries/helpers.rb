@@ -51,7 +51,10 @@ module OSLOpenstack
       def openstack_client_pkg
         case node['platform_version'].to_i
         when 8
-          'python3-openstackclient'
+          %w(
+            openstack-selinux
+            python3-openstackclient
+          )
         end
       end
 
@@ -61,7 +64,6 @@ module OSLOpenstack
           %w(
             openstack-nova-api
             openstack-nova-conductor
-            openstack-nova-console
             openstack-nova-novncproxy
             openstack-nova-scheduler
             openstack-placement-api
