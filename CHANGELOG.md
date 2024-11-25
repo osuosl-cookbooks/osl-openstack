@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+13.0.0 (2024-11-25)
+-------------------
+- OpenStack Ussuri
+
 12.3.0 (2024-11-15)
 -------------------
 - Add support for multiple regions
