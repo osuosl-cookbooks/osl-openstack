@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+13.0.2 (2024-11-27)
+-------------------
+- Increase dropdown max to 200 items
+
 13.0.1 (2024-11-27)
 -------------------
 - Remove prometheus patch
