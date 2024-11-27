@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+13.0.1 (2024-11-27)
+-------------------
+- Remove prometheus patch
+
 13.0.0 (2024-11-25)
 -------------------
 - OpenStack Ussuri
