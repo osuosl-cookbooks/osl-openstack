@@ -99,29 +99,6 @@ describe 'osl-openstack::telemetry_controller' do
         expect(chef_run.service('openstack-ceilometer-notification')).to \
           subscribe_to('cookbook_file[/etc/ceilometer/polling.yaml]').on(:restart)
       end
-      it { is_expected.to install_package 'patch' }
-      it do
-        is_expected.to run_execute('patch -p1 < /var/chef/cache/ceilometer-prometheus1.patch').with(
-          cwd: '/usr/lib/python3.6/site-packages'
-        )
-      end
-      it do
-        is_expected.to run_execute('patch -p1 < /var/chef/cache/ceilometer-prometheus2.patch').with(
-          cwd: '/usr/lib/python3.6/site-packages'
-        )
-      end
-
-      context 'already patched' do
-        cached(:chef_run) do
-          ChefSpec::SoloRunner.new(pltfrm).converge(described_recipe)
-        end
-        before do
-          stub_command('grep -q curated_sname /usr/lib/python3.6/site-packages/ceilometer/publisher/prometheus.py').and_return(true)
-          stub_command('grep -q s.project_id /usr/lib/python3.6/site-packages/ceilometer/publisher/prometheus.py').and_return(true)
-        end
-        it { is_expected.to_not run_execute('patch -p1 < /var/chef/cache/ceilometer-prometheus1.patch') }
-        it { is_expected.to_not run_execute('patch -p1 < /var/chef/cache/ceilometer-prometheus2.patch') }
-      end
     end
   end
 end
