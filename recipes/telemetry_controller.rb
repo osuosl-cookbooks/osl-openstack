@@ -50,24 +50,3 @@ include_recipe 'osl-openstack::telemetry_common'
     subscribes :restart, 'cookbook_file[/etc/ceilometer/polling.yaml]'
   end
 end
-
-# TODO: Apply upstream patch which fixes [1] use with prometheus
-# [1] https://review.opendev.org/686368
-package 'patch'
-
-cookbook_file ::File.join(Chef::Config[:file_cache_path], 'ceilometer-prometheus1.patch')
-cookbook_file ::File.join(Chef::Config[:file_cache_path], 'ceilometer-prometheus2.patch')
-
-execute "patch -p1 < #{::File.join(Chef::Config[:file_cache_path], 'ceilometer-prometheus1.patch')}" do
-  cwd "#{openstack_python_lib}/site-packages"
-  notifies :restart, 'service[openstack-ceilometer-central]'
-  notifies :restart, 'service[openstack-ceilometer-notification]'
-  not_if "grep -q curated_sname #{openstack_python_lib}/site-packages/ceilometer/publisher/prometheus.py"
-end
-
-execute "patch -p1 < #{::File.join(Chef::Config[:file_cache_path], 'ceilometer-prometheus2.patch')}" do
-  cwd "#{openstack_python_lib}/site-packages"
-  notifies :restart, 'service[openstack-ceilometer-central]'
-  notifies :restart, 'service[openstack-ceilometer-notification]'
-  not_if "grep -q s.project_id #{openstack_python_lib}/site-packages/ceilometer/publisher/prometheus.py"
-end
