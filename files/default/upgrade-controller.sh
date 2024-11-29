@@ -63,4 +63,4 @@ su -s /bin/sh -c "neutron-db-manage upgrade heads" neutron
 # Upgrade the rest of the packages
 dnf -y upgrade --best --allowerasing
 
-touch /root/ussuri-upgrade-done
+touch /root/victoria-upgrade-done
