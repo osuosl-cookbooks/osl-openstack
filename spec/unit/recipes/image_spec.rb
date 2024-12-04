@@ -40,22 +40,6 @@ describe 'osl-openstack::image' do
       end
       it { is_expected.to install_package 'openstack-glance' }
       it do
-        is_expected.to create_template('/etc/glance/glance-registry.conf').with(
-          owner: 'root',
-          group: 'glance',
-          mode: '0640',
-          sensitive: true,
-          variables: {
-              auth_endpoint: 'controller.example.com',
-              database_connection: 'mysql+pymysql://glance_x86:glance@localhost:3306/glance_x86',
-              memcached_endpoint: 'controller.example.com:11211',
-              service_pass: 'glance',
-              transport_url: 'rabbit://openstack:openstack@controller.example.com:5672',
-          }
-        )
-      end
-      it { expect(chef_run.template('/etc/glance/glance-registry.conf')).to notify('service[openstack-glance-registry]').to(:restart) }
-      it do
         is_expected.to create_template('/etc/glance/glance-api.conf').with(
           owner: 'root',
           group: 'glance',
@@ -98,8 +82,6 @@ describe 'osl-openstack::image' do
       it { expect(chef_run.osl_ceph_keyring('glance')).to notify('service[openstack-glance-api]').to(:restart) }
       it { is_expected.to enable_service 'openstack-glance-api' }
       it { is_expected.to start_service 'openstack-glance-api' }
-      it { is_expected.to enable_service 'openstack-glance-registry' }
-      it { is_expected.to start_service 'openstack-glance-registry' }
 
       context 'region2 w/o ceph' do
         cached(:chef_run) do
@@ -124,22 +106,6 @@ describe 'osl-openstack::image' do
               region: 'RegionTwo'
             )
           end
-        end
-
-        it do
-          is_expected.to create_template('/etc/glance/glance-registry.conf').with(
-            owner: 'root',
-            group: 'glance',
-            mode: '0640',
-            sensitive: true,
-            variables: {
-                auth_endpoint: 'controller.example.com',
-                database_connection: 'mysql+pymysql://glance_x86:glance@localhost_region2:3306/glance_x86',
-                memcached_endpoint: 'controller_region2.example.com:11211',
-                service_pass: 'glance',
-                transport_url: 'rabbit://openstack:openstack@controller_region2.example.com:5672',
-            }
-          )
         end
 
         it do

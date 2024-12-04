@@ -56,21 +56,6 @@ end
 
 package 'openstack-glance'
 
-template '/etc/glance/glance-registry.conf' do
-  owner 'root'
-  group 'glance'
-  mode '0640'
-  sensitive true
-  variables(
-    auth_endpoint: auth_endpoint,
-    database_connection: openstack_database_connection('image'),
-    memcached_endpoint: s['memcached']['endpoint'],
-    service_pass: i['service']['pass'],
-    transport_url: openstack_transport_url
-  )
-  notifies :restart, 'service[openstack-glance-registry]'
-end
-
 template '/etc/glance/glance-api.conf' do
   owner 'root'
   group 'glance'
@@ -111,11 +96,6 @@ osl_ceph_keyring i['ceph']['rbd_store_user'] do
   notifies :restart, 'service[openstack-glance-api]'
 end unless openstack_local_storage_image
 
-%w(
-  openstack-glance-api
-  openstack-glance-registry
-).each do |srv|
-  service srv do
-    action [:enable, :start]
-  end
+service 'openstack-glance-api' do
+  action [:enable, :start]
 end
