@@ -1,6 +1,6 @@
 file '/root/upgrade-test' do
   if node['osl-openstack']['upgrade']
-    action :touch
+    action :create
   else
     action :delete
   end
