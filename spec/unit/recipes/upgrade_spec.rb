@@ -47,13 +47,13 @@ describe 'osl-openstack::upgrade' do
         end
       end
 
-      context '/root/victoria-upgrade-done' do
+      context '/root/wallaby-upgrade-done' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm).converge(described_recipe)
         end
         before do
           allow(File).to receive(:exist?).and_call_original
-          allow(File).to receive(:exist?).with('/root/victoria-upgrade-done').and_return(true)
+          allow(File).to receive(:exist?).with('/root/wallaby-upgrade-done').and_return(true)
         end
         it { is_expected.to_not run_ruby_block 'raise_upgrade_exeception' }
         it { is_expected.to_not stop_service 'yum-cron' }
