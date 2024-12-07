@@ -20,12 +20,12 @@ package 'crudini'
 
 service 'yum-cron' do
   action [:stop, :disable]
-  not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/victoria-upgrade-done') }
+  not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/wallaby-upgrade-done') }
 end
 
 service 'dnf-automatic.timer' do
   action [:stop, :disable]
-  not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/victoria-upgrade-done') }
+  not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/wallaby-upgrade-done') }
 end
 
 osl_repos_openstack 'upgrade'
@@ -55,5 +55,5 @@ ruby_block 'raise_upgrade_exeception' do
   block do
     raise 'Upgrade recipe enabled, stopping futher chef resources from running'
   end
-  not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/victoria-upgrade-done') }
+  not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/wallaby-upgrade-done') }
 end
