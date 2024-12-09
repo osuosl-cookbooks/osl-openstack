@@ -177,9 +177,12 @@ control 'compute-controller' do
 
   describe command('bash -c "source /root/openrc && /bin/nova-status upgrade check"') do
     its('stdout') { should match(/Check: Cells v2.*\n.*Result: Success/) }
-    its('stdout') { should match(/Check: Ironic Flavor Migration.*\n.*Result: Success/) }
-    its('stdout') { should match(/Check: Placement API.*\n.*Result: Success/) }
     its('stdout') { should match(/Check: Cinder API.*\n.*Result: Success/) }
+    its('stdout') { should match(/Check: hw_machine_type unset.*\n.*Result: Success/) }
+    its('stdout') { should match(/Check: Older than N-1 computes.*\n.*Result: Success/) }
+    its('stdout') { should match(/Check: Placement API.*\n.*Result: Success/) }
+    its('stdout') { should match(/Check: Policy File JSON to YAML Migration.*\n.*Result: Success/) }
+    its('stdout') { should match(/Check: Policy Scope-based Defaults.*\n.*Result: Success/) }
   end
 
   describe http('https://controller.example.com:6080', ssl_verify: false) do

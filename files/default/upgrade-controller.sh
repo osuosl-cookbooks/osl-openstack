@@ -9,10 +9,12 @@ set -ex
 # Disable Chef temporarily
 rm -f /etc/cron.d/chef-client
 
+# Uprade this first since it takes so long
+dnf -y upgrade openstack-selinux
+
 # Stop all OpenStack services
 systemctl stop 'openstack-*'
 systemctl stop 'neutron-*'
-dnf -y install openstack-selinux
 systemctl stop httpd
 
 # Upgrade Keystone
@@ -21,6 +23,9 @@ dnf -y upgrade \*horizon\* \*django\*
 su -s /bin/sh -c "keystone-manage db_sync" keystone
 rm -rfv /usr/lib/systemd/system/httpd.service.d/openstack-dashboard.conf
 systemctl daemon-reload
+# Workaround issue with COMPRESS_PRECOMPILERS in horizon after the upgrade [1]
+# [1] https://access.redhat.com/solutions/7011005
+systemctl restart memcached
 systemctl start httpd
 
 # Upgrade Glance
@@ -63,4 +68,4 @@ su -s /bin/sh -c "neutron-db-manage upgrade heads" neutron
 # Upgrade the rest of the packages
 dnf -y upgrade --best --allowerasing
 
-touch /root/victoria-upgrade-done
+touch /root/wallaby-upgrade-done
