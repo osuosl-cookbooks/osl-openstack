@@ -3,7 +3,7 @@ if node['osl-openstack']['upgrade']
 
   execute '/root/upgrade.sh' do
     live_stream true
-    creates '/root/wallaby-upgrade-done'
+    creates '/root/xena-upgrade-done'
     only_if { ::File.exist?('/usr/sbin/httpd') }
   end
 end
