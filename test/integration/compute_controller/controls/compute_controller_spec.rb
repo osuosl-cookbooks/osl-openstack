@@ -188,4 +188,15 @@ control 'compute-controller' do
   describe http('https://controller.example.com:6080', ssl_verify: false) do
     its('status') { should cmp 200 }
   end
+
+  describe file '/etc/cron.d/nova-rowsflush' do
+    its('content') do
+      should match %r{20 5 \* \* \* nova nova-manage db archive_deleted_rows --max_rows 1000 --before `date --date='today - 90 days' \+\\\%F` --until-complete --all-cells >>/var/log/nova/nova-rowsflush.log 2>&1}
+    end
+  end
+  describe file '/etc/cron.d/nova-rowspurge' do
+    its('content') do
+      should match %r{20 6 \* \* \* nova nova-manage db purge --before `date --date='today - 14 days' \+\\\%D` --all-cells >>/var/log/nova/nova-rowspurge.log 2>&1}
+    end
+  end
 end

@@ -232,3 +232,15 @@ file '/var/lib/nova/.ssh/config' do
   group 'nova'
   mode '600'
 end
+
+logrotate_app 'var_log_ceph' do
+  path '/var/log/ceph'
+  frequency 'daily'
+  rotate 0
+  maxage 30
+  options %w(
+    copytruncate
+    missingok
+    notifempty
+  )
+end

@@ -272,6 +272,22 @@ describe 'osl-openstack::compute_controller' do
         expect(chef_run.template('/etc/sysconfig/openstack-nova-novncproxy')).to \
           notify('service[openstack-nova-novncproxy]').to(:restart)
       end
+      it do
+        is_expected.to create_cron_d('nova-rowsflush').with(
+          minute: 20,
+          hour: 5,
+          user: 'nova',
+          command: "nova-manage db archive_deleted_rows --max_rows 1000 --before `date --date='today - 90 days' +\\%F` --until-complete --all-cells >>/var/log/nova/nova-rowsflush.log 2>&1"
+        )
+      end
+      it do
+        is_expected.to create_cron_d('nova-rowspurge').with(
+          minute: 20,
+          hour: 6,
+          user: 'nova',
+          command: "nova-manage db purge --before `date --date='today - 14 days' +\\%D` --all-cells >>/var/log/nova/nova-rowspurge.log 2>&1"
+        )
+      end
 
       context 'pci passthrough' do
         cached(:chef_run) do
