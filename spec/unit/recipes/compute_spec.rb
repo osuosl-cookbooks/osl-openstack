@@ -188,6 +188,19 @@ describe 'osl-openstack::compute' do
           mode: '600'
         )
       end
+      it do
+        is_expected.to enable_logrotate_app('var_log_ceph').with(
+          path: '"/var/log/ceph"',
+          frequency: 'daily',
+          rotate: 0,
+          maxage: 30,
+          options: %w(
+            copytruncate
+            missingok
+            notifempty
+          )
+        )
+      end
       context 'AMD' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm) do |node|

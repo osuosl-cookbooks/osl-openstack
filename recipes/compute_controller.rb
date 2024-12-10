@@ -213,3 +213,23 @@ template '/etc/sysconfig/openstack-nova-novncproxy' do
   )
   notifies :restart, 'service[openstack-nova-novncproxy]'
 end
+
+cron_d 'nova-rowsflush' do
+  minute 20
+  hour 5
+  user 'nova'
+  command %W(
+    nova-manage db archive_deleted_rows --max_rows 1000 --before `date --date='today - 90 days' +\\\%F`
+    --until-complete --all-cells >>/var/log/nova/nova-rowsflush.log 2>&1
+  ).join(' ')
+end
+
+cron_d 'nova-rowspurge' do
+  minute 20
+  hour 6
+  user 'nova'
+  command %W(
+    nova-manage db purge --before `date --date='today - 14 days' +\\\%D`
+    --all-cells >>/var/log/nova/nova-rowspurge.log 2>&1
+  ).join(' ')
+end

@@ -7,6 +7,9 @@ set -ex
 # Disable Chef temporarily
 rm -f /etc/cron.d/chef-client
 
+# Uprade this first since it takes so long
+dnf -y upgrade openstack-selinux
+
 # Stop all OpenStack services
 systemctl stop 'openstack-*'
 systemctl stop 'neutron-*'
