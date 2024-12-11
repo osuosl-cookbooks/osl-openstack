@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+16.0.0 (2024-12-11)
+-------------------
+- OpenStack Xena
+
 15.1.0 (2024-12-10)
 -------------------
 - Various fixes and adjustments
