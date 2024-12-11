@@ -48,6 +48,10 @@ su -s /bin/sh -c "heat-manage db_sync" heat
 systemctl stop '*ceilometer*'
 dnf -y upgrade \*ceilometer\*
 
+# Upgrade placement
+dnf -y upgrade \*placement\* --best --allowerasing
+su -s /bin/sh -c "placement-manage db sync" placement
+
 # Upgrade nova
 crudini --set /etc/nova/nova.conf upgrade_levels compute auto
 systemctl stop '*nova*'
