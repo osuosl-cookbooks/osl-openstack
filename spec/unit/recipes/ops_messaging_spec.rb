@@ -26,7 +26,7 @@ describe 'osl-openstack::ops_messaging' do
       it do
         is_expected.to create_osl_systemd_unit_drop_in('ulimit').with(
           content: {
-            'Unit' => {
+            'Service' => {
               'LimitNOFILE' => 300000,
             },
           },
@@ -36,12 +36,25 @@ describe 'osl-openstack::ops_messaging' do
 
       it { is_expected.to enable_service 'rabbitmq-server' }
       it { is_expected.to start_service 'rabbitmq-server' }
-      it do
-        is_expected.to create_yum_repository('centos-rabbitmq').with(
-          description: 'CentOS $releasever - RabbitMQ',
-          baseurl: 'https://ftp.osuosl.org/pub/osl/vault/$releasever-stream/messaging/$basearch/rabbitmq-38',
-          gpgkey: 'https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Messaging'
-        )
+      case pltfrm
+      when ALMA_8
+        it do
+          is_expected.to create_yum_repository('centos-rabbitmq').with(
+            description: 'CentOS $releasever - RabbitMQ',
+            baseurl: 'https://ftp.osuosl.org/pub/osl/vault/$releasever-stream/messaging/$basearch/rabbitmq-38',
+            gpgkey: 'https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Messaging',
+            priority: '20'
+          )
+        end
+      when ALMA_9
+        it do
+          is_expected.to create_yum_repository('centos-rabbitmq').with(
+            description: 'CentOS $releasever - RabbitMQ',
+            baseurl: 'https://centos-stream.osuosl.org/SIGs/$releasever-stream/messaging/$basearch/rabbitmq-38',
+            gpgkey: 'https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Messaging',
+            priority: '20'
+          )
+        end
       end
 
       it do

@@ -25,5 +25,6 @@ depends 'osl-resources'
 depends 'yum-kernel-osuosl'
 
 supports 'almalinux', '~> 8.0'
+supports 'almalinux', '~> 9.0'
 
 gem 'fog-openstack', '~> 1.1'

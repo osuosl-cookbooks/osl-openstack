@@ -1,4 +1,5 @@
 local_storage = input('local_storage')
+os_release = os.release.to_i
 
 control 'compute' do
   %w(
@@ -47,17 +48,32 @@ control 'compute' do
   end
 
   os_pkgs =
-    %w(
-      device-mapper
-      device-mapper-multipath
-      libguestfs-rescue
-      libguestfs-tools
-      libvirt
-      openstack-nova-compute
-      python3-libguestfs
-      sg3_utils
-      sysfsutils
-    )
+    case os_release
+    when 8
+      %w(
+        device-mapper
+        device-mapper-multipath
+        libguestfs-rescue
+        libguestfs-tools
+        libvirt
+        openstack-nova-compute
+        python3-libguestfs
+        sg3_utils
+        sysfsutils
+      )
+    when 9
+      %w(
+        device-mapper
+        device-mapper-multipath
+        libguestfs-rescue
+        libvirt
+        openstack-nova-compute
+        python3-libguestfs
+        sg3_utils
+        sysfsutils
+        virt-win-reg
+      )
+    end
 
   os_pkgs.each do |p|
     describe package p do

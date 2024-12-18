@@ -19,7 +19,8 @@ action :create do
 
   yum_repository 'centos-rabbitmq' do
     description 'CentOS $releasever - RabbitMQ'
-    baseurl 'https://ftp.osuosl.org/pub/osl/vault/$releasever-stream/messaging/$basearch/rabbitmq-38'
+    baseurl openstack_rabbitmq_repo
+    priority '20'
     gpgkey 'https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Messaging'
   end
 
@@ -27,7 +28,7 @@ action :create do
 
   osl_systemd_unit_drop_in 'ulimit' do
     content({
-      'Unit' => {
+      'Service' => {
         'LimitNOFILE' => 300000,
       },
     })
