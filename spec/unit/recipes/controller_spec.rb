@@ -10,7 +10,6 @@ describe 'osl-openstack::controller' do
       include_context 'common_stubs'
       include_context 'network_stubs'
       include_context 'compute_stubs'
-      include_context 'telemetry_stubs'
 
       before do
         stub_data_bag_item('prometheus', 'openstack_exporter')

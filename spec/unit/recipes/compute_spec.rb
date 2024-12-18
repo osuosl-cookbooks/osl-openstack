@@ -29,19 +29,37 @@ describe 'osl-openstack::compute' do
       it { is_expected.to install_kernel_module 'tun' }
       it { is_expected.to load_kernel_module 'tun' }
       it { is_expected.to create_cookbook_file '/etc/sysconfig/network' }
-      it do
-        is_expected.to install_package %w(
-          device-mapper
-          device-mapper-multipath
-          libguestfs-rescue
-          libguestfs-tools
-          libvirt
-          openstack-nova-compute
-          python3-libguestfs
-          sg3_utils
-          sysfsutils
-        )
+      case pltfrm
+      when ALMA_8
+        it do
+          is_expected.to install_package %w(
+            device-mapper
+            device-mapper-multipath
+            libguestfs-rescue
+            libguestfs-tools
+            libvirt
+            openstack-nova-compute
+            python3-libguestfs
+            sg3_utils
+            sysfsutils
+          )
+        end
+      when ALMA_9
+        it do
+          is_expected.to install_package %w(
+            device-mapper
+            device-mapper-multipath
+            libguestfs-rescue
+            libvirt
+            openstack-nova-compute
+            python3-libguestfs
+            sg3_utils
+            sysfsutils
+            virt-win-reg
+          )
+        end
       end
+      it { is_expected.to delete_file '/etc/nova/nova-compute.conf' }
       it { is_expected.to enable_service 'libvirtd-tcp.socket' }
       it { is_expected.to start_service 'libvirtd-tcp.socket' }
       it { expect(chef_run.link('/usr/bin/qemu-system-x86_64')).to link_to('/usr/libexec/qemu-kvm') }

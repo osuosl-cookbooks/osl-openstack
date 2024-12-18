@@ -38,61 +38,42 @@ verifier:
       attrs:
         - test/integration/multi-node/compute.yml
       sudo: true
+<% if ENV['TF_VAR_region2'] == '1' %>
+    - name: controller_region2
+      backend: ssh
+      hosts_output: controller_region2
+      user: almalinux
+      profile_locations:
+        - test/integration/compute_controller
+        - test/integration/image
+        - test/integration/network
+        - test/integration/ops_messaging
+      attrs:
+        - test/integration/multi-node/controller_region2.yml
+      sudo: true
+    - name: compute_region3
+      backend: ssh
+      hosts_output: compute_region2
+      user: almalinux
+      profile_locations:
+        - test/integration/compute
+        - test/integration/telemetry_compute
+      attrs:
+        - test/integration/multi-node/compute_region2.yml
+      sudo: true
+<% end %>
 
 platforms:
   - name: almalinux-8
-    verifier:
-      systems:
-        - name: controller
-          backend: ssh
-          hosts_output: controller
-          user: almalinux
-          profile_locations:
-            - test/integration/block_storage_controller
-            - test/integration/compute_controller
-            - test/integration/identity
-            - test/integration/image
-            - test/integration/network
-            - test/integration/ops_messaging
-            - test/integration/orchestration
-            - test/integration/telemetry_controller
-          attrs:
-            - test/integration/multi-node/controller.yml
-          sudo: true
-        - name: compute
-          backend: ssh
-          hosts_output: compute
-          user: almalinux
-          profile_locations:
-            - test/integration/compute
-            - test/integration/telemetry_compute
-          attrs:
-            - test/integration/multi-node/compute.yml
-          sudo: true
-<% if ENV['TF_VAR_region2'] == '1' %>
-        - name: controller_region2
-          backend: ssh
-          hosts_output: controller_region2
-          user: almalinux
-          profile_locations:
-            - test/integration/compute_controller
-            - test/integration/image
-            - test/integration/network
-            - test/integration/ops_messaging
-          attrs:
-            - test/integration/multi-node/controller_region2.yml
-          sudo: true
-        - name: compute_region3
-          backend: ssh
-          hosts_output: compute_region2
-          user: almalinux
-          profile_locations:
-            - test/integration/compute
-            - test/integration/telemetry_compute
-          attrs:
-            - test/integration/multi-node/compute_region2.yml
-          sudo: true
-<% end %>
+    driver:
+      variables:
+        os_image: "Almalinux 8"
+        ssh_user_name: "almalinux"
+  - name: almalinux-9
+    driver:
+      variables:
+        os_image: "Almalinux 9"
+        ssh_user_name: "almalinux"
 
 suites:
   - name: multi-node

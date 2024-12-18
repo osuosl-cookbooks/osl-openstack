@@ -18,6 +18,15 @@ module OSLOpenstack
         cmd.stdout.match(/^#{user}\s+\.\*\s+\.\*\s+\.\*/)
       end
 
+      def openstack_rabbitmq_repo
+        case node['platform_version'].to_i
+        when 8
+          'https://ftp.osuosl.org/pub/osl/vault/$releasever-stream/messaging/$basearch/rabbitmq-38'
+        when 9
+          'https://centos-stream.osuosl.org/SIGs/$releasever-stream/messaging/$basearch/rabbitmq-38'
+        end
+      end
+
       def openstack_services
         {
           'block-storage' => 'cinder',
@@ -36,7 +45,7 @@ module OSLOpenstack
 
       def openstack_python_bin
         case node['platform_version'].to_i
-        when 8
+        when 8, 9
           '/usr/bin/python3'
         end
       end
@@ -45,12 +54,14 @@ module OSLOpenstack
         case node['platform_version'].to_i
         when 8
           '/usr/lib/python3.6'
+        when 9
+          '/usr/lib/python3.9'
         end
       end
 
       def openstack_client_pkg
         case node['platform_version'].to_i
-        when 8
+        when 8, 9
           %w(
             openstack-selinux
             python3-openstackclient
@@ -60,7 +71,7 @@ module OSLOpenstack
 
       def openstack_compute_controller_pkgs
         case node['platform_version'].to_i
-        when 8
+        when 8, 9
           %w(
             openstack-nova-api
             openstack-nova-conductor
@@ -85,6 +96,18 @@ module OSLOpenstack
             python3-libguestfs
             sg3_utils
             sysfsutils
+          )
+        when 9
+          %w(
+            device-mapper
+            device-mapper-multipath
+            libguestfs-rescue
+            libvirt
+            openstack-nova-compute
+            python3-libguestfs
+            sg3_utils
+            sysfsutils
+            virt-win-reg
           )
         end
       end
