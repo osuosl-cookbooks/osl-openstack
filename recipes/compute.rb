@@ -46,6 +46,10 @@ cookbook_file '/etc/sysconfig/network'
 
 package openstack_compute_pkgs
 
+file '/etc/nova/nova-compute.conf' do
+  action :delete
+end
+
 link "/usr/bin/qemu-system-#{node['kernel']['machine']}" do
   to '/usr/libexec/qemu-kvm'
 end

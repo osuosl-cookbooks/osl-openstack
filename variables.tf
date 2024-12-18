@@ -2,7 +2,7 @@ variable "docker_image" {
     default = "AlmaLinux 9 (docker)"
 }
 variable "os_image" {
-    default = "AlmaLinux 8"
+    default = "AlmaLinux 9"
 }
 variable "ssh_key_name" {
     default = "bootstrap"
