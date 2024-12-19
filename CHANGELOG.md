@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+17.0.0 (2024-12-19)
+-------------------
+- OpenStack Yoga
+
 16.0.1 (2024-12-11)
 -------------------
 - Make sure we run migrations for placement
