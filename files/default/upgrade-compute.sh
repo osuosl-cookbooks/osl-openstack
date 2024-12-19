@@ -19,7 +19,7 @@ dnf -y upgrade --best --allowerasing
 
 set +ex
 
-touch /root/xena-upgrade-done
+touch /root/yoga-upgrade-done
 
 echo
 echo "Run the following command once the controller has been upgraded:"

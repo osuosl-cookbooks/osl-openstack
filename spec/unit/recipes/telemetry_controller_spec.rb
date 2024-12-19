@@ -8,7 +8,6 @@ describe 'osl-openstack::telemetry_controller' do
       end
 
       include_context 'common_stubs'
-      include_context 'telemetry_stubs'
 
       it { is_expected.to add_osl_repos_openstack 'telemetry-controller' }
       it { is_expected.to create_osl_openstack_client 'telemetry-controller' }

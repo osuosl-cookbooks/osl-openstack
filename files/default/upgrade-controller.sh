@@ -72,4 +72,4 @@ su -s /bin/sh -c "neutron-db-manage upgrade heads" neutron
 # Upgrade the rest of the packages
 dnf -y upgrade --best --allowerasing
 
-touch /root/xena-upgrade-done
+touch /root/yoga-upgrade-done
