@@ -3,7 +3,7 @@ verifier:
   name: inspec
 driver:
   name: openstack
-  flavor_ref: 'm1.large'
+  flavor_ref: 'c2.local.8c8m50d'
   user_data: userdata.txt
 provisioner:
   name: chef_infra
@@ -274,7 +274,7 @@ suites:
   - name: controller
     driver_config:
       server_name: "controller-<%= ENV['USER'] %>"
-      flavor_ref: 'm1.xlarge'
+      flavor_ref: 'r2.local.8c24m100d'
     run_list:
       - recipe[openstack_test]
       - role[openstack_tk]
@@ -296,7 +296,7 @@ suites:
   - name: allinone
     driver_config:
       server_name: "allinone-<%= ENV['USER'] %>"
-      flavor_ref: 'm1.xlarge'
+      flavor_ref: 'r2.local.8c24m100d'
     run_list:
       - recipe[openstack_test]
       - role[openstack_tk]
@@ -327,7 +327,7 @@ suites:
         - test/integration/telemetry_controller
   - name: upgrade
     driver_config:
-      flavor_ref: 'm1.xlarge'
+      flavor_ref: 'r2.local.8c24m100d'
       server_name: "upgrade-<%= ENV['USER'] %>"
     run_list:
       - recipe[openstack_test::upgrade_start]

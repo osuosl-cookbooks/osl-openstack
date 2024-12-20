@@ -53,6 +53,10 @@ describe 'osl-openstack::compute' do
             libvirt
             openstack-nova-compute
             python3-libguestfs
+            qemu-kvm
+            qemu-kvm-device-display-virtio-gpu
+            qemu-kvm-device-display-virtio-gpu-pci
+            qemu-kvm-device-display-virtio-vga
             sg3_utils
             sysfsutils
             virt-win-reg
@@ -282,9 +286,9 @@ describe 'osl-openstack::compute' do
           it { is_expected.to_not load_kernel_module('kvm_hv') }
           it { is_expected.to_not enable_service 'smt_off' }
           it { is_expected.to_not start_service 'smt_off' }
-          it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/force_raw_images = false/) }
+          it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/force_raw_images = false/) }
           it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/cpu_mode = none/) }
-          it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/disk_cachemodes = file=writeback/) }
+          it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/disk_cachemodes = file=writeback/) }
         end
       end
 
@@ -377,6 +381,8 @@ describe 'osl-openstack::compute' do
             }
           )
         end
+        it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/force_raw_images = false/) }
+        it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/disk_cachemodes = file=writeback/) }
       end
     end
   end
