@@ -105,6 +105,10 @@ module OSLOpenstack
             libvirt
             openstack-nova-compute
             python3-libguestfs
+            qemu-kvm
+            qemu-kvm-device-display-virtio-gpu
+            qemu-kvm-device-display-virtio-gpu-pci
+            qemu-kvm-device-display-virtio-vga
             sg3_utils
             sysfsutils
             virt-win-reg
