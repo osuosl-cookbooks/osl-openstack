@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+17.0.1 (2024-12-20)
+-------------------
+- Various fixes for AlmaLinux 9 and local storage
+
 17.0.0 (2024-12-19)
 -------------------
 - OpenStack Yoga
