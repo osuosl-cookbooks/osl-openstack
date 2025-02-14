@@ -33,7 +33,7 @@ resource "openstack_networking_port_v2" "chef_zero" {
 resource "openstack_compute_instance_v2" "chef_zero" {
     name            = "chef-zero"
     image_name      = var.docker_image
-    flavor_name     = "m1.medium"
+    flavor_name     = "m2.local.2c3m10d"
     key_pair        = var.ssh_key_name
     security_groups = ["default"]
     connection {
@@ -129,7 +129,7 @@ resource "openstack_networking_port_v2" "compute_openstack" {
 resource "openstack_compute_instance_v2" "database" {
     name            = "database"
     image_name      = var.os_image
-    flavor_name     = "m1.large"
+    flavor_name     = "m2.local.8c8m100d"
     key_pair        = var.ssh_key_name
     security_groups = ["default"]
     connection {
@@ -153,7 +153,7 @@ resource "openstack_compute_instance_v2" "database" {
 resource "openstack_compute_instance_v2" "ceph" {
     name            = "ceph"
     image_name      = "AlmaLinux 8"
-    flavor_name     = "m1.large"
+    flavor_name     = "m2.local.8c8m100d"
     key_pair        = var.ssh_key_name
     security_groups = ["default"]
     connection {
@@ -171,7 +171,7 @@ resource "openstack_compute_instance_v2" "ceph" {
 resource "openstack_compute_instance_v2" "controller" {
     name            = "controller"
     image_name      = var.os_image
-    flavor_name     = "m1.xlarge"
+    flavor_name     = "m2.local.16c16m200d"
     key_pair        = var.ssh_key_name
     security_groups = ["default"]
     connection {
@@ -195,7 +195,7 @@ resource "openstack_compute_instance_v2" "controller" {
 resource "openstack_compute_instance_v2" "compute" {
     name            = "compute"
     image_name      = var.os_image
-    flavor_name     = "m1.large"
+    flavor_name     = "m2.local.8c8m100d"
     key_pair        = var.ssh_key_name
     security_groups = ["default"]
     connection {
