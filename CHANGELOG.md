@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+17.0.2 (2025-02-26)
+-------------------
+- Only install qemu-kvm-device-display-virtio-vga on x86
+
 17.0.1 (2024-12-20)
 -------------------
 - Various fixes for AlmaLinux 9 and local storage
