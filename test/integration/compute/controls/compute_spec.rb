@@ -72,12 +72,13 @@ control 'compute' do
         qemu-kvm
         qemu-kvm-device-display-virtio-gpu
         qemu-kvm-device-display-virtio-gpu-pci
-        qemu-kvm-device-display-virtio-vga
         sg3_utils
         sysfsutils
         virt-win-reg
       )
     end
+
+  os_pkgs << 'qemu-kvm-device-display-virtio-vga' if os_release >= 9 && os.arch == 'x86_64'
 
   os_pkgs.each do |p|
     describe package p do

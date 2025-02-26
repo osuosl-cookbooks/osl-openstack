@@ -245,6 +245,48 @@ describe 'osl-openstack::compute' do
         it { is_expected.to upgrade_package 'kernel' }
       end
 
+      context 'aarch64' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm) do |node|
+            node.automatic['kernel']['machine'] = 'aarch64'
+          end.converge(described_recipe)
+        end
+
+        case pltfrm
+        when ALMA_8
+          it do
+            is_expected.to install_package %w(
+              device-mapper
+              device-mapper-multipath
+              libguestfs-rescue
+              libguestfs-tools
+              libvirt
+              openstack-nova-compute
+              python3-libguestfs
+              sg3_utils
+              sysfsutils
+            )
+          end
+        when ALMA_9
+          it do
+            is_expected.to install_package %w(
+              device-mapper
+              device-mapper-multipath
+              libguestfs-rescue
+              libvirt
+              openstack-nova-compute
+              python3-libguestfs
+              qemu-kvm
+              qemu-kvm-device-display-virtio-gpu
+              qemu-kvm-device-display-virtio-gpu-pci
+              sg3_utils
+              sysfsutils
+              virt-win-reg
+            )
+          end
+        end
+      end
+
       context 'ppc64le' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm) do |node|
@@ -260,6 +302,39 @@ describe 'osl-openstack::compute' do
         it { is_expected.to_not enable_service 'smt_off' }
         it { is_expected.to_not start_service 'smt_off' }
 
+        case pltfrm
+        when ALMA_8
+          it do
+            is_expected.to install_package %w(
+              device-mapper
+              device-mapper-multipath
+              libguestfs-rescue
+              libguestfs-tools
+              libvirt
+              openstack-nova-compute
+              python3-libguestfs
+              sg3_utils
+              sysfsutils
+            )
+          end
+        when ALMA_9
+          it do
+            is_expected.to install_package %w(
+              device-mapper
+              device-mapper-multipath
+              libguestfs-rescue
+              libvirt
+              openstack-nova-compute
+              python3-libguestfs
+              qemu-kvm
+              qemu-kvm-device-display-virtio-gpu
+              qemu-kvm-device-display-virtio-gpu-pci
+              sg3_utils
+              sysfsutils
+              virt-win-reg
+            )
+          end
+        end
         context 'power8' do
           cached(:chef_run) do
             ChefSpec::SoloRunner.new(pltfrm) do |node|
