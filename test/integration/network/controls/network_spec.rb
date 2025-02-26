@@ -72,7 +72,7 @@ control 'network' do
   describe ini('/etc/neutron/dhcp_agent.ini') do
     its('DEFAULT.interface_driver') { should cmp 'neutron.agent.linux.interface.BridgeInterfaceDriver' }
     its('DEFAULT.enable_isolated_metadata') { should cmp 'true' }
-    its('DEFAULT.dhcp_lease_duration') { should cmp '600' }
+    its('DEFAULT.dhcp_lease_duration') { should cmp '3600' }
   end if controller
 
   describe ini('/etc/neutron/metadata_agent.ini') do
