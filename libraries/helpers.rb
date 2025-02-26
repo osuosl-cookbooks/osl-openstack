@@ -98,21 +98,23 @@ module OSLOpenstack
             sysfsutils
           )
         when 9
-          %w(
-            device-mapper
-            device-mapper-multipath
-            libguestfs-rescue
-            libvirt
-            openstack-nova-compute
-            python3-libguestfs
-            qemu-kvm
-            qemu-kvm-device-display-virtio-gpu
-            qemu-kvm-device-display-virtio-gpu-pci
-            qemu-kvm-device-display-virtio-vga
-            sg3_utils
-            sysfsutils
-            virt-win-reg
-          )
+          pkgs =
+            %w(
+              device-mapper
+              device-mapper-multipath
+              libguestfs-rescue
+              libvirt
+              openstack-nova-compute
+              python3-libguestfs
+              qemu-kvm
+              qemu-kvm-device-display-virtio-gpu
+              qemu-kvm-device-display-virtio-gpu-pci
+              sg3_utils
+              sysfsutils
+              virt-win-reg
+            )
+          pkgs << 'qemu-kvm-device-display-virtio-vga' if intel?
+          pkgs.sort!
         end
       end
 
