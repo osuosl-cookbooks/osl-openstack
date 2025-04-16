@@ -23,6 +23,7 @@ depends 'osl-prometheus'
 depends 'osl-repos'
 depends 'osl-resources'
 depends 'yum-kernel-osuosl'
+depends 'yum-osuosl'
 
 supports 'almalinux', '~> 8.0'
 supports 'almalinux', '~> 9.0'

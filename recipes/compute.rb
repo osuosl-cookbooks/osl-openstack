@@ -41,6 +41,9 @@ kernel_module 'tun' do
   action [:install, :load]
 end
 
+# Use our virt repo on AlmaLinux 9 for ppc64le
+include_recipe 'yum-osuosl::virt' if node['platform_version'].to_i >= 9 && ppc64le?
+
 # Disable IPv6 autoconf globally
 cookbook_file '/etc/sysconfig/network'
 
