@@ -28,6 +28,7 @@ describe 'osl-openstack::compute' do
       end
       it { is_expected.to install_kernel_module 'tun' }
       it { is_expected.to load_kernel_module 'tun' }
+      it { is_expected.to_not include_recipe 'yum-osuosl::virt' }
       it { is_expected.to create_cookbook_file '/etc/sysconfig/network' }
       case pltfrm
       when ALMA_8
@@ -252,6 +253,8 @@ describe 'osl-openstack::compute' do
           end.converge(described_recipe)
         end
 
+        it { is_expected.to_not include_recipe 'yum-osuosl::virt' }
+
         case pltfrm
         when ALMA_8
           it do
@@ -317,6 +320,7 @@ describe 'osl-openstack::compute' do
               sysfsutils
             )
           end
+          it { is_expected.to_not include_recipe 'yum-osuosl::virt' }
         when ALMA_9
           it do
             is_expected.to install_package %w(
@@ -334,6 +338,7 @@ describe 'osl-openstack::compute' do
               virt-win-reg
             )
           end
+          it { is_expected.to include_recipe 'yum-osuosl::virt' }
         end
         context 'power8' do
           cached(:chef_run) do
