@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+17.1.0 (2025-04-16)
+-------------------
+- Add OSL virt repo for ppc64le on AlmaLinux 9
+
 17.0.3 (2025-02-26)
 -------------------
 - Increase dhcp lease to 1hr
