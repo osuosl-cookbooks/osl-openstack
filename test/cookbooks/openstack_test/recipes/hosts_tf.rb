@@ -16,6 +16,12 @@ append_if_no_line '10.1.2.3' do
   sensitive false
 end
 
+append_if_no_line '10.1.2.13' do
+  path '/etc/hosts'
+  line '10.1.2.13 controller2.testing.osuosl.org'
+  sensitive false
+end
+
 append_if_no_line '10.1.2.4' do
   path '/etc/hosts'
   line '10.1.2.4 compute.testing.osuosl.org'
@@ -38,4 +44,8 @@ append_if_no_line '10.1.2.104' do
   path '/etc/hosts'
   line '10.1.2.104 compute-region2.testing.osuosl.org'
   sensitive false
+end
+
+hostname node['hostname'] do
+  fqdn "#{node['hostname']}.example.com"
 end

@@ -10,6 +10,7 @@
       "block_token": "AQAjbr1aWv+aNBAAoGfqrwX9iSdNmtuvUkwGhA==",
       "rbd_store_user": "cinder"
     },
+    "cluster": "multinode",
     "db": {
       "user": "cinder",
       "pass": "cinder"
@@ -93,6 +94,34 @@
     "suffix": "x86",
     "endpoint": "db.testing.osuosl.org"
   },
+  "ha": {
+    "keepalived": {
+      "primary": {
+        "controller.novalocal": true,
+        "controller2.novalocal": false
+      },
+      "interface": {
+        "controller.novalocal": "ens4",
+        "controller2.novalocal": "ens4"
+      },
+      "priority": {
+        "controller.novalocal": 100,
+        "controller2.novalocal": 90
+      },
+      "virtual_router_id": 51,
+      "auth_pass": "vrrp_pass",
+      "vip_v4": "10.1.2.10",
+      "vip_v6": "fd00:1:2::10"
+    },
+    "api_listen_ip": {
+      "controller.novalocal": "10.1.2.3",
+      "controller2.novalocal": "10.1.2.13"
+    },
+    "haproxy": {
+      "stats_user": "admin",
+      "stats_pass": "stats_pass"
+    }
+  },
   "identity": {
     "aliases":[
       "controller1.testing.osuosl.org"
@@ -101,6 +130,10 @@
     "db": {
       "user": "keystone",
       "pass": "keystone"
+    },
+    "fernet_keys": {
+      "0": "mMb-EZdddLdkfDNmlaYY_S7UJ_McR3K5iMWDONCQOxM=",
+      "1": "KhDajJFtaX2bRdcLdX5WynU7viNk3XKkYpTX1Vo91Bs="
     }
   },
   "image": {
@@ -122,16 +155,25 @@
     }
   },
   "messaging": {
-    "endpoint": "controller.testing.osuosl.org",
+    "endpoint": [
+      "controller.testing.osuosl.org",
+      "controller2.testing.osuosl.org"
+    ],
     "user": "openstack",
-    "pass": "openstack"
+    "pass": "openstack",
+    "cookie": "KLVQHHBZLYDZGPPRMPFW",
+    "primary_node": "rabbit@controller.testing.osuosl.org"
   },
   "memcached": {
-    "endpoint": "controller.testing.osuosl.org:11211"
+    "endpoint": [
+      "controller.testing.osuosl.org:11211",
+      "controller2.testing.osuosl.org:11211"
+    ]
   },
   "network": {
     "endpoint": "controller.testing.osuosl.org",
     "region": "RegionOne",
+    "ha": true,
     "db": {
       "user": "neutron",
       "pass": "neutron"

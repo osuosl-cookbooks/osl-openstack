@@ -45,7 +45,7 @@ control 'compute' do
     its('content') { should match /^NETWORKING=yes$/ }
     its('content') { should match /^NETWORKING_IPV6=yes$/ }
     its('content') { should match /^IPV6_AUTOCONF=no$/ }
-  end
+  end if os_release <= 8
 
   os_pkgs =
     case os_release

@@ -22,7 +22,8 @@ osl_openstack_client 'dashboard'
 osl_firewall_openstack 'dashboard'
 osl_openstack_openrc 'dashboard'
 
-node.default['osl-apache']['listen'] = %w(80 443)
+listen_ip = openstack_api_listen_ip
+node.default['osl-apache']['listen'] = %w(80 443).map { |p| "#{listen_ip}:#{p}" }
 
 include_recipe 'osl-memcached'
 include_recipe 'osl-apache'
@@ -70,7 +71,7 @@ template '/etc/openstack-dashboard/local_settings' do
   sensitive true
   variables(
     auth_url: auth_endpoint,
-    memcache_servers: s['memcached']['endpoint'],
+    memcache_servers: openstack_memcached_endpoints,
     regions: d['regions'],
     secret_key: d['secret_key']
   )
@@ -82,6 +83,7 @@ apache_app 'horizon' do
   cookbook 'osl-openstack'
   server_name d['endpoint']
   server_aliases d['aliases'] if d['aliases']
+  server_address listen_ip
   template 'wsgi-horizon.conf.erb'
   notifies :run, 'execute[horizon: compress]'
   notifies :reload, 'apache2_service[osuosl]'

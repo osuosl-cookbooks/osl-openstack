@@ -1,6 +1,6 @@
 require_controls 'osuosl-baseline' do
   control 'ssl-baseline'
-end
+end unless input('skip_ssl_baseline', value: false)
 
 db_endpoint = input('db_endpoint')
 
@@ -22,13 +22,11 @@ control 'openstack-identity' do
   describe port(5000) do
     it { should be_listening }
     its('protocols') { should include 'tcp' }
-    its('addresses') { should include '0.0.0.0' }
   end
 
   describe json(
     content: http(
-      'https://127.0.0.1:5000/v3',
-      headers: { 'Host' => 'controller.testing.osuosl.org' },
+      'https://controller.testing.osuosl.org:5000/v3',
       ssl_verify: false
     ).body
   ) do
@@ -36,7 +34,7 @@ control 'openstack-identity' do
   end
 
   describe http(
-    'https://127.0.0.1:5000',
+    'https://controller.testing.osuosl.org:5000',
     headers: { 'Host' => 'controller1.testing.osuosl.org' },
     ssl_verify: false
   ) do
@@ -47,7 +45,6 @@ control 'openstack-identity' do
   describe port(11211) do
     it { should be_listening }
     its('protocols') { should include 'udp' }
-    its('addresses') { should include '0.0.0.0' }
   end
 
   describe command('bash -c "source /root/openrc && /usr/bin/openstack token issue"') do
@@ -65,8 +62,8 @@ control 'openstack-identity' do
 
   describe ini '/etc/keystone/keystone.conf' do
     its('DEFAULT.public_endpoint') { should cmp 'https://controller.testing.osuosl.org:5000/' }
-    its('DEFAULT.transport_url') { should cmp 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672' }
-    its('cache.memcache_servers') { should cmp 'controller.testing.osuosl.org:11211' }
+    its('DEFAULT.transport_url') { should match %r{^rabbit://openstack:openstack@controller\.testing\.osuosl\.org:5672} }
+    its('cache.memcache_servers') { should match(/controller\.testing\.osuosl\.org:11211/) }
     its('database.connection') { should cmp "mysql+pymysql://keystone_x86:keystone@#{db_endpoint}:3306/keystone_x86" }
   end
 

@@ -9,3 +9,5 @@ inputs:
     value: controller.testing.osuosl.org
   - name: physical_interface_mappings
     value: public:eth1
+  - name: primary_controller
+    value: true

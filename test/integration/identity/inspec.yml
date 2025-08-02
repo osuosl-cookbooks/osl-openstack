@@ -10,3 +10,5 @@ inputs:
       - 5000
   - name: db_endpoint
     value: localhost
+  - name: skip_ssl_baseline
+    value: false

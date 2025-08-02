@@ -31,8 +31,10 @@ template '/etc/neutron/neutron.conf' do
     auth_endpoint: auth_endpoint,
     compute_pass: s['compute']['service']['pass'],
     controller: controller,
+    ha: safe_dig(n, 'ha'),
     database_connection: openstack_database_connection('network'),
-    memcached_endpoint: s['memcached']['endpoint'],
+    listen_ip: openstack_api_listen_ip,
+    memcached_endpoint: openstack_memcached_servers,
     region: n['region'],
     service_pass: n['service']['pass'],
     transport_url: openstack_transport_url
@@ -52,10 +54,10 @@ end
 osl_systemd_unit_drop_in 'part_of_iptables' do
   extend Iptables::Cookbook::Helpers
   content({
-    'Unit' => {
-      'PartOf' => "#{get_service_name(:ipv4)}.service",
-    },
-  })
+            'Unit' => {
+              'PartOf' => "#{get_service_name(:ipv4)}.service",
+            },
+          })
   unit_name 'neutron-linuxbridge-agent.service'
 end
 

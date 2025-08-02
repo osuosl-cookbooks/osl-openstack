@@ -36,6 +36,37 @@ module OSLOpenstack
         end
       end
 
+      # Join the local RabbitMQ broker to the primary's Mnesia cluster
+      # so queue metadata is shared across both nodes. Without clustering
+      # the brokers are isolated and OpenStack RPC reply queues become
+      # undeliverable when request and reply go through different nodes.
+      def openstack_rabbitmq_join_cluster(primary_node_name)
+        if primary_node_name.include?(node['hostname'])
+          Chef::Log.info("This node IS the RabbitMQ primary ('#{primary_node_name}'). No join needed.")
+          return false
+        end
+        # rabbitmqctl 3.8 doesn't accept --format json on cluster_status.
+        # Parse the plain text output - if the primary's node name shows
+        # up at all, we're already clustered with it.
+        cluster_status = shell_out('rabbitmqctl cluster_status')
+        cluster_status.error!
+        if cluster_status.stdout.include?(primary_node_name)
+          Chef::Log.info("Already clustered with '#{primary_node_name}'. Skipping.")
+          return false
+        end
+        Chef::Log.info("Joining RabbitMQ cluster with primary '#{primary_node_name}'.")
+        begin
+          shell_out!('rabbitmqctl stop_app')
+          shell_out!("rabbitmqctl join_cluster #{primary_node_name}")
+          shell_out!('rabbitmqctl start_app')
+          true
+        rescue Mixlib::ShellOut::ShellCommandFailed => e
+          Chef::Log.error("RabbitMQ join_cluster failed: #{e.message}")
+          shell_out('rabbitmqctl start_app')
+          raise 'Failed to join RabbitMQ cluster; see chef logs.'
+        end
+      end
+
       def openstack_services
         {
           'block-storage' => 'cinder',
@@ -129,8 +160,53 @@ module OSLOpenstack
 
       def openstack_transport_url
         m = os_secrets['messaging']
+        user = m['user']
+        pass = m['pass']
+        hosts = Array(m['endpoint']).sort.map { |endpoint| "#{user}:#{pass}@#{endpoint}:5672" }.join(',')
+        "rabbit://#{hosts}/"
+      end
 
-        "rabbit://#{m['user']}:#{m['pass']}@#{m['endpoint']}:5672"
+      def openstack_memcached_endpoints
+        Array(os_secrets['memcached']['endpoint']).sort
+      end
+
+      def openstack_memcached_servers
+        openstack_memcached_endpoints.join(',')
+      end
+
+      # Per-host listen address for Apache/WSGI vhosts so that HAProxy can
+      # bind to the VIP on the same port. Returns '*' when the cloud is not
+      # configured for HA (back-compat with single-controller deployments).
+      def openstack_api_listen_ip
+        ha = safe_dig(os_secrets, 'ha')
+        return '*' unless ha
+        safe_dig(ha, 'api_listen_ip', node['fqdn']) || '*'
+      end
+
+      # Comma-joined glance endpoint URLs for nova/cinder. Accepts either
+      # a single string or an array in os_secrets['image']['endpoint'].
+      def openstack_image_api_servers
+        Array(os_secrets['image']['endpoint']).map { |e| "http://#{e}:9292" }.join(',')
+      end
+
+      # OpenStack APIs to put behind HAProxy on the controller VIP.
+      # Horizon (80/443) uses 'source' for session affinity; everything
+      # else round-robins.
+      def openstack_ha_services
+        [
+          { name: 'keystone',       port: 5000 },
+          { name: 'glance-api',     port: 9292 },
+          { name: 'nova-api',       port: 8774 },
+          { name: 'nova-metadata',  port: 8775 },
+          { name: 'placement',      port: 8778 },
+          { name: 'neutron-server', port: 9696 },
+          { name: 'cinder-api',     port: 8776 },
+          { name: 'heat-api',       port: 8004 },
+          { name: 'heat-cfn',       port: 8000 },
+          { name: 'novnc',          port: 6080 },
+          { name: 'horizon-http',   port: 80,  balance: 'source' },
+          { name: 'horizon-https',  port: 443, balance: 'source' },
+        ]
       end
 
       def openstack_database_connection(service)
@@ -159,7 +235,7 @@ module OSLOpenstack
           if address.nil?
             '127.0.0.1'
           else
-            address[0]
+            address.first
           end
         end
       end
@@ -249,15 +325,28 @@ module OSLOpenstack
           openstack_domain_name: 'default',
         }
 
+        return @connection_cache if @connection_cache
+
+        # On a fresh controller bootstrap, Apache + keystone may not be
+        # ready when this is first called. Retry with backoff and surface
+        # the actual error if all attempts fail (rather than returning
+        # nil and letting callers fail with NoMethodError on nil).
         count = 0
-        begin
-          @connection_cache ||= Fog::OpenStack::Identity.new(params)
-        rescue
-          count += 1
-          Chef::Log.warn("Unable to connect to controller, retry ##{count}")
-          sleep(1)
-          retry unless count > 10
+        max_attempts = 20
+        last_error = nil
+        loop do
+          begin
+            @connection_cache = Fog::OpenStack::Identity.new(params)
+            return @connection_cache
+          rescue => e
+            last_error = e
+            count += 1
+            break if count >= max_attempts
+            Chef::Log.warn("Unable to connect to keystone at #{params[:openstack_auth_url]} (#{e.class}: #{e.message}), retry ##{count}")
+            sleep([2**count, 30].min)
+          end
         end
+        raise "Failed to connect to keystone at #{params[:openstack_auth_url]} after #{count} attempts: #{last_error.class}: #{last_error.message}"
       end
 
       def os_role(new_resource)
@@ -306,7 +395,7 @@ module OSLOpenstack
         raise "project_name #{new_resource.project_name} not found" if project.nil?
         raise "role #{new_resource.role_name} not found" if role.nil?
         raise "user #{new_resource.user_name} not found" if user.nil?
-        (user.projects.find { |p| p['name'] == new_resource.project_name })
+        user.projects.find { |p| p['name'] == new_resource.project_name }
       end
 
       def os_user_grant_domain(new_resource)
@@ -321,7 +410,9 @@ module OSLOpenstack
 
       def safe_dig(hash, *keys)
         keys.reduce(hash) do |acc, key|
-          acc.is_a?(Hash) ? acc[key] : nil
+          if acc.is_a?(Hash) || acc.is_a?(Chef::DataBagItem)
+            acc[key]
+          end
         end
       end
 

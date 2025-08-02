@@ -4,10 +4,19 @@
 [DEFAULT]
 <% if @controller -%>
 allow_overlapping_ips = True
+<% if @listen_ip && @listen_ip != '*' -%>
+bind_host = <%= @listen_ip %>
+<% end -%>
 control_exchange = neutron
 core_plugin = ml2
 router_distributed = False
 service_plugins = neutron.services.l3_router.l3_router_plugin.L3RouterPlugin,metering
+<% if @ha -%>
+l3_ha = True
+max_l3_agents_per_router = 2
+min_l3_agents_per_router = 2
+dhcp_agents_per_network = 2
+<% end -%>
 <% end -%>
 auth_strategy = keystone
 transport_url = <%= @transport_url %>

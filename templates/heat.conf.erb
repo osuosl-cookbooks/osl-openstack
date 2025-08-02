@@ -10,6 +10,14 @@ stack_domain_admin = heat_domain_admin
 stack_domain_admin_password = <%= @heat_domain_admin %>
 stack_user_domain_name = heat
 transport_url = <%= @transport_url %>
+<% if @listen_ip && @listen_ip != '*' -%>
+
+[heat_api]
+bind_host = <%= @listen_ip %>
+
+[heat_api_cfn]
+bind_host = <%= @listen_ip %>
+<% end -%>
 
 [cache]
 memcache_servers = <%= @memcached_endpoint %>

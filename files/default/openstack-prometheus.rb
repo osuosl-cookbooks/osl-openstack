@@ -3,11 +3,11 @@ require 'fog/openstack'
 require 'prometheus_reporter'
 
 @connection_params = {
-  openstack_auth_url:     ENV['OS_AUTH_URL'],
-  openstack_username:     ENV['OS_USERNAME'],
-  openstack_api_key:      ENV['OS_PASSWORD'],
+  openstack_auth_url: ENV['OS_AUTH_URL'],
+  openstack_username: ENV['OS_USERNAME'],
+  openstack_api_key: ENV['OS_PASSWORD'],
   openstack_project_name: ENV['OS_PROJECT_NAME'],
-  openstack_domain_id:    'default',
+  openstack_domain_id: 'default',
 }
 
 report = PrometheusReporter::TextFormatter.new
@@ -60,4 +60,4 @@ end
 
 report.entry(:openstack_completion_time, value: Time.now.to_i, labels: { cluster: ENV['OS_CLUSTER'] })
 
-puts report.to_s
+puts report

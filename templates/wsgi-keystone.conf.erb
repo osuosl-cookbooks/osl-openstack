@@ -1,7 +1,7 @@
-Listen 5000
+Listen <%= @server_address %>:5000
 WSGISocketPrefix /var/lock/subsys
 
-<VirtualHost *:5000>
+<VirtualHost <%= @server_address %>:5000>
   ServerName <%= @server_name %>
   <% unless @server_aliases.empty? -%>
   ServerAlias <%= @server_aliases.flatten.join(" ") %>

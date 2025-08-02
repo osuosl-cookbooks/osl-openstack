@@ -1,0 +1,6 @@
+{
+  "id": "snmp_exporter",
+  "snmp": [],
+  "snmp_pdu": [],
+  "snmp_arista": []
+}

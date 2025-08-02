@@ -60,7 +60,7 @@ osl_openstack_role 'heat_stack_user'
     endpoint_name 'orchestration'
     service_name 'heat'
     interface int
-    url "http://#{o['endpoint']}:8004/v1/%\(tenant_id\)s"
+    url "http://#{o['endpoint']}:8004/v1/%(tenant_id)s"
     region 'RegionOne'
   end
 
@@ -90,7 +90,8 @@ template '/etc/heat/heat.conf' do
     database_connection: openstack_database_connection('orchestration'),
     endpoint: o['endpoint'],
     heat_domain_admin: o['heat_domain_admin'],
-    memcached_endpoint: s['memcached']['endpoint'],
+    listen_ip: openstack_api_listen_ip,
+    memcached_endpoint: openstack_memcached_servers,
     region: o['region'],
     service_pass: o['service']['pass'],
     transport_url: openstack_transport_url

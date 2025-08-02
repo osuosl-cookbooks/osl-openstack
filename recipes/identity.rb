@@ -21,7 +21,8 @@ osl_openstack_client 'identity'
 osl_firewall_openstack 'identity'
 osl_openstack_openrc 'identity'
 
-node.default['osl-apache']['listen'] = %w(80 443)
+listen_ip = openstack_api_listen_ip
+node.default['osl-apache']['listen'] = %w(80 443).map { |p| "#{listen_ip}:#{p}" }
 
 include_recipe 'osl-memcached'
 include_recipe 'osl-apache'
@@ -42,6 +43,31 @@ end
 
 endpoint = s['identity']['endpoint']
 admin_pass = s['users']['admin']
+fernet_keys = safe_dig(s, 'identity', 'fernet_keys')
+
+if fernet_keys
+  # On a fresh node the openstack-keystone package creates /etc/keystone
+  # but not /etc/keystone/fernet-keys; that dir is normally created by
+  # `keystone-manage fernet_setup` (below), which runs after these file
+  # resources. Pre-create it so the data-bag keys can be written on the
+  # very first chef run.
+  directory '/etc/keystone/fernet-keys' do
+    owner 'keystone'
+    group 'keystone'
+    mode '0700'
+  end
+
+  fernet_keys.each do |key, val|
+    file "/etc/keystone/fernet-keys/#{key}" do
+      content val
+      owner 'keystone'
+      group 'keystone'
+      mode '600'
+      sensitive true
+      notifies :reload, 'apache2_service[osuosl]'
+    end
+  end
+end
 
 template '/etc/keystone/keystone.conf' do
   owner 'root'
@@ -51,7 +77,7 @@ template '/etc/keystone/keystone.conf' do
   variables(
     endpoint: endpoint,
     transport_url: openstack_transport_url,
-    memcached_endpoint: s['memcached']['endpoint'],
+    memcached_endpoint: openstack_memcached_servers,
     database_connection: openstack_database_connection('identity')
   )
   notifies :run, 'execute[keystone: db_sync]', :immediately
@@ -96,6 +122,7 @@ end
 apache_app 'keystone' do
   server_name endpoint
   server_aliases s['identity']['aliases'] if s['identity']['aliases']
+  server_address listen_ip
   cookbook 'osl-openstack'
   template 'wsgi-keystone.conf.erb'
   notifies :reload, 'apache2_service[osuosl]', :immediately

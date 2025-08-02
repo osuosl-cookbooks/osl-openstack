@@ -3,3 +3,5 @@ name: telemetry-controller
 inputs:
   - name: prometheus_endpoint
     value: localhost
+  - name: primary_controller
+    value: true

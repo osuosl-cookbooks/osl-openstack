@@ -107,8 +107,9 @@ describe 'osl-openstack::compute' do
               ServerGroupAffinityFilter
             ),
             endpoint: 'controller.testing.osuosl.org',
-            image_endpoint: 'controller.testing.osuosl.org',
+            image_api_servers: 'http://controller.testing.osuosl.org:9292',
             images_rbd_pool: 'vms',
+            listen_ip: '*',
             local_storage: false,
             memcached_endpoint: 'controller.testing.osuosl.org:11211',
             metadata_proxy_shared_secret: '2SJh0RuO67KpZ63z',
@@ -122,7 +123,7 @@ describe 'osl-openstack::compute' do
             rbd_user: 'cinder',
             region: 'RegionOne',
             service_pass: 'nova',
-            transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672',
+            transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672/',
           }
         )
       end
@@ -578,8 +579,9 @@ describe 'osl-openstack::compute' do
                 ServerGroupAffinityFilter
               ),
               endpoint: 'controller_region2.testing.osuosl.org',
-              image_endpoint: 'controller_region2.testing.osuosl.org',
+              image_api_servers: 'http://controller_region2.testing.osuosl.org:9292',
               images_rbd_pool: nil,
+              listen_ip: '*',
               local_storage: true,
               memcached_endpoint: 'controller_region2.testing.osuosl.org:11211',
               metadata_proxy_shared_secret: '2SJh0RuO67KpZ63z',
@@ -593,7 +595,7 @@ describe 'osl-openstack::compute' do
               rbd_user: nil,
               region: 'RegionTwo',
               service_pass: 'nova',
-              transport_url: 'rabbit://openstack:openstack@controller_region2.testing.osuosl.org:5672',
+              transport_url: 'rabbit://openstack:openstack@controller_region2.testing.osuosl.org:5672/',
             }
           )
         end

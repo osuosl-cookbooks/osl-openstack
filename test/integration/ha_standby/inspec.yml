@@ -1,0 +1,4 @@
+---
+name: ha_standby
+title: OpenStack HA controller (standby)
+summary: Verifies the standby controller runs HA services without holding the VIP

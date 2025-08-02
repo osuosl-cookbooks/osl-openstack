@@ -1,0 +1,4 @@
+---
+name: ha_master
+title: OpenStack HA controller (master)
+summary: Verifies the master controller holds the VIP and runs the HA services

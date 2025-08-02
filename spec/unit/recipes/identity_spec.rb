@@ -76,10 +76,10 @@ describe 'osl-openstack::identity' do
           mode: '0640',
           sensitive: true,
           variables: {
-              endpoint: 'controller.testing.osuosl.org',
-              transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672',
-              memcached_endpoint: 'controller.testing.osuosl.org:11211',
-              database_connection: 'mysql+pymysql://keystone_x86:keystone@localhost:3306/keystone_x86',
+            endpoint: 'controller.testing.osuosl.org',
+            transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672/',
+            memcached_endpoint: 'controller.testing.osuosl.org:11211',
+            database_connection: 'mysql+pymysql://keystone_x86:keystone@localhost:3306/keystone_x86',
           }
         )
       end

@@ -10,14 +10,23 @@ backup_ceph_stripe_count = 0
 backup_ceph_stripe_unit = 0
 backup_ceph_user = <%= @backup_ceph_user %>
 backup_driver = cinder.backup.drivers.ceph
+<% if @cluster -%>
+cluster = <%= @cluster %>
+<% end -%>
 control_exchange = cinder
 enabled_backends = ceph,ceph_ssd
 enable_v3_api = true
-glance_api_servers = http://<%= @image_endpoint %>:9292
+glance_api_servers = <%= @image_api_servers %>
 restore_discard_excess_bytes = true
 state_path = /var/lib/cinder
 transport_url = <%= @transport_url %>
 volume_clear_size = 256
+
+<% if @cluster -%>
+[coordination]
+backend_url = <%= @coordination_url %>
+
+<% end -%>
 
 [cache]
 memcache_servers = <%= @memcached_endpoint %>

@@ -97,7 +97,7 @@ template '/etc/placement/placement.conf' do
   variables(
     auth_endpoint: auth_endpoint,
     database_connection: openstack_database_connection('placement'),
-    memcached_endpoint: s['memcached']['endpoint'],
+    memcached_endpoint: openstack_memcached_servers,
     service_pass: p['service']['pass']
   )
   notifies :run, 'execute[placement: db_sync]', :immediately
@@ -156,20 +156,25 @@ execute 'nova: discover hosts' do
   subscribes :run, 'template[/etc/nova/nova.conf]', :immediately
 end
 
+listen_ip = openstack_api_listen_ip
+
 apache_app 'placement' do
   cookbook 'osl-openstack'
+  server_address listen_ip
   template 'wsgi-placement.conf.erb'
   notifies :reload, 'apache2_service[compute]', :immediately
 end
 
 apache_app 'nova-api' do
   cookbook 'osl-openstack'
+  server_address listen_ip
   template 'wsgi-nova-api.conf.erb'
   notifies :reload, 'apache2_service[compute]', :immediately
 end
 
 apache_app 'nova-metadata' do
   cookbook 'osl-openstack'
+  server_address listen_ip
   template 'wsgi-nova-metadata.conf.erb'
   notifies :reload, 'apache2_service[compute]', :immediately
 end
@@ -219,7 +224,7 @@ cron_d 'nova-rowsflush' do
   hour 5
   user 'nova'
   command %W(
-    nova-manage db archive_deleted_rows --max_rows 1000 --before `date --date='today - 90 days' +\\\%F`
+    nova-manage db archive_deleted_rows --max_rows 1000 --before `date --date='today - 90 days' +\\%F`
     --until-complete --all-cells >>/var/log/nova/nova-rowsflush.log 2>&1
   ).join(' ')
 end
@@ -229,7 +234,7 @@ cron_d 'nova-rowspurge' do
   hour 6
   user 'nova'
   command %W(
-    nova-manage db purge --before `date --date='today - 14 days' +\\\%D`
+    nova-manage db purge --before `date --date='today - 14 days' +\\%D`
     --all-cells >>/var/log/nova/nova-rowspurge.log 2>&1
   ).join(' ')
 end

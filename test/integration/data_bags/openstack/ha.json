@@ -1,0 +1,27 @@
+{
+  "id": "ha",
+  "ha": {
+    "keepalived": {
+      "primary": {
+        "controller.testing.osuosl.org": true
+      },
+      "interface": {
+        "controller.testing.osuosl.org": "eth1"
+      },
+      "priority": {
+        "controller.testing.osuosl.org": 100
+      },
+      "virtual_router_id": 1,
+      "auth_pass": "auth_pass",
+      "vip_v4": "192.168.60.10",
+      "vip_v6": "fc00::10"
+    },
+    "api_listen_ip": {
+      "controller.testing.osuosl.org": "192.168.60.11"
+    },
+    "haproxy": {
+      "stats_user": "admin",
+      "stats_pass": "stats_pass"
+    }
+  }
+}

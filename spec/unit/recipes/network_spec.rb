@@ -18,14 +18,16 @@ describe 'osl-openstack::network' do
           mode: '0640',
           sensitive: true,
           variables: {
-              auth_endpoint: 'controller.testing.osuosl.org',
-              compute_pass: 'nova',
-              controller: false,
-              database_connection: 'mysql+pymysql://neutron_x86:neutron@localhost:3306/neutron_x86',
-              memcached_endpoint: 'controller.testing.osuosl.org:11211',
-              region: 'RegionOne',
-              service_pass: 'neutron',
-              transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672',
+            auth_endpoint: 'controller.testing.osuosl.org',
+            compute_pass: 'nova',
+            controller: false,
+            ha: nil,
+            listen_ip: '*',
+            database_connection: 'mysql+pymysql://neutron_x86:neutron@localhost:3306/neutron_x86',
+            memcached_endpoint: 'controller.testing.osuosl.org:11211',
+            region: 'RegionOne',
+            service_pass: 'neutron',
+            transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672/',
           }
         )
       end
@@ -46,14 +48,16 @@ describe 'osl-openstack::network' do
             mode: '0640',
             sensitive: true,
             variables: {
-                auth_endpoint: 'controller.testing.osuosl.org',
-                compute_pass: 'nova',
-                controller: false,
-                database_connection: 'mysql+pymysql://neutron_x86:neutron@localhost_region2:3306/neutron_x86',
-                memcached_endpoint: 'controller_region2.testing.osuosl.org:11211',
-                region: 'RegionTwo',
-                service_pass: 'neutron',
-                transport_url: 'rabbit://openstack:openstack@controller_region2.testing.osuosl.org:5672',
+              auth_endpoint: 'controller.testing.osuosl.org',
+              compute_pass: 'nova',
+              controller: false,
+              ha: nil,
+              listen_ip: '*',
+              database_connection: 'mysql+pymysql://neutron_x86:neutron@localhost_region2:3306/neutron_x86',
+              memcached_endpoint: 'controller_region2.testing.osuosl.org:11211',
+              region: 'RegionTwo',
+              service_pass: 'neutron',
+              transport_url: 'rabbit://openstack:openstack@controller_region2.testing.osuosl.org:5672/',
             }
           )
         end

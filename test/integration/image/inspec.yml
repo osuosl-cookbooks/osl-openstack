@@ -7,3 +7,5 @@ inputs:
     value: controller.testing.osuosl.org
   - name: local_storage
     value: false
+  - name: primary_controller
+    value: true

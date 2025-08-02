@@ -21,4 +21,6 @@ s = os_secrets['messaging']
 osl_openstack_messaging 'default' do
   user s['user']
   pass s['pass']
+  cookie s['cookie'] if s['cookie']
+  primary_node s['primary_node'] if s['primary_node']
 end
