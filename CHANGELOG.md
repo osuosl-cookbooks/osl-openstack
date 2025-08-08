@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+17.2.0 (2025-08-08)
+-------------------
+- Only install/use fog-openstack gem when needed
+
 17.1.0 (2025-04-16)
 -------------------
 - Add OSL virt repo for ppc64le on AlmaLinux 9
