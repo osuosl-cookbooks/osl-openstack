@@ -2,7 +2,16 @@ module OSLOpenstack
   module Cookbook
     module Helpers
       include Chef::Mixin::ShellOut
-      require 'fog/openstack'
+
+      def install_fog_openstack_gem
+        return if gem_installed?('fog-openstack')
+        declare_resource(:package, 'gcc') { compile_time(true) }
+
+        declare_resource(:chef_gem, 'fog-openstack') do
+          version '~> 1.1'
+          compile_time true
+        end
+      end
 
       def os_secrets
         data_bag_item('openstack', node['osl-openstack']['databag_item'])
@@ -219,6 +228,10 @@ module OSLOpenstack
 
       # OpenStack API helpers
       def os_conn
+        install_fog_openstack_gem unless gem_installed?('fog-openstack')
+        raise 'fog-openstack Gem missing' unless gem_installed?('fog-openstack')
+        require 'fog/openstack' unless defined?(::Fog)
+
         s = os_secrets
         params = {
           openstack_auth_url: "https://#{s['identity']['endpoint']}:5000/v3",
@@ -302,6 +315,16 @@ module OSLOpenstack
         keys.reduce(hash) do |acc, key|
           acc.is_a?(Hash) ? acc[key] : nil
         end
+      end
+
+      # Check if a given gem is installed and available for require
+      #
+      # @return [true, false] Gem installed result
+      #
+      def gem_installed?(gem_name)
+        !Gem::Specification.find_by_name(gem_name).nil?
+      rescue Gem::LoadError
+        false
       end
     end
   end
