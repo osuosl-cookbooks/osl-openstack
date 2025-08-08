@@ -12,7 +12,9 @@ execute 'copy self-signed ca-cert' do
   creates '/tmp/cacert'
 end
 
-chef_gem 'excon'
+chef_gem 'excon' do
+  compile_time true
+end
 
 # Make sure ruby knows to use the ca-bundle certs as authority so that our self signed cert gets verified properly.
 # NOTE: This is only needed for testing, not production.
