@@ -264,7 +264,7 @@ resource "null_resource" "controller" {
             knife bootstrap -c test/chef-config/knife.rb \
                 ${var.ssh_user_name}@${openstack_compute_instance_v2.controller.network.0.fixed_ip_v4} \
                 --bootstrap-version ${var.chef_version} -y -N controller --sudo \
-                -r 'role[openstack_tf_common],role[openstack_controller],recipe[openstack_test::prometheus],recipe[osl-openstack::ops_messaging],recipe[osl-openstack::controller],recipe[osl-openstack::block_storage],recipe[openstack_test::image_upload]'
+                -r 'role[openstack_tf_common],role[openstack_controller],recipe[openstack_test::prometheus],recipe[osl-openstack::ops_messaging],recipe[osl-openstack::controller],recipe[osl-openstack::block_storage],recipe[openstack_test::image_upload],recipe[openstack_test::create_network]'
             EOF
         environment = {
             CHEF_SERVER = "${openstack_compute_instance_v2.chef_zero.network.0.fixed_ip_v4}"
@@ -274,6 +274,9 @@ resource "null_resource" "controller" {
     provisioner "remote-exec" {
         inline = [
             "sudo cinc-client",
+            "sudo /root/image_upload.sh",
+            "sudo /root/create_flavor.sh",
+            "sudo /root/create_network.sh",
         ]
     }
 

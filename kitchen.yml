@@ -94,6 +94,7 @@ suites:
       - role[openstack_ops_identity]
       - recipe[osl-openstack::network_controller]
       - recipe[osl-openstack::network]
+      - recipe[openstack_test::create_network]
     verifier:
       inputs:
         compute: true
@@ -143,6 +144,7 @@ suites:
       - recipe[osl-openstack::network]
       - recipe[osl-openstack::compute_controller]
       - recipe[osl-openstack::compute]
+      - recipe[openstack_test::create_network]
     verifier:
       inspec_tests:
         - test/integration/compute
@@ -163,6 +165,7 @@ suites:
       - recipe[osl-openstack::network]
       - recipe[osl-openstack::compute_controller]
       - recipe[osl-openstack::compute]
+      - recipe[openstack_test::create_network]
     verifier:
       inputs:
         local_storage: true
@@ -309,6 +312,7 @@ suites:
       - recipe[osl-openstack::network]
       - recipe[osl-openstack::compute]
       - recipe[openstack_test::image_upload]
+      - recipe[openstack_test::create_network]
     verifier:
       inputs:
         compute: true
@@ -343,6 +347,7 @@ suites:
       - recipe[osl-openstack::network]
       - recipe[osl-openstack::compute]
       - recipe[openstack_test::image_upload]
+      - recipe[openstack_test::create_network]
     verifier:
       inputs:
         compute: true

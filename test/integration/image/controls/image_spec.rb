@@ -39,15 +39,16 @@ control 'image' do
 
   describe command('/root/image_upload.sh') do
     its('exit_status') { should eq 0 }
+    its('stderr') { should eq '' }
   end
 
   describe command('bash -c "source /root/openrc && /usr/bin/openstack image list"') do
     its('stdout') do
-      should match(/\|\s[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\s\|\scirros.*\s\|\sactive/)
+      should match(/\|\s[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\s\|\salpine.*\s\|\sactive/)
     end
   end
 
-  describe command('bash -c "source /root/openrc && /usr/bin/openstack image show cirros -c properties -f value"') do
+  describe command('bash -c "source /root/openrc && /usr/bin/openstack image show alpine -c properties -f value"') do
     if local_storage
       its('stdout') { should_not match(/direct_url': 'rbd:/) }
       its('stdout') { should_not match(/'locations':/) }
@@ -60,6 +61,17 @@ control 'image' do
   describe command('rbd --id glance ls images') do
     its('stdout') { should match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/) }
   end unless local_storage
+
+  describe command('/root/create_flavor.sh') do
+    its('exit_status') { should eq 0 }
+    its('stderr') { should eq '' }
+  end
+
+  describe command('bash -c "source /root/openrc && /usr/bin/openstack flavor show default -c ram -c vcpus -c disk -f shell"') do
+    its('stdout') { should match(/disk="1"/) }
+    its('stdout') { should match(/ram="512"/) }
+    its('stdout') { should match(/vcpus="1"/) }
+  end
 
   describe user('glance') do
     if local_storage

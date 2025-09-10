@@ -5,7 +5,7 @@
 enable_v1_api = false
 enable_v2_api = true
 <% unless @local_storage -%>
-enabled_backends = rbd:rbd,http:http
+enabled_backends = rbd:rbd
 show_image_direct_url = true
 show_multiple_locations = true
 <% else -%>
@@ -17,11 +17,9 @@ transport_url = <%= @transport_url %>
 <% unless @local_storage -%>
 default_backend = rbd
 default_store = rbd
-stores = rbd
 <% else -%>
 default_backend = file
 default_store = file
-stores = file
 <% end -%>
 
 <% unless @local_storage -%>

@@ -2,6 +2,7 @@ include_recipe 'osl-ceph'
 
 osl_ceph_test 'openstack' do
   create_config false
+  osd_size '10G'
 end
 
 %w(
@@ -25,7 +26,7 @@ secrets = os_secrets
 osl_ceph_client 'glance' do
   caps(
     mon: 'profile rbd',
-    osd: 'profile rbd pool=images'
+    osd: 'profile rbd pool=images, profile rbd-read-only pool=volumes, profile rbd-read-only pool=vms'
   )
   key secrets['image']['ceph']['image_token']
   keyname 'client.glance'
