@@ -143,4 +143,26 @@ control 'network' do
       its('stdout') { should match(/^#{ext}$/) }
     end
   end if controller
+
+  describe command('/root/create_network.sh') do
+    its('exit_status') { should eq 0 }
+    its('stderr') { should eq '' }
+  end if controller
+
+  describe command('bash -c "source /root/openrc && openstack network show public -c admin_state_up -c provider:network_type -c provider:physical_network -c router:external -c is_default -c shared -c status -f shell"') do
+    its('stdout') { should match(/admin_state_up="True"/) }
+    its('stdout') { should match(/is_default="True"/) }
+    its('stdout') { should match(/provider_network_type="flat"/) }
+    its('stdout') { should match(/provider_physical_network="public"/) }
+    its('stdout') { should match(/router_external="True"/) }
+    its('stdout') { should match(/shared="True"/) }
+    its('stdout') { should match(/status="ACTIVE"/) }
+  end if controller
+
+  describe command('bash -c "source /root/openrc && openstack subnet show public -c allocation_pools -c cidr -c dns_nameservers -c gateway_ip -f shell"') do
+    its('stdout') { should match(/allocation_pools="\[{'start': '10.10.1.2', 'end': '10.10.1.100'}\]"/) }
+    its('stdout') { should match(%r{cidr="10.10.1.0/24"}) }
+    its('stdout') { should match(/dns_nameservers="\['140.211.166.130', '140.211.166.131'\]"/) }
+    its('stdout') { should match(/gateway_ip="10.10.1.1"/) }
+  end if controller
 end
