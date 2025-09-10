@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+17.2.1 (2025-09-10)
+-------------------
+- Attempt to resolve issues with snapshots
+
 17.2.0 (2025-08-08)
 -------------------
 - Only install/use fog-openstack gem when needed
