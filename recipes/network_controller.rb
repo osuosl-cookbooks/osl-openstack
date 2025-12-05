@@ -51,6 +51,7 @@ end
 end
 
 package %w(
+  conntrack-tools
   ebtables
   openstack-neutron
   openstack-neutron-linuxbridge

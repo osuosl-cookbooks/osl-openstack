@@ -18,6 +18,7 @@
 #
 
 package %w(
+  conntrack-tools
   ebtables
   ipset
   openstack-neutron-linuxbridge

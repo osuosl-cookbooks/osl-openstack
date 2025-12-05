@@ -42,6 +42,7 @@ describe 'osl-openstack::network_controller' do
       end
       it do
         is_expected.to install_package %w(
+          conntrack-tools
           ebtables
           openstack-neutron
           openstack-neutron-linuxbridge

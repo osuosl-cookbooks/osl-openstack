@@ -9,7 +9,7 @@ describe 'osl-openstack::network' do
 
       include_context 'common_stubs'
 
-      it { is_expected.to install_package(%w(ebtables ipset openstack-neutron-linuxbridge)) }
+      it { is_expected.to install_package(%w(conntrack-tools ebtables ipset openstack-neutron-linuxbridge)) }
       it { is_expected.to include_recipe 'osl-openstack::network_common' }
       it do
         is_expected.to create_template('/etc/neutron/neutron.conf').with(
