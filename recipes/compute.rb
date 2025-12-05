@@ -126,6 +126,27 @@ when 'ppc64le'
   service 'smt_off' do
     action [:enable, :start]
   end if openstack_power8?
+end
+
+# KSM is not available on ppc64le (at least on AlmaLinux 8)
+unless ppc64le?
+  package 'ksmtuned'
+
+  template '/etc/ksmtuned.conf' do
+    variables(ksm: c['ksm'] || {})
+    notifies :restart, 'service[ksmtuned]'
+  end
+
+  service 'ksm' do
+    action [:enable, :start]
+  end
+
+  service 'ksmtuned' do
+    action [:enable, :start]
+  end
+end
+
+case node['kernel']['machine']
 when 'x86_64'
   kvm_module =
     if node.read('dmi', 'processor', 'manufacturer') == 'AMD'
