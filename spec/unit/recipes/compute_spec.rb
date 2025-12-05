@@ -131,6 +131,33 @@ describe 'osl-openstack::compute' do
       it { expect(chef_run.service('openstack-nova-compute')).to subscribe_to('template[/etc/nova/nova.conf]').on(:restart) }
       it { is_expected.to enable_service 'libvirt-guests' }
       it { is_expected.to start_service 'libvirt-guests' }
+      case pltfrm
+      when ALMA_9
+        it { is_expected.to install_package 'ksmtuned' }
+        it do
+          is_expected.to create_template('/etc/ksmtuned.conf').with(
+            variables: {
+              ksm: {
+                'npages_max' => 2500,
+                'thres_coef' => 25,
+                'monitor_interval' => 30,
+              },
+            }
+          )
+        end
+        it { expect(chef_run.template('/etc/ksmtuned.conf')).to notify('service[ksmtuned]').to(:restart) }
+        it { is_expected.to enable_service 'ksm' }
+        it { is_expected.to start_service 'ksm' }
+        it { is_expected.to enable_service 'ksmtuned' }
+        it { is_expected.to start_service 'ksmtuned' }
+      when ALMA_8
+        it { is_expected.to_not install_package 'ksmtuned' }
+        it { is_expected.to_not create_template '/etc/ksmtuned.conf' }
+        it { is_expected.to_not enable_service 'ksm' }
+        it { is_expected.to_not start_service 'ksm' }
+        it { is_expected.to_not enable_service 'ksmtuned' }
+        it { is_expected.to_not start_service 'ksmtuned' }
+      end
       it { is_expected.to install_kernel_module('kvm_intel').with(options: %w(nested=1)) }
       it { is_expected.to include_recipe 'osl-openstack::network' }
       it { is_expected.to include_recipe 'osl-openstack::telemetry_compute' }

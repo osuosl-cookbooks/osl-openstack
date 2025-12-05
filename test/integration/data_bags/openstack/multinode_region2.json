@@ -36,6 +36,11 @@
       "parallel_shutdown": "25",
       "shutdown_timeout": "120"
     },
+    "ksm": {
+      "npages_max": 2500,
+      "thres_coef": 25,
+      "monitor_interval": 30
+    },
     "local_storage": {
       "compute-region2.novalocal": true
     },

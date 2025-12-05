@@ -27,6 +27,35 @@ control 'compute' do
     it { should be_running }
   end
 
+  # KSM is only available on AlmaLinux 9+
+  if os_release >= 9
+    describe package 'ksmtuned' do
+      it { should be_installed }
+    end
+
+    # KSM services have ConditionVirtualization=no in their systemd units,
+    # so they will only run on bare metal. We can only verify they are enabled.
+    describe service 'ksm' do
+      it { should be_enabled }
+    end
+
+    describe service 'ksmtuned' do
+      it { should be_enabled }
+    end
+
+    describe file '/etc/ksmtuned.conf' do
+      its('content') { should match(/^KSM_SLEEP_MSEC=10$/) }
+      its('content') { should match(/^KSM_NPAGES_BOOST=300$/) }
+      its('content') { should match(/^KSM_NPAGES_DECAY=-50$/) }
+      its('content') { should match(/^KSM_NPAGES_MIN=64$/) }
+      its('content') { should match(/^KSM_NPAGES_MAX=2500$/) }
+      its('content') { should match(/^KSM_THRES_COEF=25$/) }
+      its('content') { should match(/^KSM_THRES_CONST=2048$/) }
+      its('content') { should match(/^KSM_MONITOR_INTERVAL=30$/) }
+      its('content') { should match(/^KSM_MERGE_ACROSS_NODES=1$/) }
+    end
+  end
+
   describe port 16509 do
     it { should be_listening }
     its('protocols') { should cmp 'tcp' }
