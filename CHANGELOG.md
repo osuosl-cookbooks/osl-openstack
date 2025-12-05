@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+17.2.2 (2025-12-05)
+-------------------
+- Install conntrack-tools on nodes with linuxbridge neutron agent
+
 17.2.1 (2025-09-10)
 -------------------
 - Attempt to resolve issues with snapshots
