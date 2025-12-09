@@ -85,6 +85,11 @@ shared_context 'common_stubs' do
           "parallel_shutdown": '25',
           "shutdown_timeout": '120',
         },
+        'ksm' => {
+          'npages_max' => 2500,
+          'thres_coef' => 25,
+          'monitor_interval' => 30,
+        },
         'local_storage' => {
           'node1.example.com' => true,
         },
@@ -306,6 +311,11 @@ shared_context 'region2_stubs' do
           "on_shutdown": 'shutdown',
           "parallel_shutdown": '25',
           "shutdown_timeout": '120',
+        },
+        'ksm' => {
+          'npages_max' => 2500,
+          'thres_coef' => 25,
+          'monitor_interval' => 30,
         },
         'cinder_disabled' => {
           'node1.example.com' => true,
