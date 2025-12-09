@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+17.3.0 (2025-12-09)
+-------------------
+- Add KSM support for compute nodes
+
 17.2.2 (2025-12-05)
 -------------------
 - Install conntrack-tools on nodes with linuxbridge neutron agent
