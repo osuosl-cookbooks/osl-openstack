@@ -38,10 +38,10 @@ describe 'osl-openstack::telemetry_controller' do
           mode: '0640',
           sensitive: true,
           variables: {
-              auth_endpoint: 'controller.example.com',
-              memcached_endpoint: 'controller.example.com:11211',
+              auth_endpoint: 'controller.testing.osuosl.org',
+              memcached_endpoint: 'controller.testing.osuosl.org:11211',
               service_pass: 'ceilometer',
-              transport_url: 'rabbit://openstack:openstack@controller.example.com:5672',
+              transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672',
           }
         )
       end

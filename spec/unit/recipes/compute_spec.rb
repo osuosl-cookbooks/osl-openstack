@@ -84,7 +84,7 @@ describe 'osl-openstack::compute' do
           variables: {
             allow_resize_to_same_host: nil,
             api_database_connection: 'mysql+pymysql://nova_x86:nova@localhost:3306/nova_api_x86',
-            auth_endpoint: 'controller.example.com',
+            auth_endpoint: 'controller.testing.osuosl.org',
             cinder_disabled: false,
             compute: true,
             cpu_allocation_ratio: nil,
@@ -100,11 +100,11 @@ describe 'osl-openstack::compute' do
               ServerGroupAntiAffinityFilter
               ServerGroupAffinityFilter
             ),
-            endpoint: 'controller.example.com',
-            image_endpoint: 'controller.example.com',
+            endpoint: 'controller.testing.osuosl.org',
+            image_endpoint: 'controller.testing.osuosl.org',
             images_rbd_pool: 'vms',
             local_storage: false,
-            memcached_endpoint: 'controller.example.com:11211',
+            memcached_endpoint: 'controller.testing.osuosl.org:11211',
             metadata_proxy_shared_secret: '2SJh0RuO67KpZ63z',
             neutron_pass: 'neutron',
             pci_alias: nil,
@@ -116,7 +116,7 @@ describe 'osl-openstack::compute' do
             rbd_user: 'cinder',
             region: 'RegionOne',
             service_pass: 'nova',
-            transport_url: 'rabbit://openstack:openstack@controller.example.com:5672',
+            transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672',
           }
         )
       end
@@ -158,6 +158,25 @@ describe 'osl-openstack::compute' do
         it { is_expected.to_not enable_service 'ksmtuned' }
         it { is_expected.to_not start_service 'ksmtuned' }
       end
+
+      # KSM should not be installed when running in a VM (guest)
+      context 'when running in a VM' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(ALMA_9) do |node|
+            node.automatic['virtualization']['role'] = 'guest'
+          end.converge(described_recipe)
+        end
+        include_context 'common_stubs'
+        include_context 'compute_stubs'
+
+        it { is_expected.to_not install_package 'ksmtuned' }
+        it { is_expected.to_not create_template '/etc/ksmtuned.conf' }
+        it { is_expected.to_not enable_service 'ksm' }
+        it { is_expected.to_not start_service 'ksm' }
+        it { is_expected.to_not enable_service 'ksmtuned' }
+        it { is_expected.to_not start_service 'ksmtuned' }
+      end
+
       it { is_expected.to install_kernel_module('kvm_intel').with(options: %w(nested=1)) }
       it { is_expected.to include_recipe 'osl-openstack::network' }
       it { is_expected.to include_recipe 'osl-openstack::telemetry_compute' }
@@ -266,7 +285,7 @@ describe 'osl-openstack::compute' do
       context 'pci passthrough' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm) do |node|
-            node.automatic['fqdn'] = 'node1.example.com'
+            node.automatic['fqdn'] = 'node1.testing.osuosl.org'
           end.converge(described_recipe)
         end
         it { is_expected.to add_osl_repos_centos_kmods('osl-openstack').with(kernel_6_6: true) }
@@ -404,7 +423,7 @@ describe 'osl-openstack::compute' do
           ChefSpec::SoloRunner.new(pltfrm.dup.merge(
             step_into: %w(osl_openstack_openrc)
           )) do |node|
-            node.automatic['fqdn'] = 'node1.example.com'
+            node.automatic['fqdn'] = 'node1.testing.osuosl.org'
           end.converge(described_recipe)
         end
 
@@ -424,7 +443,7 @@ describe 'osl-openstack::compute' do
             mode: '0750',
             sensitive: true,
             variables: {
-              endpoint: 'controller.example.com',
+              endpoint: 'controller.testing.osuosl.org',
               pass: 'admin',
               region: 'RegionTwo',
             }
@@ -452,7 +471,7 @@ describe 'osl-openstack::compute' do
             variables: {
               allow_resize_to_same_host: nil,
               api_database_connection: 'mysql+pymysql://nova_x86:nova@localhost_region2:3306/nova_api_x86',
-              auth_endpoint: 'controller.example.com',
+              auth_endpoint: 'controller.testing.osuosl.org',
               cinder_disabled: true,
               compute: true,
               cpu_allocation_ratio: nil,
@@ -468,11 +487,11 @@ describe 'osl-openstack::compute' do
                 ServerGroupAntiAffinityFilter
                 ServerGroupAffinityFilter
               ),
-              endpoint: 'controller_region2.example.com',
-              image_endpoint: 'controller_region2.example.com',
+              endpoint: 'controller_region2.testing.osuosl.org',
+              image_endpoint: 'controller_region2.testing.osuosl.org',
               images_rbd_pool: nil,
               local_storage: true,
-              memcached_endpoint: 'controller_region2.example.com:11211',
+              memcached_endpoint: 'controller_region2.testing.osuosl.org:11211',
               metadata_proxy_shared_secret: '2SJh0RuO67KpZ63z',
               neutron_pass: 'neutron',
               pci_alias: '{ "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }',
@@ -484,7 +503,7 @@ describe 'osl-openstack::compute' do
               rbd_user: nil,
               region: 'RegionTwo',
               service_pass: 'nova',
-              transport_url: 'rabbit://openstack:openstack@controller_region2.example.com:5672',
+              transport_url: 'rabbit://openstack:openstack@controller_region2.testing.osuosl.org:5672',
             }
           )
         end

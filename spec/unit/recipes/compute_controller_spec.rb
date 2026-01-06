@@ -46,7 +46,7 @@ describe 'osl-openstack::compute_controller' do
             endpoint_name: 'placement',
             service_name: 'placement',
             interface: int,
-            url: 'http://controller.example.com:8778',
+            url: 'http://controller.testing.osuosl.org:8778',
             region: 'RegionOne'
           )
         end
@@ -55,7 +55,7 @@ describe 'osl-openstack::compute_controller' do
             endpoint_name: 'compute',
             service_name: 'nova',
             interface: int,
-            url: 'http://controller.example.com:8774/v2.1',
+            url: 'http://controller.testing.osuosl.org:8774/v2.1',
             region: 'RegionOne'
           )
         end
@@ -86,9 +86,9 @@ describe 'osl-openstack::compute_controller' do
           mode: '0640',
           sensitive: true,
           variables: {
-              auth_endpoint: 'controller.example.com',
+              auth_endpoint: 'controller.testing.osuosl.org',
               database_connection: 'mysql+pymysql://placement_x86:placement@localhost:3306/placement_x86',
-              memcached_endpoint: 'controller.example.com:11211',
+              memcached_endpoint: 'controller.testing.osuosl.org:11211',
               service_pass: 'placement',
           }
         )
@@ -122,13 +122,13 @@ describe 'osl-openstack::compute_controller' do
           variables: {
               allow_resize_to_same_host: nil,
               api_database_connection: 'mysql+pymysql://nova_x86:nova@localhost:3306/nova_api_x86',
-              auth_endpoint: 'controller.example.com',
+              auth_endpoint: 'controller.testing.osuosl.org',
               cinder_disabled: false,
               compute: false,
               cpu_allocation_ratio: nil,
               database_connection: 'mysql+pymysql://nova_x86:nova@localhost:3306/nova_x86',
               disk_allocation_ratio: '1.5',
-              endpoint: 'controller.example.com',
+              endpoint: 'controller.testing.osuosl.org',
               enabled_filters: %w(
                 AggregateInstanceExtraSpecsFilter
                 PciPassthroughFilter
@@ -139,10 +139,10 @@ describe 'osl-openstack::compute_controller' do
                 ServerGroupAntiAffinityFilter
                 ServerGroupAffinityFilter
               ),
-              image_endpoint: 'controller.example.com',
+              image_endpoint: 'controller.testing.osuosl.org',
               images_rbd_pool: 'vms',
               local_storage: false,
-              memcached_endpoint: 'controller.example.com:11211',
+              memcached_endpoint: 'controller.testing.osuosl.org:11211',
               metadata_proxy_shared_secret: '2SJh0RuO67KpZ63z',
               neutron_pass: 'neutron',
               pci_alias: nil,
@@ -154,7 +154,7 @@ describe 'osl-openstack::compute_controller' do
               rbd_user: 'cinder',
               region: 'RegionOne',
               service_pass: 'nova',
-              transport_url: 'rabbit://openstack:openstack@controller.example.com:5672',
+              transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672',
           }
         )
       end
@@ -289,10 +289,29 @@ describe 'osl-openstack::compute_controller' do
         )
       end
 
+      # Nova Flavor Sync script for ad-hoc RequestSpec fixes
+      it do
+        is_expected.to create_cookbook_file('/root/nova-fix-flavors.py').with(
+          source: 'fix-flavors.py',
+          owner: 'root',
+          group: 'root',
+          mode: '0700'
+        )
+      end
+
+      it do
+        is_expected.to create_directory('/root/.nova-flavor-fixes/backups').with(
+          owner: 'root',
+          group: 'root',
+          mode: '0700',
+          recursive: true
+        )
+      end
+
       context 'pci passthrough' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm) do |node|
-            node.automatic['fqdn'] = 'controller2.example.com'
+            node.automatic['fqdn'] = 'controller2.testing.osuosl.org'
           end.converge(described_recipe)
         end
 
@@ -305,7 +324,7 @@ describe 'osl-openstack::compute_controller' do
         context 'compute node & local storage' do
           cached(:chef_run) do
             ChefSpec::SoloRunner.new(pltfrm) do |node|
-              node.automatic['fqdn'] = 'node1.example.com'
+              node.automatic['fqdn'] = 'node1.testing.osuosl.org'
             end.converge(described_recipe)
           end
 
@@ -321,7 +340,7 @@ describe 'osl-openstack::compute_controller' do
       context 'region2' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm) do |node|
-            node.automatic['fqdn'] = 'node1.example.com'
+            node.automatic['fqdn'] = 'node1.testing.osuosl.org'
             node.normal['osl-openstack']['node_type'] = 'controller'
           end.converge(described_recipe)
         end
@@ -336,13 +355,13 @@ describe 'osl-openstack::compute_controller' do
             variables: {
                 allow_resize_to_same_host: nil,
                 api_database_connection: 'mysql+pymysql://nova_x86:nova@localhost_region2:3306/nova_api_x86',
-                auth_endpoint: 'controller.example.com',
+                auth_endpoint: 'controller.testing.osuosl.org',
                 cinder_disabled: true,
                 compute: false,
                 cpu_allocation_ratio: nil,
                 database_connection: 'mysql+pymysql://nova_x86:nova@localhost_region2:3306/nova_x86',
                 disk_allocation_ratio: '1.5',
-                endpoint: 'controller_region2.example.com',
+                endpoint: 'controller_region2.testing.osuosl.org',
                 enabled_filters: %w(
                   AggregateInstanceExtraSpecsFilter
                   PciPassthroughFilter
@@ -353,10 +372,10 @@ describe 'osl-openstack::compute_controller' do
                   ServerGroupAntiAffinityFilter
                   ServerGroupAffinityFilter
                 ),
-                image_endpoint: 'controller_region2.example.com',
+                image_endpoint: 'controller_region2.testing.osuosl.org',
                 images_rbd_pool: nil,
                 local_storage: true,
-                memcached_endpoint: 'controller_region2.example.com:11211',
+                memcached_endpoint: 'controller_region2.testing.osuosl.org:11211',
                 metadata_proxy_shared_secret: '2SJh0RuO67KpZ63z',
                 neutron_pass: 'neutron',
                 pci_alias: '{ "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }',
@@ -368,7 +387,7 @@ describe 'osl-openstack::compute_controller' do
                 rbd_user: nil,
                 region: 'RegionTwo',
                 service_pass: 'nova',
-                transport_url: 'rabbit://openstack:openstack@controller_region2.example.com:5672',
+                transport_url: 'rabbit://openstack:openstack@controller_region2.testing.osuosl.org:5672',
             }
           )
         end

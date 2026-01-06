@@ -37,7 +37,7 @@ shared_context 'common_stubs' do
           "user": 'cinder',
           "pass": 'cinder',
         },
-        "endpoint": 'controller.example.com',
+        "endpoint": 'controller.testing.osuosl.org',
         "region": 'RegionOne',
         'service' => {
           "user": 'cinder',
@@ -77,7 +77,7 @@ shared_context 'common_stubs' do
           ServerGroupAntiAffinityFilter
           ServerGroupAffinityFilter
         ),
-        "endpoint": 'controller.example.com',
+        "endpoint": 'controller.testing.osuosl.org',
         "region": 'RegionOne',
         'libvirt_guests' => {
           "on_boot": 'ignore',
@@ -91,16 +91,16 @@ shared_context 'common_stubs' do
           'monitor_interval' => 30,
         },
         'local_storage' => {
-          'node1.example.com' => true,
+          'node1.testing.osuosl.org' => true,
         },
         "nova_migration_key": "----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA2Dri5D9Rf0pv3QiQAO5JnvjmzuCfMdh62VONFvEKluMhakTy\np1uR2C3lKUcyBc1np/yyJ+kepcU30gJ5w/KhBLimxYx+VkaiWAiXgMmkwU0clNRR\n5XE0fxEPx1Wd/E0MAs7WYG6BW+c5lqmHN/wWARxgOl3mDeY0XB72W8mhi/mANfyj\nyI6W0H6iD13R36HaEjV+KkEHHGAatnP66tz7oe0PaFaYemtpatMFrKmMqtL0xhzy\nhWEoVacA5dmd3PHgdz+8hUczkdlTbnsyZToKB8+g/5gTmy49Z/sotO23Bm6cAB/6\nyxMosuIFXa7tqkAHGwy/WIm5PepaL4pvyB+HVQIDAQABAoIBAQCgKE2yPewBWoMs\ntpDi/5xsMXPTu7BuXSfxHN+eJH9xb15qthL9PufxtVzNjDxS6+dhF9xlj1fx9Pf5\nh3flWStGsfZk0EErajoI9qQw8iokOxd2bSUTyxvVGjATtyjDndXNpqJG3tLV3Zhc\nLclIAGHUBM6JrM8fcGlL6msTZW9QmupEU69ih0rHGR50in2e+Ofp6TWPbwH2PoRn\nvj3SOyBAOfZMpsTweYwZm/FhkpSY+lxXbsPgEasJNm0/F46U7CHlQVSUY248Y+eB\nDzNI7MC5bknqbWg0TDOQtw41RLaGdVUQy9wqC/UlOWb4mteEZXIx3tfNb5W/5V7G\nYedSjwgpAoGBAPQiCzsWTdC7cR9YbF4d8Tv9uKNCmZG1Q4dxTnhQJcSFsBTr2f2a\nps3Ej3nW0wQZfVOVaU6dUcyQxgm4x2fi+TqhAVGdRLSA8iSJTpC99RUn/JdAW/UA\ngvGI0iCrkq/BYCjjrKI7ZsHv6urE3I0jnh5+H969BsZ6XR6IntwmDshrAoGBAOK9\nnzlOEZO54VGTRuBF1m0E3GBsVDhrsoFpZSVcgv3h84MK2idMP0XvEBxvOI/I2hGI\nkVJ23axxWEmpGzWrBNuJrC0sQKD3g6rdwXSwPsGk0OEXyQVrC3LfLZf3iS+GDSI7\nUYPL01joCXy99fQPCf/dCdpviAlZVO/mlO4Tdd8/AoGAHEQk0L6QW+6X9m0ifvMw\njyWdTynS5g/6tZ/k2gFNnidsb7+vCbHyRjjP8+dvnzXkUN0nyDZm1iydAVsnm1uo\nR6WEpZJz9gJIBvru4ctcqQpsMIb/Hqrkflq9GZND9J2LKLDTuCTwjNveczg/4QeS\nsy0fO4bfVfOs/HANFKhDZekCgYBnEalyZDGLRIDPEzKxui1Zy07eKgAy0YoIV7+Z\nty74d6C5HdLC8F8GzEA3nLtKaRPvynO817m2rKNkgJGU2NPRdAinVClgwoLAxiMt\nhvxQDDrDR4uigeFna1oPbX+X8cjAmdRZI+tDy96cLMHEGp4CCBl1iSN+lHQOxXNH\nseLwAwKBgQDx5QqwZOfmlQ0rx6jf2EoHChbS3JYt1cRJbwzIOakcKh2Jn/agxZJ8\ne9o0x8HI89mJd1WejorvSVN1c3IgV5TG10k5PcmOxlv1OhGNFzWgvMXZmvCwwP40\nX0BwCgHRB7FvPAMu0hrDmEIJ87edGd1ziRYXpA9Lke/4VQk249pwzA==\n-----END RSA PRIVATE KEY-----",
         "nova_public_key": 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDYOuLkP1F/Sm/dCJAA7kme+ObO4J8x2HrZU40W8QqW4yFqRPKnW5HYLeUpRzIFzWen/LIn6R6lxTfSAnnD8qEEuKbFjH5WRqJYCJeAyaTBTRyU1FHlcTR/EQ/HVZ38TQwCztZgboFb5zmWqYc3/BYBHGA6XeYN5jRcHvZbyaGL+YA1/KPIjpbQfqIPXdHfodoSNX4qQQccYBq2c/rq3Puh7Q9oVph6a2lq0wWsqYyq0vTGHPKFYShVpwDl2Z3c8eB3P7yFRzOR2VNuezJlOgoHz6D/mBObLj1n+yi07bcGbpwAH/rLEyiy4gVdru2qQAcbDL9Yibk96lovim/IH4dV nova-migration',
         'pci_alias' => {
-          'controller2.example.com' => '{ "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }',
-          'node1.example.com' => '{ "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }',
+          'controller2.testing.osuosl.org' => '{ "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }',
+          'node1.testing.osuosl.org' => '{ "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }',
         },
         'pci_passthrough_whitelist' => {
-          'node1.example.com' => '{ "vendor_id": "10de", "product_id": "1db5" }',
+          'node1.testing.osuosl.org' => '{ "vendor_id": "10de", "product_id": "1db5" }',
         },
         'service' => {
           "user": 'nova',
@@ -109,16 +109,16 @@ shared_context 'common_stubs' do
       },
       'dashboard' => {
         "aliases": [
-          'controller1.example.com',
+          'controller1.testing.osuosl.org',
         ],
-        "endpoint": 'controller.example.com',
+        "endpoint": 'controller.testing.osuosl.org',
         'db' => {
           "user": 'horizon',
           "pass": 'horizon',
         },
         'regions' => {
-          "RegionOne": 'https://controller.example.com:5000/v3',
-          "RegionTwo": 'https://controller.example.com:5000/v3',
+          "RegionOne": 'https://controller.testing.osuosl.org:5000/v3',
+          "RegionTwo": 'https://controller.testing.osuosl.org:5000/v3',
         },
         "secret_key": '-#45g2*o=8mhe(10if%*65@g#z0r#r7m__w6kwq8s9@n%12a11',
       },
@@ -128,16 +128,16 @@ shared_context 'common_stubs' do
       },
       'identity' => {
         "aliases": [
-          'controller1.example.com',
+          'controller1.testing.osuosl.org',
         ],
-        "endpoint": 'controller.example.com',
+        "endpoint": 'controller.testing.osuosl.org',
         'db' => {
           "user": 'keystone',
           "pass": 'keystone',
         },
       },
       'image' => {
-        "endpoint": 'controller.example.com',
+        "endpoint": 'controller.testing.osuosl.org',
         "region": 'RegionOne',
         'db' => {
           "user": 'glance',
@@ -149,7 +149,7 @@ shared_context 'common_stubs' do
           "rbd_store_user": 'glance',
         },
         'local_storage' => {
-          'node1.example.com' => true,
+          'node1.testing.osuosl.org' => true,
         },
         'service' => {
           "user": 'glance',
@@ -157,21 +157,21 @@ shared_context 'common_stubs' do
         },
       },
       'messaging' => {
-        "endpoint": 'controller.example.com',
+        "endpoint": 'controller.testing.osuosl.org',
         "user": 'openstack',
         "pass": 'openstack',
       },
       'memcached' => {
-        "endpoint": 'controller.example.com:11211',
+        "endpoint": 'controller.testing.osuosl.org:11211',
       },
       'network' => {
-        "endpoint": 'controller.example.com',
+        "endpoint": 'controller.testing.osuosl.org',
         "region": 'RegionOne',
         'db' => {
           "user": 'neutron',
           "pass": 'neutron',
         },
-        "nova_metadata_host": 'controller.example.com',
+        "nova_metadata_host": 'controller.testing.osuosl.org',
         "metadata_proxy_shared_secret": '2SJh0RuO67KpZ63z',
         'physical_interface_mappings' => [
           {
@@ -180,11 +180,11 @@ shared_context 'common_stubs' do
             'uuid': '8df74e06-c4aa-4eb2-b312-0e915bf8f97f',
             'controller' => {
               "default": 'eth1',
-              "controller2.example.com": 'p1p2',
+              "controller2.testing.osuosl.org": 'p1p2',
             },
             'compute' => {
               "default": 'eth1',
-              "node1.example.com": 'eno1',
+              "node1.testing.osuosl.org": 'eno1',
             },
           },
           {
@@ -204,11 +204,11 @@ shared_context 'common_stubs' do
         'vxlan_interface' => {
           'controller' => {
             "default": 'lo',
-            "controller2.example.com": 'p2p1',
+            "controller2.testing.osuosl.org": 'p2p1',
           },
           'compute' => {
             "default": 'lo',
-            "node1.example.com": 'eno2',
+            "node1.testing.osuosl.org": 'eno2',
           },
         },
       },
@@ -222,7 +222,7 @@ shared_context 'common_stubs' do
           "user": 'heat',
           "pass": 'heat',
         },
-        "endpoint": 'controller.example.com',
+        "endpoint": 'controller.testing.osuosl.org',
         "heat_domain_admin": 'heat_domain_admin',
         'service' => {
           "user": 'heat',
@@ -230,7 +230,7 @@ shared_context 'common_stubs' do
         },
       },
       'placement' => {
-        "endpoint": 'controller.example.com',
+        "endpoint": 'controller.testing.osuosl.org',
         "region": 'RegionOne',
         'db' => {
           "user": 'placement',
@@ -304,7 +304,7 @@ shared_context 'region2_stubs' do
           ServerGroupAntiAffinityFilter
           ServerGroupAffinityFilter
         ),
-        "endpoint": 'controller_region2.example.com',
+        "endpoint": 'controller_region2.testing.osuosl.org',
         "region": 'RegionTwo',
         'libvirt_guests' => {
           "on_boot": 'ignore',
@@ -318,19 +318,19 @@ shared_context 'region2_stubs' do
           'monitor_interval' => 30,
         },
         'cinder_disabled' => {
-          'node1.example.com' => true,
+          'node1.testing.osuosl.org' => true,
         },
         'local_storage' => {
-          'node1.example.com' => true,
+          'node1.testing.osuosl.org' => true,
         },
         "nova_migration_key": "----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA2Dri5D9Rf0pv3QiQAO5JnvjmzuCfMdh62VONFvEKluMhakTy\np1uR2C3lKUcyBc1np/yyJ+kepcU30gJ5w/KhBLimxYx+VkaiWAiXgMmkwU0clNRR\n5XE0fxEPx1Wd/E0MAs7WYG6BW+c5lqmHN/wWARxgOl3mDeY0XB72W8mhi/mANfyj\nyI6W0H6iD13R36HaEjV+KkEHHGAatnP66tz7oe0PaFaYemtpatMFrKmMqtL0xhzy\nhWEoVacA5dmd3PHgdz+8hUczkdlTbnsyZToKB8+g/5gTmy49Z/sotO23Bm6cAB/6\nyxMosuIFXa7tqkAHGwy/WIm5PepaL4pvyB+HVQIDAQABAoIBAQCgKE2yPewBWoMs\ntpDi/5xsMXPTu7BuXSfxHN+eJH9xb15qthL9PufxtVzNjDxS6+dhF9xlj1fx9Pf5\nh3flWStGsfZk0EErajoI9qQw8iokOxd2bSUTyxvVGjATtyjDndXNpqJG3tLV3Zhc\nLclIAGHUBM6JrM8fcGlL6msTZW9QmupEU69ih0rHGR50in2e+Ofp6TWPbwH2PoRn\nvj3SOyBAOfZMpsTweYwZm/FhkpSY+lxXbsPgEasJNm0/F46U7CHlQVSUY248Y+eB\nDzNI7MC5bknqbWg0TDOQtw41RLaGdVUQy9wqC/UlOWb4mteEZXIx3tfNb5W/5V7G\nYedSjwgpAoGBAPQiCzsWTdC7cR9YbF4d8Tv9uKNCmZG1Q4dxTnhQJcSFsBTr2f2a\nps3Ej3nW0wQZfVOVaU6dUcyQxgm4x2fi+TqhAVGdRLSA8iSJTpC99RUn/JdAW/UA\ngvGI0iCrkq/BYCjjrKI7ZsHv6urE3I0jnh5+H969BsZ6XR6IntwmDshrAoGBAOK9\nnzlOEZO54VGTRuBF1m0E3GBsVDhrsoFpZSVcgv3h84MK2idMP0XvEBxvOI/I2hGI\nkVJ23axxWEmpGzWrBNuJrC0sQKD3g6rdwXSwPsGk0OEXyQVrC3LfLZf3iS+GDSI7\nUYPL01joCXy99fQPCf/dCdpviAlZVO/mlO4Tdd8/AoGAHEQk0L6QW+6X9m0ifvMw\njyWdTynS5g/6tZ/k2gFNnidsb7+vCbHyRjjP8+dvnzXkUN0nyDZm1iydAVsnm1uo\nR6WEpZJz9gJIBvru4ctcqQpsMIb/Hqrkflq9GZND9J2LKLDTuCTwjNveczg/4QeS\nsy0fO4bfVfOs/HANFKhDZekCgYBnEalyZDGLRIDPEzKxui1Zy07eKgAy0YoIV7+Z\nty74d6C5HdLC8F8GzEA3nLtKaRPvynO817m2rKNkgJGU2NPRdAinVClgwoLAxiMt\nhvxQDDrDR4uigeFna1oPbX+X8cjAmdRZI+tDy96cLMHEGp4CCBl1iSN+lHQOxXNH\nseLwAwKBgQDx5QqwZOfmlQ0rx6jf2EoHChbS3JYt1cRJbwzIOakcKh2Jn/agxZJ8\ne9o0x8HI89mJd1WejorvSVN1c3IgV5TG10k5PcmOxlv1OhGNFzWgvMXZmvCwwP40\nX0BwCgHRB7FvPAMu0hrDmEIJ87edGd1ziRYXpA9Lke/4VQk249pwzA==\n-----END RSA PRIVATE KEY-----",
         "nova_public_key": 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDYOuLkP1F/Sm/dCJAA7kme+ObO4J8x2HrZU40W8QqW4yFqRPKnW5HYLeUpRzIFzWen/LIn6R6lxTfSAnnD8qEEuKbFjH5WRqJYCJeAyaTBTRyU1FHlcTR/EQ/HVZ38TQwCztZgboFb5zmWqYc3/BYBHGA6XeYN5jRcHvZbyaGL+YA1/KPIjpbQfqIPXdHfodoSNX4qQQccYBq2c/rq3Puh7Q9oVph6a2lq0wWsqYyq0vTGHPKFYShVpwDl2Z3c8eB3P7yFRzOR2VNuezJlOgoHz6D/mBObLj1n+yi07bcGbpwAH/rLEyiy4gVdru2qQAcbDL9Yibk96lovim/IH4dV nova-migration',
         'pci_alias' => {
-          'controller2.example.com' => '{ "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }',
-          'node1.example.com' => '{ "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }',
+          'controller2.testing.osuosl.org' => '{ "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }',
+          'node1.testing.osuosl.org' => '{ "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }',
         },
         'pci_passthrough_whitelist' => {
-          'node1.example.com' => '{ "vendor_id": "10de", "product_id": "1db5" }',
+          'node1.testing.osuosl.org' => '{ "vendor_id": "10de", "product_id": "1db5" }',
         },
         'service' => {
           "user": 'nova',
@@ -342,17 +342,17 @@ shared_context 'region2_stubs' do
         "endpoint": 'localhost_region2',
       },
       'identity' => {
-        "endpoint": 'controller.example.com',
+        "endpoint": 'controller.testing.osuosl.org',
       },
       'image' => {
-        "endpoint": 'controller_region2.example.com',
+        "endpoint": 'controller_region2.testing.osuosl.org',
         "region": 'RegionTwo',
         'db' => {
           "user": 'glance',
           "pass": 'glance',
         },
         'local_storage' => {
-          'node1.example.com' => true,
+          'node1.testing.osuosl.org' => true,
         },
         'service' => {
           "user": 'glance',
@@ -360,21 +360,21 @@ shared_context 'region2_stubs' do
         },
       },
       'messaging' => {
-        "endpoint": 'controller_region2.example.com',
+        "endpoint": 'controller_region2.testing.osuosl.org',
         "user": 'openstack',
         "pass": 'openstack',
       },
       'memcached' => {
-        "endpoint": 'controller_region2.example.com:11211',
+        "endpoint": 'controller_region2.testing.osuosl.org:11211',
       },
       'network' => {
-        "endpoint": 'controller_region2.example.com',
+        "endpoint": 'controller_region2.testing.osuosl.org',
         "region": 'RegionTwo',
         'db' => {
           "user": 'neutron',
           "pass": 'neutron',
         },
-        "nova_metadata_host": 'controller_region2.example.com',
+        "nova_metadata_host": 'controller_region2.testing.osuosl.org',
         "metadata_proxy_shared_secret": '2SJh0RuO67KpZ63z',
         'physical_interface_mappings' => [
           {
@@ -383,11 +383,11 @@ shared_context 'region2_stubs' do
             'uuid': '8df74e06-c4aa-4eb2-b312-0e915bf8f97f',
             'controller' => {
               "default": 'eth1',
-              "controller2.example.com": 'p1p2',
+              "controller2.testing.osuosl.org": 'p1p2',
             },
             'compute' => {
               "default": 'eth1',
-              "node1.example.com": 'eno1',
+              "node1.testing.osuosl.org": 'eno1',
             },
           },
           {
@@ -407,11 +407,11 @@ shared_context 'region2_stubs' do
         'vxlan_interface' => {
           'controller' => {
             "default": 'lo',
-            "controller2.example.com": 'p2p1',
+            "controller2.testing.osuosl.org": 'p2p1',
           },
           'compute' => {
             "default": 'lo',
-            "node1.example.com": 'eno2',
+            "node1.testing.osuosl.org": 'eno2',
           },
         },
       },
@@ -419,7 +419,7 @@ shared_context 'region2_stubs' do
         "region": 'RegionTwo',
       },
       'placement' => {
-        "endpoint": 'controller_region2.example.com',
+        "endpoint": 'controller_region2.testing.osuosl.org',
         "region": 'RegionTwo',
         'db' => {
           "user": 'placement',
@@ -466,13 +466,13 @@ shared_context 'dashboard_noregion_stubs' do
   before do
     stub_data_bag_item('openstack', 'x86').and_return(
       'identity' => {
-        "endpoint": 'controller.example.com',
+        "endpoint": 'controller.testing.osuosl.org',
       },
       'dashboard' => {
         "aliases": [
-          'controller1.example.com',
+          'controller1.testing.osuosl.org',
         ],
-        "endpoint": 'controller.example.com',
+        "endpoint": 'controller.testing.osuosl.org',
         'db' => {
           "user": 'horizon',
           "pass": 'horizon',
@@ -480,7 +480,7 @@ shared_context 'dashboard_noregion_stubs' do
         "secret_key": '-#45g2*o=8mhe(10if%*65@g#z0r#r7m__w6kwq8s9@n%12a11',
       },
       'memcached' => {
-        "endpoint": 'controller.example.com:11211',
+        "endpoint": 'controller.testing.osuosl.org:11211',
       }
     )
     stubs_for_resource('execute[rabbitmq: add user openstack]') do |resource|

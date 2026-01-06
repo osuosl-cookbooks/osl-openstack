@@ -2,7 +2,7 @@
 # Cookbook:: osl-openstack
 # Recipe:: compute_controller
 #
-# Copyright:: 2016-2025, Oregon State University
+# Copyright:: 2016-2026, Oregon State University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -232,4 +232,20 @@ cron_d 'nova-rowspurge' do
     nova-manage db purge --before `date --date='today - 14 days' +\\\%D`
     --all-cells >>/var/log/nova/nova-rowspurge.log 2>&1
   ).join(' ')
+end
+
+# Deploy Nova Flavor Sync script for ad-hoc RequestSpec fixes
+cookbook_file '/root/nova-fix-flavors.py' do
+  source 'fix-flavors.py'
+  owner 'root'
+  group 'root'
+  mode '0700'
+end
+
+# Create backup directory for flavor sync
+directory '/root/.nova-flavor-fixes/backups' do
+  owner 'root'
+  group 'root'
+  mode '0700'
+  recursive true
 end

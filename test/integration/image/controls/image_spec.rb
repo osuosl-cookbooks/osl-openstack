@@ -29,12 +29,12 @@ control 'image' do
     its('DEFAULT.transport_url') { should cmp "rabbit://openstack:openstack@#{controller_endpoint}:5672" }
     its('rbd.rbd_store_pool') { should cmp 'images' } unless local_storage
     its('rbd.rbd_store_user') { should cmp 'glance' } unless local_storage
-    its('keystone_authtoken.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
+    its('keystone_authtoken.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
     its('keystone_authtoken.memcached_servers') { should cmp "#{controller_endpoint}:11211" }
     its('keystone_authtoken.password') { should cmp 'glance' }
     its('keystone_authtoken.service_token_roles_required') { should cmp 'true' }
     its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
-    its('keystone_authtoken.www_authenticate_uri') { should cmp 'https://controller.example.com:5000/v3' }
+    its('keystone_authtoken.www_authenticate_uri') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
   end
 
   describe command('/root/image_upload.sh') do

@@ -21,7 +21,7 @@ describe 'osl-openstack::controller' do
               project_name: 'admin',
               project_domain_name: 'default',
               identity_api_version: 3,
-              auth_url: 'https://controller.example.org:5000/v3',
+              auth_url: 'https://controller.testing.osuosl.org:5000/v3',
               region_name: 'RegionOne',
             }
           )
@@ -39,7 +39,7 @@ describe 'osl-openstack::controller' do
       it { is_expected.to include_recipe 'osl-openstack::mon' }
       it do
         is_expected.to render_file('/etc/sysconfig/prometheus-openstack-exporter').with_content(
-          'OS_AUTH_URL=https://controller.example.org:5000/v3'
+          'OS_AUTH_URL=https://controller.testing.osuosl.org:5000/v3'
         )
       end
     end

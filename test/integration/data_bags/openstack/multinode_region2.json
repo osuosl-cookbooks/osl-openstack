@@ -28,7 +28,7 @@
       "ServerGroupAntiAffinityFilter",
       "ServerGroupAffinityFilter"
     ],
-    "endpoint": "controller-region2.example.com",
+    "endpoint": "controller-region2.testing.osuosl.org",
     "region": "RegionTwo",
     "libvirt_guests": {
       "on_boot": "ignore",
@@ -56,10 +56,10 @@
   },
   "database_server": {
     "suffix": "x86",
-    "endpoint": "db-region2.example.com"
+    "endpoint": "db-region2.testing.osuosl.org"
   },
   "identity": {
-    "endpoint": "controller.example.com",
+    "endpoint": "controller.testing.osuosl.org",
     "region": "RegionTwo",
     "db": {
       "user": "keystone",
@@ -67,7 +67,7 @@
     }
   },
   "image": {
-    "endpoint": "controller-region2.example.com",
+    "endpoint": "controller-region2.testing.osuosl.org",
     "region": "RegionTwo",
     "db": {
       "user": "glance",
@@ -82,21 +82,21 @@
     }
   },
   "messaging": {
-    "endpoint": "controller-region2.example.com",
+    "endpoint": "controller-region2.testing.osuosl.org",
     "user": "openstack",
     "pass": "openstack"
   },
   "memcached": {
-    "endpoint": "controller-region2.example.com:11211"
+    "endpoint": "controller-region2.testing.osuosl.org:11211"
   },
   "network": {
-    "endpoint": "controller-region2.example.com",
+    "endpoint": "controller-region2.testing.osuosl.org",
     "region": "RegionTwo",
     "db": {
       "user": "neutron",
       "pass": "neutron"
     },
-    "nova_metadata_host": "controller-region2.example.com",
+    "nova_metadata_host": "controller-region2.testing.osuosl.org",
     "metadata_proxy_shared_secret": "2SJh0RuO67KpZ63z",
     "physical_interface_mappings": [
       {
@@ -126,7 +126,7 @@
     "region": "RegionTwo"
   },
   "placement": {
-    "endpoint": "controller-region2.example.com",
+    "endpoint": "controller-region2.testing.osuosl.org",
     "region": "RegionTwo",
     "db": {
       "user": "placement",
@@ -144,7 +144,7 @@
     },
     "pipeline": {
       "publishers": [
-        "prometheus://controller.example.com:9091/metrics/job/ceilometer"
+        "prometheus://controller.testing.osuosl.org:9091/metrics/job/ceilometer"
       ]
     },
     "service": {

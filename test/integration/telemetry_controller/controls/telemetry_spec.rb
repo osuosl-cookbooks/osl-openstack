@@ -31,9 +31,9 @@ control 'telemetry-controller' do
   end
 
   describe ini('/etc/ceilometer/ceilometer.conf') do
-    its('DEFAULT.transport_url') { should cmp 'rabbit://openstack:openstack@controller.example.com:5672' }
-    its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
-    its('service_credentials.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
+    its('DEFAULT.transport_url') { should cmp 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672' }
+    its('cache.memcache_servers') { should cmp 'controller.testing.osuosl.org:11211' }
+    its('service_credentials.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
     its('service_credentials.password') { should cmp 'ceilometer' }
   end
 
