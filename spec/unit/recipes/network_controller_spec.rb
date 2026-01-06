@@ -35,7 +35,7 @@ describe 'osl-openstack::network_controller' do
             endpoint_name: 'network',
             service_name: 'neutron',
             interface: int,
-            url: 'http://controller.example.com:9696',
+            url: 'http://controller.testing.osuosl.org:9696',
             region: 'RegionOne'
           )
         end
@@ -58,14 +58,14 @@ describe 'osl-openstack::network_controller' do
           mode: '0640',
           sensitive: true,
           variables: {
-              auth_endpoint: 'controller.example.com',
+              auth_endpoint: 'controller.testing.osuosl.org',
               compute_pass: 'nova',
               controller: true,
               database_connection: 'mysql+pymysql://neutron_x86:neutron@localhost:3306/neutron_x86',
-              memcached_endpoint: 'controller.example.com:11211',
+              memcached_endpoint: 'controller.testing.osuosl.org:11211',
               region: 'RegionOne',
               service_pass: 'neutron',
-              transport_url: 'rabbit://openstack:openstack@controller.example.com:5672',
+              transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672',
           }
         )
       end
@@ -127,9 +127,9 @@ describe 'osl-openstack::network_controller' do
           mode: '0640',
           sensitive: true,
           variables: {
-            memcached_endpoint: 'controller.example.com:11211',
+            memcached_endpoint: 'controller.testing.osuosl.org:11211',
             metadata_proxy_shared_secret: '2SJh0RuO67KpZ63z',
-            nova_metadata_host: 'controller.example.com',
+            nova_metadata_host: 'controller.testing.osuosl.org',
           }
         )
       end
@@ -168,7 +168,7 @@ describe 'osl-openstack::network_controller' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm) do |node|
             node.normal['osl-openstack']['node_type'] = 'controller'
-            node.automatic['fqdn'] = 'controller2.example.com'
+            node.automatic['fqdn'] = 'controller2.testing.osuosl.org'
             node.automatic['network']['interfaces']['p2p1']['addresses'] = {
               '192.168.1.100' => {
                 'family' => 'inet',
@@ -193,7 +193,7 @@ describe 'osl-openstack::network_controller' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm) do |node|
             node.normal['osl-openstack']['node_type'] = 'compute'
-            node.automatic['fqdn'] = 'node1.example.com'
+            node.automatic['fqdn'] = 'node1.testing.osuosl.org'
             node.automatic['network']['interfaces']['eno2']['addresses'] = {
               '192.168.1.101' => {
                 'family' => 'inet',
@@ -217,7 +217,7 @@ describe 'osl-openstack::network_controller' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm) do |node|
             node.normal['osl-openstack']['node_type'] = 'controller'
-            node.automatic['fqdn'] = 'node1.example.com'
+            node.automatic['fqdn'] = 'node1.testing.osuosl.org'
           end.converge(described_recipe)
         end
 
@@ -232,7 +232,7 @@ describe 'osl-openstack::network_controller' do
               endpoint_name: 'network',
               service_name: 'neutron',
               interface: int,
-              url: 'http://controller_region2.example.com:9696',
+              url: 'http://controller_region2.testing.osuosl.org:9696',
               region: 'RegionTwo'
             )
           end
@@ -245,14 +245,14 @@ describe 'osl-openstack::network_controller' do
             mode: '0640',
             sensitive: true,
             variables: {
-                auth_endpoint: 'controller.example.com',
+                auth_endpoint: 'controller.testing.osuosl.org',
                 compute_pass: 'nova',
                 controller: true,
                 database_connection: 'mysql+pymysql://neutron_x86:neutron@localhost_region2:3306/neutron_x86',
-                memcached_endpoint: 'controller_region2.example.com:11211',
+                memcached_endpoint: 'controller_region2.testing.osuosl.org:11211',
                 region: 'RegionTwo',
                 service_pass: 'neutron',
-                transport_url: 'rabbit://openstack:openstack@controller_region2.example.com:5672',
+                transport_url: 'rabbit://openstack:openstack@controller_region2.testing.osuosl.org:5672',
             }
           )
         end
@@ -264,9 +264,9 @@ describe 'osl-openstack::network_controller' do
             mode: '0640',
             sensitive: true,
             variables: {
-              memcached_endpoint: 'controller_region2.example.com:11211',
+              memcached_endpoint: 'controller_region2.testing.osuosl.org:11211',
               metadata_proxy_shared_secret: '2SJh0RuO67KpZ63z',
-              nova_metadata_host: 'controller_region2.example.com',
+              nova_metadata_host: 'controller_region2.testing.osuosl.org',
             }
           )
         end

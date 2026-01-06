@@ -35,22 +35,22 @@ control 'orchestration' do
 
   describe ini('/etc/heat/heat.conf') do
     its('DEFAULT.auth_encryption_key') { should cmp '4CFk1URr4Ln37kKRNSypwjI7vv7jfLQE' }
-    its('DEFAULT.heat_metadata_server_url') { should cmp 'http://controller.example.com:8000' }
-    its('DEFAULT.heat_waitcondition_server_url') { should cmp 'http://controller.example.com:8000/v1/waitcondition' }
+    its('DEFAULT.heat_metadata_server_url') { should cmp 'http://controller.testing.osuosl.org:8000' }
+    its('DEFAULT.heat_waitcondition_server_url') { should cmp 'http://controller.testing.osuosl.org:8000/v1/waitcondition' }
     its('DEFAULT.stack_domain_admin_password') { should cmp 'heat_domain_admin' }
-    its('DEFAULT.transport_url') { should cmp 'rabbit://openstack:openstack@controller.example.com:5672' }
-    its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
-    its('clients_keystone.auth_url') { should cmp 'https://controller.example.com:5000' }
+    its('DEFAULT.transport_url') { should cmp 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672' }
+    its('cache.memcache_servers') { should cmp 'controller.testing.osuosl.org:11211' }
+    its('clients_keystone.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000' }
     its('database.connection') { should cmp "mysql+pymysql://heat_x86:heat@#{db_endpoint}:3306/heat_x86" }
-    its('keystone_authtoken.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
-    its('keystone_authtoken.memcached_servers') { should cmp 'controller.example.com:11211' }
+    its('keystone_authtoken.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
+    its('keystone_authtoken.memcached_servers') { should cmp 'controller.testing.osuosl.org:11211' }
     its('keystone_authtoken.password') { should cmp 'heat' }
     its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
     its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
-    its('keystone_authtoken.www_authenticate_uri') { should cmp 'https://controller.example.com:5000/v3' }
+    its('keystone_authtoken.www_authenticate_uri') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
     its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
     its('trustee.auth_type') { should cmp 'v3password' }
-    its('trustee.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
+    its('trustee.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
     its('trustee.password') { should cmp 'heat' }
   end
 

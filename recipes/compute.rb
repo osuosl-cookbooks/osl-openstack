@@ -2,7 +2,7 @@
 # Cookbook:: osl-openstack
 # Recipe:: compute
 #
-# Copyright:: 2014-2025, Oregon State University
+# Copyright:: 2014-2026, Oregon State University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -128,8 +128,8 @@ when 'ppc64le'
   end if openstack_power8?
 end
 
-# KSM is only available on AlmaLinux 9+
-if node['platform_version'].to_i >= 9
+# KSM is only available on AlmaLinux 9+ and not in VMs
+if node['platform_version'].to_i >= 9 && node['virtualization']['role'] != 'guest'
   package 'ksmtuned'
 
   template '/etc/ksmtuned.conf' do

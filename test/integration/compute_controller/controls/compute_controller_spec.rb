@@ -50,12 +50,12 @@ control 'compute-controller' do
   end
 
   describe ini('/etc/placement/placement.conf') do
-    its('keystone_authtoken.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
+    its('keystone_authtoken.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
     its('keystone_authtoken.memcached_servers') { should cmp "#{controller_endpoint}:11211" }
     its('keystone_authtoken.password') { should cmp 'placement' }
     its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
     its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
-    its('keystone_authtoken.www_authenticate_uri') { should cmp 'https://controller.example.com:5000/v3' }
+    its('keystone_authtoken.www_authenticate_uri') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
     its('placement_database.connection') { should cmp "mysql+pymysql://placement_x86:placement@#{db_endpoint}:3306/placement_x86" }
   end
 
@@ -76,12 +76,12 @@ control 'compute-controller' do
     its('database.connection') { should cmp "mysql+pymysql://nova_x86:nova@#{db_endpoint}:3306/nova_x86" }
     its('filter_scheduler.enabled_filters') { should cmp 'AggregateInstanceExtraSpecsFilter,PciPassthroughFilter,AvailabilityZoneFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter' }
     its('glance.api_servers') { should cmp "http://#{controller_endpoint}:9292" }
-    its('keystone_authtoken.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
+    its('keystone_authtoken.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
     its('keystone_authtoken.memcached_servers') { should cmp "#{controller_endpoint}:11211" }
     its('keystone_authtoken.password') { should cmp 'nova' }
     its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
     its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
-    its('keystone_authtoken.www_authenticate_uri') { should cmp 'https://controller.example.com:5000/v3' }
+    its('keystone_authtoken.www_authenticate_uri') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
     its('libvirt.cpu_model_extra_flags') { should cmp 'VMX' }
     unless local_storage
       its('libvirt.disk_cachemodes') { should cmp 'network=writeback' }
@@ -96,15 +96,15 @@ control 'compute-controller' do
       its('libvirt.rbd_secret_uuid') { should cmp 'ae3f1d03-bacd-4a90-b869-1a4fabb107f2' }
       its('libvirt.rbd_user') { should cmp 'cinder' }
     end
-    its('neutron.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
+    its('neutron.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
     its('neutron.metadata_proxy_shared_secret') { should cmp '2SJh0RuO67KpZ63z' }
     its('neutron.password') { should cmp 'neutron' }
     its('notifications.notify_on_state_change') { should cmp 'vm_and_task_state' }
     its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
-    its('placement.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
+    its('placement.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
     its('placement.password') { should cmp 'placement' }
     its('serial_console.base_url') { should cmp "ws://#{controller_endpoint}:6083" }
-    its('service_user.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
+    its('service_user.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
     its('service_user.password') { should cmp 'nova' }
     its('vnc.novncproxy_base_url') { should cmp "https://#{controller_endpoint}:6080/vnc_auto.html" }
   end
@@ -132,8 +132,8 @@ control 'compute-controller' do
   end
 
   describe command("#{openstack} catalog list -c Endpoints\"") do
-    its('stdout') { should match(%r{public: http://controller.example.com:8778}) }
-    its('stdout') { should match(%r{internal: http://controller.example.com:8778}) }
+    its('stdout') { should match(%r{public: http://controller.testing.osuosl.org:8778}) }
+    its('stdout') { should match(%r{internal: http://controller.testing.osuosl.org:8778}) }
   end
 
   describe command("#{openstack} --os-placement-api-version 1.2 resource class list -f value\"") do
@@ -185,7 +185,7 @@ control 'compute-controller' do
     its('stdout') { should match(/Check: Policy Scope-based Defaults.*\n.*Result: Success/) }
   end
 
-  describe http('https://controller.example.com:6080', ssl_verify: false) do
+  describe http('https://controller.testing.osuosl.org:6080', ssl_verify: false) do
     its('status') { should cmp 200 }
   end
 
@@ -198,5 +198,22 @@ control 'compute-controller' do
     its('content') do
       should match %r{20 6 \* \* \* nova nova-manage db purge --before `date --date='today - 14 days' \+\\\%D` --all-cells >>/var/log/nova/nova-rowspurge.log 2>&1}
     end
+  end
+
+  # Nova Flavor Sync script for ad-hoc RequestSpec fixes
+  describe file '/root/nova-fix-flavors.py' do
+    it { should be_file }
+    its('mode') { should cmp '0700' }
+    its('owner') { should eq 'root' }
+    its('group') { should eq 'root' }
+    its('content') { should match %r{^#!/usr/bin/env python3} }
+    its('content') { should match /sync_specs/ }
+  end
+
+  describe directory '/root/.nova-flavor-fixes/backups' do
+    it { should be_directory }
+    its('mode') { should cmp '0700' }
+    its('owner') { should eq 'root' }
+    its('group') { should eq 'root' }
   end
 end

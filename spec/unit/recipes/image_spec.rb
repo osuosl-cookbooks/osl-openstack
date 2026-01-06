@@ -33,7 +33,7 @@ describe 'osl-openstack::image' do
             endpoint_name: 'image',
             service_name: 'glance',
             interface: int,
-            url: 'http://controller.example.com:9292',
+            url: 'http://controller.testing.osuosl.org:9292',
             region: 'RegionOne'
           )
         end
@@ -46,14 +46,14 @@ describe 'osl-openstack::image' do
           mode: '0640',
           sensitive: true,
           variables: {
-              auth_endpoint: 'controller.example.com',
+              auth_endpoint: 'controller.testing.osuosl.org',
               local_storage: false,
               database_connection: 'mysql+pymysql://glance_x86:glance@localhost:3306/glance_x86',
-              memcached_endpoint: 'controller.example.com:11211',
+              memcached_endpoint: 'controller.testing.osuosl.org:11211',
               rbd_store_pool: 'images',
               rbd_store_user: 'glance',
               service_pass: 'glance',
-              transport_url: 'rabbit://openstack:openstack@controller.example.com:5672',
+              transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672',
           }
         )
       end
@@ -86,7 +86,7 @@ describe 'osl-openstack::image' do
       context 'region2 w/o ceph' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm) do |node|
-            node.automatic['fqdn'] = 'node1.example.com'
+            node.automatic['fqdn'] = 'node1.testing.osuosl.org'
           end.converge(described_recipe)
         end
 
@@ -102,7 +102,7 @@ describe 'osl-openstack::image' do
               endpoint_name: 'image',
               service_name: 'glance',
               interface: int,
-              url: 'http://controller_region2.example.com:9292',
+              url: 'http://controller_region2.testing.osuosl.org:9292',
               region: 'RegionTwo'
             )
           end
@@ -115,14 +115,14 @@ describe 'osl-openstack::image' do
             mode: '0640',
             sensitive: true,
             variables: {
-                auth_endpoint: 'controller.example.com',
+                auth_endpoint: 'controller.testing.osuosl.org',
                 local_storage: true,
                 database_connection: 'mysql+pymysql://glance_x86:glance@localhost_region2:3306/glance_x86',
-                memcached_endpoint: 'controller_region2.example.com:11211',
+                memcached_endpoint: 'controller_region2.testing.osuosl.org:11211',
                 rbd_store_pool: nil,
                 rbd_store_user: nil,
                 service_pass: 'glance',
-                transport_url: 'rabbit://openstack:openstack@controller_region2.example.com:5672',
+                transport_url: 'rabbit://openstack:openstack@controller_region2.testing.osuosl.org:5672',
             }
           )
         end

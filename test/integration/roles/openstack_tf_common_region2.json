@@ -10,7 +10,6 @@
       "role[openstack_tf_region2]",
       "recipe[osl-selinux]",
       "recipe[openstack_test::hosts_tf]",
-      "recipe[openstack_test::compute]",
-      "recipe[openstack_test::cacert]"
+      "recipe[openstack_test::compute]"
     ]
 }

@@ -40,7 +40,7 @@ describe 'osl-openstack::identity' do
             mode: '0750',
             sensitive: true,
             variables: {
-              endpoint: 'controller.example.com',
+              endpoint: 'controller.testing.osuosl.org',
               pass: 'admin',
               region: 'RegionOne',
             }
@@ -76,9 +76,9 @@ describe 'osl-openstack::identity' do
           mode: '0640',
           sensitive: true,
           variables: {
-              endpoint: 'controller.example.com',
-              transport_url: 'rabbit://openstack:openstack@controller.example.com:5672',
-              memcached_endpoint: 'controller.example.com:11211',
+              endpoint: 'controller.testing.osuosl.org',
+              transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672',
+              memcached_endpoint: 'controller.testing.osuosl.org:11211',
               database_connection: 'mysql+pymysql://keystone_x86:keystone@localhost:3306/keystone_x86',
           }
         )
@@ -115,24 +115,24 @@ describe 'osl-openstack::identity' do
               --bootstrap-project-name admin \
               --bootstrap-role-name admin \
               --bootstrap-service-name keystone \
-              --bootstrap-admin-url https://controller.example.com:5000/v3/ \
-              --bootstrap-internal-url https://controller.example.com:5000/v3/ \
-              --bootstrap-public-url https://controller.example.com:5000/v3/ \
+              --bootstrap-admin-url https://controller.testing.osuosl.org:5000/v3/ \
+              --bootstrap-internal-url https://controller.testing.osuosl.org:5000/v3/ \
+              --bootstrap-public-url https://controller.testing.osuosl.org:5000/v3/ \
               --bootstrap-region-id RegionOne && touch /etc/keystone/bootstrapped
             EOC
         )
       end
       it do
         is_expected.to create_apache_app('keystone').with(
-          server_name: 'controller.example.com',
-          server_aliases: %w(controller1.example.com),
+          server_name: 'controller.testing.osuosl.org',
+          server_aliases: %w(controller1.testing.osuosl.org),
           cookbook: 'osl-openstack',
           template: 'wsgi-keystone.conf.erb'
         )
       end
       it do
         is_expected.to render_file('/etc/httpd/sites-available/keystone.conf').with_content(
-          'RewriteCond "%{HTTP_HOST}" "!^controller\.example\.com" [NC]'
+          'RewriteCond "%{HTTP_HOST}" "!^controller\.testing\.osuosl\.org" [NC]'
         )
       end
       it { expect(chef_run.apache_app('keystone')).to notify('apache2_service[osuosl]').to(:reload) }

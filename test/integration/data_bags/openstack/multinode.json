@@ -14,7 +14,7 @@
       "user": "cinder",
       "pass": "cinder"
     },
-    "endpoint": "controller.example.com",
+    "endpoint": "controller.testing.osuosl.org",
     "region": "RegionOne",
     "service": {
       "user": "cinder",
@@ -54,7 +54,7 @@
       "ServerGroupAntiAffinityFilter",
       "ServerGroupAffinityFilter"
     ],
-    "endpoint": "controller.example.com",
+    "endpoint": "controller.testing.osuosl.org",
     "region": "RegionOne",
     "libvirt_guests": {
       "on_boot": "ignore",
@@ -76,35 +76,35 @@
   },
   "dashboard": {
     "aliases":[
-      "controller1.example.com"
+      "controller1.testing.osuosl.org"
     ],
-    "endpoint": "controller.example.com",
+    "endpoint": "controller.testing.osuosl.org",
     "db": {
       "user": "horizon",
       "pass": "horizon"
     },
     "regions": {
-      "RegionOne": "https://controller.example.com:5000/v3",
-      "RegionTwo": "https://controller.example.com:5000/v3"
+      "RegionOne": "https://controller.testing.osuosl.org:5000/v3",
+      "RegionTwo": "https://controller.testing.osuosl.org:5000/v3"
     },
     "secret_key": "-#45g2*o=8mhe(10if%*65@g#z0r#r7m__w6kwq8s9@n%12a11"
   },
   "database_server": {
     "suffix": "x86",
-    "endpoint": "db.example.com"
+    "endpoint": "db.testing.osuosl.org"
   },
   "identity": {
     "aliases":[
-      "controller1.example.com"
+      "controller1.testing.osuosl.org"
     ],
-    "endpoint": "controller.example.com",
+    "endpoint": "controller.testing.osuosl.org",
     "db": {
       "user": "keystone",
       "pass": "keystone"
     }
   },
   "image": {
-    "endpoint": "controller.example.com",
+    "endpoint": "controller.testing.osuosl.org",
     "region": "RegionOne",
     "db": {
       "user": "glance",
@@ -122,21 +122,21 @@
     }
   },
   "messaging": {
-    "endpoint": "controller.example.com",
+    "endpoint": "controller.testing.osuosl.org",
     "user": "openstack",
     "pass": "openstack"
   },
   "memcached": {
-    "endpoint": "controller.example.com:11211"
+    "endpoint": "controller.testing.osuosl.org:11211"
   },
   "network": {
-    "endpoint": "controller.example.com",
+    "endpoint": "controller.testing.osuosl.org",
     "region": "RegionOne",
     "db": {
       "user": "neutron",
       "pass": "neutron"
     },
-    "nova_metadata_host": "controller.example.com",
+    "nova_metadata_host": "controller.testing.osuosl.org",
     "metadata_proxy_shared_secret": "2SJh0RuO67KpZ63z",
     "physical_interface_mappings": [
       {
@@ -171,7 +171,7 @@
       "user": "heat",
       "pass": "heat"
     },
-    "endpoint": "controller.example.com",
+    "endpoint": "controller.testing.osuosl.org",
     "heat_domain_admin": "heat_domain_admin",
     "service": {
       "user": "heat",
@@ -179,7 +179,7 @@
     }
   },
   "placement": {
-    "endpoint": "controller.example.com",
+    "endpoint": "controller.testing.osuosl.org",
     "region": "RegionOne",
     "db": {
       "user": "placement",
@@ -197,7 +197,7 @@
     },
     "pipeline": {
       "publishers": [
-        "prometheus://controller.example.com:9091/metrics/job/ceilometer"
+        "prometheus://controller.testing.osuosl.org:9091/metrics/job/ceilometer"
       ]
     },
     "service": {

@@ -1,3 +1,3 @@
-db_endpoint: db.example.com
+db_endpoint: db.testing.osuosl.org
 physical_interface_mappings: public:eth1.42
-prometheus_endpoint: controller.example.com
+prometheus_endpoint: controller.testing.osuosl.org

@@ -35,7 +35,7 @@ describe 'osl-openstack::block_storage_controller' do
             endpoint_name: 'volumev2',
             service_name: 'cinderv2',
             interface: int,
-            url: 'http://controller.example.com:8776/v2/%(project_id)s',
+            url: 'http://controller.testing.osuosl.org:8776/v2/%(project_id)s',
             region: 'RegionOne'
           )
         end
@@ -44,7 +44,7 @@ describe 'osl-openstack::block_storage_controller' do
             endpoint_name: 'volumev3',
             service_name: 'cinderv3',
             interface: int,
-            url: 'http://controller.example.com:8776/v3/%(project_id)s',
+            url: 'http://controller.testing.osuosl.org:8776/v3/%(project_id)s',
             region: 'RegionOne'
           )
         end
@@ -58,20 +58,20 @@ describe 'osl-openstack::block_storage_controller' do
           mode: '0640',
           sensitive: true,
           variables: {
-              auth_endpoint: 'controller.example.com',
+              auth_endpoint: 'controller.testing.osuosl.org',
               backup_ceph_pool: 'backups',
               backup_ceph_user: 'cinder-backup',
               block_rbd_pool: 'volumes',
               block_ssd_rbd_pool: 'volumes_ssd',
               compute_pass: 'nova',
               database_connection: 'mysql+pymysql://cinder_x86:cinder@localhost:3306/cinder_x86',
-              image_endpoint: 'controller.example.com',
-              memcached_endpoint: 'controller.example.com:11211',
+              image_endpoint: 'controller.testing.osuosl.org',
+              memcached_endpoint: 'controller.testing.osuosl.org:11211',
               rbd_secret_uuid: '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8',
               rbd_user: 'cinder',
               region: 'RegionOne',
               service_pass: 'cinder',
-              transport_url: 'rabbit://openstack:openstack@controller.example.com:5672',
+              transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672',
           }
         )
       end

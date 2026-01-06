@@ -6,6 +6,6 @@ inputs:
   - name: db_endpoint
     value: localhost
   - name: controller_endpoint
-    value: controller.example.com
+    value: controller.testing.osuosl.org
   - name: physical_interface_mappings
     value: public:eth1

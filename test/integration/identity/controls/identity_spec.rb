@@ -28,7 +28,7 @@ control 'openstack-identity' do
   describe json(
     content: http(
       'https://127.0.0.1:5000/v3',
-      headers: { 'Host' => 'controller.example.com' },
+      headers: { 'Host' => 'controller.testing.osuosl.org' },
       ssl_verify: false
     ).body
   ) do
@@ -37,11 +37,11 @@ control 'openstack-identity' do
 
   describe http(
     'https://127.0.0.1:5000',
-    headers: { 'Host' => 'controller1.example.com' },
+    headers: { 'Host' => 'controller1.testing.osuosl.org' },
     ssl_verify: false
   ) do
     its('status') { should cmp 301 }
-    its('headers.location') { should cmp 'https://controller.example.com:5000/' }
+    its('headers.location') { should cmp 'https://controller.testing.osuosl.org:5000/' }
   end
 
   describe port(11211) do
@@ -64,9 +64,9 @@ control 'openstack-identity' do
   end
 
   describe ini '/etc/keystone/keystone.conf' do
-    its('DEFAULT.public_endpoint') { should cmp 'https://controller.example.com:5000/' }
-    its('DEFAULT.transport_url') { should cmp 'rabbit://openstack:openstack@controller.example.com:5672' }
-    its('cache.memcache_servers') { should cmp 'controller.example.com:11211' }
+    its('DEFAULT.public_endpoint') { should cmp 'https://controller.testing.osuosl.org:5000/' }
+    its('DEFAULT.transport_url') { should cmp 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672' }
+    its('cache.memcache_servers') { should cmp 'controller.testing.osuosl.org:11211' }
     its('database.connection') { should cmp "mysql+pymysql://keystone_x86:keystone@#{db_endpoint}:3306/keystone_x86" }
   end
 
@@ -89,6 +89,6 @@ control 'openstack-identity' do
   end
 
   describe apache_conf('/etc/httpd/sites-enabled/keystone.conf') do
-    its('ServerName') { should include 'controller.example.com' }
+    its('ServerName') { should include 'controller.testing.osuosl.org' }
   end
 end

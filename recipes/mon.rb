@@ -2,7 +2,7 @@
 # Cookbook:: osl-openstack
 # Recipe:: mon
 #
-# Copyright:: 2014-2025, Oregon State University
+# Copyright:: 2014-2026, Oregon State University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ if node['osl-openstack']['node_type'] == 'controller'
   end
 
   chef_gem 'prometheus_reporter' do
-    # TODO: Waiting on new release from upstream
+    version '1.1.1'
     source 'https://packagecloud.io/osuosl/prometheus_reporter'
   end
 

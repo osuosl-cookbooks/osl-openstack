@@ -12,7 +12,6 @@
       "recipe[openstack_test::ceph_tf_config]",
       "recipe[openstack_test::hosts_tf]",
       "recipe[openstack_test::compute]",
-      "recipe[openstack_test::cacert]",
       "recipe[osl-ceph]"
     ]
 }

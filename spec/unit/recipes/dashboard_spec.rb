@@ -57,11 +57,11 @@ describe 'osl-openstack::dashboard' do
           mode: '0640',
           sensitive: true,
           variables: {
-            auth_url: 'controller.example.com',
-            memcache_servers: 'controller.example.com:11211',
+            auth_url: 'controller.testing.osuosl.org',
+            memcache_servers: 'controller.testing.osuosl.org:11211',
             regions: {
-              'RegionOne' => 'https://controller.example.com:5000/v3',
-              'RegionTwo' => 'https://controller.example.com:5000/v3',
+              'RegionOne' => 'https://controller.testing.osuosl.org:5000/v3',
+              'RegionTwo' => 'https://controller.testing.osuosl.org:5000/v3',
             },
             secret_key: '-#45g2*o=8mhe(10if%*65@g#z0r#r7m__w6kwq8s9@n%12a11',
           }
@@ -79,8 +79,8 @@ describe 'osl-openstack::dashboard' do
         is_expected.to render_file('/etc/openstack-dashboard/local_settings').with_content(
         <<~EOF
           DEFAULT_SERVICE_REGIONS = [
-            ('https://controller.example.com:5000/v3', 'RegionOne'),
-            ('https://controller.example.com:5000/v3', 'RegionTwo'),
+            ('https://controller.testing.osuosl.org:5000/v3', 'RegionOne'),
+            ('https://controller.testing.osuosl.org:5000/v3', 'RegionTwo'),
           ]
         EOF
       )
@@ -88,14 +88,14 @@ describe 'osl-openstack::dashboard' do
       it do
         is_expected.to create_apache_app('horizon').with(
           cookbook: 'osl-openstack',
-          server_name: 'controller.example.com',
-          server_aliases: %w(controller1.example.com),
+          server_name: 'controller.testing.osuosl.org',
+          server_aliases: %w(controller1.testing.osuosl.org),
           template: 'wsgi-horizon.conf.erb'
         )
       end
       it do
         is_expected.to render_file('/etc/httpd/sites-available/horizon.conf').with_content(
-          'RewriteCond "%{HTTP_HOST}" "!^controller\.example\.com" [NC]'
+          'RewriteCond "%{HTTP_HOST}" "!^controller\.testing\.osuosl\.org" [NC]'
         )
       end
       it { expect(chef_run.apache_app('horizon')).to notify('execute[horizon: compress]').to(:run) }
@@ -121,8 +121,8 @@ describe 'osl-openstack::dashboard' do
             mode: '0640',
             sensitive: true,
             variables: {
-              auth_url: 'controller.example.com',
-              memcache_servers: 'controller.example.com:11211',
+              auth_url: 'controller.testing.osuosl.org',
+              memcache_servers: 'controller.testing.osuosl.org:11211',
               regions: nil,
               secret_key: '-#45g2*o=8mhe(10if%*65@g#z0r#r7m__w6kwq8s9@n%12a11',
             }

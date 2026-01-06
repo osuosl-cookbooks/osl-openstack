@@ -1,4 +1,4 @@
 #cloud-config
 manage_etc_hosts: true
 hostname: node1
-fqdn: node1.example.com
+fqdn: node1.testing.osuosl.org

@@ -45,7 +45,7 @@ describe 'osl-openstack::orchestration' do
             endpoint_name: 'orchestration',
             service_name: 'heat',
             interface: int,
-            url: 'http://controller.example.com:8004/v1/%(tenant_id)s',
+            url: 'http://controller.testing.osuosl.org:8004/v1/%(tenant_id)s',
             region: 'RegionOne'
           )
         end
@@ -54,7 +54,7 @@ describe 'osl-openstack::orchestration' do
             endpoint_name: 'cloudformation',
             service_name: 'heat-cfn',
             interface: int,
-            url: 'http://controller.example.com:8000/v1',
+            url: 'http://controller.testing.osuosl.org:8000/v1',
             region: 'RegionOne'
           )
         end
@@ -76,14 +76,14 @@ describe 'osl-openstack::orchestration' do
           sensitive: true,
           variables: {
               auth_encryption_key: '4CFk1URr4Ln37kKRNSypwjI7vv7jfLQE',
-              auth_endpoint: 'controller.example.com',
+              auth_endpoint: 'controller.testing.osuosl.org',
               database_connection: 'mysql+pymysql://heat_x86:heat@localhost:3306/heat_x86',
-              endpoint: 'controller.example.com',
+              endpoint: 'controller.testing.osuosl.org',
               heat_domain_admin: 'heat_domain_admin',
-              memcached_endpoint: 'controller.example.com:11211',
+              memcached_endpoint: 'controller.testing.osuosl.org:11211',
               region: 'RegionOne',
               service_pass: 'heat',
-              transport_url: 'rabbit://openstack:openstack@controller.example.com:5672',
+              transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672',
           }
         )
       end

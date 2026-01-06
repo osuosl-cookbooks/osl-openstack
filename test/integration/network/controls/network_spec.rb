@@ -52,17 +52,17 @@ control 'network' do
       its('DEFAULT.core_plugin') { should cmp 'ml2' }
       its('DEFAULT.router_distributed') { should cmp 'false' }
       its('DEFAULT.service_plugins') { should cmp 'neutron.services.l3_router.l3_router_plugin.L3RouterPlugin,metering' }
-      its('nova.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
+      its('nova.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
       its('nova.password') { should cmp 'nova' }
     end
     its('DEFAULT.auth_strategy') { should cmp 'keystone' }
     its('DEFAULT.transport_url') { should cmp "rabbit://openstack:openstack@#{controller_endpoint}:5672" }
-    its('keystone_authtoken.auth_url') { should cmp 'https://controller.example.com:5000/v3' }
+    its('keystone_authtoken.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
     its('keystone_authtoken.memcached_servers') { should cmp "#{controller_endpoint}:11211" }
     its('keystone_authtoken.password') { should cmp 'neutron' }
     its('keystone_authtoken.service_token_roles_required') { should cmp 'true' }
     its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
-    its('keystone_authtoken.www_authenticate_uri') { should cmp 'https://controller.example.com:5000/v3' }
+    its('keystone_authtoken.www_authenticate_uri') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
   end
 
   describe ini('/etc/neutron/l3_agent.ini') do
