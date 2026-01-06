@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+17.3.1 (2026-01-06)
+-------------------
+- Add nova-fix-flavors.py script and fix KSM idempotency
+
 17.3.0 (2025-12-09)
 -------------------
 - Add KSM support for compute nodes
