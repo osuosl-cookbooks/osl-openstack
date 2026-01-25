@@ -261,7 +261,7 @@ describe 'osl-openstack::compute' do
       end
       it do
         is_expected.to create_file('/var/lib/nova/.ssh/config').with(
-          content: "Host *\n  StrictHostKeyChecking no\n  UserKnownHostsFile /dev/null\n  ProxyCommand /usr/bin/hpnssh -F /var/lib/nova/.ssh/config_hpnssh -W %h:%p %h\n",
+          content: "Host *\n  StrictHostKeyChecking no\n  UserKnownHostsFile /dev/null\n  ProxyCommand /usr/bin/hpnssh -F /var/lib/nova/.ssh/config_hpnssh -W %h:2222 %h\n",
           user: 'nova',
           group: 'nova',
           mode: '600'

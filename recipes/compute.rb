@@ -271,7 +271,7 @@ file '/var/lib/nova/.ssh/config' do
     Host *
       StrictHostKeyChecking no
       UserKnownHostsFile /dev/null
-      ProxyCommand /usr/bin/hpnssh -F /var/lib/nova/.ssh/config_hpnssh -W %h:%p %h
+      ProxyCommand /usr/bin/hpnssh -F /var/lib/nova/.ssh/config_hpnssh -W %h:2222 %h
   EOL
   user 'nova'
   group 'nova'
