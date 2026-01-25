@@ -22,6 +22,10 @@ osl_openstack_client 'compute'
 osl_openstack_openrc 'compute'
 osl_firewall_openstack 'compute'
 osl_firewall_vnc 'osl-openstack'
+osl_firewall_hpnssh 'osl-openstack'
+osl_hpnssh 'osl-openstack' do
+  extra_options ['UsePAM yes']
+end
 
 s = os_secrets
 c = s['compute']
@@ -250,11 +254,24 @@ osl_ssh_key 'nova_migration_key' do
   dir_path '/var/lib/nova/.ssh'
 end
 
+file '/var/lib/nova/.ssh/config_hpnssh' do
+  content <<~EOL
+    Host *
+      Port 2222
+      StrictHostKeyChecking no
+      UserKnownHostsFile /dev/null
+  EOL
+  user 'nova'
+  group 'nova'
+  mode '600'
+end
+
 file '/var/lib/nova/.ssh/config' do
   content <<~EOL
     Host *
       StrictHostKeyChecking no
       UserKnownHostsFile /dev/null
+      ProxyCommand /usr/bin/hpnssh -F /var/lib/nova/.ssh/config_hpnssh -W %h:%p %h
   EOL
   user 'nova'
   group 'nova'

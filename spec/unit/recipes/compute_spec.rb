@@ -14,6 +14,8 @@ describe 'osl-openstack::compute' do
       it { is_expected.to create_osl_openstack_client 'compute' }
       it { is_expected.to create_osl_openstack_openrc 'compute' }
       it { is_expected.to accept_osl_firewall_openstack 'compute' }
+      it { is_expected.to accept_osl_firewall_hpnssh 'osl-openstack' }
+      it { is_expected.to install_osl_hpnssh 'osl-openstack' }
       it { is_expected.to include_recipe 'osl-ceph' }
       it do
         is_expected.to create_osl_ceph_config('default').with(
@@ -250,8 +252,16 @@ describe 'osl-openstack::compute' do
         )
       end
       it do
+        is_expected.to create_file('/var/lib/nova/.ssh/config_hpnssh').with(
+          content: "Host *\n  Port 2222\n  StrictHostKeyChecking no\n  UserKnownHostsFile /dev/null\n",
+          user: 'nova',
+          group: 'nova',
+          mode: '600'
+        )
+      end
+      it do
         is_expected.to create_file('/var/lib/nova/.ssh/config').with(
-          content: "Host *\n  StrictHostKeyChecking no\n  UserKnownHostsFile /dev/null\n",
+          content: "Host *\n  StrictHostKeyChecking no\n  UserKnownHostsFile /dev/null\n  ProxyCommand /usr/bin/hpnssh -F /var/lib/nova/.ssh/config_hpnssh -W %h:%p %h\n",
           user: 'nova',
           group: 'nova',
           mode: '600'
