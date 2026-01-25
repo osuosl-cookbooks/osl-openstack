@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+17.4.1 (2026-01-25)
+-------------------
+- Fix ProxyCommand to use port 2222 instead of %p
+
 17.4.0 (2026-01-25)
 -------------------
 - Add HPN-SSH support for Nova cold migrations
