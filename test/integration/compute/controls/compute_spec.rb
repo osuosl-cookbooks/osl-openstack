@@ -221,7 +221,7 @@ X0BwCgHRB7FvPAMu0hrDmEIJ87edGd1ziRYXpA9Lke/4VQk249pwzA==
       should cmp("Host *
   StrictHostKeyChecking no
   UserKnownHostsFile /dev/null
-  ProxyCommand /usr/bin/hpnssh -F /var/lib/nova/.ssh/config_hpnssh -W %h:%p %h\n")
+  ProxyCommand /usr/bin/hpnssh -F /var/lib/nova/.ssh/config_hpnssh -W %h:2222 %h\n")
     end
     its('mode') { should cmp '00600' }
     it { should be_owned_by 'nova' }
