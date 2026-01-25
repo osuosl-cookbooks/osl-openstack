@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+17.4.0 (2026-01-25)
+-------------------
+- Add HPN-SSH support for Nova cold migrations
+
 17.3.1 (2026-01-06)
 -------------------
 - Add nova-fix-flavors.py script and fix KSM idempotency
