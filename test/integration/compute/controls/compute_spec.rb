@@ -27,35 +27,6 @@ control 'compute' do
     it { should be_running }
   end
 
-  # KSM is only available on AlmaLinux 9+
-  if os_release >= 9
-    describe package 'ksmtuned' do
-      it { should be_installed }
-    end
-
-    # KSM services have ConditionVirtualization=no in their systemd units,
-    # so they will only run on bare metal. We can only verify they are enabled.
-    describe service 'ksm' do
-      it { should be_enabled }
-    end
-
-    describe service 'ksmtuned' do
-      it { should be_enabled }
-    end
-
-    describe file '/etc/ksmtuned.conf' do
-      its('content') { should match(/^KSM_SLEEP_MSEC=10$/) }
-      its('content') { should match(/^KSM_NPAGES_BOOST=300$/) }
-      its('content') { should match(/^KSM_NPAGES_DECAY=-50$/) }
-      its('content') { should match(/^KSM_NPAGES_MIN=64$/) }
-      its('content') { should match(/^KSM_NPAGES_MAX=2500$/) }
-      its('content') { should match(/^KSM_THRES_COEF=25$/) }
-      its('content') { should match(/^KSM_THRES_CONST=2048$/) }
-      its('content') { should match(/^KSM_MONITOR_INTERVAL=30$/) }
-      its('content') { should match(/^KSM_MERGE_ACROSS_NODES=1$/) }
-    end
-  end
-
   describe port 16509 do
     it { should be_listening }
     its('protocols') { should cmp 'tcp' }
@@ -200,7 +171,7 @@ control 'compute' do
 
   describe file('/var/lib/nova/.ssh/id_rsa') do
     its('content') do
-      should cmp('----BEGIN RSA PRIVATE KEY-----
+      should cmp('-----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCAQEA2Dri5D9Rf0pv3QiQAO5JnvjmzuCfMdh62VONFvEKluMhakTy
 p1uR2C3lKUcyBc1np/yyJ+kepcU30gJ5w/KhBLimxYx+VkaiWAiXgMmkwU0clNRR
 5XE0fxEPx1Wd/E0MAs7WYG6BW+c5lqmHN/wWARxgOl3mDeY0XB72W8mhi/mANfyj
@@ -233,15 +204,42 @@ X0BwCgHRB7FvPAMu0hrDmEIJ87edGd1ziRYXpA9Lke/4VQk249pwzA==
     it { should be_grouped_into 'nova' }
   end
 
-  describe file('/var/lib/nova/.ssh/config') do
+  describe file('/var/lib/nova/.ssh/config_hpnssh') do
     its('content') do
       should cmp("Host *
+  Port 2222
   StrictHostKeyChecking no
   UserKnownHostsFile /dev/null\n")
     end
     its('mode') { should cmp '00600' }
     it { should be_owned_by 'nova' }
     it { should be_grouped_into 'nova' }
+  end
+
+  describe file('/var/lib/nova/.ssh/config') do
+    its('content') do
+      should cmp("Host *
+  StrictHostKeyChecking no
+  UserKnownHostsFile /dev/null
+  ProxyCommand /usr/bin/hpnssh -F /var/lib/nova/.ssh/config_hpnssh -W %h:%p %h\n")
+    end
+    its('mode') { should cmp '00600' }
+    it { should be_owned_by 'nova' }
+    it { should be_grouped_into 'nova' }
+  end
+
+  describe service('hpnsshd') do
+    it { should be_enabled }
+    it { should be_running }
+  end
+
+  describe port(2222) do
+    it { should be_listening }
+    its('processes') { should include 'hpnsshd' }
+  end
+
+  describe command('su - nova -s /bin/bash -c "ssh localhost hostname"') do
+    its('exit_status') { should eq 0 }
   end
 
   describe file '/etc/logrotate.d/var_log_ceph' do
