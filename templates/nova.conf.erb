@@ -94,7 +94,11 @@ images_type = rbd
 inject_key = false
 inject_partition = -2
 inject_password = false
+live_migration_downtime = 1000
+live_migration_downtime_delay = 30
 live_migration_flag = VIR_MIGRATE_UNDEFINE_SOURCE,VIR_MIGRATE_PEER2PEER,VIR_MIGRATE_LIVE,VIR_MIGRATE_PERSIST_DEST,VIR_MIGRATE_TUNNELLED
+live_migration_permit_post_copy = true
+live_migration_timeout_action = force_complete
 <% end -%>
 
 [neutron]
