@@ -228,6 +228,10 @@ X0BwCgHRB7FvPAMu0hrDmEIJ87edGd1ziRYXpA9Lke/4VQk249pwzA==
     it { should be_grouped_into 'nova' }
   end
 
+  describe command 'systemctl cat openstack-nova-compute' do
+    its('stdout') { should match /^LimitNOFILE = 1048576$/ }
+  end
+
   describe service('hpnsshd') do
     it { should be_enabled }
     it { should be_running }

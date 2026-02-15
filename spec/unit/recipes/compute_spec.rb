@@ -128,6 +128,18 @@ describe 'osl-openstack::compute' do
       it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/disk_cachemodes = file=writeback/) }
       it { is_expected.to_not include_recipe 'yum-kernel-osuosl::install' }
       it { is_expected.to modify_user('nova').with(shell: '/bin/sh') }
+
+      it do
+        is_expected.to create_osl_systemd_unit_drop_in('ulimit').with(
+          content: {
+            'Service' => {
+              'LimitNOFILE' => 1048576,
+            },
+          },
+          unit_name: 'openstack-nova-compute.service'
+        )
+      end
+
       it { is_expected.to enable_service 'openstack-nova-compute' }
       it { is_expected.to start_service 'openstack-nova-compute' }
       it { expect(chef_run.service('openstack-nova-compute')).to subscribe_to('template[/etc/nova/nova.conf]').on(:restart) }
