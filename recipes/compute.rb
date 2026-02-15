@@ -86,6 +86,19 @@ user 'nova' do
   action :modify
 end
 
+# Increase the file descriptor limit for nova-compute to prevent
+# "Too many open files" errors when using Ceph/RBD storage and
+# eventlet concurrency, which can exhaust the default FD limit.
+osl_systemd_unit_drop_in 'ulimit' do
+  content({
+    'Service' => {
+      'LimitNOFILE' => 1048576,
+    },
+  })
+  unit_name 'openstack-nova-compute.service'
+  notifies :restart, 'service[openstack-nova-compute]'
+end
+
 service 'openstack-nova-compute' do
   action [:enable, :start]
   subscribes :restart, 'template[/etc/nova/nova.conf]'
