@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+17.4.3 (2026-02-15)
+-------------------
+- Increase LimitNOFILE for nova-compute to fix "Too many open files"
+
 17.4.2 (2026-01-27)
 -------------------
 - Add live migration tuning settings to nova.conf
