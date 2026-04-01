@@ -1,0 +1,33 @@
+---
+driver:
+  name: openstack
+  openstack_username: <%= ENV['OS_USERNAME'] %>
+  openstack_api_key: <%= ENV['OS_PASSWORD'] %>
+  openstack_auth_url: <%= ENV['OS_AUTH_URL'] %>
+  openstack_domain_id: 'default'
+  openstack_project_name: <%= ENV['OS_PROJECT_NAME'] %>
+  openstack_domain_name: <%= ENV['OS_USER_DOMAIN_NAME'] %>
+  floating_ip_pool: <%= ENV['OS_FLOATING_IP_POOL'] %>
+  network_ref: <%= ENV['OS_NETWORK_REF']  %>
+  flavor_ref: <%= ENV['OS_FLAVOR_REF'] %>
+  availability_zone: <%= ENV['OS_AVAILABILITY_ZONE'] || 'nova' %>
+  private_key_path: <%= ENV['OS_PRIVATE_SSH_KEY'] %>
+  key_name: <%= ENV['OS_SSH_KEYPAIR'] %>
+
+transport:
+  name: rsync
+  ssh_key: <%= ENV['OS_PRIVATE_SSH_KEY'] %>
+
+platforms:
+  - name: almalinux-8
+    driver_plugin: openstack
+    driver_config:
+      image_ref: "AlmaLinux 8"
+    transport:
+      username: almalinux
+  - name: almalinux-9
+    driver_plugin: openstack
+    driver_config:
+      image_ref: "AlmaLinux 9"
+    transport:
+      username: almalinux
