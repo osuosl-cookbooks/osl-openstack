@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+17.5.0 (2026-04-03)
+-------------------
+- Fix compute recipe for EL9 and ppc64le compatibility
+
 17.4.3 (2026-02-15)
 -------------------
 - Increase LimitNOFILE for nova-compute to fix "Too many open files"
