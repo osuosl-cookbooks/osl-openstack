@@ -30,8 +30,12 @@ describe 'osl-openstack::compute' do
       end
       it { is_expected.to install_kernel_module 'tun' }
       it { is_expected.to load_kernel_module 'tun' }
-      it { is_expected.to_not include_recipe 'yum-osuosl::virt' }
-      it { is_expected.to create_cookbook_file '/etc/sysconfig/network' }
+      case pltfrm
+      when ALMA_8
+        it { is_expected.to create_cookbook_file '/etc/sysconfig/network' }
+      when ALMA_9
+        it { is_expected.to_not create_cookbook_file '/etc/sysconfig/network' }
+      end
       case pltfrm
       when ALMA_8
         it do
@@ -191,6 +195,25 @@ describe 'osl-openstack::compute' do
         it { is_expected.to_not start_service 'ksmtuned' }
       end
 
+      # KSM should not be installed on ppc64le qemu guests
+      context 'when running in a ppc64le qemu guest' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(ALMA_9) do |node|
+            node.automatic['kernel']['machine'] = 'ppc64le'
+            node.automatic['cpu']['machine'] = 'CHRP IBM pSeries (emulated by qemu)'
+          end.converge(described_recipe)
+        end
+        include_context 'common_stubs'
+        include_context 'compute_stubs'
+
+        it { is_expected.to_not install_package 'ksmtuned' }
+        it { is_expected.to_not create_template '/etc/ksmtuned.conf' }
+        it { is_expected.to_not enable_service 'ksm' }
+        it { is_expected.to_not start_service 'ksm' }
+        it { is_expected.to_not enable_service 'ksmtuned' }
+        it { is_expected.to_not start_service 'ksmtuned' }
+      end
+
       it { is_expected.to install_kernel_module('kvm_intel').with(options: %w(nested=1)) }
       it { is_expected.to include_recipe 'osl-openstack::network' }
       it { is_expected.to include_recipe 'osl-openstack::telemetry_compute' }
@@ -310,8 +333,14 @@ describe 'osl-openstack::compute' do
             node.automatic['fqdn'] = 'node1.testing.osuosl.org'
           end.converge(described_recipe)
         end
-        it { is_expected.to add_osl_repos_centos_kmods('osl-openstack').with(kernel_6_6: true) }
-        it { is_expected.to upgrade_package 'kernel' }
+        case pltfrm
+        when ALMA_8
+          it { is_expected.to add_osl_repos_centos_kmods('osl-openstack').with(kernel_6_6: true) }
+          it { is_expected.to upgrade_package 'kernel' }
+        when ALMA_9
+          it { is_expected.to_not add_osl_repos_centos_kmods 'osl-openstack' }
+          it { is_expected.to_not upgrade_package 'kernel' }
+        end
       end
 
       context 'aarch64' do
@@ -369,9 +398,30 @@ describe 'osl-openstack::compute' do
         it { is_expected.to_not load_kernel_module('kvm_pr') }
         it { is_expected.to install_kernel_module('kvm_hv') }
         it { is_expected.to load_kernel_module('kvm_hv') }
-        it { is_expected.to create_cookbook_file('/etc/rc.d/rc.local').with(mode: '644') }
+        it { is_expected.to_not install_kernel_module('kvm_intel') }
+        it { is_expected.to_not install_kernel_module('kvm_amd') }
         it { is_expected.to_not enable_service 'smt_off' }
         it { is_expected.to_not start_service 'smt_off' }
+        it { is_expected.to_not include_recipe 'yum-kernel-osuosl::install' }
+
+        context 'KVM hypervisor' do
+          cached(:chef_run) do
+            ChefSpec::SoloRunner.new(pltfrm) do |node|
+              node.automatic['kernel']['machine'] = 'ppc64le'
+              node.automatic['cpu']['hypervisor_vendor'] = 'KVM'
+            end.converge(described_recipe)
+          end
+          case pltfrm
+          when ALMA_8
+            it { is_expected.to install_kernel_module('kvm_pr') }
+            it { is_expected.to load_kernel_module('kvm_pr') }
+          when ALMA_9
+            it { is_expected.to_not install_kernel_module('kvm_pr') }
+            it { is_expected.to_not load_kernel_module('kvm_pr') }
+          end
+          it { is_expected.to_not install_kernel_module('kvm_hv') }
+          it { is_expected.to_not load_kernel_module('kvm_hv') }
+        end
 
         case pltfrm
         when ALMA_8
@@ -388,7 +438,7 @@ describe 'osl-openstack::compute' do
               sysfsutils
             )
           end
-          it { is_expected.to_not include_recipe 'yum-osuosl::virt' }
+          it { is_expected.to_not install_package 'kernel-kvm' }
         when ALMA_9
           it do
             is_expected.to install_package %w(
@@ -406,7 +456,7 @@ describe 'osl-openstack::compute' do
               virt-win-reg
             )
           end
-          it { is_expected.to include_recipe 'yum-osuosl::virt' }
+          it { is_expected.to install_package 'kernel-kvm' }
         end
         context 'power8' do
           cached(:chef_run) do
@@ -417,6 +467,13 @@ describe 'osl-openstack::compute' do
           end
           it { is_expected.to enable_service 'smt_off' }
           it { is_expected.to start_service 'smt_off' }
+          it { is_expected.to_not include_recipe 'yum-kernel-osuosl::install' }
+          case pltfrm
+          when ALMA_9
+            it { is_expected.to install_package 'kernel-kvm' }
+          when ALMA_8
+            it { is_expected.to_not install_package 'kernel-kvm' }
+          end
         end
 
         context 'power10' do
@@ -427,7 +484,12 @@ describe 'osl-openstack::compute' do
               node.automatic['cpu']['hypervisor_vendor'] = 'pHyp'
             end.converge(described_recipe)
           end
-          it { is_expected.to include_recipe 'yum-kernel-osuosl::install' }
+          case pltfrm
+          when ALMA_8
+            it { is_expected.to include_recipe 'yum-kernel-osuosl::install' }
+          when ALMA_9
+            it { is_expected.to_not include_recipe 'yum-kernel-osuosl::install' }
+          end
           it { is_expected.to_not install_kernel_module('kvm_pr') }
           it { is_expected.to_not load_kernel_module('kvm_pr') }
           it { is_expected.to_not install_kernel_module('kvm_hv') }
@@ -437,6 +499,12 @@ describe 'osl-openstack::compute' do
           it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/force_raw_images = false/) }
           it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/cpu_mode = none/) }
           it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/disk_cachemodes = file=writeback/) }
+          case pltfrm
+          when ALMA_9
+            it { is_expected.to install_package 'kernel-kvm' }
+          when ALMA_8
+            it { is_expected.to_not install_package 'kernel-kvm' }
+          end
         end
       end
 
