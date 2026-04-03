@@ -6,6 +6,7 @@ Berksfile.lock
 \#*#
 .*.sw[a-z]
 *.un~
+*.log
 
 # Bundler
 Gemfile.lock

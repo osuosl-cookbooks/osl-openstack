@@ -39,7 +39,7 @@ control 'compute' do
 
   describe kernel_module('kvm_intel') do
     it { should be_loaded }
-  end
+  end if os.arch == 'x86_64'
 
   describe file '/etc/sysconfig/network' do
     its('content') { should match /^NETWORKING=yes$/ }
@@ -88,7 +88,7 @@ control 'compute' do
 
   describe file '/usr/bin/qemu-system-x86_64' do
     its('link_path') { should cmp '/usr/libexec/qemu-kvm' }
-  end
+  end if os.arch == 'x86_64'
 
   %w(/var/run/ceph/guests /var/log/ceph).each do |d|
     describe file(d) do
@@ -160,6 +160,16 @@ control 'compute' do
 
   describe file '/etc/modprobe.d/options_kvm_intel.conf' do
     its('content') { should cmp "options kvm_intel nested=1\n" }
+  end if os.arch == 'x86_64'
+
+  if os.arch == 'ppc64le'
+    describe kernel_module('kvm_hv') do
+      it { should be_loaded }
+    end
+
+    describe package('kernel-kvm') do
+      it { should be_installed }
+    end if os_release == 9
   end
 
   describe file('/var/lib/nova/.ssh/authorized_keys') do

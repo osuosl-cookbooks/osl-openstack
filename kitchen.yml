@@ -7,6 +7,7 @@ driver:
   user_data: userdata.txt
 provisioner:
   name: chef_infra
+  product_name: cinc
   product_version: 18
   deprecations_as_errors: true
   roles_path: test/integration/roles

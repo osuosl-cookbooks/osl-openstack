@@ -45,11 +45,10 @@ kernel_module 'tun' do
   action [:install, :load]
 end
 
-# Use our virt repo on AlmaLinux 9 for ppc64le
-include_recipe 'yum-osuosl::virt' if node['platform_version'].to_i >= 9 && ppc64le?
-
-# Disable IPv6 autoconf globally
-cookbook_file '/etc/sysconfig/network'
+# Disable IPv6 autoconf globally (not needed on EL9+ where nmstate manages interfaces)
+cookbook_file '/etc/sysconfig/network' do
+  only_if { node['platform_version'].to_i < 9 }
+end
 
 package openstack_compute_pkgs
 
@@ -109,7 +108,7 @@ service 'libvirt-guests' do
 end
 
 # Newer kernels are needed on AlmaLinux 8 to get pci-passthrough to work
-if openstack_pci_alias
+if openstack_pci_alias && node['platform_version'].to_i < 9
   osl_repos_centos_kmods 'osl-openstack' do
     kernel_6_6 true
   end
@@ -121,21 +120,19 @@ end
 
 case node['kernel']['machine']
 when 'ppc64le'
-  include_recipe 'yum-kernel-osuosl::install' if openstack_power10?
+  include_recipe 'yum-kernel-osuosl::install' if openstack_power10? && node['platform_version'].to_i < 9
+
+  package 'kernel-kvm' if node['platform_version'].to_i == 9
 
   kernel_module 'kvm_pr' do
     action [:install, :load]
+    only_if { node['platform_version'].to_i < 9 }
     only_if { node.read('cpu', 'hypervisor_vendor').to_s.match?(/KVM/) }
   end
 
   kernel_module 'kvm_hv' do
     action [:install, :load]
     not_if { node.read('cpu', 'hypervisor_vendor').to_s.match?(/KVM|pHyp/) }
-  end
-
-  # TODO: revert back to stock file now that we can use the systemd unit
-  cookbook_file '/etc/rc.d/rc.local' do
-    mode '644'
   end
 
   # SMT needs to be on POWER8 systems due to architecture limitations
@@ -146,7 +143,7 @@ when 'ppc64le'
 end
 
 # KSM is only available on AlmaLinux 9+ and not in VMs
-if node['platform_version'].to_i >= 9 && node['virtualization']['role'] != 'guest'
+if node['platform_version'].to_i >= 9 && !openstack_qemu_guest?
   package 'ksmtuned'
 
   template '/etc/ksmtuned.conf' do

@@ -226,6 +226,14 @@ module OSLOpenstack
         node.read('cpu', 'model_name').to_s.match?(/POWER10/)
       end
 
+      def openstack_qemu_guest?
+        if node['kernel']['machine'] == 'ppc64le'
+          node.read('cpu', 'machine').to_s.match?(/qemu/i)
+        else
+          node['virtualization']['role'] == 'guest'
+        end
+      end
+
       # OpenStack API helpers
       def os_conn
         install_fog_openstack_gem unless gem_installed?('fog-openstack')
