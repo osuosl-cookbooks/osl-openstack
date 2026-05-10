@@ -191,7 +191,11 @@ module OSLOpenstack
 
       # OpenStack APIs to put behind HAProxy on the controller VIP.
       # Horizon (80/443) uses 'source' for session affinity; everything
-      # else round-robins.
+      # else round-robins. The openstack_exporter (port 9183) is
+      # intentionally NOT fronted - its package only supports listen_port
+      # (no listen_address), so it always binds 0.0.0.0 which would
+      # conflict with a VIP bind on the same host. Prometheus should
+      # scrape both controllers directly as separate targets.
       def openstack_ha_services
         [
           { name: 'keystone',       port: 5000 },

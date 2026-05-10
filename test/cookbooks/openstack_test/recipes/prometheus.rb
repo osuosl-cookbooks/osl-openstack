@@ -4,7 +4,10 @@ node.default['prometheus-platform']['components']['prometheus']['config']['scrap
     'honor_labels' => true,
     'static_configs' => {
       'index_1' => {
-        'targets' => %w(controller.testing.osuosl.org:9183),
+        'targets' => %w(
+          controller.testing.osuosl.org:9183
+          controller2.testing.osuosl.org:9183
+        ),
         'labels' => {},
       },
     },
