@@ -13,6 +13,7 @@ action :create do
         name: new_resource.service_name,
         type: new_resource.type
       )
+      os_collection_invalidate(:services)
     end
   end
 end

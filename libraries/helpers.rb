@@ -3,6 +3,27 @@ module OSLOpenstack
     module Helpers
       include Chef::Mixin::ShellOut
 
+      # Process-wide caches. Module-level so they survive across the
+      # per-action-class instances Chef creates for each resource - the
+      # alternative (per-instance @ivars) re-fetches the data bag and
+      # builds a fresh keystone connection for every osl_openstack_*
+      # resource, which adds up fast on a controller run.
+      class << self
+        attr_accessor :secrets_cache, :conn_cache
+      end
+
+      def self.collection_cache
+        @collection_cache ||= {}
+      end
+
+      # Reset all module-level caches. Call between ChefSpec examples so
+      # cached state doesn't leak across tests.
+      def self.reset_cache!
+        @secrets_cache = nil
+        @conn_cache = nil
+        @collection_cache = {}
+      end
+
       def install_fog_openstack_gem
         return if gem_installed?('fog-openstack')
         declare_resource(:package, 'gcc') { compile_time(true) }
@@ -14,17 +35,18 @@ module OSLOpenstack
       end
 
       def os_secrets
-        data_bag_item('openstack', node['osl-openstack']['databag_item'])
+        OSLOpenstack::Cookbook::Helpers.secrets_cache ||=
+          data_bag_item('openstack', node['osl-openstack']['databag_item'])
       end
 
       def openstack_rabbitmq_user?(user)
         cmd = shell_out!('rabbitmqctl -q list_users')
-        cmd.stdout.match(/^#{user}/)
+        cmd.stdout.match?(/^#{Regexp.escape(user)}\s/)
       end
 
       def openstack_rabbitmq_permissions?(user)
         cmd = shell_out!('rabbitmqctl -q list_permissions')
-        cmd.stdout.match(/^#{user}\s+\.\*\s+\.\*\s+\.\*/)
+        cmd.stdout.match?(/^#{Regexp.escape(user)}\s+\.\*\s+\.\*\s+\.\*/)
       end
 
       def openstack_rabbitmq_repo
@@ -41,7 +63,11 @@ module OSLOpenstack
       # the brokers are isolated and OpenStack RPC reply queues become
       # undeliverable when request and reply go through different nodes.
       def openstack_rabbitmq_join_cluster(primary_node_name)
-        if primary_node_name.include?(node['hostname'])
+        # Extract the primary's short hostname from "rabbit@<host>.<domain>"
+        # and compare exactly to node['hostname'] - substring matching
+        # would conflate "controller" with "controller2".
+        primary_short_hostname = primary_node_name.split('@', 2).last.split('.', 2).first
+        if primary_short_hostname == node['hostname']
           Chef::Log.info("This node IS the RabbitMQ primary ('#{primary_node_name}'). No join needed.")
           return false
         end
@@ -316,6 +342,8 @@ module OSLOpenstack
 
       # OpenStack API helpers
       def os_conn
+        return OSLOpenstack::Cookbook::Helpers.conn_cache if OSLOpenstack::Cookbook::Helpers.conn_cache
+
         install_fog_openstack_gem unless gem_installed?('fog-openstack')
         raise 'fog-openstack Gem missing' unless gem_installed?('fog-openstack')
         require 'fog/openstack' unless defined?(::Fog)
@@ -329,8 +357,6 @@ module OSLOpenstack
           openstack_domain_name: 'default',
         }
 
-        return @connection_cache if @connection_cache
-
         # On a fresh controller bootstrap, Apache + keystone may not be
         # ready when this is first called. Retry with backoff and surface
         # the actual error if all attempts fail (rather than returning
@@ -340,8 +366,8 @@ module OSLOpenstack
         last_error = nil
         loop do
           begin
-            @connection_cache = Fog::OpenStack::Identity.new(params)
-            return @connection_cache
+            OSLOpenstack::Cookbook::Helpers.conn_cache = Fog::OpenStack::Identity.new(params)
+            return OSLOpenstack::Cookbook::Helpers.conn_cache
           rescue => e
             last_error = e
             count += 1
@@ -353,43 +379,52 @@ module OSLOpenstack
         raise "Failed to connect to keystone at #{params[:openstack_auth_url]} after #{count} attempts: #{last_error.class}: #{last_error.message}"
       end
 
+      # Memoized fetch of a top-level keystone collection (roles,
+      # services, domains, projects, users, endpoints). Resources that
+      # mutate a collection MUST call os_collection_invalidate after
+      # the create succeeds so the next lookup re-fetches.
+      def os_collection(name)
+        OSLOpenstack::Cookbook::Helpers.collection_cache[name] ||= os_conn.send(name).all
+      end
+
+      def os_collection_invalidate(name)
+        OSLOpenstack::Cookbook::Helpers.collection_cache.delete(name)
+      end
+
       def os_role(new_resource)
-        os_conn.roles.find { |r| r.name == new_resource.role_name }
+        os_collection(:roles).find { |r| r.name == new_resource.role_name }
       end
 
       def os_service(new_resource)
-        os_conn.services.find do |s|
-          s.name == new_resource.service_name
-        end
+        os_collection(:services).find { |s| s.name == new_resource.service_name }
       end
 
       def os_domain(new_resource)
-        os_conn.domains.find { |u| u.id == new_resource.domain_name } ||
-          os_conn.domains.find { |u| u.name == new_resource.domain_name }
+        os_collection(:domains).find do |d|
+          d.id == new_resource.domain_name || d.name == new_resource.domain_name
+        end
       end
 
       def os_endpoint(new_resource)
         service = os_service(new_resource)
         raise "service_name #{new_resource.service_name} not found" if service.nil?
-        os_conn.endpoints.find do |e|
+        os_collection(:endpoints).find do |e|
           e.service_id == service.id && e.interface == new_resource.interface && e.region == new_resource.region
         end
       end
 
       def os_project(new_resource)
-        # return if new_resource.project_name.nil?
         domain = os_domain(new_resource)
-        os_conn.projects.find do |p|
-          (p.name == new_resource.project_name) && (domain ? p.domain_id == domain.id : {})
+        os_collection(:projects).find do |p|
+          p.name == new_resource.project_name && (domain.nil? || p.domain_id == domain.id)
         end
       end
 
       def os_user(new_resource)
         domain = os_domain(new_resource)
-        os_conn.users.find_by_name(
-          new_resource.user_name,
-          domain ? { domain_id: domain.id } : {}
-        ).first
+        os_collection(:users).find do |u|
+          u.name == new_resource.user_name && (domain.nil? || u.domain_id == domain.id)
+        end
       end
 
       def os_user_grant_role(new_resource)

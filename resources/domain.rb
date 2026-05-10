@@ -9,6 +9,7 @@ action :create do
   unless os_domain(new_resource)
     converge_by("creating domain #{new_resource.domain_name}") do
       os_conn.domains.create(name: new_resource.domain_name)
+      os_collection_invalidate(:domains)
     end
   end
 end
