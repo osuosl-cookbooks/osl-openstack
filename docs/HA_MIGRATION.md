@@ -1,33 +1,48 @@
 # Production HA Migration Runbook
 
-Steps to convert the existing single-controller production cloud to a
-2-node active/active HA controller pair with minimal downtime.
+Steps to convert the existing single-controller production cloud
+(`controller1`, currently holds a manually-assigned VIP, no HAProxy)
+to a 2-node active/active HA controller pair (`controller1` +
+`controller2`) with minimal downtime.
 
 This runbook assumes the cookbook is already at the
 `ramereth/ha-controller` branch (or merged) and that you have read
 [recipes/ha.rb](../recipes/ha.rb) and
 [libraries/helpers.rb](../libraries/helpers.rb) for context.
 
+The runbook is organized in four sections:
+
+- **A. Preparation** — staging changes off-line; *no impact on prod*.
+- **B. Cookbook deploy on `controller1`** — applies the new cookbook
+  in non-HA mode; brief (~1–5s) service reloads/restarts, *no
+  keepalived/HAProxy behavior change yet*.
+- **C. HA cutover** — keepalived takes the VIP, HAProxy fronts the
+  APIs, `controller2` joins the cluster. *This is the main outage
+  window (~30s–2m).*
+- **D. Validation & finalize** — failover test, router migration,
+  cleanup.
+
 ## Target Architecture
 
-| Component | Today | After |
+| Component | Today (`controller1` only) | After (`controller1` + `controller2`) |
 | --- | --- | --- |
-| Controllers | 1 active (`controller`) | 2 active/active (`controller`, `controller2`) |
-| VIP | Manually-assigned IP on `controller` | keepalived-managed VIP, floats between nodes |
+| Controllers | 1 active | 2 active/active |
+| VIP | Manually-assigned IP on `controller1` | keepalived-managed, floats |
 | API frontend | Apache binds `0.0.0.0` directly | HAProxy on VIP → Apache on per-host private IP |
-| RabbitMQ | Single broker on `controller` | Mnesia cluster across both controllers |
-| Memcached | Single instance on `controller` | Two instances, clients see both |
-| Cinder volume | Single active | Active/active via `cluster` + tooz coordination |
+| RabbitMQ | Single broker on `controller1` | Mnesia cluster across both controllers |
+| Memcached | Single instance on `controller1` | Two instances, clients see both |
+| Cinder volume | Single active | Active/active via `cluster` + tooz |
 | Neutron L3 | Single agent | `l3_ha = True`, `max_l3_agents_per_router = 2` |
 | MariaDB | External `osl-mysql` primary | **Unchanged** (HA out of scope) |
 
 ## Prerequisites
 
-- [ ] `controller2` host provisioned, OS installed, on the same L2 segment
-      as `controller` (VRRP requires multicast).
+- [ ] `controller2` host provisioned, OS installed, on the same L2
+      segment as `controller1` (VRRP requires multicast).
 - [ ] Forward + reverse DNS resolves for `controller2.<domain>`. Both
-      controllers can resolve each other's FQDN to the **management/data**
-      IP (not the VIP). RabbitMQ Mnesia is fragile if FQDNs don't agree.
+      controllers can resolve each other's FQDN to the
+      **management/data** IP (not the VIP). RabbitMQ Mnesia is fragile
+      if FQDNs don't agree.
 - [ ] Each controller has a per-host private IP reserved for Apache /
       backend services to bind to (separate from the VIP). These go in
       `ha.api_listen_ip`.
@@ -40,44 +55,48 @@ This runbook assumes the cookbook is already at the
   - HAProxy stats `stats_user` / `stats_pass`
   - Erlang cookie for RabbitMQ (20+ chars, alphanumeric, no quotes —
     must be identical on both nodes)
-- [ ] `chef-repo` and the latest `osl-openstack` cookbook uploaded to
-      the chef server; `controller2` knows about the chef server and can
-      register.
-- [ ] Maintenance window scheduled. Plan for **30s–2m** of API
-      unavailability during step 4 (the controller cutover).
+- [ ] Maintenance window scheduled for **Section C** only. Plan for
+      **30s–2m** of API unavailability during step C2.
 
-## Phase 0 — Stage Cookbook Changes (no production impact)
+---
+
+# A. Preparation (no production impact)
+
+These phases stage everything off-line. Nothing here deploys to prod.
+
+## A1 — Upload cookbook to chef server
 
 1. Merge / tag the `ramereth/ha-controller` branch.
-2. `berks upload` (or equivalent) to push the new cookbook + deps to the
-   chef server. Do **not** run `chef-client` on `controller` yet.
-3. Confirm `osl-openstack`, `osl-haproxy`, `osl-keepalived` versions on
-   the chef server match what's in `Berksfile.lock`.
+2. `berks upload` (or equivalent) to push the new cookbook + deps to
+   the chef server. **Do not run `chef-client` yet.**
+3. Confirm `osl-openstack`, `osl-haproxy`, `osl-keepalived` versions
+   on the chef server match what's in `Berksfile.lock`.
 
-## Phase 1 — Update the Production Data Bag (no production impact)
+## A2 — Draft the data-bag merge request (DON'T MERGE YET)
 
 The HA recipe is gated on `safe_dig(os_secrets, 'ha')` — see
-[recipes/controller.rb:23](../recipes/controller.rb#L23). Until the `ha`
-block exists in the data bag, nothing changes for any node that runs
-chef.
+[recipes/controller.rb:23](../recipes/controller.rb#L23). Until the
+`ha` block exists in the deployed data bag, nothing changes for any
+node that runs chef.
 
-Edit the `openstack` data bag for the prod cloud (your `x86`-suffixed
-item, or whichever matches `database_server.suffix`). Add:
+Open a merge request against the data-bag repo for the prod cloud's
+`openstack` data bag item (your `x86`-suffixed item, or whichever
+matches `database_server.suffix`). The MR adds:
 
 ```jsonc
 {
   "ha": {
     "keepalived": {
       "primary": {
-        "controller.<domain>":  true,
+        "controller1.<domain>": true,
         "controller2.<domain>": false
       },
       "interface": {
-        "controller.<domain>":  "<vrrp-iface>",
+        "controller1.<domain>": "<vrrp-iface>",
         "controller2.<domain>": "<vrrp-iface>"
       },
       "priority": {
-        "controller.<domain>":  100,
+        "controller1.<domain>": 100,
         "controller2.<domain>": 90
       },
       "virtual_router_id": <unique-1-255>,
@@ -86,7 +105,7 @@ item, or whichever matches `database_server.suffix`). Add:
       "vip_v6": "<existing-manual-vip-v6>"
     },
     "api_listen_ip": {
-      "controller.<domain>":  "<controller-private-ip>",
+      "controller1.<domain>": "<controller1-private-ip>",
       "controller2.<domain>": "<controller2-private-ip>"
     },
     "haproxy": {
@@ -97,7 +116,7 @@ item, or whichever matches `database_server.suffix`). Add:
 }
 ```
 
-In the same edit, convert these single-string fields to **arrays**
+In the same MR, convert these single-string fields to **arrays**
 listing both controllers (the helpers accept either form — see
 `openstack_transport_url` and `openstack_memcached_endpoints` in
 [libraries/helpers.rb](../libraries/helpers.rb)):
@@ -105,15 +124,15 @@ listing both controllers (the helpers accept either form — see
 ```jsonc
 {
   "messaging": {
-    "endpoint": ["controller.<domain>", "controller2.<domain>"],
+    "endpoint": ["controller1.<domain>", "controller2.<domain>"],
     "user":    "openstack",
     "pass":    "...",
     "cookie":       "<erlang-cookie>",
-    "primary_node": "rabbit@controller.<domain>"
+    "primary_node": "rabbit@controller1.<domain>"
   },
   "memcached": {
     "endpoint": [
-      "controller.<domain>:11211",
+      "controller1.<domain>:11211",
       "controller2.<domain>:11211"
     ]
   },
@@ -127,51 +146,98 @@ listing both controllers (the helpers accept either form — see
 Notes:
 
 - `messaging.primary_node` is the FQDN-form Erlang node name of the
-  **existing** broker. New nodes (controller2) join *this* node's
-  cluster; this node never tries to join itself.
+  **existing** broker (`controller1`). New nodes (`controller2`) join
+  *this* node's cluster; `controller1` never tries to join itself.
 - `network.ha = true` flips
   [templates/neutron.conf.erb:14-16](../templates/neutron.conf.erb#L14-L16).
-  Existing routers stay non-HA until you migrate them (Phase 7).
+  Existing routers stay non-HA until you migrate them (D2).
 - Don't remove the old single-string forms — *replace* them. The old
   string form will not be valid once the keys become arrays.
-- **Do not deploy yet.** Upload the data bag, but until you run
-  `chef-client` somewhere, nothing changes.
+- Get the MR reviewed and approved, but **leave it un-merged** until
+  step C1. Merging is what deploys.
 
-## Phase 2 — Bootstrap controller2 With NO Run List Yet
+## A3 — Bootstrap `controller2` with an empty run list
 
 1. Bootstrap `controller2` against the chef server with an **empty
    run_list** (or an OS-baseline-only role).
 2. Run `chef-client` once. Confirm:
-   - Node registered, OHAI sees the right `fqdn`, `ipaddress`,
-     interfaces.
-   - Both controllers' `/etc/hosts` (or DNS) resolve each other.
-3. Pre-install RabbitMQ on `controller2` is **not** required — the
-   `osl-openstack::ha` path will install everything when its run list is
-   in place. This step is just for sanity.
+   - Node registered with the chef server.
+   - OHAI sees the right `fqdn`, `ipaddress`, interfaces.
+   - Both controllers resolve each other's FQDN (DNS or
+     `/etc/hosts`).
+3. Pre-installing RabbitMQ on `controller2` is **not** required — the
+   full HA run list (step C3) installs everything.
 
-## Phase 3 — Pre-cutover Sanity on controller (no impact)
+---
 
-On the existing controller:
+# B. Cookbook deploy on `controller1` (no HA behavior, brief restarts)
+
+This is a normal cookbook upgrade. Because the data-bag MR from A2 is
+not merged yet, `safe_dig(os_secrets, 'ha')` returns nil and
+`osl-openstack::ha` stays skipped. But the cookbook also tightens
+some templates outside the HA gate — `Listen *:5000` instead of
+`Listen 5000`, `bind_host = *` instead of an absent line, etc. The
+behavior is identical (`*` is the same wildcard bind as before), but
+the **text** of the config files differs, so Chef will reload Apache
+and restart a few native daemons.
+
+Doing this step separately from the cutover means:
+
+- the cosmetic service-restart blips happen during a normal cookbook
+  upgrade window, not during the keepalived takeover, and
+- if something about the cookbook upgrade itself misbehaves, you
+  debug it with keepalived/HAProxy still out of the picture.
+
+## B1 — Run chef on `controller1`
 
 ```bash
-# Snapshot current state for rollback comparison
-ip addr show           > /root/pre-ha-ipaddr.txt
-ss -tlnp               > /root/pre-ha-listening.txt
-rabbitmqctl status     > /root/pre-ha-rabbit.txt
-openstack endpoint list > /root/pre-ha-endpoints.txt
+sudo cinc-client 2>&1 | tee /root/ha-prestage.log
 ```
+
+Expected restarts/reloads on this run:
+
+| File | Old | New | Impact |
+| --- | --- | --- | --- |
+| `node['osl-apache']['listen']` | `["80","443"]` | `["*:80","*:443"]` | Apache reload |
+| `wsgi-*.conf.erb` (keystone, nova-api, nova-metadata, placement, cinder-api) | `Listen 5000` etc. | `Listen *:5000` etc. | Apache reload |
+| `glance-api.conf.erb` | (no `bind_host`) | `bind_host = *` | glance-api restart |
+| `neutron.conf.erb` | (no `bind_host`) | `bind_host = *` | neutron-server restart |
+| `heat.conf.erb` | (no `bind_host`) | `bind_host = *` | heat-api / heat-api-cfn restart |
+| `nova.conf.erb` | (no `novncproxy_host`) | `novncproxy_host = *` | nova-novncproxy restart |
+
+Each is a ~1–5s blip for that specific API. Stagger or accept; the
+cluster as a whole stays serving.
+
+## B2 — Verify and run chef a second time
+
+```bash
+sudo cinc-client
+```
+
+The second run should be idempotent — no resources updated. If
+anything still updates, investigate before moving to Section C.
 
 Confirm:
 
-- The current "manual VIP" is configured on `<vrrp-iface>` (matches
-  `ha.keepalived.interface[controller.<domain>]`).
-- Apache currently binds `0.0.0.0` (or `*`) on 5000/8774/8776/etc.
-  After cutover it will bind `ha.api_listen_ip[controller.<domain>]`
-  on those ports, and HAProxy will own the VIP bind.
-- No other VRRP group on the segment uses the chosen
-  `virtual_router_id`.
+- All native daemons running.
+- `openstack endpoint list` works.
+- The existing manually-assigned VIP is still bound on
+  `<vrrp-iface>`.
 
-## Phase 4 — Cutover controller (THE OUTAGE WINDOW)
+---
+
+# C. HA cutover (THE OUTAGE WINDOW)
+
+This is the maintenance window. Steps C1–C3 take **~30s–2m** of API
+unavailability total (mostly during C2's service restarts).
+
+## C1 — Merge the data-bag MR
+
+Merge the MR from A2 and confirm chef server / chef-zero is now
+serving the data bag with the `ha` block. Until the next chef-client
+run on `controller1`, the bag exists but the recipe hasn't reacted.
+
+## C2 — Cutover `controller1`
 
 This run installs keepalived + HAProxy, flips Apache from wildcard to
 per-host IP, and restarts the native API daemons (glance-api,
@@ -179,19 +245,25 @@ neutron-server, heat-api, heat-cfn, nova-novncproxy) so they release
 their `0.0.0.0:port` sockets before HAProxy tries to bind the VIP on
 the same port.
 
-**Outage:** API requests fail for ~30s–2m as Apache + the native
-daemons restart and HAProxy picks up its listeners.
-
-1. **Drain the manual VIP**. The VIP must not already be bound to the
-   interface when keepalived starts (keepalived will not steal an
-   address it didn't put there, and the duplicate bind will look like
-   split-brain). Either:
+1. **Drain the manual VIP** on `controller1`. The VIP must not
+   already be bound to the interface when keepalived starts
+   (keepalived will not steal an address it didn't put there, and
+   the duplicate bind will look like split-brain). Either:
    - Reuse the existing IP: `ip addr del <vip>/<mask> dev <vrrp-iface>`
      (immediately before the chef run), **or**
-   - Tear down the systemd unit / NetworkManager profile / shell script
-     that pins the VIP today.
+   - Tear down the systemd unit / NetworkManager profile / shell
+     script that pins the VIP today.
 
-2. **Run chef on controller**:
+2. **Pre-cutover snapshot** for rollback comparison:
+
+   ```bash
+   ip addr show           > /root/pre-ha-ipaddr.txt
+   ss -tlnp               > /root/pre-ha-listening.txt
+   rabbitmqctl status     > /root/pre-ha-rabbit.txt
+   openstack endpoint list > /root/pre-ha-endpoints.txt
+   ```
+
+3. **Run chef on `controller1`**:
 
    ```bash
    sudo cinc-client 2>&1 | tee /root/ha-cutover.log
@@ -201,22 +273,22 @@ daemons restart and HAProxy picks up its listeners.
    - `osl-keepalived` installs, drops `keepalived.conf` includes for
      `openstack-ipv4` / `openstack-ipv6` / `openstack` sync_group,
      starts keepalived. The VIP appears on the wire within ~3s.
-   - `osl-haproxy::install` installs the package; the recipe immediately
-     overwrites the package-default `/etc/haproxy/haproxy.cfg` with a
-     stub that binds only `127.0.0.1:18999` (haproxy 3.x rejects
-     no-proxy configs, see commit message in
+   - `osl-haproxy::install` installs the package; the recipe
+     immediately overwrites the package-default
+     `/etc/haproxy/haproxy.cfg` with a stub that binds only
+     `127.0.0.1:18999` (haproxy 3.x rejects no-proxy configs, see
      [recipes/ha.rb:86-114](../recipes/ha.rb#L86-L114)).
    - Apache vhosts re-render with `Listen <api_listen_ip>:<port>` and
      reload.
    - `glance-api`, `neutron-server`, `heat-api`, `heat-api-cfn`,
      `nova-novncproxy` each restart and rebind to the per-host IP.
-   - At end of run: HAProxy reloads with the real config (all listeners
-     for the OpenStack APIs on the VIP). The
-     `service[haproxy_post_daemons_restart]` resource queues a delayed
-     restart that fires after the native daemons have released their
-     wildcard sockets.
+   - At end of run: HAProxy reloads with the real config (all
+     listeners for the OpenStack APIs on the VIP). The
+     `service[haproxy_post_daemons_restart]` resource queues a
+     delayed restart that fires after the native daemons have
+     released their wildcard sockets.
 
-3. **Verify on controller**:
+4. **Verify on `controller1`**:
 
    ```bash
    # VIP held here
@@ -237,20 +309,19 @@ daemons restart and HAProxy picks up its listeners.
    openstack server list
    ```
 
-4. **Run the second chef pass** on controller. The recipe must be
-   idempotent — only `service[haproxy] :reload` (if any haproxy bind set
-   changed) should fire. Anything else updating means we have an
-   ordering bug.
+5. **Second chef pass** on `controller1`. Must be idempotent — only
+   `service[haproxy] :reload` (if any haproxy bind set changed)
+   should fire. Anything else updating means an ordering bug.
 
-If anything in this phase fails badly, see [Rollback](#rollback) below.
+If anything in this step fails badly, see [Rollback](#rollback).
 
-## Phase 5 — Bring controller2 Online
+## C3 — Bring `controller2` online
 
-1. Add `controller2` to the same role / run_list that `controller` uses
-   (typically `role[osl-openstack-controller]` or whatever wraps
+1. Add `controller2` to the same role / run_list that `controller1`
+   uses (typically `role[osl-openstack-controller]` or whatever wraps
    `recipe[osl-openstack::controller]`).
 
-2. Run chef on controller2:
+2. Run chef on `controller2`:
 
    ```bash
    sudo cinc-client 2>&1 | tee /root/ha-join.log
@@ -258,18 +329,18 @@ If anything in this phase fails badly, see [Rollback](#rollback) below.
 
    Watch for:
    - keepalived starts but does **not** take the VIP (priority 90 vs
-     100). On the wire, controller2 sends VRRP advertisements but
-     stays BACKUP.
+     `controller1`'s 100). On the wire, `controller2` sends VRRP
+     advertisements but stays BACKUP.
    - RabbitMQ installs, the `osl_openstack_messaging` resource (see
      [resources/messaging.rb](../resources/messaging.rb)) writes
      `/var/lib/rabbitmq/.erlang.cookie`, sets `USE_LONGNAME=true` and
      `NODENAME=rabbit@controller2.<domain>` in `rabbitmq-env.conf`,
      restarts rabbit, then runs `rabbitmqctl join_cluster
-     rabbit@controller.<domain>`. The join wipes controller2's local
-     mnesia and copies schema from controller — non-disruptive to
-     controller's existing connections.
+     rabbit@controller1.<domain>`. The join wipes `controller2`'s
+     local mnesia and copies schema from `controller1` —
+     non-disruptive to `controller1`'s existing connections.
    - Apache binds `controller2`'s `api_listen_ip` per-host IP.
-   - HAProxy on controller2 binds the VIP listeners using
+   - HAProxy on `controller2` binds the VIP listeners using
      `ip_nonlocal_bind=1` (it doesn't currently hold the VIP).
 
 3. **Verify the cluster**:
@@ -277,26 +348,30 @@ If anything in this phase fails badly, see [Rollback](#rollback) below.
    ```bash
    # On either node
    rabbitmqctl cluster_status
-   # Should show both rabbit@controller.<domain> and rabbit@controller2.<domain>
+   # Should show both rabbit@controller1.<domain> and rabbit@controller2.<domain>
 
-   # On controller (HAProxy stats — both backends should be UP)
-   curl -u <stats_user>:<stats_pass> http://<api_listen_ip>:9000/
+   # On controller1 (HAProxy stats — both backends should be UP)
+   curl -u <stats_user>:<stats_pass> http://<controller1-api-listen-ip>:9000/
 
    # API still works
    openstack endpoint list
    ```
 
-## Phase 6 — Failover Test
+---
+
+# D. Validation & finalize
+
+## D1 — Failover test
 
 While there's still an attentive operator on the call:
 
-1. On controller (current MASTER):
+1. On `controller1` (current MASTER):
 
    ```bash
    sudo systemctl stop keepalived
    ```
 
-2. Within ~3s the VIP should appear on controller2:
+2. Within ~3s the VIP should appear on `controller2`:
 
    ```bash
    # On controller2
@@ -312,20 +387,21 @@ While there's still an attentive operator on the call:
 4. Bring the master back:
 
    ```bash
-   # On controller
+   # On controller1
    sudo systemctl start keepalived
    ```
 
-   The VIP returns to controller (priority 100 vs 90, default preempt).
+   The VIP returns to `controller1` (priority 100 vs 90, default
+   preempt).
 
 If failover doesn't work (VIP doesn't move, or both controllers think
-they're MASTER), check VRRP advertisements with `tcpdump -i <iface> vrrp`
-on each node. Common causes: firewall blocking VRRP multicast, mismatched
-`virtual_router_id`, mismatched `auth_pass`.
+they're MASTER), check VRRP advertisements with `tcpdump -i <iface>
+vrrp` on each node. Common causes: firewall blocking VRRP multicast,
+mismatched `virtual_router_id`, mismatched `auth_pass`.
 
-## Phase 7 — Migrate Existing Neutron Routers to L3 HA
+## D2 — Migrate existing neutron routers to L3 HA
 
-`network.ha = true` (set in Phase 1) makes routers created **after** the
+`network.ha = true` (merged in C1) makes routers created **after** the
 cutover HA-enabled. Existing routers stay single-agent.
 
 For each existing router that needs HA:
@@ -344,10 +420,10 @@ openstack router set --enable $ROUTER
 openstack router set --external-gateway $GW_NET $ROUTER
 ```
 
-Each flip causes a brief data-plane interruption for tenants behind that
-router. Schedule per-tenant.
+Each flip causes a brief data-plane interruption for tenants behind
+that router. Schedule per-tenant.
 
-## Phase 8 — Cinder Active/Active
+## D3 — Cinder active/active
 
 If `block-storage.cluster` is already set in the data bag, the
 templates render the `cluster = <name>` and
@@ -363,11 +439,11 @@ cinder-manage cluster list
 Existing volumes attach to the cluster automatically on the next
 volume operation.
 
-## Phase 9 — Post-Migration Cleanup
+## D4 — Post-migration cleanup
 
-- [ ] Remove the manual-VIP scripts / NetworkManager profiles / systemd
-      units from controller. They're no longer load-bearing and will
-      conflict if accidentally re-enabled.
+- [ ] Remove the manual-VIP scripts / NetworkManager profiles /
+      systemd units from `controller1`. They're no longer load-bearing
+      and will conflict if accidentally re-enabled.
 - [ ] Update Prometheus scrape targets to scrape `openstack_exporter`
       on **both** controllers as separate targets (it always binds
       `0.0.0.0`, so it can't go behind the VIP — see comment in
@@ -380,18 +456,18 @@ volume operation.
       into either, but writes to `/etc/openstack` config files must go
       through chef.
 
+---
+
 ## Rollback
 
-If the Phase 4 cutover fails before Phase 5 (i.e., controller2 isn't
-joined yet):
+**If C2 failed before C3** (i.e. `controller2` isn't joined yet):
 
-1. **Remove the `ha` block from the data bag.** The recipe gate in
-   [recipes/controller.rb:23](../recipes/controller.rb#L23) is
-   `safe_dig(os_secrets, 'ha')`, so without it `osl-openstack::ha` is
-   skipped entirely.
-2. Revert `messaging.endpoint`, `memcached.endpoint` to single strings.
-3. Revert `network.ha` to absent.
-4. **Manually**:
+1. **Revert the data-bag MR.** Without the `ha` block,
+   `osl-openstack::ha` is skipped entirely
+   ([recipes/controller.rb:23](../recipes/controller.rb#L23)). Revert
+   `messaging.endpoint`, `memcached.endpoint` to single strings.
+   Revert `network.ha` to absent.
+2. **Manually**:
    - `systemctl stop keepalived haproxy`
    - `systemctl disable keepalived haproxy`
    - Re-add the manual VIP to `<vrrp-iface>`.
@@ -399,16 +475,16 @@ joined yet):
      will, since `openstack_api_listen_ip` returns `'*'` when `ha` is
      absent).
    - Restart httpd + the native API daemons.
-5. Run chef once to converge the rolled-back state.
+3. Run chef once on `controller1` to converge the rolled-back state.
 
-After Phase 5, rolling back is harder because controller2 has joined
-the rabbit cluster and is actively serving traffic. The supported path
-at that point is forward — fix the issue rather than tear it down.
+After C3, rolling back is harder because `controller2` has joined the
+rabbit cluster and is actively serving traffic. The supported path at
+that point is forward — fix the issue rather than tear it down.
 
 ## Known Gotchas
 
 - **VIP duplicate-bind on first run.** If you forget to drain the
-  manual VIP before chef runs (Phase 4 step 1), keepalived will start
+  manual VIP before chef runs (C2 step 1), keepalived will start
   alongside the manual assignment and the address will be present
   twice. Fix: `ip addr del <vip>/<mask> dev <iface>`, then
   `systemctl restart keepalived`.
@@ -424,37 +500,38 @@ at that point is forward — fix the issue rather than tear it down.
   heat-api, heat-api-cfn, nova-novncproxy historically bind
   `0.0.0.0:port`. The recipe restarts them so they pick up
   `bind_host = <api_listen_ip>` before HAProxy tries to bind the VIP
-  on the same port. The
-  `service[haproxy_post_daemons_restart]` delayed restart
+  on the same port. The `service[haproxy_post_daemons_restart]`
+  delayed restart
   ([recipes/ha.rb:194-206](../recipes/ha.rb#L194-L206)) makes sure
   HAProxy comes up *after* they release the wildcard sockets.
 - **RabbitMQ FQDN mismatch.** Mnesia node identity is the full Erlang
-  node name (`rabbit@<fqdn>`). If `controller2`'s hostname comes up as
-  `controller2.novalocal` instead of `controller2.<your-domain>`,
+  node name (`rabbit@<fqdn>`). If `controller2`'s hostname comes up
+  as `controller2.novalocal` instead of `controller2.<your-domain>`,
   the join silently fails or creates a phantom node. The
   `osl_openstack_messaging` resource forces `USE_LONGNAME=true` and
-  pins `NODENAME` to the FQDN form, but DNS / `/etc/hosts` must agree.
+  pins `NODENAME` to the FQDN form, but DNS / `/etc/hosts` must
+  agree.
 - **Erlang dist + EPMD ports.** Cluster traffic uses 4369 (EPMD) and
   25672 (Erlang dist) in addition to 5672 (AMQP) and 15672
-  (management). The `rabbitmq_mgt` profile in `osl-firewall` opens all
-  four. If clustering doesn't form, check iptables for those ports
-  between the two controllers.
+  (management). The `rabbitmq_mgt` profile in `osl-firewall` opens
+  all four. If clustering doesn't form, check iptables for those
+  ports between the two controllers.
 - **Don't restart both rabbit nodes simultaneously.** A coordinated
   outage of both will require `rabbitmqctl force_boot` on whichever
   node had the latest mnesia state to get the cluster back. For
-  rolling restarts: stop one, wait for it to leave the cluster cleanly
-  (`rabbitmqctl stop_app && rabbitmqctl reset && rabbitmqctl
+  rolling restarts: stop one, wait for it to leave the cluster
+  cleanly (`rabbitmqctl stop_app && rabbitmqctl reset && rabbitmqctl
   start_app && rabbitmqctl join_cluster ...`), then the other.
 - **`ip_nonlocal_bind`.** HAProxy on the BACKUP controller binds the
   VIP it doesn't currently hold. The `sysctl` resources in
   [recipes/ha.rb:27-31](../recipes/ha.rb#L27-L31) set
   `net.ipv4.ip_nonlocal_bind=1` and `net.ipv6.ip_nonlocal_bind=1` —
   without these, HAProxy fails to start on the BACKUP node.
-- **Kitchen suite for verification.** Before the prod cutover, run the
-  `multinode` kitchen suite (uses
+- **Kitchen suite for verification.** Before the prod cutover, run
+  the `multinode` kitchen suite (uses
   [test/integration/data_bags/openstack/multinode.json](../test/integration/data_bags/openstack/multinode.json))
   to exercise the same data bag schema with two real controller VMs
   and a rabbit cluster. The `ha` suite
   ([test/integration/data_bags/openstack/ha.json](../test/integration/data_bags/openstack/ha.json))
-  exercises only the `osl-openstack::ha` recipe in isolation, not the
-  full controller stack.
+  exercises only the `osl-openstack::ha` recipe in isolation, not
+  the full controller stack.
