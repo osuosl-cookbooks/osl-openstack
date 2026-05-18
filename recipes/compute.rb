@@ -90,10 +90,10 @@ end
 # eventlet concurrency, which can exhaust the default FD limit.
 osl_systemd_unit_drop_in 'ulimit' do
   content({
-    'Service' => {
-      'LimitNOFILE' => 1048576,
-    },
-  })
+            'Service' => {
+              'LimitNOFILE' => 1048576,
+            },
+          })
   unit_name 'openstack-nova-compute.service'
   notifies :restart, 'service[openstack-nova-compute]'
 end

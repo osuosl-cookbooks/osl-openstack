@@ -1,6 +1,15 @@
 require 'chefspec'
 require 'chefspec/berkshelf'
 
+# Reset the module-level helper caches (data bag, fog connection,
+# keystone collections) between examples so cached state from one
+# spec doesn't leak into the next.
+RSpec.configure do |config|
+  config.before(:each) do
+    OSLOpenstack::Cookbook::Helpers.reset_cache! if defined?(OSLOpenstack::Cookbook::Helpers)
+  end
+end
+
 ALMA_9 = {
   platform: 'almalinux',
   version: '9',

@@ -1,6 +1,7 @@
 db_endpoint = input('db_endpoint')
 controller_endpoint = input('controller_endpoint')
 local_storage = input('local_storage')
+primary_controller = input('primary_controller', value: true)
 
 control 'image' do
   describe service 'openstack-glance-api' do
@@ -11,7 +12,6 @@ control 'image' do
   describe port 9292 do
     it { should be_listening }
     its('protocols') { should include 'tcp' }
-    its('addresses') { should include '0.0.0.0' }
   end
 
   %w(
@@ -26,11 +26,11 @@ control 'image' do
 
   describe ini('/etc/glance/glance-api.conf') do
     its('database.connection') { should cmp "mysql+pymysql://glance_x86:glance@#{db_endpoint}:3306/glance_x86" }
-    its('DEFAULT.transport_url') { should cmp "rabbit://openstack:openstack@#{controller_endpoint}:5672" }
+    its('DEFAULT.transport_url') { should match(%r{^rabbit://openstack:openstack@#{Regexp.escape(controller_endpoint)}:5672}) }
     its('rbd.rbd_store_pool') { should cmp 'images' } unless local_storage
     its('rbd.rbd_store_user') { should cmp 'glance' } unless local_storage
     its('keystone_authtoken.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
-    its('keystone_authtoken.memcached_servers') { should cmp "#{controller_endpoint}:11211" }
+    its('keystone_authtoken.memcached_servers') { should match(/#{Regexp.escape(controller_endpoint)}:11211/) }
     its('keystone_authtoken.password') { should cmp 'glance' }
     its('keystone_authtoken.service_token_roles_required') { should cmp 'true' }
     its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
@@ -40,7 +40,7 @@ control 'image' do
   describe command('/root/image_upload.sh') do
     its('exit_status') { should eq 0 }
     its('stderr') { should eq '' }
-  end
+  end if primary_controller
 
   describe command('bash -c "source /root/openrc && /usr/bin/openstack image list"') do
     its('stdout') do
@@ -65,7 +65,7 @@ control 'image' do
   describe command('/root/create_flavor.sh') do
     its('exit_status') { should eq 0 }
     its('stderr') { should eq '' }
-  end
+  end if primary_controller
 
   describe command('bash -c "source /root/openrc && /usr/bin/openstack flavor show default -c ram -c vcpus -c disk -f shell"') do
     its('stdout') { should match(/disk="1"/) }

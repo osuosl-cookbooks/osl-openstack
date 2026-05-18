@@ -86,10 +86,10 @@ describe 'osl-openstack::compute_controller' do
           mode: '0640',
           sensitive: true,
           variables: {
-              auth_endpoint: 'controller.testing.osuosl.org',
-              database_connection: 'mysql+pymysql://placement_x86:placement@localhost:3306/placement_x86',
-              memcached_endpoint: 'controller.testing.osuosl.org:11211',
-              service_pass: 'placement',
+            auth_endpoint: 'controller.testing.osuosl.org',
+            database_connection: 'mysql+pymysql://placement_x86:placement@localhost:3306/placement_x86',
+            memcached_endpoint: 'controller.testing.osuosl.org:11211',
+            service_pass: 'placement',
           }
         )
       end
@@ -120,41 +120,42 @@ describe 'osl-openstack::compute_controller' do
           mode: '0640',
           sensitive: true,
           variables: {
-              allow_resize_to_same_host: nil,
-              api_database_connection: 'mysql+pymysql://nova_x86:nova@localhost:3306/nova_api_x86',
-              auth_endpoint: 'controller.testing.osuosl.org',
-              cinder_disabled: false,
-              compute: false,
-              cpu_allocation_ratio: nil,
-              database_connection: 'mysql+pymysql://nova_x86:nova@localhost:3306/nova_x86',
-              disk_allocation_ratio: '1.5',
-              endpoint: 'controller.testing.osuosl.org',
-              enabled_filters: %w(
-                AggregateInstanceExtraSpecsFilter
-                PciPassthroughFilter
-                AvailabilityZoneFilter
-                ComputeFilter
-                ComputeCapabilitiesFilter
-                ImagePropertiesFilter
-                ServerGroupAntiAffinityFilter
-                ServerGroupAffinityFilter
-              ),
-              image_endpoint: 'controller.testing.osuosl.org',
-              images_rbd_pool: 'vms',
-              local_storage: false,
-              memcached_endpoint: 'controller.testing.osuosl.org:11211',
-              metadata_proxy_shared_secret: '2SJh0RuO67KpZ63z',
-              neutron_pass: 'neutron',
-              pci_alias: nil,
-              pci_passthrough_whitelist: nil,
-              placement_pass: 'placement',
-              power10: false,
-              ram_allocation_ratio: nil,
-              rbd_secret_uuid: '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8',
-              rbd_user: 'cinder',
-              region: 'RegionOne',
-              service_pass: 'nova',
-              transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672',
+            allow_resize_to_same_host: nil,
+            api_database_connection: 'mysql+pymysql://nova_x86:nova@localhost:3306/nova_api_x86',
+            auth_endpoint: 'controller.testing.osuosl.org',
+            cinder_disabled: false,
+            compute: false,
+            cpu_allocation_ratio: nil,
+            database_connection: 'mysql+pymysql://nova_x86:nova@localhost:3306/nova_x86',
+            disk_allocation_ratio: '1.5',
+            endpoint: 'controller.testing.osuosl.org',
+            enabled_filters: %w(
+              AggregateInstanceExtraSpecsFilter
+              PciPassthroughFilter
+              AvailabilityZoneFilter
+              ComputeFilter
+              ComputeCapabilitiesFilter
+              ImagePropertiesFilter
+              ServerGroupAntiAffinityFilter
+              ServerGroupAffinityFilter
+            ),
+            image_api_servers: 'http://controller.testing.osuosl.org:9292',
+            images_rbd_pool: 'vms',
+            listen_ip: '*',
+            local_storage: false,
+            memcached_endpoint: 'controller.testing.osuosl.org:11211',
+            metadata_proxy_shared_secret: '2SJh0RuO67KpZ63z',
+            neutron_pass: 'neutron',
+            pci_alias: nil,
+            pci_passthrough_whitelist: nil,
+            placement_pass: 'placement',
+            power10: false,
+            ram_allocation_ratio: nil,
+            rbd_secret_uuid: '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8',
+            rbd_user: 'cinder',
+            region: 'RegionOne',
+            service_pass: 'nova',
+            transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672/',
           }
         )
       end
@@ -353,41 +354,42 @@ describe 'osl-openstack::compute_controller' do
             mode: '0640',
             sensitive: true,
             variables: {
-                allow_resize_to_same_host: nil,
-                api_database_connection: 'mysql+pymysql://nova_x86:nova@localhost_region2:3306/nova_api_x86',
-                auth_endpoint: 'controller.testing.osuosl.org',
-                cinder_disabled: true,
-                compute: false,
-                cpu_allocation_ratio: nil,
-                database_connection: 'mysql+pymysql://nova_x86:nova@localhost_region2:3306/nova_x86',
-                disk_allocation_ratio: '1.5',
-                endpoint: 'controller_region2.testing.osuosl.org',
-                enabled_filters: %w(
-                  AggregateInstanceExtraSpecsFilter
-                  PciPassthroughFilter
-                  AvailabilityZoneFilter
-                  ComputeFilter
-                  ComputeCapabilitiesFilter
-                  ImagePropertiesFilter
-                  ServerGroupAntiAffinityFilter
-                  ServerGroupAffinityFilter
-                ),
-                image_endpoint: 'controller_region2.testing.osuosl.org',
-                images_rbd_pool: nil,
-                local_storage: true,
-                memcached_endpoint: 'controller_region2.testing.osuosl.org:11211',
-                metadata_proxy_shared_secret: '2SJh0RuO67KpZ63z',
-                neutron_pass: 'neutron',
-                pci_alias: '{ "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }',
-                pci_passthrough_whitelist: '{ "vendor_id": "10de", "product_id": "1db5" }',
-                placement_pass: 'placement',
-                power10: false,
-                ram_allocation_ratio: nil,
-                rbd_secret_uuid: nil,
-                rbd_user: nil,
-                region: 'RegionTwo',
-                service_pass: 'nova',
-                transport_url: 'rabbit://openstack:openstack@controller_region2.testing.osuosl.org:5672',
+              allow_resize_to_same_host: nil,
+              api_database_connection: 'mysql+pymysql://nova_x86:nova@localhost_region2:3306/nova_api_x86',
+              auth_endpoint: 'controller.testing.osuosl.org',
+              cinder_disabled: true,
+              compute: false,
+              cpu_allocation_ratio: nil,
+              database_connection: 'mysql+pymysql://nova_x86:nova@localhost_region2:3306/nova_x86',
+              disk_allocation_ratio: '1.5',
+              endpoint: 'controller_region2.testing.osuosl.org',
+              enabled_filters: %w(
+                AggregateInstanceExtraSpecsFilter
+                PciPassthroughFilter
+                AvailabilityZoneFilter
+                ComputeFilter
+                ComputeCapabilitiesFilter
+                ImagePropertiesFilter
+                ServerGroupAntiAffinityFilter
+                ServerGroupAffinityFilter
+              ),
+              image_api_servers: 'http://controller_region2.testing.osuosl.org:9292',
+              images_rbd_pool: nil,
+              listen_ip: '*',
+              local_storage: true,
+              memcached_endpoint: 'controller_region2.testing.osuosl.org:11211',
+              metadata_proxy_shared_secret: '2SJh0RuO67KpZ63z',
+              neutron_pass: 'neutron',
+              pci_alias: '{ "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }',
+              pci_passthrough_whitelist: '{ "vendor_id": "10de", "product_id": "1db5" }',
+              placement_pass: 'placement',
+              power10: false,
+              ram_allocation_ratio: nil,
+              rbd_secret_uuid: nil,
+              rbd_user: nil,
+              region: 'RegionTwo',
+              service_pass: 'nova',
+              transport_url: 'rabbit://openstack:openstack@controller_region2.testing.osuosl.org:5672/',
             }
           )
         end

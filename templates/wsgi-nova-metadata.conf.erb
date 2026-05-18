@@ -1,6 +1,6 @@
-Listen 8775
+Listen <%= @server_address %>:8775
 
-<VirtualHost *:8775>
+<VirtualHost <%= @server_address %>:8775>
   WSGIProcessGroup nova-metadata
   WSGIApplicationGroup %{GLOBAL}
   WSGIPassAuthorization On

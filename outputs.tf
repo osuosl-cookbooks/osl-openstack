@@ -13,6 +13,9 @@ output "ceph" {
 output "controller" {
     value = "${openstack_compute_instance_v2.controller.network.0.fixed_ip_v4}"
 }
+output "controller2" {
+    value = "${openstack_compute_instance_v2.controller2.network.0.fixed_ip_v4}"
+}
 output "controller_region2" {
     value = length(module.region2) > 0 ? module.region2[0].controller_region2 : null
 }

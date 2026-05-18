@@ -7,6 +7,7 @@ driver:
   command_timeout: 7200
 
 transport:
+  name: rsync
   command_timeout: 7200
 
 verifier:
@@ -19,6 +20,7 @@ verifier:
       profile_locations:
         - test/integration/block_storage_controller
         - test/integration/compute_controller
+        - test/integration/ha_master
         - test/integration/identity
         - test/integration/image
         - test/integration/network
@@ -27,6 +29,23 @@ verifier:
         - test/integration/telemetry_controller
       attrs:
         - test/integration/multi-node/controller.yml
+      sudo: true
+    - name: controller2
+      backend: ssh
+      hosts_output: controller2
+      user: almalinux
+      profile_locations:
+        - test/integration/block_storage_controller
+        - test/integration/compute_controller
+        - test/integration/ha_standby
+        - test/integration/identity
+        - test/integration/image
+        - test/integration/network
+        - test/integration/ops_messaging
+        - test/integration/orchestration
+        - test/integration/telemetry_controller
+      attrs:
+        - test/integration/multi-node/controller2.yml
       sudo: true
     - name: compute
       backend: ssh
@@ -67,12 +86,12 @@ platforms:
   - name: almalinux-8
     driver:
       variables:
-        os_image: "Almalinux 8"
+        os_image: "AlmaLinux 8"
         ssh_user_name: "almalinux"
   - name: almalinux-9
     driver:
       variables:
-        os_image: "Almalinux 9"
+        os_image: "AlmaLinux 9"
         ssh_user_name: "almalinux"
 
 suites:

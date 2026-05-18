@@ -38,10 +38,10 @@ describe 'osl-openstack::telemetry_controller' do
           mode: '0640',
           sensitive: true,
           variables: {
-              auth_endpoint: 'controller.testing.osuosl.org',
-              memcached_endpoint: 'controller.testing.osuosl.org:11211',
-              service_pass: 'ceilometer',
-              transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672',
+            auth_endpoint: 'controller.testing.osuosl.org',
+            memcached_endpoint: 'controller.testing.osuosl.org:11211',
+            service_pass: 'ceilometer',
+            transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672/',
           }
         )
       end
@@ -51,7 +51,7 @@ describe 'osl-openstack::telemetry_controller' do
           group: 'ceilometer',
           mode: '0640',
           variables: {
-              publishers: %w(prometheus://localhost:9091/metrics/job/ceilometer),
+            publishers: %w(prometheus://localhost:9091/metrics/job/ceilometer),
           }
         )
       end

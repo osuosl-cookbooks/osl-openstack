@@ -1,6 +1,6 @@
-Listen 8776
+Listen <%= @server_address %>:8776
 
-<VirtualHost *:8776>
+<VirtualHost <%= @server_address %>:8776>
   WSGIProcessGroup  cinder-wsgi
   WSGIApplicationGroup %{GLOBAL}
   WSGIPassAuthorization On

@@ -23,6 +23,7 @@ action :create do
           default_project_id: project ? project.id : nil,
           password: new_resource.password
         )
+        os_collection_invalidate(:users)
       end
     else
       converge_by("creating user #{new_resource.user_name}") do
@@ -32,6 +33,7 @@ action :create do
           default_project_id: project ? project.id : nil,
           password: new_resource.password
         )
+        os_collection_invalidate(:users)
       end
     end
   end

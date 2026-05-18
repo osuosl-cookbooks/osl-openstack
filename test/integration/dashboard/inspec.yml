@@ -9,3 +9,5 @@ inputs:
     value:
       - 443
       - 5000
+  - name: skip_ssl_baseline
+    value: false

@@ -25,6 +25,8 @@ include_recipe 'osl-ceph'
 
 package 'openstack-cinder'
 
+db_connection = openstack_database_connection('block-storage')
+
 template '/etc/cinder/cinder.conf' do
   owner 'root'
   group 'cinder'
@@ -36,10 +38,12 @@ template '/etc/cinder/cinder.conf' do
     backup_ceph_user: b['ceph']['block_backup_rbd_store_user'],
     block_rbd_pool: b['ceph']['block_rbd_pool'],
     block_ssd_rbd_pool: b['ceph']['block_ssd_rbd_pool'],
+    cluster: b['cluster'],
     compute_pass: s['compute']['service']['pass'],
-    database_connection: openstack_database_connection('block-storage'),
-    image_endpoint: s['image']['endpoint'],
-    memcached_endpoint: s['memcached']['endpoint'],
+    coordination_url: db_connection.sub('mysql+pymysql', 'mysql'),
+    database_connection: db_connection,
+    image_api_servers: openstack_image_api_servers,
+    memcached_endpoint: openstack_memcached_servers,
     region: b['region'],
     rbd_secret_uuid: ceph_fsid,
     rbd_user: b['ceph']['rbd_store_user'],

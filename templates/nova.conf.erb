@@ -54,7 +54,7 @@ connection = <%= @database_connection %>
 enabled_filters = <%= @enabled_filters.join(',') %>
 
 [glance]
-api_servers = http://<%= @image_endpoint %>:9292
+api_servers = <%= @image_api_servers %>
 
 [keystone_authtoken]
 auth_type = v3password
@@ -160,5 +160,8 @@ username = nova
 [vnc]
 enabled = true
 novncproxy_base_url = https://<%= @endpoint %>:6080/vnc_auto.html
+<% if @listen_ip && @listen_ip != '*' -%>
+novncproxy_host = <%= @listen_ip %>
+<% end -%>
 server_listen = 0.0.0.0
 server_proxyclient_address = <%= node['ipaddress'] %>

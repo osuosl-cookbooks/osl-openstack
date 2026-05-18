@@ -75,15 +75,16 @@ describe 'osl-openstack::orchestration' do
           mode: '0640',
           sensitive: true,
           variables: {
-              auth_encryption_key: '4CFk1URr4Ln37kKRNSypwjI7vv7jfLQE',
-              auth_endpoint: 'controller.testing.osuosl.org',
-              database_connection: 'mysql+pymysql://heat_x86:heat@localhost:3306/heat_x86',
-              endpoint: 'controller.testing.osuosl.org',
-              heat_domain_admin: 'heat_domain_admin',
-              memcached_endpoint: 'controller.testing.osuosl.org:11211',
-              region: 'RegionOne',
-              service_pass: 'heat',
-              transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672',
+            auth_encryption_key: '4CFk1URr4Ln37kKRNSypwjI7vv7jfLQE',
+            auth_endpoint: 'controller.testing.osuosl.org',
+            database_connection: 'mysql+pymysql://heat_x86:heat@localhost:3306/heat_x86',
+            endpoint: 'controller.testing.osuosl.org',
+            heat_domain_admin: 'heat_domain_admin',
+            listen_ip: '*',
+            memcached_endpoint: 'controller.testing.osuosl.org:11211',
+            region: 'RegionOne',
+            service_pass: 'heat',
+            transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672/',
           }
         )
       end

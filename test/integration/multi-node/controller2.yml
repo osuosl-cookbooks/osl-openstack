@@ -1,0 +1,9 @@
+db_endpoint: db.testing.osuosl.org
+physical_interface_mappings: public:eth1.42
+prometheus_endpoint: controller.testing.osuosl.org
+skip_ssl_baseline: true
+# controller2's bootstrap intentionally omits the one-time
+# image_upload, create_flavor, create_network, and prometheus exporter
+# recipes - those run only on the primary controller. Skip the
+# corresponding InSpec checks so this controller doesn't fail them.
+primary_controller: false

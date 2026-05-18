@@ -19,6 +19,7 @@ action :create do
         name: new_resource.endpoint_name,
         region: new_resource.region
       )
+      os_collection_invalidate(:endpoints)
     end
   end
 end

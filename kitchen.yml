@@ -6,8 +6,7 @@ driver:
   flavor_ref: 'c2.local.8c8m50d'
   user_data: userdata.txt
 provisioner:
-  name: chef_infra
-  product_name: cinc
+  name: cinc_infra
   product_version: 18
   deprecations_as_errors: true
   roles_path: test/integration/roles
@@ -27,6 +26,13 @@ suites:
   - name: mon
     run_list:
       - recipe[osl-openstack::mon]
+  - name: ha
+    attributes:
+      osl-openstack:
+        databag_item: ha
+    run_list:
+      - recipe[openstack_test::ha]
+      - recipe[osl-openstack::ha]
   - name: ops_messaging
     driver_config:
       server_name: "ops-messaging-<%= ENV['USER'] %>"

@@ -1,6 +1,6 @@
-Listen 8774
+Listen <%= @server_address %>:8774
 
-<VirtualHost *:8774>
+<VirtualHost <%= @server_address %>:8774>
   WSGIProcessGroup nova-api
   WSGIApplicationGroup %{GLOBAL}
   WSGIPassAuthorization On

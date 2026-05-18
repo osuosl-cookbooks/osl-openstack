@@ -1,6 +1,6 @@
-Listen 8778
+Listen <%= @server_address %>:8778
 
-<VirtualHost *:8778>
+<VirtualHost <%= @server_address %>:8778>
   WSGIProcessGroup placement-api
   WSGIApplicationGroup %{GLOBAL}
   WSGIPassAuthorization On

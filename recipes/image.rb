@@ -64,8 +64,9 @@ template '/etc/glance/glance-api.conf' do
   variables(
     auth_endpoint: auth_endpoint,
     database_connection: openstack_database_connection('image'),
+    listen_ip: openstack_api_listen_ip,
     local_storage: openstack_local_storage_image,
-    memcached_endpoint: s['memcached']['endpoint'],
+    memcached_endpoint: openstack_memcached_servers,
     rbd_store_pool: safe_dig(i, 'ceph', 'rbd_store_pool'),
     rbd_store_user: safe_dig(i, 'ceph', 'rbd_store_user'),
     service_pass: i['service']['pass'],

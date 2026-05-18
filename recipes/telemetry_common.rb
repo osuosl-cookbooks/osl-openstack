@@ -30,7 +30,7 @@ template '/etc/ceilometer/ceilometer.conf' do
   sensitive true
   variables(
     auth_endpoint: auth_endpoint,
-    memcached_endpoint: s['memcached']['endpoint'],
+    memcached_endpoint: openstack_memcached_servers,
     service_pass: t['service']['pass'],
     transport_url: openstack_transport_url
   )

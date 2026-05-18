@@ -1,6 +1,6 @@
 WSGISocketPrefix /var/lock/subsys
 
-<VirtualHost *:80>
+<VirtualHost <%= @server_address %>:80>
   ServerName <%= @server_name %>
   <% unless @server_aliases.empty? -%>
   ServerAlias <%= @server_aliases.flatten.join(" ") %>
@@ -20,7 +20,7 @@ WSGISocketPrefix /var/lock/subsys
   CustomLog "|/usr/sbin/rotatelogs <%= @log_dir %>/horizon/access/%Y%m%d.log 86400" combined-osuosl
 </VirtualHost>
 
-<VirtualHost *:443>
+<VirtualHost <%= @server_address %>:443>
   ServerName <%= @server_name %>
   <% unless @server_aliases.empty? -%>
   ServerAlias <%= @server_aliases.flatten.join(" ") %>

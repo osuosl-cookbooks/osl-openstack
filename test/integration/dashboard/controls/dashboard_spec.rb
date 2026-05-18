@@ -1,6 +1,6 @@
 require_controls 'osuosl-baseline' do
   control 'ssl-baseline'
-end
+end unless input('skip_ssl_baseline', value: false)
 
 control 'openstack-dashboard' do
   describe package 'openstack-dashboard' do
@@ -11,7 +11,6 @@ control 'openstack-dashboard' do
     describe port(p) do
       it { should be_listening }
       its('protocols') { should include 'tcp' }
-      its('addresses') { should include '0.0.0.0' }
     end
   end
 

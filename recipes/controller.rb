@@ -20,6 +20,7 @@ prometheus_cloud = os_secrets['database_server']['suffix']
 node.default['osl-openstack']['node_type'] = 'controller'
 node.default['osl-prometheus']['openstack']['cloud'] = prometheus_cloud
 
+include_recipe 'osl-openstack::ha' if safe_dig(os_secrets, 'ha')
 include_recipe 'osl-openstack::identity'
 include_recipe 'osl-openstack::image'
 include_recipe 'osl-openstack::network_controller'

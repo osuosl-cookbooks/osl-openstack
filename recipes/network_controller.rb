@@ -80,7 +80,7 @@ template '/etc/neutron/metadata_agent.ini' do
   mode '0640'
   sensitive true
   variables(
-    memcached_endpoint: s['memcached']['endpoint'],
+    memcached_endpoint: openstack_memcached_servers,
     metadata_proxy_shared_secret: n['metadata_proxy_shared_secret'],
     nova_metadata_host: n['nova_metadata_host']
   )

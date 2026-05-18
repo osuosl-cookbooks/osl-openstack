@@ -1,6 +1,6 @@
 {
   "id": "openstack_exporter",
-  "mycloud": {
+  "x86": {
     "username": "admin",
     "user_domain_name": "default",
     "password": "admin",

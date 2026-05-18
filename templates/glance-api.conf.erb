@@ -2,6 +2,9 @@
 # Any changes will be overwritten
 
 [DEFAULT]
+<% if @listen_ip && @listen_ip != '*' -%>
+bind_host = <%= @listen_ip %>
+<% end -%>
 enable_v1_api = false
 enable_v2_api = true
 <% unless @local_storage -%>

@@ -10,6 +10,7 @@ action :create do
   unless os_project(new_resource)
     converge_by("creating project #{new_resource.project_name}") do
       os_conn.projects.create name: new_resource.project_name
+      os_collection_invalidate(:projects)
     end
   end
 end

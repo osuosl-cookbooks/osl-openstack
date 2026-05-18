@@ -24,7 +24,9 @@ CACHES = {
   'default': {
     'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
     'LOCATION': [
-      '<%= @memcache_servers %>',
+<% @memcache_servers.each do |server| -%>
+      '<%= server %>',
+<% end -%>
     ]
   }
 }

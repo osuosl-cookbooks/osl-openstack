@@ -58,7 +58,7 @@ describe 'osl-openstack::dashboard' do
           sensitive: true,
           variables: {
             auth_url: 'controller.testing.osuosl.org',
-            memcache_servers: 'controller.testing.osuosl.org:11211',
+            memcache_servers: ['controller.testing.osuosl.org:11211'],
             regions: {
               'RegionOne' => 'https://controller.testing.osuosl.org:5000/v3',
               'RegionTwo' => 'https://controller.testing.osuosl.org:5000/v3',
@@ -122,7 +122,7 @@ describe 'osl-openstack::dashboard' do
             sensitive: true,
             variables: {
               auth_url: 'controller.testing.osuosl.org',
-              memcache_servers: 'controller.testing.osuosl.org:11211',
+              memcache_servers: ['controller.testing.osuosl.org:11211'],
               regions: nil,
               secret_key: '-#45g2*o=8mhe(10if%*65@g#z0r#r7m__w6kwq8s9@n%12a11',
             }

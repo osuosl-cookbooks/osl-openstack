@@ -24,6 +24,14 @@ resource "openstack_networking_subnet_v2" "openstack_subnet" {
     no_gateway      = "true"
 }
 
+resource "openstack_networking_subnet_v2" "openstack_subnet_v6" {
+    network_id      = openstack_networking_network_v2.openstack_network.id
+    cidr            = "fd00:1:2::/64"
+    ip_version      = 6
+    enable_dhcp     = "false"
+    no_gateway      = "true"
+}
+
 resource "openstack_networking_port_v2" "chef_zero" {
     name            = "chef_zero"
     admin_state_up  = true
@@ -58,6 +66,23 @@ resource "openstack_compute_instance_v2" "chef_zero" {
     }
 }
 
+# Re-upload cookbooks and data bags to chef-zero on every apply so that
+# local recipe / data bag edits are picked up without recreating chef-zero.
+resource "null_resource" "knife_upload" {
+    triggers = {
+        always_run = timestamp()
+    }
+    provisioner "local-exec" {
+        command = "rake knife_upload"
+        environment = {
+            CHEF_SERVER = "${openstack_compute_instance_v2.chef_zero.network.0.fixed_ip_v4}"
+        }
+    }
+    depends_on = [
+        openstack_compute_instance_v2.chef_zero,
+    ]
+}
+
 resource "openstack_networking_port_v2" "database" {
     name            = "database"
     admin_state_up  = true
@@ -72,6 +97,12 @@ resource "openstack_networking_port_v2" "ceph" {
 
 resource "openstack_networking_port_v2" "controller" {
     name            = "controller"
+    admin_state_up  = true
+    network_id      = data.openstack_networking_network_v2.network.id
+}
+
+resource "openstack_networking_port_v2" "controller2" {
+    name            = "controller2"
     admin_state_up  = true
     network_id      = data.openstack_networking_network_v2.network.id
 }
@@ -112,6 +143,25 @@ resource "openstack_networking_port_v2" "controller_openstack" {
     fixed_ip {
         subnet_id = openstack_networking_subnet_v2.openstack_subnet.id
         ip_address = "10.1.2.3"
+    }
+    fixed_ip {
+        subnet_id = openstack_networking_subnet_v2.openstack_subnet_v6.id
+        ip_address = "fd00:1:2::3"
+    }
+}
+
+resource "openstack_networking_port_v2" "controller2_openstack" {
+    name                  = "controller2_openstack"
+    admin_state_up        = true
+    port_security_enabled = false
+    network_id            = openstack_networking_network_v2.openstack_network.id
+    fixed_ip {
+        subnet_id = openstack_networking_subnet_v2.openstack_subnet.id
+        ip_address = "10.1.2.13"
+    }
+    fixed_ip {
+        subnet_id = openstack_networking_subnet_v2.openstack_subnet_v6.id
+        ip_address = "fd00:1:2::13"
     }
 }
 
@@ -192,6 +242,30 @@ resource "openstack_compute_instance_v2" "controller" {
     }
 }
 
+resource "openstack_compute_instance_v2" "controller2" {
+    name            = "controller2"
+    image_name      = var.os_image
+    flavor_name     = "m2.local.16c16m200d"
+    key_pair        = var.ssh_key_name
+    security_groups = ["default"]
+    connection {
+        user = var.ssh_user_name
+        host = openstack_networking_port_v2.controller2.all_fixed_ips.0
+    }
+    network {
+        port = openstack_networking_port_v2.controller2.id
+    }
+    network {
+        port = openstack_networking_port_v2.controller2_openstack.id
+    }
+    provisioner "remote-exec" {
+        inline = [
+            "sudo mkdir -p /etc/cinc",
+            "sudo ln -sf /etc/cinc /etc/chef"
+        ]
+    }
+}
+
 resource "openstack_compute_instance_v2" "compute" {
     name            = "compute"
     image_name      = var.os_image
@@ -217,6 +291,9 @@ resource "openstack_compute_instance_v2" "compute" {
 }
 
 resource "null_resource" "database" {
+    triggers = {
+        instance_id = openstack_compute_instance_v2.database.id
+    }
     provisioner "local-exec" {
         command = <<-EOF
             knife bootstrap -c test/chef-config/knife.rb \
@@ -235,6 +312,9 @@ resource "null_resource" "database" {
 }
 
 resource "null_resource" "ceph" {
+    triggers = {
+        instance_id = openstack_compute_instance_v2.ceph.id
+    }
     provisioner "local-exec" {
         command = <<-EOF
             knife bootstrap -c test/chef-config/knife.rb \
@@ -253,6 +333,9 @@ resource "null_resource" "ceph" {
 }
 
 resource "null_resource" "controller" {
+    triggers = {
+        instance_id = openstack_compute_instance_v2.controller.id
+    }
     connection {
         type = "ssh"
         user = var.ssh_user_name
@@ -287,7 +370,44 @@ resource "null_resource" "controller" {
     ]
 }
 
+resource "null_resource" "controller2" {
+    triggers = {
+        instance_id = openstack_compute_instance_v2.controller2.id
+    }
+    connection {
+        type = "ssh"
+        user = var.ssh_user_name
+        host = openstack_compute_instance_v2.controller2.network.0.fixed_ip_v4
+    }
+
+    provisioner "local-exec" {
+        command = <<-EOF
+            knife bootstrap -c test/chef-config/knife.rb \
+                ${var.ssh_user_name}@${openstack_compute_instance_v2.controller2.network.0.fixed_ip_v4} \
+                --bootstrap-version ${var.chef_version} -y -N controller2 --sudo \
+                -r 'role[openstack_tf_common],role[openstack_controller],recipe[osl-openstack::ops_messaging],recipe[osl-openstack::controller],recipe[osl-openstack::block_storage]'
+            EOF
+        environment = {
+            CHEF_SERVER = "${openstack_compute_instance_v2.chef_zero.network.0.fixed_ip_v4}"
+        }
+    }
+
+    provisioner "remote-exec" {
+        inline = [
+            "sudo cinc-client",
+        ]
+    }
+
+    depends_on = [
+        openstack_compute_instance_v2.controller2,
+        null_resource.controller,
+    ]
+}
+
 resource "null_resource" "compute" {
+    triggers = {
+        instance_id = openstack_compute_instance_v2.compute.id
+    }
     connection {
         type = "ssh"
         user = var.ssh_user_name

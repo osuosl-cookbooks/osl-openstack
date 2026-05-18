@@ -9,6 +9,7 @@ action :create do
   unless os_role(new_resource)
     converge_by("creating role #{new_resource.role_name}") do
       os_conn.roles.create name: new_resource.role_name
+      os_collection_invalidate(:roles)
     end
   end
 end
