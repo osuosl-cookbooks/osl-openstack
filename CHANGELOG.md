@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+18.0.0 (2026-05-18)
+-------------------
+- Add active-active HA controller support
+
 17.5.0 (2026-04-03)
 -------------------
 - Fix compute recipe for EL9 and ppc64le compatibility
