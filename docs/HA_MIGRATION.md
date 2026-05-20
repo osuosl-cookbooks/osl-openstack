@@ -139,9 +139,20 @@ listing both controllers (the helpers accept either form — see
   "network": {
     "ha": true
     // ...existing keys
+  },
+  "block-storage": {
+    "cluster": "<cluster-name>"
+    // ...existing keys
   }
 }
 ```
+
+`<cluster-name>` is an arbitrary identifier (e.g. `prod` or
+`cloud-name`). It's what cinder-volume services register themselves
+under so they form an active/active cluster — see
+[templates/cinder.conf.erb:13-27](../templates/cinder.conf.erb#L13-L27).
+Once both controllers run with the same value, `cinder-manage cluster
+list` will show one cluster with two services bound (verified in D3).
 
 Notes:
 
@@ -404,7 +415,37 @@ mismatched `virtual_router_id`, mismatched `auth_pass`.
 `network.ha = true` (merged in C1) makes routers created **after** the
 cutover HA-enabled. Existing routers stay single-agent.
 
-For each existing router that needs HA:
+**Identify which routers need migration.** `openstack router list
+--long` includes an `HA` column — anything `False` was created under
+the old `l3_ha = False` default and needs the flip below:
+
+```bash
+# All routers with their HA state
+openstack router list --long
+
+# Just the non-HA ones (the targets for this step)
+openstack router list --long -f value -c ID -c Name -c HA \
+  | awk '$NF == "False" { print }'
+```
+
+Also check routers that are *already* HA but only have one L3 agent
+(if any predate `max_l3_agents_per_router = 2`):
+
+```bash
+# Router → number of L3 agents serving it
+openstack router list -f value -c ID -c Name | while read id name; do
+  count=$(openstack network agent list --router "$id" -f value | wc -l)
+  echo "$count $id $name"
+done | sort -n
+```
+
+For HA routers showing `1` agent, the scheduler will usually add the
+second agent on its own once `controller2`'s L3 agent is up and
+`max_l3_agents_per_router = 2` is in effect; force it with
+`openstack network agent add router <agent_id> <router_id>` if
+needed.
+
+For each non-HA router that needs HA:
 
 ```bash
 ROUTER=<router-id>
@@ -423,13 +464,13 @@ openstack router set --external-gateway $GW_NET $ROUTER
 Each flip causes a brief data-plane interruption for tenants behind
 that router. Schedule per-tenant.
 
-## D3 — Cinder active/active
+## D3 — Verify cinder active/active
 
-If `block-storage.cluster` is already set in the data bag, the
-templates render the `cluster = <name>` and
-`[coordination] backend_url = mysql://...` blocks (see
-[templates/cinder.conf.erb:13-27](../templates/cinder.conf.erb#L13-L27)).
-After both `cinder-volume` services are running, verify:
+`block-storage.cluster` was added in the A2 data-bag MR, so by this
+point `cinder.conf` on both controllers renders the `cluster =
+<name>` and `[coordination] backend_url = mysql://...` blocks. After
+both `cinder-volume` services have restarted (which C2 / C3 take care
+of), verify:
 
 ```bash
 cinder-manage cluster list
