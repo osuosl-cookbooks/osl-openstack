@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+18.0.1 (2026-05-22)
+-------------------
+- HA: handle encrypted data bags, accept CIDR VIPs, drop haproxy stub, fix NRPE checks
+
 18.0.0 (2026-05-18)
 -------------------
 - Add active-active HA controller support
