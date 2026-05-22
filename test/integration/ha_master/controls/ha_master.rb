@@ -27,11 +27,13 @@ end
 
 control 'vip-held' do
   title 'Master holds the VIP'
+  # CIDR matches the multinode data bag (vip_v4: 10.1.2.10/23,
+  # vip_v6: fd00:1:2::10/64).
   describe command("ip -4 addr show dev #{vrrp_iface}") do
-    its('stdout') { should match(%r{#{Regexp.escape(vip_v4)}/32}) }
+    its('stdout') { should match(%r{#{Regexp.escape(vip_v4)}/23}) }
   end
   describe command("ip -6 addr show dev #{vrrp_iface}") do
-    its('stdout') { should match(%r{#{Regexp.escape(vip_v6)}/128}) }
+    its('stdout') { should match(%r{#{Regexp.escape(vip_v6)}/64}) }
   end
 end
 

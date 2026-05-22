@@ -33,44 +33,50 @@ end
 if node['osl-openstack']['node_type'] == 'controller'
   package 'nagios-plugins-http'
 
+  # Hit this node's API daemons directly: on HA controllers that's the
+  # per-host private IP Apache binds to (api_listen_ip); on non-HA
+  # single-controller deploys Apache binds wildcard, so node['ipaddress']
+  # is the right target.
+  local_ip = openstack_local_api_endpoint
+
   nrpe_check 'check_keystone_api' do
     command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "--ssl -I #{node['ipaddress']} -p 5000"
+    parameters "--ssl -I #{local_ip} -p 5000"
   end
 
   nrpe_check 'check_glance_api' do
     command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "-I #{node['ipaddress']} -p 9292"
+    parameters "-I #{local_ip} -p 9292"
   end
 
   nrpe_check 'check_nova_api' do
     command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "-I #{node['ipaddress']} -p 8774"
+    parameters "-I #{local_ip} -p 8774"
   end
 
   nrpe_check 'check_nova_placement_api' do
     command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "-I #{node['ipaddress']} -p 8778"
+    parameters "-I #{local_ip} -p 8778"
   end
 
   nrpe_check 'check_novnc' do
     command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "--ssl -I #{node['ipaddress']} -p 6080"
+    parameters "--ssl -I #{local_ip} -p 6080"
   end
 
   nrpe_check 'check_neutron_api' do
     command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "-I #{node['ipaddress']} -p 9696"
+    parameters "-I #{local_ip} -p 9696"
   end
 
   nrpe_check 'check_cinder_api' do
     command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "-I #{node['ipaddress']} -p 8776"
+    parameters "-I #{local_ip} -p 8776"
   end
 
   nrpe_check 'check_heat_api' do
     command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "-I #{node['ipaddress']} -p 8004"
+    parameters "-I #{local_ip} -p 8004"
   end
 
   file '/usr/local/etc/os_cluster' do

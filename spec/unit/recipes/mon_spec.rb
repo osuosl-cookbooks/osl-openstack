@@ -94,6 +94,43 @@ describe 'osl-openstack::mon' do
           )
         end
       end
+      context 'HA controller' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm) do |node|
+            node.normal['osl-openstack']['node_type'] = 'controller'
+            node.automatic['fqdn'] = 'controller1.testing.osuosl.org'
+          end.converge(described_recipe)
+        end
+
+        before do
+          stub_data_bag_item('openstack', 'x86').and_return(
+            'database_server' => { 'suffix' => 'x86' },
+            'ha' => {
+              'api_listen_ip' => {
+                'controller1.testing.osuosl.org' => '10.1.2.3',
+              },
+            }
+          )
+        end
+
+        # Each nrpe_check should target the per-host backend IP from
+        # ha.api_listen_ip, not node['ipaddress'].
+        {
+          'check_keystone_api' => '--ssl -I 10.1.2.3 -p 5000',
+          'check_glance_api' => '-I 10.1.2.3 -p 9292',
+          'check_nova_api' => '-I 10.1.2.3 -p 8774',
+          'check_nova_placement_api' => '-I 10.1.2.3 -p 8778',
+          'check_novnc' => '--ssl -I 10.1.2.3 -p 6080',
+          'check_neutron_api' => '-I 10.1.2.3 -p 9696',
+          'check_cinder_api' => '-I 10.1.2.3 -p 8776',
+          'check_heat_api' => '-I 10.1.2.3 -p 8004',
+        }.each do |name, params|
+          it "passes the api_listen_ip to #{name}" do
+            expect(chef_run).to add_nrpe_check(name).with(parameters: params)
+          end
+        end
+      end
+
       context 'ppc64le' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm) do |node|

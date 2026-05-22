@@ -13,8 +13,8 @@
       },
       "virtual_router_id": 1,
       "auth_pass": "auth_pass",
-      "vip_v4": "192.168.60.10",
-      "vip_v6": "fc00::10"
+      "vip_v4": "192.168.60.10/24",
+      "vip_v6": "fc00::10/64"
     },
     "api_listen_ip": {
       "controller.testing.osuosl.org": "192.168.60.11"

@@ -20,11 +20,13 @@ end
 
 control 'vip-bound' do
   # Single-node test: this node is master and should hold the VIPs.
+  # CIDR matches the data bag (vip_v4: 192.168.60.10/24, vip_v6:
+  # fc00::10/64) - keepalived honors the supplied prefix length.
   describe command('ip -4 addr show dev eth1') do
-    its('stdout') { should match(%r{192\.168\.60\.10/32}) }
+    its('stdout') { should match(%r{192\.168\.60\.10/24}) }
   end
   describe command('ip -6 addr show dev eth1') do
-    its('stdout') { should match(%r{fc00::10/128}) }
+    its('stdout') { should match(%r{fc00::10/64}) }
   end
 end
 

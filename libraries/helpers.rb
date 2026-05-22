@@ -209,6 +209,16 @@ module OSLOpenstack
         safe_dig(ha, 'api_listen_ip', node['fqdn']) || '*'
       end
 
+      # Concrete IP that local healthchecks (NRPE etc.) should connect to
+      # in order to hit *this* node's API daemons directly, bypassing
+      # the VIP / HAProxy. On HA controllers Apache binds the per-host
+      # private IP (ha.api_listen_ip[node['fqdn']]); on non-HA
+      # single-controller deploys Apache binds wildcard, so
+      # node['ipaddress'] is the right local target.
+      def openstack_local_api_endpoint
+        safe_dig(os_secrets, 'ha', 'api_listen_ip', node['fqdn']) || node['ipaddress']
+      end
+
       # Comma-joined glance endpoint URLs for nova/cinder. Accepts either
       # a single string or an array in os_secrets['image']['endpoint'].
       def openstack_image_api_servers
@@ -449,7 +459,8 @@ module OSLOpenstack
 
       def safe_dig(hash, *keys)
         keys.reduce(hash) do |acc, key|
-          if acc.is_a?(Hash) || acc.is_a?(Chef::DataBagItem)
+          case acc
+          when Hash, Chef::DataBagItem, Chef::EncryptedDataBagItem
             acc[key]
           end
         end
