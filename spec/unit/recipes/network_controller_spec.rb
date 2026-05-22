@@ -12,6 +12,18 @@ describe 'osl-openstack::network_controller' do
       include_context 'common_stubs'
       include_context 'network_stubs'
 
+      before do
+        # The iptables-in-namespace bash is guarded by an only_if on
+        # File.exist?('/run/netns/<qdhcp ns>'). The default-context
+        # cached(:chef_run) asserts the bash runs, so stub the
+        # namespace path to exist. The "namespace missing" branch is
+        # exercised in its own context below.
+        allow(File).to receive(:exist?).and_call_original
+        allow(File).to receive(:exist?)
+          .with('/run/netns/qdhcp-8df74e06-c4aa-4eb2-b312-0e915bf8f97f')
+          .and_return(true)
+      end
+
       it { is_expected.to add_osl_repos_openstack 'network' }
       it { is_expected.to create_osl_openstack_client 'network' }
       it { is_expected.to accept_osl_firewall_openstack 'network' }
@@ -165,6 +177,26 @@ describe 'osl-openstack::network_controller' do
         )
       end
       it { is_expected.to_not run_bash 'block external dns on private1' }
+
+      context 'when the qdhcp namespace is not present on this controller' do
+        # Simulates an HA secondary where the neutron-dhcp scheduler
+        # hasn't placed the network on this node's dhcp-agent yet, so
+        # /run/netns/qdhcp-<uuid> doesn't exist locally.
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm) do |node|
+            node.normal['osl-openstack']['node_type'] = 'controller'
+          end.converge(described_recipe)
+        end
+
+        before do
+          allow(File).to receive(:exist?).and_call_original
+          allow(File).to receive(:exist?)
+            .with('/run/netns/qdhcp-8df74e06-c4aa-4eb2-b312-0e915bf8f97f')
+            .and_return(false)
+        end
+
+        it { is_expected.to_not run_bash 'block external dns on public' }
+      end
 
       context 'fqdn controller' do
         cached(:chef_run) do

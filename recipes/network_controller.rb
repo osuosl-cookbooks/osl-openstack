@@ -121,13 +121,19 @@ end
 
 n['physical_interface_mappings'].each do |network|
   next if network['subnet'].nil? || network['uuid'].nil?
-  ip_cmd = "ip netns exec qdhcp-#{network['uuid']}"
+  netns = "qdhcp-#{network['uuid']}"
+  ip_cmd = "ip netns exec #{netns}"
 
   bash "block external dns on #{network['name']}" do
     code <<~EOL
       #{ip_cmd} iptables -A INPUT -p tcp --dport 53 ! -s #{network['subnet']} -j DROP
       #{ip_cmd} iptables -A INPUT -p udp --dport 53 ! -s #{network['subnet']} -j DROP
     EOL
+    # In HA mode the DHCP scheduler may not have placed this network on
+    # this controller's neutron-dhcp-agent yet, so the qdhcp namespace
+    # won't exist locally. Skip rather than fail; the next chef run
+    # after the scheduler assigns the network will apply the rule.
+    only_if { ::File.exist?("/run/netns/#{netns}") }
     not_if "#{ip_cmd} iptables -S | egrep \"#{network['subnet']}.*port 53.*DROP\""
   end
 end
