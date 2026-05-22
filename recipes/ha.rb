@@ -60,58 +60,19 @@ service 'keepalived' do
 end
 
 # HAProxy: front the OpenStack APIs on the VIP, balancing across both
-# controllers. Apache on each controller binds to its per-host listen IP
-# (see openstack_api_listen_ip), so HAProxy can bind the same ports on
-# the VIP without conflict.
+# controllers. Apache on each controller binds to its per-host listen
+# IP (see openstack_api_listen_ip), so HAProxy can bind the same ports
+# on the VIP without conflict.
 #
-# Install haproxy first so the package creates /etc/haproxy and the
-# haproxy user; then overwrite the package-default haproxy.cfg with a
-# minimal stub before the delayed service[haproxy] :start fires. The
-# package config has `bind *:5000` for a demo frontend, which would
-# hold a wildcard socket that prevents Apache from binding the per-host
-# IP on the same port even after our config replaces it (graceful
-# reload preserves listening sockets in stuck old workers).
+# On EL9 the haproxy package preset is `disabled`, so the install
+# itself doesn't start the daemon — the delayed service[haproxy]
+# :start (queued by haproxy_service[haproxy] in osl-haproxy::install)
+# is the first thing to run it, and by then the haproxy.cfg template
+# declared by haproxy_config_global below has rendered. If you ever
+# run this on a platform where the package auto-starts haproxy with
+# its demo `bind *:5000` config, stop the daemon out of band before
+# applying this recipe so it doesn't squat on a wildcard socket.
 include_recipe 'osl-haproxy::install'
-
-# If haproxy is already running (the package was just installed with
-# the demo frontend, or carrying over from a prior chef run), restart
-# it right after we overwrite haproxy.cfg with the stub. Otherwise the
-# old wildcard sockets stay bound in memory and Apache/daemons can't
-# bind their per-host IPs.
-execute 'haproxy_release_wildcards' do
-  command 'systemctl is-active haproxy >/dev/null 2>&1 && systemctl restart haproxy || true'
-  action :nothing
-end
-
-file '/etc/haproxy/haproxy.cfg' do
-  # haproxy 3.x rejects configs with no proxies, and `service[haproxy]
-  # :start` (queued by haproxy_service[haproxy] in osl-haproxy::install)
-  # fires before the real haproxy.cfg template's delayed_action :create
-  # renders. The dummy localhost listen makes this stub valid so the
-  # initial start succeeds; the proper template renders later in the
-  # delayed phase and reloads haproxy with the real listeners.
-  content <<~EOC
-    global
-        daemon
-    defaults
-        mode tcp
-        timeout connect 10s
-        timeout client 1m
-        timeout server 1m
-    listen _placeholder
-        bind 127.0.0.1:18999
-  EOC
-  mode '0644'
-  # Write the stub when the file is missing OR still holds the
-  # package-default sample frontend (which has "bind *:5000"). Skip
-  # if our Chef-managed config (which never uses bind *:) is already
-  # in place - we don't want to wipe live listeners on every run.
-  only_if do
-    !::File.exist?('/etc/haproxy/haproxy.cfg') ||
-      ::File.read('/etc/haproxy/haproxy.cfg').match?(/^\s*bind\s+\*:/)
-  end
-  notifies :run, 'execute[haproxy_release_wildcards]', :immediately
-end
 
 haproxy_config_global 'global' do
   user 'haproxy'
@@ -133,8 +94,12 @@ haproxy_config_defaults 'defaults' do
   haproxy_retries 3
 end
 
-vip4 = k['vip_v4']
-vip6 = k['vip_v6']
+# keepalived wants the VIP in CIDR form (`192.0.2.10/24`,
+# `2001:db8::10/64`) so it adds the route with the right netmask;
+# haproxy `bind` rejects CIDR and wants the bare address. Allow the
+# data bag to carry either form and strip the suffix for haproxy.
+vip4 = k['vip_v4'].to_s.split('/', 2).first
+vip6 = k['vip_v6'].to_s.split('/', 2).first if k['vip_v6']
 listen_ips = h['api_listen_ip']
 controllers = listen_ips.keys.sort
 

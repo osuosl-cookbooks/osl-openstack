@@ -110,8 +110,8 @@
       },
       "virtual_router_id": 51,
       "auth_pass": "vrrp_pass",
-      "vip_v4": "10.1.2.10",
-      "vip_v6": "fd00:1:2::10"
+      "vip_v4": "10.1.2.10/23",
+      "vip_v6": "fd00:1:2::10/64"
     },
     "api_listen_ip": {
       "controller.novalocal": "10.1.2.3",

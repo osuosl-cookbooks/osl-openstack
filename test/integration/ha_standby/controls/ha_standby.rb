@@ -27,11 +27,13 @@ end
 
 control 'vip-not-held' do
   title 'Standby does not hold the VIP'
+  # Whatever CIDR the master ends up with (10.1.2.10/23 from the
+  # multinode data bag), it must NOT be present on the standby.
   describe command("ip -4 addr show dev #{vrrp_iface}") do
-    its('stdout') { should_not match(%r{#{Regexp.escape(vip_v4)}/32}) }
+    its('stdout') { should_not match(/#{Regexp.escape(vip_v4)}\b/) }
   end
   describe command("ip -6 addr show dev #{vrrp_iface}") do
-    its('stdout') { should_not match(%r{#{Regexp.escape(vip_v6)}/128}) }
+    its('stdout') { should_not match(/#{Regexp.escape(vip_v6)}\b/) }
   end
 end
 
