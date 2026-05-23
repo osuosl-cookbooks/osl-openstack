@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+18.0.3 (2026-05-23)
+-------------------
+- ha: tell osl-apache it is behind a load balancer
+
 18.0.2 (2026-05-22)
 -------------------
 - network_controller: skip qdhcp iptables when the namespace is absent
