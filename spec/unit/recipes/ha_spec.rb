@@ -36,6 +36,12 @@ describe 'osl-openstack::ha' do
         expect { chef_run }.to_not raise_error
       end
 
+      it 'tells osl-apache it is behind a load balancer' do
+        # So Apache trusts X-Forwarded-For / X-Forwarded-Proto from
+        # haproxy and REMOTE_ADDR reflects the real client.
+        expect(chef_run.node['osl-apache']['behind_loadbalancer']).to be true
+      end
+
       it 'passes the VIP to keepalived in CIDR form' do
         expect(chef_run).to create_keepalived_vrrp_instance('openstack-ipv4').with(
           virtual_ipaddress: ['192.168.60.10/24']
