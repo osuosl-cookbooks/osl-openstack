@@ -450,19 +450,33 @@ For each non-HA router that needs HA:
 ```bash
 ROUTER=<router-id>
 
-# Capture current external gateway
-GW_NET=$(openstack router show $ROUTER -f value -c external_gateway_info \
-        | jq -r '.network_id')
-
-# Disable, flip ha=True, re-enable
-openstack router unset --external-gateway $ROUTER
+# Neutron only lets you flip --ha while the router is admin-down.
+# The gateway, fixed IPs, and any attached floating IPs are
+# preserved across the flip - no need to unset/re-attach.
 openstack router set --disable --ha $ROUTER
 openstack router set --enable $ROUTER
-openstack router set --external-gateway $GW_NET $ROUTER
+```
+
+Verify it actually flipped:
+
+```bash
+openstack router show $ROUTER -c ha
+openstack network agent list --router $ROUTER
+# Should show two L3 agents binding the router once
+# max_l3_agents_per_router=2 + dhcp_agents_per_network=2 are in play.
 ```
 
 Each flip causes a brief data-plane interruption for tenants behind
-that router. Schedule per-tenant.
+that router (the L3 agent re-creates the qrouter namespace). Schedule
+per-tenant.
+
+**If `set --ha` fails on your neutron version** ("router has a
+gateway", "cannot change ha on attached router", etc.), you have to
+take the conservative path: detach every floating IP referencing the
+router, unset the external gateway, flip `--ha`, re-attach the
+gateway with `--fixed-ip subnet=<id>,ip-address=<addr>` to preserve
+the public IPs, then re-attach the floating IPs. Floating IPs that
+SNAT outbound from instances must keep the same address.
 
 ## D3 — Verify cinder active/active
 
