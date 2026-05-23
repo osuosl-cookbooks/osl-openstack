@@ -22,6 +22,14 @@ s = os_secrets
 h = s['ha']
 k = h['keepalived']
 
+# Apache sits behind HAProxy on the VIP, so every request arrives
+# from haproxy's source IP. Tell osl-apache to honor X-Forwarded-For
+# / X-Forwarded-Proto from haproxy so REMOTE_ADDR + the WSGI/PHP
+# scheme reflect the real client instead of the load balancer.
+# Set this before any recipe pulls in osl-apache - controller.rb
+# includes ha first, so identity/dashboard/etc see this attribute.
+node.default['osl-apache']['behind_loadbalancer'] = true
+
 # Allow HAProxy on the standby controller to bind to the VIP it doesn't
 # currently hold; on failover the bind takes effect immediately.
 %w(net.ipv4.ip_nonlocal_bind net.ipv6.ip_nonlocal_bind).each do |key|
