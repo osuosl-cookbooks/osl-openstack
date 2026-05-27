@@ -145,6 +145,7 @@ describe 'osl-openstack::compute' do
         )
       end
 
+      it { is_expected.to run_ruby_block 'wait for keystone VIP before starting nova-compute' }
       it { is_expected.to enable_service 'openstack-nova-compute' }
       it { is_expected.to start_service 'openstack-nova-compute' }
       it { expect(chef_run.service('openstack-nova-compute')).to subscribe_to('template[/etc/nova/nova.conf]').on(:restart) }

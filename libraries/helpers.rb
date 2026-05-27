@@ -219,6 +219,64 @@ module OSLOpenstack
         safe_dig(os_secrets, 'ha', 'api_listen_ip', node['fqdn']) || node['ipaddress']
       end
 
+      # Whether haproxy terminates TLS on the VIP (forwarding plain HTTP
+      # to the Apache / native daemon backends on the per-host IP).
+      # True whenever the cloud is configured for HA - the cert lives
+      # only on haproxy then, and Apache vhosts serve plain HTTP behind
+      # it. False on single-controller deploys, where Apache still
+      # terminates TLS itself.
+      def openstack_tls_on_haproxy?
+        !!safe_dig(os_secrets, 'ha')
+      end
+
+      # True when the haproxy service is already active. Gates the
+      # one-time eager start in the ha recipe so re-running chef on an
+      # already-running controller is a no-op (keeps the converge
+      # idempotent). shell_out (not shell_out!) so an inactive/absent
+      # unit's non-zero exit just reads as "not running"; the rescue
+      # covers hosts without systemctl (e.g. the chefspec runner), so
+      # specs don't need to stub the command.
+      def haproxy_running?
+        shell_out('systemctl is-active --quiet haproxy').exitstatus.zero?
+      rescue
+        false
+      end
+
+      # Reachability probe for the keystone API on the controller VIP.
+      # nova-compute makes a blocking keystone call at startup and exits
+      # non-zero if the VIP isn't reachable yet - on a fresh converge a
+      # cold-ARP blip the instant the daemon starts is enough to crash it
+      # and abort the run, even though systemd's Restart=always recovers
+      # it seconds later. A plain TCP connect both confirms keystone is
+      # listening and warms this host's ARP/neighbor entry for the VIP.
+      # The rescue reads an unreachable VIP as "not yet" rather than
+      # raising (and keeps specs from needing a live socket).
+      def openstack_keystone_reachable?
+        require 'socket'
+        require 'timeout'
+        host = os_secrets['identity']['endpoint']
+        Timeout.timeout(5) { TCPSocket.new(host, 5000).close }
+        true
+      rescue
+        false
+      end
+
+      # Block until the keystone VIP accepts connections, so chef only
+      # starts the compute daemons once their keystone dependency is
+      # actually reachable. Backoff mirrors os_conn; raises after the
+      # budget so a genuine outage surfaces instead of hanging forever.
+      def openstack_wait_for_keystone
+        host = os_secrets['identity']['endpoint']
+        count = 0
+        max_attempts = 30
+        until openstack_keystone_reachable?
+          count += 1
+          raise "keystone VIP #{host}:5000 unreachable after #{count} attempts" if count >= max_attempts
+          Chef::Log.warn("Waiting for keystone VIP #{host}:5000 before starting compute daemons (attempt ##{count})")
+          sleep([2 * count, 15].min)
+        end
+      end
+
       # Comma-joined glance endpoint URLs for nova/cinder. Accepts either
       # a single string or an array in os_secrets['image']['endpoint'].
       def openstack_image_api_servers
@@ -232,9 +290,18 @@ module OSLOpenstack
       # (no listen_address), so it always binds 0.0.0.0 which would
       # conflict with a VIP bind on the same host. Prometheus should
       # scrape both controllers directly as separate targets.
+      #
+      # `tls: true` marks services that already serve TLS today
+      # (keystone + horizon-https via Apache vhost SSL, novnc via
+      # nova-novncproxy `--ssl_only`). In HA mode
+      # (openstack_tls_on_haproxy?) the listener flips to haproxy
+      # `mode http` + `ssl crt ...` and the backend serves plain
+      # HTTP. Services without `tls:` are plain-HTTP today (the data
+      # bag endpoints are `http://...`); migrating those to HTTPS is
+      # tracked separately and would just add `tls: true` here.
       def openstack_ha_services
         [
-          { name: 'keystone',       port: 5000 },
+          { name: 'keystone',       port: 5000, tls: true },
           { name: 'glance-api',     port: 9292 },
           { name: 'nova-api',       port: 8774 },
           { name: 'nova-metadata',  port: 8775 },
@@ -243,9 +310,9 @@ module OSLOpenstack
           { name: 'cinder-api',     port: 8776 },
           { name: 'heat-api',       port: 8004 },
           { name: 'heat-cfn',       port: 8000 },
-          { name: 'novnc',          port: 6080 },
+          { name: 'novnc',          port: 6080, tls: true },
           { name: 'horizon-http',   port: 80,  balance: 'source' },
-          { name: 'horizon-https',  port: 443, balance: 'source' },
+          { name: 'horizon-https',  port: 443, balance: 'source', tls: true },
         ]
       end
 

@@ -1,8 +1,0 @@
-db_endpoint: db.testing.osuosl.org
-physical_interface_mappings: public:eth1.42
-prometheus_endpoint: controller.testing.osuosl.org
-# Skip ssl-baseline in multi-node: Apache binds the per-host private IP
-# (10.1.2.3), which the InSpec runner cannot reach (sslshake opens a
-# direct TCP socket from the runner, not via the SSH transport).
-# Single-node identity/dashboard suites still cover SSL hardening.
-skip_ssl_baseline: true

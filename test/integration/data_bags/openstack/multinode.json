@@ -97,16 +97,16 @@
   "ha": {
     "keepalived": {
       "primary": {
-        "controller.novalocal": true,
-        "controller2.novalocal": false
+        "controller1.testing.osuosl.org": true,
+        "controller2.testing.osuosl.org": false
       },
       "interface": {
-        "controller.novalocal": "ens4",
-        "controller2.novalocal": "ens4"
+        "controller1.testing.osuosl.org": "ens4",
+        "controller2.testing.osuosl.org": "ens4"
       },
       "priority": {
-        "controller.novalocal": 100,
-        "controller2.novalocal": 90
+        "controller1.testing.osuosl.org": 100,
+        "controller2.testing.osuosl.org": 90
       },
       "virtual_router_id": 51,
       "auth_pass": "vrrp_pass",
@@ -114,8 +114,8 @@
       "vip_v6": "fd00:1:2::10/64"
     },
     "api_listen_ip": {
-      "controller.novalocal": "10.1.2.3",
-      "controller2.novalocal": "10.1.2.13"
+      "controller1.testing.osuosl.org": "10.1.2.3",
+      "controller2.testing.osuosl.org": "10.1.2.13"
     },
     "haproxy": {
       "stats_user": "admin",
@@ -156,17 +156,17 @@
   },
   "messaging": {
     "endpoint": [
-      "controller.testing.osuosl.org",
+      "controller1.testing.osuosl.org",
       "controller2.testing.osuosl.org"
     ],
     "user": "openstack",
     "pass": "openstack",
     "cookie": "KLVQHHBZLYDZGPPRMPFW",
-    "primary_node": "rabbit@controller.testing.osuosl.org"
+    "primary_node": "rabbit@controller1.testing.osuosl.org"
   },
   "memcached": {
     "endpoint": [
-      "controller.testing.osuosl.org:11211",
+      "controller1.testing.osuosl.org:11211",
       "controller2.testing.osuosl.org:11211"
     ]
   },

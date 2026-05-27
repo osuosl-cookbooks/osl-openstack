@@ -1,4 +1,7 @@
 db_endpoint = input('db_endpoint')
+# memcached cluster member (controller1 on HA multi-node, the cloud
+# name on single-controller).
+messaging_host = input('messaging_host', value: 'controller.testing.osuosl.org')
 
 control 'block-storage-controller' do
   describe package 'openstack-cinder' do
@@ -29,7 +32,7 @@ control 'block-storage-controller' do
     its('DEFAULT.glance_api_version') { should_not cmp '' }
     its('DEFAULT.restore_discard_excess_bytes') { should cmp 'true' }
     its('DEFAULT.volume_clear_size') { should cmp '256' }
-    its('cache.memcache_servers') { should match(/controller\.testing\.osuosl\.org:11211/) }
+    its('cache.memcache_servers') { should match(/#{Regexp.escape(messaging_host)}:11211/) }
     its('ceph.rados_connect_timeout') { should cmp '-1' }
     its('ceph.rbd_ceph_conf') { should cmp '/etc/ceph/ceph.conf' }
     its('ceph.rbd_flatten_volume_from_snapshot') { should cmp 'false' }
@@ -52,7 +55,7 @@ control 'block-storage-controller' do
     its('ceph_ssd.volume_driver') { should cmp 'cinder.volume.drivers.rbd.RBDDriver' }
     its('database.connection') { should cmp "mysql+pymysql://cinder_x86:cinder@#{db_endpoint}:3306/cinder_x86" }
     its('keystone_authtoken.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
-    its('keystone_authtoken.memcached_servers') { should match(/controller\.testing\.osuosl\.org:11211/) }
+    its('keystone_authtoken.memcached_servers') { should match(/#{Regexp.escape(messaging_host)}:11211/) }
     its('keystone_authtoken.password') { should cmp 'cinder' }
     its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
     its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }

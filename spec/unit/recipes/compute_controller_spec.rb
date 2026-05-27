@@ -266,6 +266,7 @@ describe 'osl-openstack::compute_controller' do
           variables: {
             cert: '/etc/nova/pki/certs/novnc.pem',
             key: '/etc/nova/pki/private/novnc.key',
+            haproxy_tls: false,
           }
         )
       end

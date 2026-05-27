@@ -73,7 +73,11 @@ template '/etc/openstack-dashboard/local_settings' do
     auth_url: auth_endpoint,
     memcache_servers: openstack_memcached_endpoints,
     regions: d['regions'],
-    secret_key: d['secret_key']
+    secret_key: d['secret_key'],
+    # Django needs to trust haproxy's X-Forwarded-Proto when haproxy
+    # terminates TLS - otherwise it builds http:// redirect URLs and
+    # drops the secure-cookie flag.
+    haproxy_tls: openstack_tls_on_haproxy?
   )
   notifies :run, 'execute[horizon: compress]'
   notifies :reload, 'apache2_service[osuosl]'
@@ -85,6 +89,10 @@ apache_app 'horizon' do
   server_aliases d['aliases'] if d['aliases']
   server_address listen_ip
   template 'wsgi-horizon.conf.erb'
+  # In HA mode haproxy on the VIP terminates TLS and forwards plain
+  # HTTP to this vhost; the wsgi-horizon.conf.erb template drops its
+  # SSLEngine block when this flag is set.
+  template_params(haproxy_tls: openstack_tls_on_haproxy?)
   notifies :run, 'execute[horizon: compress]'
   notifies :reload, 'apache2_service[osuosl]'
 end

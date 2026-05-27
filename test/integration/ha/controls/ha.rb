@@ -40,10 +40,33 @@ control 'haproxy' do
     it { should exist }
     its('content') { should match(/^listen keystone/) }
     its('content') { should match(/^listen horizon-https/) }
-    its('content') { should match(/bind 192\.168\.60\.10:5000/) }
-    its('content') { should match(/bind \[fc00::10\]:5000/) }
+    # TLS listeners (keystone, novnc, horizon-https) terminate TLS on
+    # haproxy via `ssl crt ...` on the bind. Plain-HTTP backends
+    # (glance / nova / neutron / cinder / heat) stay in tcp mode and
+    # have no ssl options.
+    its('content') { should match(%r{bind 192\.168\.60\.10:5000 ssl crt /etc/haproxy/certs/wildcard\.pem}) }
+    its('content') { should match(%r{bind \[fc00::10\]:5000 ssl crt /etc/haproxy/certs/wildcard\.pem}) }
+    its('content') { should match(/bind 192\.168\.60\.10:9292$/) } # glance, no ssl
+    its('content') { should match(/option forwardfor/) }
     its('content') { should match(/balance source/) }       # horizon
     its('content') { should match(/balance roundrobin/) }   # everything else
+  end
+end
+
+control 'haproxy-cert-bundle' do
+  describe file('/etc/haproxy/certs') do
+    it { should be_directory }
+    it { should be_owned_by 'haproxy' }
+    its('mode') { should cmp '0700' }
+  end
+
+  describe file('/etc/haproxy/certs/wildcard.pem') do
+    it { should exist }
+    it { should be_owned_by 'haproxy' }
+    its('mode') { should cmp '0640' }
+    # cert + chain + key all in one PEM
+    its('content') { should match(/-----BEGIN CERTIFICATE-----/) }
+    its('content') { should match(/-----BEGIN (?:RSA )?PRIVATE KEY-----/) }
   end
 end
 

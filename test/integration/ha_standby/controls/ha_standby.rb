@@ -47,3 +47,17 @@ control 'haproxy-vip-binds' do
     end
   end
 end
+
+control 'haproxy-tls-termination' do
+  title 'Standby has the same TLS cert bundle as master, ready for failover'
+  describe file('/etc/haproxy/certs/wildcard.pem') do
+    it { should exist }
+    it { should be_owned_by 'haproxy' }
+    its('mode') { should cmp '0640' }
+  end
+
+  describe file('/etc/haproxy/haproxy.cfg') do
+    its('content') { should match(%r{bind #{Regexp.escape(vip_v4)}:5000 ssl crt /etc/haproxy/certs/wildcard\.pem}) }
+    its('content') { should match(/option forwardfor/) }
+  end
+end

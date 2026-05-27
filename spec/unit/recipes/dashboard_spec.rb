@@ -64,6 +64,7 @@ describe 'osl-openstack::dashboard' do
               'RegionTwo' => 'https://controller.testing.osuosl.org:5000/v3',
             },
             secret_key: '-#45g2*o=8mhe(10if%*65@g#z0r#r7m__w6kwq8s9@n%12a11',
+            haproxy_tls: false,
           }
         )
       end
@@ -125,6 +126,7 @@ describe 'osl-openstack::dashboard' do
               memcache_servers: ['controller.testing.osuosl.org:11211'],
               regions: nil,
               secret_key: '-#45g2*o=8mhe(10if%*65@g#z0r#r7m__w6kwq8s9@n%12a11',
+              haproxy_tls: false,
             }
           )
         end

@@ -199,22 +199,29 @@ end
   end
 end
 
-certificate_manage 'novnc' do
-  cert_path '/etc/nova/pki'
-  cert_file 'novnc.pem'
-  key_file  'novnc.key'
-  chain_file 'novnc-bundle.crt'
-  nginx_cert true
-  owner 'nova'
-  group 'nova'
-  notifies :restart, 'service[openstack-nova-novncproxy]'
+# In HA mode haproxy on the VIP terminates TLS for novnc too, and
+# nova-novncproxy runs plain ws:// on the per-host backend IP - no
+# local cert needed. In single-controller mode keep using the
+# nova-novncproxy --ssl_only path with its own cert.
+unless openstack_tls_on_haproxy?
+  certificate_manage 'novnc' do
+    cert_path '/etc/nova/pki'
+    cert_file 'novnc.pem'
+    key_file  'novnc.key'
+    chain_file 'novnc-bundle.crt'
+    nginx_cert true
+    owner 'nova'
+    group 'nova'
+    notifies :restart, 'service[openstack-nova-novncproxy]'
+  end
 end
 
 template '/etc/sysconfig/openstack-nova-novncproxy' do
   source 'novncproxy.erb'
   variables(
     cert: '/etc/nova/pki/certs/novnc.pem',
-    key: '/etc/nova/pki/private/novnc.key'
+    key: '/etc/nova/pki/private/novnc.key',
+    haproxy_tls: openstack_tls_on_haproxy?
   )
   notifies :restart, 'service[openstack-nova-novncproxy]'
 end

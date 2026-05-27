@@ -2,6 +2,8 @@ require_controls 'osuosl-baseline' do
   control 'ssl-baseline'
 end unless input('skip_ssl_baseline', value: false)
 
+haproxy_tls = input('haproxy_tls', value: false)
+
 control 'openstack-dashboard' do
   describe package 'openstack-dashboard' do
     it { should be_installed }
@@ -22,13 +24,18 @@ control 'openstack-dashboard' do
     its('headers.location') { should cmp 'https://controller.testing.osuosl.org/' }
   end
 
-  describe http(
-    'https://127.0.0.1:443',
-    headers: { 'Host' => 'controller1.testing.osuosl.org' },
-    ssl_verify: false
-  ) do
-    its('status') { should cmp 301 }
-    its('headers.location') { should cmp 'https://controller.testing.osuosl.org/' }
+  # Localhost HTTPS probes only work when Apache terminates TLS itself
+  # (single-controller mode). In HA mode haproxy is the only thing
+  # serving TLS, and it binds the VIP rather than 127.0.0.1.
+  unless haproxy_tls
+    describe http(
+      'https://127.0.0.1:443',
+      headers: { 'Host' => 'controller1.testing.osuosl.org' },
+      ssl_verify: false
+    ) do
+      its('status') { should cmp 301 }
+      its('headers.location') { should cmp 'https://controller.testing.osuosl.org/' }
+    end
   end
 
   describe http(
@@ -39,12 +46,14 @@ control 'openstack-dashboard' do
     its('headers.location') { should cmp 'https://controller.testing.osuosl.org/' }
   end
 
-  describe http(
-    'https://127.0.0.1:443/auth/login/',
-    headers: { 'Host' => 'controller.testing.osuosl.org' },
-    ssl_verify: false
-  ) do
-    its('status') { should cmp 200 }
+  unless haproxy_tls
+    describe http(
+      'https://127.0.0.1:443/auth/login/',
+      headers: { 'Host' => 'controller.testing.osuosl.org' },
+      ssl_verify: false
+    ) do
+      its('status') { should cmp 200 }
+    end
   end
 
   describe file '/etc/httpd/conf.d/openstack-dashboard.conf' do
@@ -67,23 +76,30 @@ control 'openstack-dashboard' do
     its('ServerName') { should include 'controller.testing.osuosl.org' }
   end
 
-  resolve = '--resolve controller.testing.osuosl.org:443:127.0.0.1'
+  # End-to-end horizon login - relies on Apache locally serving TLS
+  # on 127.0.0.1:443 via the --resolve trick. In HA mode haproxy
+  # serves TLS on the VIP, not localhost; the haproxy-tls-termination
+  # control in ha_master covers the equivalent functional check
+  # there.
+  unless haproxy_tls
+    resolve = '--resolve controller.testing.osuosl.org:443:127.0.0.1'
 
-  # Simulate logging into horizon with curl and test the output to ensure the
-  # application is running correctly
-  horizon_command =
-    # 1. Get initial cookbooks for curl
-    # 2. Grab the CSRF token
-    # 3. Try logging into the site with the token
-    "curl -so /dev/null -k -c c.txt -b c.txt #{resolve} https://controller.testing.osuosl.org/auth/login/ && " \
-    'token=$(grep csrftoken c.txt | cut -f7) &&' \
-    'curl -H \'Referer:https://controller.testing.osuosl.org/auth/login/\' -k -c c.txt -b c.txt -d ' \
-    '"login=admin&password=admin&csrfmiddlewaretoken=${token}" -v ' \
-    "#{resolve} https://controller.testing.osuosl.org/auth/login/ 2>&1"
+    # Simulate logging into horizon with curl and test the output to ensure the
+    # application is running correctly
+    horizon_command =
+      # 1. Get initial cookbooks for curl
+      # 2. Grab the CSRF token
+      # 3. Try logging into the site with the token
+      "curl -so /dev/null -k -c c.txt -b c.txt #{resolve} https://controller.testing.osuosl.org/auth/login/ && " \
+      'token=$(grep csrftoken c.txt | cut -f7) &&' \
+      'curl -H \'Referer:https://controller.testing.osuosl.org/auth/login/\' -k -c c.txt -b c.txt -d ' \
+      '"login=admin&password=admin&csrfmiddlewaretoken=${token}" -v ' \
+      "#{resolve} https://controller.testing.osuosl.org/auth/login/ 2>&1"
 
-  describe command(horizon_command) do
-    its('stdout') { should match(/subject:.*CN=\*.testing.osuosl.org/) }
-    its('stdout') { should match(/< HTTP.*200 OK/) }
-    its('stdout') { should_not match(/CSRF verification failed. Request aborted./) }
+    describe command(horizon_command) do
+      its('stdout') { should match(/subject:.*CN=\*.testing.osuosl.org/) }
+      its('stdout') { should match(/< HTTP.*200 OK/) }
+      its('stdout') { should_not match(/CSRF verification failed. Request aborted./) }
+    end
   end
 end
