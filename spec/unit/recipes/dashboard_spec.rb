@@ -15,13 +15,14 @@ describe 'osl-openstack::dashboard' do
       it { is_expected.to create_osl_openstack_client 'dashboard' }
       it { is_expected.to accept_osl_firewall_openstack 'dashboard' }
       %w(
-        osl-memcached
         osl-apache
         osl-apache::mod_wsgi
         osl-apache::mod_ssl
       ).each do |r|
         it { is_expected.to include_recipe r }
       end
+      # memcached setup lives in ::identity (runs first via controller.rb).
+      it { is_expected.to_not include_recipe 'osl-memcached' }
       it { is_expected.to install_package 'openstack-dashboard' }
       it do
         is_expected.to create_certificate_manage('wildcard-dashboard').with(

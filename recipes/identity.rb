@@ -24,7 +24,20 @@ osl_openstack_openrc 'identity'
 listen_ip = openstack_api_listen_ip
 node.default['osl-apache']['listen'] = %w(80 443).map { |p| "#{listen_ip}:#{p}" }
 
+# Declare memcached ourselves so we can open the firewall to all
+# OSL-managed nodes (peer controllers for horizon sessions, compute
+# nodes for keystone_authtoken caching). Default localhost-only would
+# shard horizon sessions per-controller and force a re-login on every
+# VIP failover, and leaves nova-compute silently falling back to
+# direct keystone validation. Mirrors AMQP's `osl_only: true`.
+node.default['osl-memcached']['default_service'] = false
 include_recipe 'osl-memcached'
+
+osl_memcached 'memcached' do
+  port 11211
+  osl_only true
+end
+
 include_recipe 'osl-apache'
 include_recipe 'osl-apache::mod_wsgi'
 include_recipe 'osl-apache::mod_ssl'

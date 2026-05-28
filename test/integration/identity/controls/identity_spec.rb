@@ -24,6 +24,32 @@ control 'openstack-identity' do
     it { should be_running }
   end
 
+  describe port(11211) do
+    it { should be_listening }
+    its('processes') { should include 'memcached' }
+    its('protocols') { should include 'tcp' }
+    its('protocols') { should include 'udp' }
+  end
+
+  # osl_memcached uses `osl_only: true`: the memcached chain jumps to
+  # the OSL CIDR chain (no -s rule). Local nc still works because
+  # osl-firewall accepts all lo traffic via the 20_loopback chain.
+  describe iptables do
+    it { should have_rule('-A memcached -p tcp -m tcp --dport 11211 -j osl_only') }
+    it { should have_rule('-A memcached -p udp -m udp --dport 11211 -j osl_only') }
+  end
+
+  describe ip6tables do
+    it { should have_rule('-A memcached -p tcp -m tcp --dport 11211 -j osl_only') }
+    it { should have_rule('-A memcached -p udp -m udp --dport 11211 -j osl_only') }
+  end
+
+  # Prometheus exporter scrapes localhost:11211 and reports up=1.
+  describe http('http://localhost:9150/metrics') do
+    its('status') { should cmp 200 }
+    its('body') { should match(/memcached_up 1/) }
+  end
+
   describe port(5000) do
     it { should be_listening }
     its('protocols') { should include 'tcp' }
@@ -38,13 +64,20 @@ control 'openstack-identity' do
     its(%w(version status)) { should cmp 'stable' }
   end
 
-  describe http(
-    'https://controller.testing.osuosl.org:5000',
-    headers: { 'Host' => 'controller1.testing.osuosl.org' },
-    ssl_verify: false
-  ) do
-    its('status') { should cmp 301 }
-    its('headers.location') { should cmp 'https://controller.testing.osuosl.org:5000/' }
+  # The wsgi-keystone canonical-host rewrite (Host !~ server_name ->
+  # 301 to https://server_name:5000/) is gated off when haproxy
+  # terminates TLS: behind the VIP the rewrite would 301 healthchecks
+  # and internal traffic into a loop. In HA, keystone itself answers
+  # with its 300 version-discovery payload instead.
+  unless input('haproxy_tls', value: false)
+    describe http(
+      'https://controller.testing.osuosl.org:5000',
+      headers: { 'Host' => 'controller1.testing.osuosl.org' },
+      ssl_verify: false
+    ) do
+      its('status') { should cmp 301 }
+      its('headers.location') { should cmp 'https://controller.testing.osuosl.org:5000/' }
+    end
   end
 
   describe port(11211) do
