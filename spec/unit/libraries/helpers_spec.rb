@@ -174,5 +174,15 @@ describe OSLOpenstack::Cookbook::Helpers do
         'horizon-http'
       )
     end
+
+    it 'tags horizon-http as a redirect-only listener' do
+      horizon_http = services.find { |s| s[:name] == 'horizon-http' }
+      expect(horizon_http[:redirect_to_https]).to be true
+    end
+
+    it 'does not tag any tls listener as redirect_to_https' do
+      tls_redirects = services.select { |s| s[:tls] && s[:redirect_to_https] }
+      expect(tls_redirects).to be_empty
+    end
   end
 end

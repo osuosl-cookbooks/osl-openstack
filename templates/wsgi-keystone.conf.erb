@@ -7,12 +7,12 @@ WSGISocketPrefix /var/lock/subsys
   ServerAlias <%= @server_aliases.flatten.join(" ") %>
   <% end %>
 
+<% unless @template_params && @template_params[:haproxy_tls] -%>
   RewriteEngine On
   RewriteCond "%{HTTP_HOST}" "!^<%= Regexp.escape(@server_name) %>" [NC]
   RewriteCond "%{HTTP_HOST}" "!^$"
   RewriteRule "^/?(.*)"      "https://<%= @server_name %>:5000/$1" [L,R=permanent,NE]
 
-<% unless @template_params && @template_params[:haproxy_tls] -%>
   SSLEngine On
   SSLCertificateFile /etc/pki/tls/certs/wildcard.pem
   SSLCertificateKeyFile /etc/pki/tls/private/wildcard.key

@@ -64,6 +64,10 @@ control 'haproxy-tls-termination' do
     # plain-HTTP backends have no ssl crt
     its('content') { should match(/bind #{Regexp.escape(vip_v4)}:9292$/) }
     its('content') { should match(/bind #{Regexp.escape(vip_v4)}:9696$/) }
+    # horizon-http (:80) is a redirect-only listener that 301s to https,
+    # replacing Apache's wsgi-horizon http->https rewrite which is gated
+    # off in HA mode.
+    its('content') { should match(/^\s*http-request redirect scheme https code 301/) }
   end
 
   # Probe by canonical hostname (resolves to the VIP via /etc/hosts) so
