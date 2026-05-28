@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+18.1.2 (2026-05-28)
+-------------------
+- identity: open memcached to OSL CIDRs so horizon sessions survive failover
+
 18.1.1 (2026-05-28)
 -------------------
 - ha: stop the keystone canonical-host redirect and move horizon http->https to haproxy
