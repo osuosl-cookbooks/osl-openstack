@@ -190,18 +190,28 @@ openstack_ha_services.each do |svc|
 
   haproxy_listen svc[:name] do
     bind "#{vip4}:#{port}#{cert_opt}"
-    mode svc[:tls] ? 'http' : 'tcp'
-    option ['forwardfor'] if svc[:tls]
-    # Tell the backend the request was originally HTTPS so Django /
-    # oslo middleware build correct redirect URLs and set the
-    # secure-cookie flag. `ssl_fc` is true on the TLS-terminated
-    # frontend connection.
-    http_request [
-      'set-header X-Forwarded-Proto https if { ssl_fc }',
-      'set-header X-Forwarded-Proto http if !{ ssl_fc }',
-    ] if svc[:tls]
-    extra_options('balance' => svc[:balance] || 'roundrobin')
-    server servers
+    if svc[:redirect_to_https]
+      # Plain-HTTP listener whose only job is to 301 to https. Apache
+      # used to do this in its wsgi-horizon :80 vhost; that rewrite is
+      # gated off in HA mode (Apache backends serve plain HTTP behind
+      # haproxy and would loop on %{HTTPS}=off), so haproxy owns it.
+      # No backend servers - every request terminates here.
+      mode 'http'
+      http_request ['redirect scheme https code 301']
+    else
+      mode svc[:tls] ? 'http' : 'tcp'
+      option ['forwardfor'] if svc[:tls]
+      # Tell the backend the request was originally HTTPS so Django /
+      # oslo middleware build correct redirect URLs and set the
+      # secure-cookie flag. `ssl_fc` is true on the TLS-terminated
+      # frontend connection.
+      http_request [
+        'set-header X-Forwarded-Proto https if { ssl_fc }',
+        'set-header X-Forwarded-Proto http if !{ ssl_fc }',
+      ] if svc[:tls]
+      extra_options('balance' => svc[:balance] || 'roundrobin')
+      server servers
+    end
   end
 
   haproxy_listen svc[:name] do

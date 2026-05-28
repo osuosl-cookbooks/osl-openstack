@@ -284,12 +284,15 @@ module OSLOpenstack
       end
 
       # OpenStack APIs to put behind HAProxy on the controller VIP.
-      # Horizon (80/443) uses 'source' for session affinity; everything
-      # else round-robins. The openstack_exporter (port 9183) is
-      # intentionally NOT fronted - its package only supports listen_port
-      # (no listen_address), so it always binds 0.0.0.0 which would
-      # conflict with a VIP bind on the same host. Prometheus should
-      # scrape both controllers directly as separate targets.
+      # horizon-https uses 'source' for session affinity; horizon-http
+      # is a redirect-only listener that 301s to https (the rewrite
+      # that used to live in the Apache horizon vhost moves to haproxy
+      # in HA mode). Everything else round-robins. The
+      # openstack_exporter (port 9183) is intentionally NOT fronted -
+      # its package only supports listen_port (no listen_address), so
+      # it always binds 0.0.0.0 which would conflict with a VIP bind
+      # on the same host. Prometheus should scrape both controllers
+      # directly as separate targets.
       #
       # `tls: true` marks services that already serve TLS today
       # (keystone + horizon-https via Apache vhost SSL, novnc via
@@ -311,7 +314,7 @@ module OSLOpenstack
           { name: 'heat-api',       port: 8004 },
           { name: 'heat-cfn',       port: 8000 },
           { name: 'novnc',          port: 6080, tls: true },
-          { name: 'horizon-http',   port: 80,  balance: 'source' },
+          { name: 'horizon-http',   port: 80,  redirect_to_https: true },
           { name: 'horizon-https',  port: 443, balance: 'source', tls: true },
         ]
       end

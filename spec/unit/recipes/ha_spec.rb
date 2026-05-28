@@ -90,6 +90,19 @@ describe 'osl-openstack::ha' do
         expect(glance_first.option).to be_nil # property unset
       end
 
+      it 'makes horizon-http a 301 redirect to https with no backend' do
+        # Apache's wsgi-horizon :80 vhost used to do the http->https
+        # rewrite; in HA that rewrite is gated off (Apache backends
+        # serve plain HTTP behind haproxy and would loop on %{HTTPS}=off).
+        # haproxy owns the redirect now: mode http, the redirect rule,
+        # no backend servers since every request terminates here.
+        horizon_http = chef_run.find_resources(:haproxy_listen)
+                               .find { |r| r.name == 'horizon-http' }
+        expect(horizon_http.mode).to eq('http')
+        expect(horizon_http.http_request).to include('redirect scheme https code 301')
+        expect(horizon_http.server).to be_nil
+      end
+
       it 'builds the haproxy wildcard PEM bundle' do
         expect(chef_run).to create_directory('/etc/haproxy/certs').with(
           owner: 'haproxy', group: 'haproxy', mode: '0700'
