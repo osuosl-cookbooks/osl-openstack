@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+18.1.0 (2026-05-28)
+-------------------
+- ha: terminate TLS on haproxy at the controller VIP
+
 18.0.3 (2026-05-23)
 -------------------
 - ha: tell osl-apache it is behind a load balancer
