@@ -11,3 +11,9 @@ inputs:
       - 5000
   - name: skip_ssl_baseline
     value: false
+  - name: haproxy_tls
+    value: false
+    description: >
+      Set true on HA controllers where haproxy terminates TLS on the VIP and
+      Apache serves plain HTTP on the per-host backend IP. Localhost:443-HTTPS
+      probes get skipped in that mode since Apache isn't on 127.0.0.1.

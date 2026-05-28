@@ -17,6 +17,13 @@ SECRET_KEY = '<%= @secret_key %>'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 OPENSTACK_HOST = "*"
 OPENSTACK_KEYSTONE_URL = "https://<%= @auth_url %>:5000/"
+<% if @haproxy_tls -%>
+# haproxy on the VIP terminates TLS and forwards plain HTTP to this
+# vhost. Trust X-Forwarded-Proto so Django builds the right scheme
+# in redirects and sets the secure-cookie flag.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+<% end -%>
 OPENSTACK_KEYSTONE_DEFAULT_ROLE = "member"
 OPENSTACK_KEYSTONE_ADMIN_ROLES = ["admin"]
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'

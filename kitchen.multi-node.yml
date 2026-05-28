@@ -13,9 +13,9 @@ transport:
 verifier:
   name: terraform
   systems:
-    - name: controller
+    - name: controller1
       backend: ssh
-      hosts_output: controller
+      hosts_output: controller1
       user: almalinux
       profile_locations:
         - test/integration/block_storage_controller
@@ -28,7 +28,7 @@ verifier:
         - test/integration/orchestration
         - test/integration/telemetry_controller
       attrs:
-        - test/integration/multi-node/controller.yml
+        - test/integration/multi-node/controller1.yml
       sudo: true
     - name: controller2
       backend: ssh

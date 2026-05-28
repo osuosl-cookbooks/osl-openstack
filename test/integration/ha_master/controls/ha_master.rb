@@ -46,3 +46,30 @@ control 'haproxy-vip-listeners' do
     end
   end
 end
+
+control 'haproxy-tls-termination' do
+  title 'haproxy terminates TLS for keystone / novnc / horizon-https'
+  describe file('/etc/haproxy/certs/wildcard.pem') do
+    it { should exist }
+    it { should be_owned_by 'haproxy' }
+    its('mode') { should cmp '0640' }
+  end
+
+  describe file('/etc/haproxy/haproxy.cfg') do
+    # tls listeners
+    its('content') { should match(%r{bind #{Regexp.escape(vip_v4)}:5000 ssl crt /etc/haproxy/certs/wildcard\.pem}) }
+    its('content') { should match(%r{bind #{Regexp.escape(vip_v4)}:6080 ssl crt /etc/haproxy/certs/wildcard\.pem}) }
+    its('content') { should match(%r{bind #{Regexp.escape(vip_v4)}:443 ssl crt /etc/haproxy/certs/wildcard\.pem}) }
+    its('content') { should match(/option forwardfor/) }
+    # plain-HTTP backends have no ssl crt
+    its('content') { should match(/bind #{Regexp.escape(vip_v4)}:9292$/) }
+    its('content') { should match(/bind #{Regexp.escape(vip_v4)}:9696$/) }
+  end
+
+  # Probe by canonical hostname (resolves to the VIP via /etc/hosts) so
+  # the Host header matches keystone's vhost; hitting the bare IP would
+  # trip the ServerAlias redirect and return 301 instead of 200.
+  describe http('https://controller.testing.osuosl.org:5000/v3', ssl_verify: false) do
+    its('status') { should cmp 200 }
+  end
+end

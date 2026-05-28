@@ -1,5 +1,8 @@
 prometheus_endpoint = input('prometheus_endpoint')
 primary_controller = input('primary_controller', value: true)
+# RabbitMQ / memcached cluster member (controller1 on HA multi-node,
+# the cloud name on single-controller).
+messaging_host = input('messaging_host', value: 'controller.testing.osuosl.org')
 
 control 'telemetry-controller' do
   %w(
@@ -32,8 +35,8 @@ control 'telemetry-controller' do
   end
 
   describe ini('/etc/ceilometer/ceilometer.conf') do
-    its('DEFAULT.transport_url') { should match %r{^rabbit://openstack:openstack@controller\.testing\.osuosl\.org:5672} }
-    its('cache.memcache_servers') { should match(/controller\.testing\.osuosl\.org:11211/) }
+    its('DEFAULT.transport_url') { should match(%r{^rabbit://openstack:openstack@#{Regexp.escape(messaging_host)}:5672}) }
+    its('cache.memcache_servers') { should match(/#{Regexp.escape(messaging_host)}:11211/) }
     its('service_credentials.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
     its('service_credentials.password') { should cmp 'ceilometer' }
   end

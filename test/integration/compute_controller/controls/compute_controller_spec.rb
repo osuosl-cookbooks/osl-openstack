@@ -1,6 +1,10 @@
 db_endpoint = input('db_endpoint')
 controller_endpoint = input('controller_endpoint')
 local_storage = input('local_storage')
+# RabbitMQ / memcached cluster member - diverges from
+# controller_endpoint (the VIP) on HA multi-node, where it's
+# controller1.
+messaging_host = input('messaging_host', value: controller_endpoint)
 
 control 'compute-controller' do
   %w(
@@ -49,7 +53,7 @@ control 'compute-controller' do
 
   describe ini('/etc/placement/placement.conf') do
     its('keystone_authtoken.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
-    its('keystone_authtoken.memcached_servers') { should match(/#{Regexp.escape(controller_endpoint)}:11211/) }
+    its('keystone_authtoken.memcached_servers') { should match(/#{Regexp.escape(messaging_host)}:11211/) }
     its('keystone_authtoken.password') { should cmp 'placement' }
     its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
     its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
@@ -67,15 +71,15 @@ control 'compute-controller' do
     its('DEFAULT.instance_usage_audit') { should cmp 'True' }
     its('DEFAULT.instance_usage_audit_period') { should cmp 'hour' }
     its('DEFAULT.resume_guests_state_on_host_boot') { should cmp 'True' }
-    its('DEFAULT.transport_url') { should match(%r{^rabbit://openstack:openstack@#{Regexp.escape(controller_endpoint)}:5672}) }
+    its('DEFAULT.transport_url') { should match(%r{^rabbit://openstack:openstack@#{Regexp.escape(messaging_host)}:5672}) }
     its('DEFAULT.use_neutron') { should_not cmp '' }
     its('api_database.connection') { should cmp "mysql+pymysql://nova_x86:nova@#{db_endpoint}:3306/nova_api_x86" }
-    its('cache.memcache_servers') { should match(/#{Regexp.escape(controller_endpoint)}:11211/) }
+    its('cache.memcache_servers') { should match(/#{Regexp.escape(messaging_host)}:11211/) }
     its('database.connection') { should cmp "mysql+pymysql://nova_x86:nova@#{db_endpoint}:3306/nova_x86" }
     its('filter_scheduler.enabled_filters') { should cmp 'AggregateInstanceExtraSpecsFilter,PciPassthroughFilter,AvailabilityZoneFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter' }
     its('glance.api_servers') { should cmp "http://#{controller_endpoint}:9292" }
     its('keystone_authtoken.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
-    its('keystone_authtoken.memcached_servers') { should match(/#{Regexp.escape(controller_endpoint)}:11211/) }
+    its('keystone_authtoken.memcached_servers') { should match(/#{Regexp.escape(messaging_host)}:11211/) }
     its('keystone_authtoken.password') { should cmp 'nova' }
     its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
     its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
@@ -111,18 +115,27 @@ control 'compute-controller' do
     its('vnc.novncproxy_base_url') { should cmp "https://#{controller_endpoint}:6080/vnc_auto.html" }
   end
 
-  %w(
-    /etc/nova/pki/certs/novnc.pem
-    /etc/nova/pki/private/novnc.key
-  ).each do |c|
-    describe file(c) do
-      it { should be_owned_by 'nova' }
-      its('group') { should include 'nova' }
+  # In HA mode haproxy on the VIP terminates TLS for novnc; the local
+  # novnc cert + --ssl_only flag aren't installed (nova-novncproxy
+  # runs plain ws on the per-host backend IP).
+  if input('haproxy_tls', value: false)
+    describe file('/etc/sysconfig/openstack-nova-novncproxy') do
+      its('content') { should match(/^OPTIONS=""$/) }
     end
-  end
+  else
+    %w(
+      /etc/nova/pki/certs/novnc.pem
+      /etc/nova/pki/private/novnc.key
+    ).each do |c|
+      describe file(c) do
+        it { should be_owned_by 'nova' }
+        its('group') { should include 'nova' }
+      end
+    end
 
-  describe file('/etc/sysconfig/openstack-nova-novncproxy') do
-    its('content') { should match %r{OPTIONS="--ssl_only --cert /etc/nova/pki/certs/novnc.pem --key /etc/nova/pki/private/novnc.key"} }
+    describe file('/etc/sysconfig/openstack-nova-novncproxy') do
+      its('content') { should match %r{OPTIONS="--ssl_only --cert /etc/nova/pki/certs/novnc.pem --key /etc/nova/pki/private/novnc.key"} }
+    end
   end
 
   openstack = 'bash -c "source /root/openrc && /usr/bin/openstack'

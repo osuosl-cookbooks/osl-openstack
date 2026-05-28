@@ -12,12 +12,14 @@ WSGISocketPrefix /var/lock/subsys
   RewriteCond "%{HTTP_HOST}" "!^$"
   RewriteRule "^/?(.*)"      "https://<%= @server_name %>:5000/$1" [L,R=permanent,NE]
 
+<% unless @template_params && @template_params[:haproxy_tls] -%>
   SSLEngine On
   SSLCertificateFile /etc/pki/tls/certs/wildcard.pem
   SSLCertificateKeyFile /etc/pki/tls/private/wildcard.key
   SSLCACertificatePath /etc/pki/tls/certs
   SSLCertificateChainFile /etc/pki/tls/certs/wildcard-bundle.crt
   SSLProtocol -all +TLSv1.2
+<% end -%>
 
   WSGIDaemonProcess keystone-public processes=5 threads=1 user=keystone group=keystone display-name=%{GROUP}
   WSGIProcessGroup keystone-public

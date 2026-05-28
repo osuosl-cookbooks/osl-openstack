@@ -28,6 +28,11 @@ include_recipe 'osl-memcached'
 include_recipe 'osl-apache'
 include_recipe 'osl-apache::mod_wsgi'
 include_recipe 'osl-apache::mod_ssl'
+# Apache sits behind haproxy in HA mode; mod_remoteip rewrites
+# REMOTE_ADDR from haproxy's X-Forwarded-For. ha.rb populates the
+# trusted_proxy attribute; here we just load the module (after
+# osl-apache has captured the per-host `listen` value).
+include_recipe 'osl-apache::mod_remoteip' if openstack_tls_on_haproxy?
 
 package 'openstack-keystone'
 
@@ -125,6 +130,10 @@ apache_app 'keystone' do
   server_address listen_ip
   cookbook 'osl-openstack'
   template 'wsgi-keystone.conf.erb'
+  # In HA mode haproxy on the VIP terminates TLS and forwards plain
+  # HTTP to this vhost; the wsgi-keystone.conf.erb template drops its
+  # SSLEngine block when this flag is set.
+  template_params(haproxy_tls: openstack_tls_on_haproxy?)
   notifies :reload, 'apache2_service[osuosl]', :immediately
 end
 

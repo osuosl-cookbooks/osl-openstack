@@ -51,18 +51,69 @@ describe 'osl-openstack::ha' do
         )
       end
 
-      it 'strips the CIDR before passing the VIPs to haproxy bind' do
-        # keystone is representative; every haproxy_listen in the
-        # openstack_ha_services loop builds its v4 + v6 binds the same
-        # way. Without the strip we'd see '192.168.60.10/24:5000' or
-        # '[fc00::10/64]:5000'.
+      it 'strips the CIDR and appends ssl crt to tls listeners' do
+        # keystone is tls: true in openstack_ha_services, so each bind
+        # has `ssl crt <bundle>` appended. Without the CIDR strip we'd
+        # see '192.168.60.10/24:5000 ssl crt ...'.
         binds = chef_run.find_resources(:haproxy_listen)
                         .select { |r| r.name == 'keystone' }
                         .map(&:bind)
         expect(binds).to contain_exactly(
-          '192.168.60.10:5000',
-          '[fc00::10]:5000'
+          '192.168.60.10:5000 ssl crt /etc/haproxy/certs/wildcard.pem',
+          '[fc00::10]:5000 ssl crt /etc/haproxy/certs/wildcard.pem'
         )
+      end
+
+      it 'binds plain HTTP listeners (no tls) without ssl crt' do
+        # glance-api is tls:false (still plain HTTP today), so no
+        # ssl crt should be appended.
+        binds = chef_run.find_resources(:haproxy_listen)
+                        .select { |r| r.name == 'glance-api' }
+                        .map(&:bind)
+        expect(binds).to contain_exactly(
+          '192.168.60.10:9292',
+          '[fc00::10]:9292'
+        )
+      end
+
+      it 'switches tls listeners to mode http with option forwardfor' do
+        keystone_first = chef_run.find_resources(:haproxy_listen)
+                                 .find { |r| r.name == 'keystone' }
+        expect(keystone_first.mode).to eq('http')
+        expect(keystone_first.option).to include('forwardfor')
+      end
+
+      it 'keeps non-tls listeners in mode tcp' do
+        glance_first = chef_run.find_resources(:haproxy_listen)
+                               .find { |r| r.name == 'glance-api' }
+        expect(glance_first.mode).to eq('tcp')
+        expect(glance_first.option).to be_nil # property unset
+      end
+
+      it 'builds the haproxy wildcard PEM bundle' do
+        expect(chef_run).to create_directory('/etc/haproxy/certs').with(
+          owner: 'haproxy', group: 'haproxy', mode: '0700'
+        )
+        expect(chef_run).to create_certificate_manage('wildcard-haproxy').with(
+          cert_path: '/etc/haproxy/certs',
+          combined_file: true,
+          create_subfolders: false,
+          owner: 'haproxy',
+          group: 'haproxy'
+        )
+        expect(chef_run.certificate_manage('wildcard-haproxy')).to notify('haproxy_service[haproxy]').to(:reload)
+      end
+
+      it 'starts haproxy during converge so the VIP serves before keystone calls' do
+        # The ruby_block renders haproxy.cfg and notifies the eager
+        # start; without it a fresh bootstrap fails at osl_openstack_role
+        # with connection-refused on the VIP (haproxy's normal :start is
+        # delayed to end-of-run). Guarded by not_if so it only fires
+        # when haproxy isn't already running (kept idempotent).
+        rb = chef_run.ruby_block('render haproxy.cfg + start haproxy before api calls')
+        expect(rb).to notify('service[haproxy_eager_start]').to(:start).immediately
+        expect(rb).to notify('service[haproxy_eager_start]').to(:enable).immediately
+        expect(chef_run.service('haproxy_eager_start').service_name).to eq('haproxy')
       end
 
       it 'does not write the stub haproxy.cfg or the wildcard-release execute' do

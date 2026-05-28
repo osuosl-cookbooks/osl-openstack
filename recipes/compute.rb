@@ -98,6 +98,17 @@ osl_systemd_unit_drop_in 'ulimit' do
   notifies :restart, 'service[openstack-nova-compute]'
 end
 
+# nova-compute makes a blocking keystone call at startup and exits
+# non-zero if the controller VIP isn't reachable yet; on a fresh
+# converge a cold-ARP blip is enough to crash it and abort the run
+# before systemd's auto-restart recovers it. Wait for keystone first so
+# the initial start succeeds. not_if keeps re-converges (VIP already up)
+# a skipped no-op.
+ruby_block 'wait for keystone VIP before starting nova-compute' do
+  block { openstack_wait_for_keystone }
+  not_if { openstack_keystone_reachable? }
+end
+
 service 'openstack-nova-compute' do
   action [:enable, :start]
   subscribes :restart, 'template[/etc/nova/nova.conf]'

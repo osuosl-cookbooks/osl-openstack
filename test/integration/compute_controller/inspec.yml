@@ -7,3 +7,9 @@ inputs:
     value: controller.testing.osuosl.org
   - name: local_storage
     value: false
+  - name: haproxy_tls
+    value: false
+    description: >
+      Set true when haproxy on the VIP terminates TLS for novnc -
+      nova-novncproxy runs without --ssl_only and has no local cert
+      files in that mode.

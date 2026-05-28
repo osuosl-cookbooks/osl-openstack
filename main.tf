@@ -95,8 +95,8 @@ resource "openstack_networking_port_v2" "ceph" {
     network_id      = data.openstack_networking_network_v2.network.id
 }
 
-resource "openstack_networking_port_v2" "controller" {
-    name            = "controller"
+resource "openstack_networking_port_v2" "controller1" {
+    name            = "controller1"
     admin_state_up  = true
     network_id      = data.openstack_networking_network_v2.network.id
 }
@@ -135,8 +135,8 @@ resource "openstack_networking_port_v2" "ceph_openstack" {
     }
 }
 
-resource "openstack_networking_port_v2" "controller_openstack" {
-    name                  = "controller_openstack"
+resource "openstack_networking_port_v2" "controller1_openstack" {
+    name                  = "controller1_openstack"
     admin_state_up        = true
     port_security_enabled = false
     network_id            = openstack_networking_network_v2.openstack_network.id
@@ -218,21 +218,21 @@ resource "openstack_compute_instance_v2" "ceph" {
     }
 }
 
-resource "openstack_compute_instance_v2" "controller" {
-    name            = "controller"
+resource "openstack_compute_instance_v2" "controller1" {
+    name            = "controller1"
     image_name      = var.os_image
     flavor_name     = "m2.local.16c16m200d"
     key_pair        = var.ssh_key_name
     security_groups = ["default"]
     connection {
         user = var.ssh_user_name
-        host = openstack_networking_port_v2.controller.all_fixed_ips.0
+        host = openstack_networking_port_v2.controller1.all_fixed_ips.0
     }
     network {
-        port = openstack_networking_port_v2.controller.id
+        port = openstack_networking_port_v2.controller1.id
     }
     network {
-        port = openstack_networking_port_v2.controller_openstack.id
+        port = openstack_networking_port_v2.controller1_openstack.id
     }
     provisioner "remote-exec" {
         inline = [
@@ -332,21 +332,21 @@ resource "null_resource" "ceph" {
     ]
 }
 
-resource "null_resource" "controller" {
+resource "null_resource" "controller1" {
     triggers = {
-        instance_id = openstack_compute_instance_v2.controller.id
+        instance_id = openstack_compute_instance_v2.controller1.id
     }
     connection {
         type = "ssh"
         user = var.ssh_user_name
-        host = openstack_compute_instance_v2.controller.network.0.fixed_ip_v4
+        host = openstack_compute_instance_v2.controller1.network.0.fixed_ip_v4
     }
 
     provisioner "local-exec" {
         command = <<-EOF
             knife bootstrap -c test/chef-config/knife.rb \
-                ${var.ssh_user_name}@${openstack_compute_instance_v2.controller.network.0.fixed_ip_v4} \
-                --bootstrap-version ${var.chef_version} -y -N controller --sudo \
+                ${var.ssh_user_name}@${openstack_compute_instance_v2.controller1.network.0.fixed_ip_v4} \
+                --bootstrap-version ${var.chef_version} -y -N controller1 --sudo \
                 -r 'role[openstack_tf_common],role[openstack_controller],recipe[openstack_test::prometheus],recipe[osl-openstack::ops_messaging],recipe[osl-openstack::controller],recipe[osl-openstack::block_storage],recipe[openstack_test::image_upload],recipe[openstack_test::create_network]'
             EOF
         environment = {
@@ -364,7 +364,7 @@ resource "null_resource" "controller" {
     }
 
     depends_on = [
-        openstack_compute_instance_v2.controller,
+        openstack_compute_instance_v2.controller1,
         null_resource.database,
         null_resource.ceph,
     ]
@@ -400,7 +400,7 @@ resource "null_resource" "controller2" {
 
     depends_on = [
         openstack_compute_instance_v2.controller2,
-        null_resource.controller,
+        null_resource.controller1,
     ]
 }
 
@@ -434,6 +434,6 @@ resource "null_resource" "compute" {
 
     depends_on = [
         openstack_compute_instance_v2.compute,
-        null_resource.controller,
+        null_resource.controller1,
     ]
 }

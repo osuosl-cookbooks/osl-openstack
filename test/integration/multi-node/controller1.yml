@@ -4,12 +4,13 @@ prometheus_endpoint: controller.testing.osuosl.org
 # RabbitMQ / memcached are clustered on the controller backends, not the
 # VIP, so transport_url / memcache(d)_servers point at controller1.
 messaging_host: controller1.testing.osuosl.org
+# Skip ssl-baseline in multi-node: Apache binds the per-host private IP
+# (10.1.2.3), which the InSpec runner cannot reach (sslshake opens a
+# direct TCP socket from the runner, not via the SSH transport).
+# Single-node identity/dashboard suites still cover SSL hardening.
 skip_ssl_baseline: true
 # haproxy on the VIP terminates TLS; Apache serves plain HTTP on the
 # per-host backend IP and nova-novncproxy runs without --ssl_only.
+# Tells the dashboard / compute_controller controls to skip
+# localhost:443-HTTPS probes and the local novnc cert assertions.
 haproxy_tls: true
-# controller2's bootstrap intentionally omits the one-time
-# image_upload, create_flavor, create_network, and prometheus exporter
-# recipes - those run only on the primary controller. Skip the
-# corresponding InSpec checks so this controller doesn't fail them.
-primary_controller: false

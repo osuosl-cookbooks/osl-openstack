@@ -3,6 +3,10 @@ db_endpoint = input('db_endpoint')
 controller_endpoint = input('controller_endpoint')
 physical_interface_mappings = input('physical_interface_mappings')
 primary_controller = input('primary_controller', value: true)
+# RabbitMQ / memcached cluster member - diverges from
+# controller_endpoint (the VIP) on HA multi-node, where it's
+# controller1.
+messaging_host = input('messaging_host', value: controller_endpoint)
 
 control 'network' do
   %w(
@@ -56,9 +60,9 @@ control 'network' do
       its('nova.password') { should cmp 'nova' }
     end
     its('DEFAULT.auth_strategy') { should cmp 'keystone' }
-    its('DEFAULT.transport_url') { should match(%r{^rabbit://openstack:openstack@#{Regexp.escape(controller_endpoint)}:5672}) }
+    its('DEFAULT.transport_url') { should match(%r{^rabbit://openstack:openstack@#{Regexp.escape(messaging_host)}:5672}) }
     its('keystone_authtoken.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
-    its('keystone_authtoken.memcached_servers') { should match(/#{Regexp.escape(controller_endpoint)}:11211/) }
+    its('keystone_authtoken.memcached_servers') { should match(/#{Regexp.escape(messaging_host)}:11211/) }
     its('keystone_authtoken.password') { should cmp 'neutron' }
     its('keystone_authtoken.service_token_roles_required') { should cmp 'true' }
     its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
@@ -80,7 +84,7 @@ control 'network' do
     its('DEFAULT.metadata_proxy_shared_secret') { should cmp '2SJh0RuO67KpZ63z' }
     its('cache.backend') { should cmp 'dogpile.cache.memcached' }
     its('cache.enabled') { should cmp 'true' }
-    its('cache.memcache_servers') { should match(/#{Regexp.escape(controller_endpoint)}:11211/) }
+    its('cache.memcache_servers') { should match(/#{Regexp.escape(messaging_host)}:11211/) }
   end if controller
 
   describe ini('/etc/neutron/metering_agent.ini') do

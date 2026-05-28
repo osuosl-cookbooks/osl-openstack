@@ -50,11 +50,13 @@ WSGISocketPrefix /var/lock/subsys
     Require all granted
   </Directory>
 
+<% unless @template_params && @template_params[:haproxy_tls] -%>
   SSLEngine on
   SSLCertificateFile /etc/pki/tls/certs/wildcard.pem
   SSLCertificateKeyFile /etc/pki/tls/private/wildcard.key
   SSLCertificateChainFile /etc/pki/tls/certs/wildcard-bundle.crt
   SSLProtocol -all +TLSv1.2
+<% end -%>
 
   LogLevel info
   ErrorLogFormat "%{cu}t %M"

@@ -10,8 +10,8 @@ output "database_region2" {
 output "ceph" {
     value = "${openstack_compute_instance_v2.ceph.network.0.fixed_ip_v4}"
 }
-output "controller" {
-    value = "${openstack_compute_instance_v2.controller.network.0.fixed_ip_v4}"
+output "controller1" {
+    value = "${openstack_compute_instance_v2.controller1.network.0.fixed_ip_v4}"
 }
 output "controller2" {
     value = "${openstack_compute_instance_v2.controller2.network.0.fixed_ip_v4}"
