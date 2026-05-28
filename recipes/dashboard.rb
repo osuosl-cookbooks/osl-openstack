@@ -25,7 +25,6 @@ osl_openstack_openrc 'dashboard'
 listen_ip = openstack_api_listen_ip
 node.default['osl-apache']['listen'] = %w(80 443).map { |p| "#{listen_ip}:#{p}" }
 
-include_recipe 'osl-memcached'
 include_recipe 'osl-apache'
 include_recipe 'osl-apache::mod_wsgi'
 include_recipe 'osl-apache::mod_ssl'

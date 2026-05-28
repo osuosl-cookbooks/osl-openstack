@@ -77,3 +77,12 @@ control 'haproxy-tls-termination' do
     its('status') { should cmp 200 }
   end
 end
+
+control 'memcached-cross-controller' do
+  title 'memcached firewall lets the peer controller in (horizon sessions survive failover)'
+  # osl_only sends the rule into the OSL CIDR chain - covers peer
+  # controllers and compute nodes in one knob (mirrors AMQP).
+  describe iptables do
+    it { should have_rule('-A memcached -p tcp -m tcp --dport 11211 -j osl_only') }
+  end
+end

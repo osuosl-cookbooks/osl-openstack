@@ -61,3 +61,12 @@ control 'haproxy-tls-termination' do
     its('content') { should match(/option forwardfor/) }
   end
 end
+
+control 'memcached-cross-controller' do
+  title 'memcached firewall lets the peer controller in (horizon sessions survive failover)'
+  # Symmetric with ha_master: identity.rb runs on both controllers and
+  # configures memcached the same way.
+  describe iptables do
+    it { should have_rule('-A memcached -p tcp -m tcp --dport 11211 -j osl_only') }
+  end
+end

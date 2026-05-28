@@ -138,6 +138,16 @@ describe 'osl-openstack::identity' do
       it { expect(chef_run.apache_app('keystone')).to notify('apache2_service[osuosl]').to(:reload) }
       it { is_expected.to create_osl_openstack_role 'service' }
       it { is_expected.to create_osl_openstack_project('service').with(domain_name: 'default') }
+
+      # osl_only opens :11211 to all OSL CIDRs (controllers + computes);
+      # iptables rule asserted live in identity InSpec.
+      it { expect(chef_run.node['osl-memcached']['default_service']).to be false }
+      it do
+        is_expected.to create_osl_memcached('memcached').with(
+          port: 11211,
+          osl_only: true
+        )
+      end
     end
   end
 end
