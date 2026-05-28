@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+18.1.1 (2026-05-28)
+-------------------
+- ha: stop the keystone canonical-host redirect and move horizon http->https to haproxy
+
 18.1.0 (2026-05-28)
 -------------------
 - ha: terminate TLS on haproxy at the controller VIP
