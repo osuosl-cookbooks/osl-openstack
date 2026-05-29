@@ -18,8 +18,14 @@ describe 'osl-openstack::dashboard' do
         osl-apache
         osl-apache::mod_wsgi
         osl-apache::mod_ssl
+        osl-nrpe::check_http
       ).each do |r|
         it { is_expected.to include_recipe r }
+      end
+      # Off-HA the apache check_http targets node['ipaddress'] (the
+      # openstack_local_api_endpoint fallback), so this override is a no-op.
+      it do
+        expect(chef_run.node['osl-nrpe']['check_http']['ipaddress']).to eq('10.0.0.2')
       end
       # memcached setup lives in ::identity (runs first via controller.rb).
       it { is_expected.to_not include_recipe 'osl-memcached' }
@@ -133,6 +139,40 @@ describe 'osl-openstack::dashboard' do
         end
         it do
           is_expected.to_not render_file('/etc/openstack-dashboard/local_settings').with_content('DEFAULT_SERVICE_REGIONS')
+        end
+      end
+
+      context 'HA controller' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm) do |node|
+            node.automatic['fqdn'] = 'controller1.testing.osuosl.org'
+            node.automatic['ip6address'] = '2605:bc80:3010::140'
+          end.converge(described_recipe)
+        end
+
+        include_context 'common_stubs'
+        before do
+          stub_data_bag_item('openstack', 'x86').and_return(
+            openstack_secrets_stub.merge(
+              'ha' => {
+                'api_listen_ip' => {
+                  'controller1.testing.osuosl.org' => '10.1.2.3',
+                },
+              }
+            )
+          )
+        end
+
+        # The apache check_http runs locally via NRPE, so it must dial the
+        # per-host backend IP apache binds in HA, not the public address.
+        it do
+          expect(chef_run.node['osl-nrpe']['check_http']['ipaddress']).to eq('10.1.2.3')
+        end
+        # Apache serves no IPv6 of its own in HA (the VIP does), so this
+        # controller drops out of the per-host apache_http6 check even though
+        # it has a public IPv6.
+        it do
+          expect(chef_run.node['nagios']['_http_address6']).to be_nil
         end
       end
     end

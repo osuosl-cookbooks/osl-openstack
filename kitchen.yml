@@ -330,6 +330,7 @@ suites:
         - test/integration/compute
         - test/integration/compute_controller
         - test/integration/controller
+        - test/integration/dashboard
         - test/integration/identity
         - test/integration/image
         - test/integration/network

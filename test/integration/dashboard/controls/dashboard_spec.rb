@@ -103,3 +103,24 @@ control 'openstack-dashboard' do
     end
   end
 end
+
+control 'dashboard-nrpe-http' do
+  title 'apache check_http points at the apache listen IP'
+  desc <<~DESC
+    osl-openstack::dashboard pulls in osl-nrpe::check_http and overrides the
+    check's target to openstack_local_api_endpoint - the per-host backend IP
+    apache binds in HA, or the node's primary address on a single-controller
+    deploy. Before this wiring the dashboard node had no check_http.cfg at
+    all, so its presence (with a real -I address and the redirect-friendly
+    accepted codes) confirms the override path is in place.
+  DESC
+
+  plugin_dir = '/usr/lib64/nagios/plugins'
+
+  describe file('/etc/nagios/nrpe.d/check_http.cfg') do
+    it { should exist }
+    its('content') { should include "command[check_http]=#{plugin_dir}/check_http" }
+    its('content') { should match(/-I \d{1,3}(\.\d{1,3}){3}\b/) }
+    its('content') { should match(/-e 200,301,302,308/) }
+  end
+end
