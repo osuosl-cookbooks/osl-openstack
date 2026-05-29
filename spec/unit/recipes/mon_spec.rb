@@ -114,13 +114,16 @@ describe 'osl-openstack::mon' do
         end
 
         # Each nrpe_check should target the per-host backend IP from
-        # ha.api_listen_ip, not node['ipaddress'].
+        # ha.api_listen_ip, not node['ipaddress']. In HA the keystone
+        # and novnc backends serve plain HTTP / ws (haproxy on the VIP
+        # is the TLS endpoint), so the local check drops --ssl - check
+        # the actual backend, not what the public endpoint speaks.
         {
-          'check_keystone_api' => '--ssl -I 10.1.2.3 -p 5000',
+          'check_keystone_api' => '-I 10.1.2.3 -p 5000',
           'check_glance_api' => '-I 10.1.2.3 -p 9292',
           'check_nova_api' => '-I 10.1.2.3 -p 8774',
           'check_nova_placement_api' => '-I 10.1.2.3 -p 8778',
-          'check_novnc' => '--ssl -I 10.1.2.3 -p 6080',
+          'check_novnc' => '-I 10.1.2.3 -p 6080',
           'check_neutron_api' => '-I 10.1.2.3 -p 9696',
           'check_cinder_api' => '-I 10.1.2.3 -p 8776',
           'check_heat_api' => '-I 10.1.2.3 -p 8004',

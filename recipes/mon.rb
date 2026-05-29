@@ -39,9 +39,17 @@ if node['osl-openstack']['node_type'] == 'controller'
   # is the right target.
   local_ip = openstack_local_api_endpoint
 
+  # keystone and novnc are the two backends that terminate TLS
+  # themselves on non-HA single-controller (Apache mod_ssl /
+  # nova-novncproxy --ssl_only); in HA mode they serve plain HTTP /
+  # plain ws on the per-host IP and haproxy on the VIP is the TLS
+  # endpoint. The local nrpe check has to match what the backend
+  # actually speaks, so drop --ssl when haproxy_tls is on.
+  backend_ssl_opt = openstack_tls_on_haproxy? ? '' : '--ssl '
+
   nrpe_check 'check_keystone_api' do
     command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "--ssl -I #{local_ip} -p 5000"
+    parameters "#{backend_ssl_opt}-I #{local_ip} -p 5000"
   end
 
   nrpe_check 'check_glance_api' do
@@ -61,7 +69,7 @@ if node['osl-openstack']['node_type'] == 'controller'
 
   nrpe_check 'check_novnc' do
     command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "--ssl -I #{local_ip} -p 6080"
+    parameters "#{backend_ssl_opt}-I #{local_ip} -p 6080"
   end
 
   nrpe_check 'check_neutron_api' do

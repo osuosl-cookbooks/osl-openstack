@@ -70,3 +70,23 @@ control 'memcached-cross-controller' do
     it { should have_rule('-A memcached -p tcp -m tcp --dport 11211 -j osl_only') }
   end
 end
+
+control 'mon-nrpe-checks-drop-ssl-on-ha' do
+  title 'keystone and novnc nrpe checks omit --ssl in HA'
+  # Symmetric with ha_master: mon runs on both controllers, gating
+  # --ssl off because the keystone Apache backend and nova-novncproxy
+  # serve plain HTTP / ws on this host's api_listen_ip (10.1.2.13 for
+  # controller2 per the multinode data bag) with haproxy on the VIP
+  # terminating TLS.
+  {
+    'check_keystone_api' => 5000,
+    'check_novnc' => 6080,
+  }.each do |name, port|
+    describe file("/etc/nagios/nrpe.d/#{name}.cfg") do
+      its('content') do
+        should match(%r{^command\[#{name}\]=/usr/lib64/nagios/plugins/check_http -I 10\.1\.2\.13 -p #{port}$})
+      end
+      its('content') { should_not match(/--ssl/) }
+    end
+  end
+end

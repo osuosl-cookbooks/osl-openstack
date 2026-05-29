@@ -86,3 +86,23 @@ control 'haproxy-vip-listeners' do
     end
   end
 end
+
+control 'mon-nrpe-checks-drop-ssl-on-ha' do
+  title 'keystone and novnc nrpe checks omit --ssl in HA'
+  # In HA the Apache backend serves plain HTTP for keystone and
+  # nova-novncproxy serves plain ws on the per-host api_listen_ip
+  # (192.168.60.11 per the ha data bag); haproxy on the VIP is the
+  # TLS endpoint. The local check has to match what the backend
+  # actually speaks, so --ssl must NOT be passed to check_http.
+  {
+    'check_keystone_api' => 5000,
+    'check_novnc' => 6080,
+  }.each do |name, port|
+    describe file("/etc/nagios/nrpe.d/#{name}.cfg") do
+      its('content') do
+        should match(%r{^command\[#{name}\]=/usr/lib64/nagios/plugins/check_http -I 192\.168\.60\.11 -p #{port}$})
+      end
+      its('content') { should_not match(/--ssl/) }
+    end
+  end
+end

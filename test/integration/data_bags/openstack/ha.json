@@ -1,5 +1,8 @@
 {
   "id": "ha",
+  "database_server": {
+    "suffix": "x86"
+  },
   "ha": {
     "keepalived": {
       "primary": {
