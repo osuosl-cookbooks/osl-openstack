@@ -33,6 +33,7 @@ suites:
     run_list:
       - recipe[openstack_test::ha]
       - recipe[osl-openstack::ha]
+      - recipe[osl-openstack::mon]
   - name: ops_messaging
     driver_config:
       server_name: "ops-messaging-<%= ENV['USER'] %>"

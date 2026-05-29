@@ -347,7 +347,7 @@ resource "null_resource" "controller1" {
             knife bootstrap -c test/chef-config/knife.rb \
                 ${var.ssh_user_name}@${openstack_compute_instance_v2.controller1.network.0.fixed_ip_v4} \
                 --bootstrap-version ${var.chef_version} -y -N controller1 --sudo \
-                -r 'role[openstack_tf_common],role[openstack_controller],recipe[openstack_test::prometheus],recipe[osl-openstack::ops_messaging],recipe[osl-openstack::controller],recipe[osl-openstack::block_storage],recipe[openstack_test::image_upload],recipe[openstack_test::create_network]'
+                -r 'role[openstack_tf_common],role[openstack_controller],recipe[openstack_test::prometheus],recipe[osl-openstack::ops_messaging],recipe[osl-openstack::controller],recipe[osl-openstack::block_storage],recipe[osl-openstack::mon],recipe[openstack_test::image_upload],recipe[openstack_test::create_network]'
             EOF
         environment = {
             CHEF_SERVER = "${openstack_compute_instance_v2.chef_zero.network.0.fixed_ip_v4}"
@@ -385,7 +385,7 @@ resource "null_resource" "controller2" {
             knife bootstrap -c test/chef-config/knife.rb \
                 ${var.ssh_user_name}@${openstack_compute_instance_v2.controller2.network.0.fixed_ip_v4} \
                 --bootstrap-version ${var.chef_version} -y -N controller2 --sudo \
-                -r 'role[openstack_tf_common],role[openstack_controller],recipe[osl-openstack::ops_messaging],recipe[osl-openstack::controller],recipe[osl-openstack::block_storage]'
+                -r 'role[openstack_tf_common],role[openstack_controller],recipe[osl-openstack::ops_messaging],recipe[osl-openstack::controller],recipe[osl-openstack::block_storage],recipe[osl-openstack::mon]'
             EOF
         environment = {
             CHEF_SERVER = "${openstack_compute_instance_v2.chef_zero.network.0.fixed_ip_v4}"
