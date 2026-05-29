@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+18.1.3 (2026-05-29)
+-------------------
+- mon: drop --ssl on keystone and novnc nrpe checks under HA
+
 18.1.2 (2026-05-28)
 -------------------
 - identity: open memcached to OSL CIDRs so horizon sessions survive failover
