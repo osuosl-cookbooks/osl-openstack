@@ -29,6 +29,25 @@ include_recipe 'osl-apache'
 include_recipe 'osl-apache::mod_wsgi'
 include_recipe 'osl-apache::mod_ssl'
 
+# Nagios apache monitoring. check_http runs locally over NRPE (configured by
+# osl-apache::mon via the apache role, invoked server-side by the apache_httpd
+# check), so point it at whatever address apache actually listens on: the
+# per-host backend IP in HA, or node['ipaddress'] on a single-controller
+# deploy (openstack_local_api_endpoint already returns the latter off-HA, so
+# this is a no-op there). Declare the check here with the override already set
+# - before osl-apache::mon's own include - because the nrpe check captures its
+# -I at compile time on first include.
+node.override['osl-nrpe']['check_http']['ipaddress'] = openstack_local_api_endpoint
+
+# In HA apache binds an IPv4-only backend IP and serves no IPv6 of its own -
+# IPv6 clients terminate on the haproxy VIP - so drop this controller from the
+# per-host apache_http6 check. The VIP is monitored separately via its own
+# (unmanaged) Nagios host. Off-HA apache still binds wildcard and serves the
+# public IPv6, so the check stays.
+node.override['nagios']['_http_address6'] = nil if openstack_tls_on_haproxy?
+
+include_recipe 'osl-nrpe::check_http'
+
 package 'openstack-dashboard'
 
 certificate_manage 'wildcard-dashboard' do
