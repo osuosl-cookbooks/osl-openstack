@@ -25,3 +25,12 @@ output "compute" {
 output "compute_region2" {
     value = length(module.region2) > 0 ? module.region2[0].compute_region2 : null
 }
+output "mq1" {
+    value = "${openstack_compute_instance_v2.mq1.network.0.fixed_ip_v4}"
+}
+output "mq2" {
+    value = "${openstack_compute_instance_v2.mq2.network.0.fixed_ip_v4}"
+}
+output "mq3" {
+    value = "${openstack_compute_instance_v2.mq3.network.0.fixed_ip_v4}"
+}

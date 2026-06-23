@@ -1,9 +1,11 @@
 db_endpoint: db.testing.osuosl.org
 physical_interface_mappings: public:eth1.42
 prometheus_endpoint: controller.testing.osuosl.org
-# RabbitMQ / memcached are clustered on the controller backends, not the
-# VIP, so transport_url / memcache(d)_servers point at controller1.
-messaging_host: controller1.testing.osuosl.org
+# RabbitMQ moved to the mq tier (mq1, TLS 5671); memcached stays on the
+# controllers.
+messaging_host: mq1.testing.osuosl.org
+messaging_port: 5671
+memcached_host: controller1.testing.osuosl.org
 skip_ssl_baseline: true
 # haproxy on the VIP terminates TLS; Apache serves plain HTTP on the
 # per-host backend IP and nova-novncproxy runs without --ssl_only.

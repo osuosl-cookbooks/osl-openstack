@@ -23,4 +23,11 @@ osl_openstack_messaging 'default' do
   pass s['pass']
   cookie s['cookie'] if s['cookie']
   primary_node s['primary_node'] if s['primary_node']
+  vhosts s['vhosts'] if s['vhosts']
+  cmr_target_group_size s['cmr_target_group_size'] if s['cmr_target_group_size']
+  if s['tls']
+    tls true
+    tls_only true if s['tls_only']
+    ssl_search_id s['ssl_search_id'] if s['ssl_search_id']
+  end
 end

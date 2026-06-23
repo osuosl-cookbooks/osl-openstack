@@ -73,6 +73,9 @@ describe 'osl-openstack::block_storage_controller' do
             rbd_user: 'cinder',
             region: 'RegionOne',
             service_pass: 'cinder',
+            rabbit_quorum_queue: false,
+            rabbit_tls: false,
+            rabbit_ssl_ca_file: nil,
             transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672/',
           }
         )

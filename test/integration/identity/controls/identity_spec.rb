@@ -3,11 +3,11 @@ require_controls 'osuosl-baseline' do
 end unless input('skip_ssl_baseline', value: false)
 
 db_endpoint = input('db_endpoint')
-# RabbitMQ / memcached cluster member that appears in transport_url and
-# memcache_servers. Single-controller: the cloud name. HA multi-node:
-# the first controller (controller1), distinct from the VIP that
-# controller_endpoint / the public endpoints resolve to.
+# messaging_host = AMQP host (mq tier on multi-node); memcached_host =
+# the memcached backend (controller1 on multi-node).
 messaging_host = input('messaging_host', value: 'controller.testing.osuosl.org')
+messaging_port = input('messaging_port', value: 5672)
+memcached_host = input('memcached_host', value: messaging_host)
 
 control 'openstack-identity' do
   describe package 'openstack-keystone' do
@@ -100,8 +100,8 @@ control 'openstack-identity' do
 
   describe ini '/etc/keystone/keystone.conf' do
     its('DEFAULT.public_endpoint') { should cmp 'https://controller.testing.osuosl.org:5000/' }
-    its('DEFAULT.transport_url') { should match(%r{^rabbit://openstack:openstack@#{Regexp.escape(messaging_host)}:5672}) }
-    its('cache.memcache_servers') { should match(/#{Regexp.escape(messaging_host)}:11211/) }
+    its('DEFAULT.transport_url') { should match(%r{^rabbit://openstack:openstack@#{Regexp.escape(messaging_host)}:#{messaging_port}}) }
+    its('cache.memcache_servers') { should match(/#{Regexp.escape(memcached_host)}:11211/) }
     its('database.connection') { should cmp "mysql+pymysql://keystone_x86:keystone@#{db_endpoint}:3306/keystone_x86" }
   end
 

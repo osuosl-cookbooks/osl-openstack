@@ -68,6 +68,9 @@ template '/etc/nova/nova.conf' do
     rbd_secret_uuid: ceph_fsid,
     rbd_user: safe_dig(c, 'ceph', 'rbd_user'),
     service_pass: c['service']['pass'],
+    rabbit_quorum_queue: openstack_rabbit_quorum_queue?,
+    rabbit_tls: openstack_rabbit_tls?,
+    rabbit_ssl_ca_file: openstack_rabbit_ssl_ca_file,
     transport_url: openstack_transport_url
   )
 end

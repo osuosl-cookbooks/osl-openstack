@@ -70,6 +70,9 @@ template '/etc/glance/glance-api.conf' do
     rbd_store_pool: safe_dig(i, 'ceph', 'rbd_store_pool'),
     rbd_store_user: safe_dig(i, 'ceph', 'rbd_store_user'),
     service_pass: i['service']['pass'],
+    rabbit_quorum_queue: openstack_rabbit_quorum_queue?,
+    rabbit_tls: openstack_rabbit_tls?,
+    rabbit_ssl_ca_file: openstack_rabbit_ssl_ca_file,
     transport_url: openstack_transport_url
   )
   notifies :run, 'execute[glance: db_sync]', :immediately

@@ -2,10 +2,11 @@ db_endpoint = input('db_endpoint')
 controller_endpoint = input('controller_endpoint')
 local_storage = input('local_storage')
 primary_controller = input('primary_controller', value: true)
-# RabbitMQ / memcached cluster member - diverges from
-# controller_endpoint (the VIP) on HA multi-node, where it's
-# controller1.
+# messaging_host = AMQP host (mq tier on multi-node); memcached_host =
+# the memcached backend (controller1 on multi-node).
 messaging_host = input('messaging_host', value: controller_endpoint)
+messaging_port = input('messaging_port', value: 5672)
+memcached_host = input('memcached_host', value: messaging_host)
 
 control 'image' do
   describe service 'openstack-glance-api' do
@@ -30,11 +31,11 @@ control 'image' do
 
   describe ini('/etc/glance/glance-api.conf') do
     its('database.connection') { should cmp "mysql+pymysql://glance_x86:glance@#{db_endpoint}:3306/glance_x86" }
-    its('DEFAULT.transport_url') { should match(%r{^rabbit://openstack:openstack@#{Regexp.escape(messaging_host)}:5672}) }
+    its('DEFAULT.transport_url') { should match(%r{^rabbit://openstack:openstack@#{Regexp.escape(messaging_host)}:#{messaging_port}}) }
     its('rbd.rbd_store_pool') { should cmp 'images' } unless local_storage
     its('rbd.rbd_store_user') { should cmp 'glance' } unless local_storage
     its('keystone_authtoken.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
-    its('keystone_authtoken.memcached_servers') { should match(/#{Regexp.escape(messaging_host)}:11211/) }
+    its('keystone_authtoken.memcached_servers') { should match(/#{Regexp.escape(memcached_host)}:11211/) }
     its('keystone_authtoken.password') { should cmp 'glance' }
     its('keystone_authtoken.service_token_roles_required') { should cmp 'true' }
     its('keystone_authtoken.service_token_roles') { should cmp 'admin' }

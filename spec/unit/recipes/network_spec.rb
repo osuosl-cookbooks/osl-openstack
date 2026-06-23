@@ -27,6 +27,9 @@ describe 'osl-openstack::network' do
             memcached_endpoint: 'controller.testing.osuosl.org:11211',
             region: 'RegionOne',
             service_pass: 'neutron',
+            rabbit_quorum_queue: false,
+            rabbit_tls: false,
+            rabbit_ssl_ca_file: nil,
             transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672/',
           }
         )
@@ -57,6 +60,9 @@ describe 'osl-openstack::network' do
               memcached_endpoint: 'controller_region2.testing.osuosl.org:11211',
               region: 'RegionTwo',
               service_pass: 'neutron',
+              rabbit_quorum_queue: false,
+              rabbit_tls: false,
+              rabbit_ssl_ca_file: nil,
               transport_url: 'rabbit://openstack:openstack@controller_region2.testing.osuosl.org:5672/',
             }
           )

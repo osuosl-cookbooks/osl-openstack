@@ -55,6 +55,17 @@ append_if_no_line '10.1.2.4' do
   sensitive false
 end
 
+# Shared RabbitMQ messaging tier (mq1/mq2/mq3). The bare-hostname alias
+# lets the cluster's FQDN nodenames (rabbit@mqN.testing.osuosl.org)
+# resolve on every node; clustering + client AMQP both rely on these.
+%w(5 6 7).each_with_index do |octet, i|
+  append_if_no_line "10.1.2.#{octet}" do
+    path '/etc/hosts'
+    line "10.1.2.#{octet} mq#{i + 1}.testing.osuosl.org mq#{i + 1}"
+    sensitive false
+  end
+end
+
 append_if_no_line '10.1.2.101' do
   path '/etc/hosts'
   line '10.1.2.101 db-region2.testing.osuosl.org'

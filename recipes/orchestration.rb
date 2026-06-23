@@ -94,6 +94,9 @@ template '/etc/heat/heat.conf' do
     memcached_endpoint: openstack_memcached_servers,
     region: o['region'],
     service_pass: o['service']['pass'],
+    rabbit_quorum_queue: openstack_rabbit_quorum_queue?,
+    rabbit_tls: openstack_rabbit_tls?,
+    rabbit_ssl_ca_file: openstack_rabbit_ssl_ca_file,
     transport_url: openstack_transport_url
   )
   notifies :run, 'execute[heat: db_sync]', :immediately

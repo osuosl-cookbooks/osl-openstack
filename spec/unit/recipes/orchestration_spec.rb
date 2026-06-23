@@ -84,6 +84,9 @@ describe 'osl-openstack::orchestration' do
             memcached_endpoint: 'controller.testing.osuosl.org:11211',
             region: 'RegionOne',
             service_pass: 'heat',
+            rabbit_quorum_queue: false,
+            rabbit_tls: false,
+            rabbit_ssl_ca_file: nil,
             transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672/',
           }
         )

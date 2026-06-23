@@ -91,5 +91,18 @@ username = nova
 [oslo_concurrency]
 lock_path = /var/lib/cinder/tmp
 
+<% if @rabbit_quorum_queue || @rabbit_tls -%>
+[oslo_messaging_rabbit]
+<% if @rabbit_quorum_queue -%>
+rabbit_quorum_queue = true
+<% end -%>
+<% if @rabbit_tls -%>
+ssl = true
+<% if @rabbit_ssl_ca_file -%>
+ssl_ca_file = <%= @rabbit_ssl_ca_file %>
+<% end -%>
+<% end -%>
+
+<% end -%>
 [oslo_messaging_notifications]
 driver = messagingv2
