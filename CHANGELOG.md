@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+18.3.0 (2026-07-01)
+-------------------
+- Add shared RabbitMQ messaging tier (TLS + quorum queues)
+
 18.2.0 (2026-05-29)
 -------------------
 - Point http-role nagios checks at the apache backend IP in HA
