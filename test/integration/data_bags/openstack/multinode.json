@@ -156,13 +156,22 @@
   },
   "messaging": {
     "endpoint": [
-      "controller1.testing.osuosl.org",
-      "controller2.testing.osuosl.org"
+      "mq1.testing.osuosl.org",
+      "mq2.testing.osuosl.org",
+      "mq3.testing.osuosl.org"
     ],
     "user": "openstack",
     "pass": "openstack",
+    "vhost": "multinode",
+    "tls": true,
+    "tls_only": true,
     "cookie": "KLVQHHBZLYDZGPPRMPFW",
-    "primary_node": "rabbit@controller1.testing.osuosl.org"
+    "quorum_queues": true,
+    "cmr_target_group_size": 3,
+    "primary_node": "rabbit@mq1.testing.osuosl.org",
+    "vhosts": [
+      { "vhost": "multinode", "user": "openstack", "pass": "openstack" }
+    ]
   },
   "memcached": {
     "endpoint": [

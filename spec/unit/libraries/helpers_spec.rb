@@ -97,6 +97,80 @@ describe OSLOpenstack::Cookbook::Helpers do
     end
   end
 
+  describe '#openstack_rabbit_quorum_queue?' do
+    it 'returns false when messaging.quorum_queues is absent' do
+      allow(helper).to receive(:os_secrets).and_return('messaging' => {})
+      expect(helper.openstack_rabbit_quorum_queue?).to be false
+    end
+
+    it 'returns true when messaging.quorum_queues is set' do
+      allow(helper).to receive(:os_secrets).and_return(
+        'messaging' => { 'quorum_queues' => true }
+      )
+      expect(helper.openstack_rabbit_quorum_queue?).to be true
+    end
+  end
+
+  describe '#openstack_rabbit_tls?' do
+    it 'returns false when messaging.tls is absent' do
+      allow(helper).to receive(:os_secrets).and_return('messaging' => {})
+      expect(helper.openstack_rabbit_tls?).to be false
+    end
+
+    it 'returns true when messaging.tls is set' do
+      allow(helper).to receive(:os_secrets).and_return('messaging' => { 'tls' => true })
+      expect(helper.openstack_rabbit_tls?).to be true
+    end
+  end
+
+  describe '#openstack_rabbit_ssl_ca_file' do
+    it 'returns nil when unset (oslo falls back to the system trust store)' do
+      allow(helper).to receive(:os_secrets).and_return('messaging' => {})
+      expect(helper.openstack_rabbit_ssl_ca_file).to be_nil
+    end
+
+    it 'returns the configured path' do
+      allow(helper).to receive(:os_secrets).and_return(
+        'messaging' => { 'ssl_ca_file' => '/etc/pki/tls/certs/osl-chain.pem' }
+      )
+      expect(helper.openstack_rabbit_ssl_ca_file).to eq('/etc/pki/tls/certs/osl-chain.pem')
+    end
+  end
+
+  describe '#openstack_transport_url' do
+    let(:messaging) do
+      { 'user' => 'openstack', 'pass' => 's3cret',
+        'endpoint' => ['mq2.example.org', 'mq1.example.org', 'mq3.example.org'] }
+    end
+
+    it 'sorts endpoints, uses :5672, and the default vhost (empty path)' do
+      allow(helper).to receive(:os_secrets).and_return('messaging' => messaging)
+      expect(helper.openstack_transport_url).to eq(
+        'rabbit://openstack:s3cret@mq1.example.org:5672,' \
+        'openstack:s3cret@mq2.example.org:5672,' \
+        'openstack:s3cret@mq3.example.org:5672/'
+      )
+    end
+
+    it 'renders a named vhost as the URL path and uses :5671 under TLS' do
+      allow(helper).to receive(:os_secrets).and_return(
+        'messaging' => messaging.merge('vhost' => 'x86', 'tls' => true)
+      )
+      expect(helper.openstack_transport_url).to eq(
+        'rabbit://openstack:s3cret@mq1.example.org:5671,' \
+        'openstack:s3cret@mq2.example.org:5671,' \
+        'openstack:s3cret@mq3.example.org:5671/x86'
+      )
+    end
+
+    it "treats an explicit '/' vhost as the default (empty path)" do
+      allow(helper).to receive(:os_secrets).and_return(
+        'messaging' => messaging.merge('vhost' => '/')
+      )
+      expect(helper.openstack_transport_url).to end_with(':5672/')
+    end
+  end
+
   describe '#haproxy_running?' do
     it 'is true when systemctl is-active exits 0' do
       shellout = instance_double(Mixlib::ShellOut, exitstatus: 0)

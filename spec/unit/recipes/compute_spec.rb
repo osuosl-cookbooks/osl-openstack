@@ -123,6 +123,9 @@ describe 'osl-openstack::compute' do
             rbd_user: 'cinder',
             region: 'RegionOne',
             service_pass: 'nova',
+            rabbit_quorum_queue: false,
+            rabbit_tls: false,
+            rabbit_ssl_ca_file: nil,
             transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672/',
           }
         )
@@ -596,6 +599,9 @@ describe 'osl-openstack::compute' do
               rbd_user: nil,
               region: 'RegionTwo',
               service_pass: 'nova',
+              rabbit_quorum_queue: false,
+              rabbit_tls: false,
+              rabbit_ssl_ca_file: nil,
               transport_url: 'rabbit://openstack:openstack@controller_region2.testing.osuosl.org:5672/',
             }
           )

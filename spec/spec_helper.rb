@@ -24,6 +24,16 @@ ALMA_8 = {
   log_level: :warn,
 }.freeze
 
+# EL10 is only exercised by the messaging suite (the shared RabbitMQ
+# tier runs on AlmaLinux 10 / RabbitMQ 4.2). The rest of the recipes are
+# not EL10-ready, so ALMA_10 is deliberately NOT in ALL_PLATFORMS.
+ALMA_10 = {
+  platform: 'almalinux',
+  version: '10',
+  file_cache_path: '/var/chef/cache',
+  log_level: :warn,
+}.freeze
+
 ALL_PLATFORMS = [
   ALMA_9,
   ALMA_8,

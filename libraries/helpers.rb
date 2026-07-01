@@ -44,17 +44,28 @@ module OSLOpenstack
         cmd.stdout.match?(/^#{Regexp.escape(user)}\s/)
       end
 
-      def openstack_rabbitmq_permissions?(user)
-        cmd = shell_out!('rabbitmqctl -q list_permissions')
+      # nil checks the default vhost; pass a name for a per-cloud vhost.
+      def openstack_rabbitmq_permissions?(user, vhost = nil)
+        flag = vhost ? " -p #{vhost}" : ''
+        cmd = shell_out!("rabbitmqctl -q list_permissions#{flag}")
         cmd.stdout.match?(/^#{Regexp.escape(user)}\s+\.\*\s+\.\*\s+\.\*/)
       end
 
+      def openstack_rabbitmq_vhost?(vhost)
+        cmd = shell_out!('rabbitmqctl -q list_vhosts')
+        cmd.stdout.match?(/^#{Regexp.escape(vhost)}\s*$/)
+      end
+
+      # Messaging SIG selects version by subdir: EL8/9 use rabbitmq-38
+      # (3.9.x), EL10 only ships rabbitmq-4 (4.x).
       def openstack_rabbitmq_repo
         case node['platform_version'].to_i
         when 8
           'https://ftp.osuosl.org/pub/osl/vault/$releasever-stream/messaging/$basearch/rabbitmq-38'
         when 9
           'https://centos-stream.osuosl.org/SIGs/$releasever-stream/messaging/$basearch/rabbitmq-38'
+        when 10
+          'https://centos-stream.osuosl.org/SIGs/$releasever-stream/messaging/$basearch/rabbitmq-4'
         end
       end
 
@@ -188,8 +199,13 @@ module OSLOpenstack
         m = os_secrets['messaging']
         user = m['user']
         pass = m['pass']
-        hosts = Array(m['endpoint']).sort.map { |endpoint| "#{user}:#{pass}@#{endpoint}:5672" }.join(',')
-        "rabbit://#{hosts}/"
+        port = openstack_rabbit_tls? ? 5671 : 5672
+        hosts = Array(m['endpoint']).sort.map { |endpoint| "#{user}:#{pass}@#{endpoint}:#{port}" }.join(',')
+        # messaging.vhost is the URL path; absent or '/' = the default
+        # vhost, a name like 'x86' isolates that cloud on the tier.
+        vhost = m['vhost'].to_s
+        vhost = '' if vhost == '/'
+        "rabbit://#{hosts}/#{vhost}"
       end
 
       def openstack_memcached_endpoints
@@ -227,6 +243,25 @@ module OSLOpenstack
       # terminates TLS itself.
       def openstack_tls_on_haproxy?
         !!safe_dig(os_secrets, 'ha')
+      end
+
+      # Declare quorum (Raft-replicated) queues instead of classic.
+      # Separate flag, not `ha`: queue type/replicas are fixed at
+      # declaration, so flip this only once the full cluster is up
+      # (see docs/HA_MIGRATION.md).
+      def openstack_rabbit_quorum_queue?
+        !!safe_dig(os_secrets, 'messaging', 'quorum_queues')
+      end
+
+      # Connect to RabbitMQ over TLS (AMQPS 5671); set messaging.tls.
+      def openstack_rabbit_tls?
+        !!safe_dig(os_secrets, 'messaging', 'tls')
+      end
+
+      # CA bundle to verify the broker cert; nil uses the system trust
+      # store.
+      def openstack_rabbit_ssl_ca_file
+        safe_dig(os_secrets, 'messaging', 'ssl_ca_file')
       end
 
       # True when the haproxy service is already active. Gates the

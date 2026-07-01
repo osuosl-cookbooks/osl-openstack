@@ -120,6 +120,19 @@ notify_on_state_change = vm_and_task_state
 [oslo_concurrency]
 lock_path = /var/lib/nova/tmp
 
+<% if @rabbit_quorum_queue || @rabbit_tls -%>
+[oslo_messaging_rabbit]
+<% if @rabbit_quorum_queue -%>
+rabbit_quorum_queue = true
+<% end -%>
+<% if @rabbit_tls -%>
+ssl = true
+<% if @rabbit_ssl_ca_file -%>
+ssl_ca_file = <%= @rabbit_ssl_ca_file %>
+<% end -%>
+<% end -%>
+
+<% end -%>
 [oslo_messaging_notifications]
 driver = messagingv2
 <% if @pci_alias -%>

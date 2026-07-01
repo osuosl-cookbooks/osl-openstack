@@ -113,6 +113,25 @@ resource "openstack_networking_port_v2" "compute" {
     network_id      = data.openstack_networking_network_v2.network.id
 }
 
+# Shared RabbitMQ messaging tier (mq1/mq2/mq3).
+resource "openstack_networking_port_v2" "mq1" {
+    name            = "mq1"
+    admin_state_up  = true
+    network_id      = data.openstack_networking_network_v2.network.id
+}
+
+resource "openstack_networking_port_v2" "mq2" {
+    name            = "mq2"
+    admin_state_up  = true
+    network_id      = data.openstack_networking_network_v2.network.id
+}
+
+resource "openstack_networking_port_v2" "mq3" {
+    name            = "mq3"
+    admin_state_up  = true
+    network_id      = data.openstack_networking_network_v2.network.id
+}
+
 resource "openstack_networking_port_v2" "database_openstack" {
     name                  = "database_openstack"
     admin_state_up        = true
@@ -173,6 +192,39 @@ resource "openstack_networking_port_v2" "compute_openstack" {
     fixed_ip {
         subnet_id = openstack_networking_subnet_v2.openstack_subnet.id
         ip_address = "10.1.2.4"
+    }
+}
+
+resource "openstack_networking_port_v2" "mq1_openstack" {
+    name                  = "mq1_openstack"
+    admin_state_up        = true
+    port_security_enabled = false
+    network_id            = openstack_networking_network_v2.openstack_network.id
+    fixed_ip {
+        subnet_id = openstack_networking_subnet_v2.openstack_subnet.id
+        ip_address = "10.1.2.5"
+    }
+}
+
+resource "openstack_networking_port_v2" "mq2_openstack" {
+    name                  = "mq2_openstack"
+    admin_state_up        = true
+    port_security_enabled = false
+    network_id            = openstack_networking_network_v2.openstack_network.id
+    fixed_ip {
+        subnet_id = openstack_networking_subnet_v2.openstack_subnet.id
+        ip_address = "10.1.2.6"
+    }
+}
+
+resource "openstack_networking_port_v2" "mq3_openstack" {
+    name                  = "mq3_openstack"
+    admin_state_up        = true
+    port_security_enabled = false
+    network_id            = openstack_networking_network_v2.openstack_network.id
+    fixed_ip {
+        subnet_id = openstack_networking_subnet_v2.openstack_subnet.id
+        ip_address = "10.1.2.7"
     }
 }
 
@@ -290,6 +342,81 @@ resource "openstack_compute_instance_v2" "compute" {
     }
 }
 
+# Shared RabbitMQ messaging tier. Runs AlmaLinux 10 so the SIG repo
+# yields RabbitMQ 4.2 (the clouds stay EL9/3.9). Image must exist in the
+# cloud (like the hardcoded "AlmaLinux 8" the ceph node uses).
+resource "openstack_compute_instance_v2" "mq1" {
+    name            = "mq1"
+    image_name      = "AlmaLinux 10"
+    flavor_name     = "m2.local.4c4m50d"
+    key_pair        = var.ssh_key_name
+    security_groups = ["default"]
+    connection {
+        user = var.ssh_user_name
+        host = openstack_networking_port_v2.mq1.all_fixed_ips.0
+    }
+    network {
+        port = openstack_networking_port_v2.mq1.id
+    }
+    network {
+        port = openstack_networking_port_v2.mq1_openstack.id
+    }
+    provisioner "remote-exec" {
+        inline = [
+            "sudo mkdir -p /etc/cinc",
+            "sudo ln -sf /etc/cinc /etc/chef"
+        ]
+    }
+}
+
+resource "openstack_compute_instance_v2" "mq2" {
+    name            = "mq2"
+    image_name      = "AlmaLinux 10"
+    flavor_name     = "m2.local.4c4m50d"
+    key_pair        = var.ssh_key_name
+    security_groups = ["default"]
+    connection {
+        user = var.ssh_user_name
+        host = openstack_networking_port_v2.mq2.all_fixed_ips.0
+    }
+    network {
+        port = openstack_networking_port_v2.mq2.id
+    }
+    network {
+        port = openstack_networking_port_v2.mq2_openstack.id
+    }
+    provisioner "remote-exec" {
+        inline = [
+            "sudo mkdir -p /etc/cinc",
+            "sudo ln -sf /etc/cinc /etc/chef"
+        ]
+    }
+}
+
+resource "openstack_compute_instance_v2" "mq3" {
+    name            = "mq3"
+    image_name      = "AlmaLinux 10"
+    flavor_name     = "m2.local.4c4m50d"
+    key_pair        = var.ssh_key_name
+    security_groups = ["default"]
+    connection {
+        user = var.ssh_user_name
+        host = openstack_networking_port_v2.mq3.all_fixed_ips.0
+    }
+    network {
+        port = openstack_networking_port_v2.mq3.id
+    }
+    network {
+        port = openstack_networking_port_v2.mq3_openstack.id
+    }
+    provisioner "remote-exec" {
+        inline = [
+            "sudo mkdir -p /etc/cinc",
+            "sudo ln -sf /etc/cinc /etc/chef"
+        ]
+    }
+}
+
 resource "null_resource" "database" {
     triggers = {
         instance_id = openstack_compute_instance_v2.database.id
@@ -347,7 +474,7 @@ resource "null_resource" "controller1" {
             knife bootstrap -c test/chef-config/knife.rb \
                 ${var.ssh_user_name}@${openstack_compute_instance_v2.controller1.network.0.fixed_ip_v4} \
                 --bootstrap-version ${var.chef_version} -y -N controller1 --sudo \
-                -r 'role[openstack_tf_common],role[openstack_controller],recipe[openstack_test::prometheus],recipe[osl-openstack::ops_messaging],recipe[osl-openstack::controller],recipe[osl-openstack::block_storage],recipe[osl-openstack::mon],recipe[openstack_test::image_upload],recipe[openstack_test::create_network]'
+                -r 'role[openstack_tf_common],role[openstack_controller],recipe[openstack_test::prometheus],recipe[osl-openstack::controller],recipe[osl-openstack::block_storage],recipe[osl-openstack::mon],recipe[openstack_test::image_upload],recipe[openstack_test::create_network]'
             EOF
         environment = {
             CHEF_SERVER = "${openstack_compute_instance_v2.chef_zero.network.0.fixed_ip_v4}"
@@ -367,6 +494,9 @@ resource "null_resource" "controller1" {
         openstack_compute_instance_v2.controller1,
         null_resource.database,
         null_resource.ceph,
+        null_resource.mq1,
+        null_resource.mq2,
+        null_resource.mq3,
     ]
 }
 
@@ -385,7 +515,7 @@ resource "null_resource" "controller2" {
             knife bootstrap -c test/chef-config/knife.rb \
                 ${var.ssh_user_name}@${openstack_compute_instance_v2.controller2.network.0.fixed_ip_v4} \
                 --bootstrap-version ${var.chef_version} -y -N controller2 --sudo \
-                -r 'role[openstack_tf_common],role[openstack_controller],recipe[osl-openstack::ops_messaging],recipe[osl-openstack::controller],recipe[osl-openstack::block_storage],recipe[osl-openstack::mon]'
+                -r 'role[openstack_tf_common],role[openstack_controller],recipe[osl-openstack::controller],recipe[osl-openstack::block_storage],recipe[osl-openstack::mon]'
             EOF
         environment = {
             CHEF_SERVER = "${openstack_compute_instance_v2.chef_zero.network.0.fixed_ip_v4}"
@@ -435,5 +565,109 @@ resource "null_resource" "compute" {
     depends_on = [
         openstack_compute_instance_v2.compute,
         null_resource.controller1,
+    ]
+}
+
+# mq1 is the cluster primary: it creates the per-cloud vhost(s)/users and
+# the rest join it. mq2/mq3 chain off it so the cluster forms in order.
+resource "null_resource" "mq1" {
+    triggers = {
+        instance_id = openstack_compute_instance_v2.mq1.id
+    }
+    connection {
+        type = "ssh"
+        user = var.ssh_user_name
+        host = openstack_compute_instance_v2.mq1.network.0.fixed_ip_v4
+    }
+
+    provisioner "local-exec" {
+        command = <<-EOF
+            knife bootstrap -c test/chef-config/knife.rb \
+                ${var.ssh_user_name}@${openstack_compute_instance_v2.mq1.network.0.fixed_ip_v4} \
+                --bootstrap-version ${var.chef_version} -y -N mq1 --sudo \
+                -r 'role[openstack_tf],recipe[osl-selinux],recipe[openstack_test::hosts_tf],recipe[osl-openstack::ops_messaging]'
+            EOF
+        environment = {
+            CHEF_SERVER = "${openstack_compute_instance_v2.chef_zero.network.0.fixed_ip_v4}"
+        }
+    }
+
+    provisioner "remote-exec" {
+        inline = [
+            "sudo cinc-client",
+        ]
+    }
+
+    depends_on = [
+        openstack_compute_instance_v2.mq1,
+        null_resource.knife_upload,
+    ]
+}
+
+resource "null_resource" "mq2" {
+    triggers = {
+        instance_id = openstack_compute_instance_v2.mq2.id
+    }
+    connection {
+        type = "ssh"
+        user = var.ssh_user_name
+        host = openstack_compute_instance_v2.mq2.network.0.fixed_ip_v4
+    }
+
+    provisioner "local-exec" {
+        command = <<-EOF
+            knife bootstrap -c test/chef-config/knife.rb \
+                ${var.ssh_user_name}@${openstack_compute_instance_v2.mq2.network.0.fixed_ip_v4} \
+                --bootstrap-version ${var.chef_version} -y -N mq2 --sudo \
+                -r 'role[openstack_tf],recipe[osl-selinux],recipe[openstack_test::hosts_tf],recipe[osl-openstack::ops_messaging]'
+            EOF
+        environment = {
+            CHEF_SERVER = "${openstack_compute_instance_v2.chef_zero.network.0.fixed_ip_v4}"
+        }
+    }
+
+    provisioner "remote-exec" {
+        inline = [
+            "sudo cinc-client",
+        ]
+    }
+
+    depends_on = [
+        openstack_compute_instance_v2.mq2,
+        null_resource.mq1,
+    ]
+}
+
+resource "null_resource" "mq3" {
+    triggers = {
+        instance_id = openstack_compute_instance_v2.mq3.id
+    }
+    connection {
+        type = "ssh"
+        user = var.ssh_user_name
+        host = openstack_compute_instance_v2.mq3.network.0.fixed_ip_v4
+    }
+
+    provisioner "local-exec" {
+        command = <<-EOF
+            knife bootstrap -c test/chef-config/knife.rb \
+                ${var.ssh_user_name}@${openstack_compute_instance_v2.mq3.network.0.fixed_ip_v4} \
+                --bootstrap-version ${var.chef_version} -y -N mq3 --sudo \
+                -r 'role[openstack_tf],recipe[osl-selinux],recipe[openstack_test::hosts_tf],recipe[osl-openstack::ops_messaging]'
+            EOF
+        environment = {
+            CHEF_SERVER = "${openstack_compute_instance_v2.chef_zero.network.0.fixed_ip_v4}"
+        }
+    }
+
+    provisioner "remote-exec" {
+        inline = [
+            "sudo cinc-client",
+        ]
+    }
+
+    depends_on = [
+        openstack_compute_instance_v2.mq3,
+        null_resource.mq2,
     ]
 }

@@ -1,0 +1,18 @@
+<%# Shared-tier RabbitMQ config (TLS + quorum CMR); embedded brokers don't render it. -%>
+<% if @tls -%>
+listeners.ssl.default = 5671
+ssl_options.certfile = <%= @ssl_cert %>
+ssl_options.keyfile = <%= @ssl_key %>
+<% if @ssl_cacert -%>
+ssl_options.cacertfile = <%= @ssl_cacert %>
+<% end -%>
+ssl_options.verify = verify_none
+ssl_options.fail_if_no_peer_cert = false
+<% if @tls_only -%>
+listeners.tcp = none
+<% end -%>
+<% end -%>
+<% if @cmr -%>
+quorum_queue.continuous_membership_reconciliation.enabled = true
+quorum_queue.continuous_membership_reconciliation.target_group_size = <%= @cmr %>
+<% end -%>

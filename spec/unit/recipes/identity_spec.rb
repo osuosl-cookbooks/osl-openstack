@@ -77,6 +77,9 @@ describe 'osl-openstack::identity' do
           sensitive: true,
           variables: {
             endpoint: 'controller.testing.osuosl.org',
+            rabbit_quorum_queue: false,
+            rabbit_tls: false,
+            rabbit_ssl_ca_file: nil,
             transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672/',
             memcached_endpoint: 'controller.testing.osuosl.org:11211',
             database_connection: 'mysql+pymysql://keystone_x86:keystone@localhost:3306/keystone_x86',

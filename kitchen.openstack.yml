@@ -31,3 +31,9 @@ platforms:
       image_ref: "AlmaLinux 9"
     transport:
       username: almalinux
+  - name: almalinux-10
+    driver_plugin: openstack
+    driver_config:
+      image_ref: "AlmaLinux 10"
+    transport:
+      username: almalinux

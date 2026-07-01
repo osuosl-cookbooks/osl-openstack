@@ -1,0 +1,12 @@
+{
+  "id": "messaging_tier",
+  "messaging": {
+    "user": "openstack",
+    "pass": "openstack",
+    "tls": true,
+    "tls_only": true,
+    "vhosts": [
+      { "vhost": "tier-test", "user": "tier", "pass": "tier" }
+    ]
+  }
+}

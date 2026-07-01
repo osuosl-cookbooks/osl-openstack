@@ -32,6 +32,9 @@ template '/etc/ceilometer/ceilometer.conf' do
     auth_endpoint: auth_endpoint,
     memcached_endpoint: openstack_memcached_servers,
     service_pass: t['service']['pass'],
+    rabbit_quorum_queue: openstack_rabbit_quorum_queue?,
+    rabbit_tls: openstack_rabbit_tls?,
+    rabbit_ssl_ca_file: openstack_rabbit_ssl_ca_file,
     transport_url: openstack_transport_url
   )
 end

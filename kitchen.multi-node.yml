@@ -24,7 +24,6 @@ verifier:
         - test/integration/identity
         - test/integration/image
         - test/integration/network
-        - test/integration/ops_messaging
         - test/integration/orchestration
         - test/integration/telemetry_controller
       attrs:
@@ -41,7 +40,6 @@ verifier:
         - test/integration/identity
         - test/integration/image
         - test/integration/network
-        - test/integration/ops_messaging
         - test/integration/orchestration
         - test/integration/telemetry_controller
       attrs:
@@ -56,6 +54,33 @@ verifier:
         - test/integration/telemetry_compute
       attrs:
         - test/integration/multi-node/compute.yml
+      sudo: true
+    - name: mq1
+      backend: ssh
+      hosts_output: mq1
+      user: almalinux
+      profile_locations:
+        - test/integration/messaging_tier
+      attrs:
+        - test/integration/multi-node/mq.yml
+      sudo: true
+    - name: mq2
+      backend: ssh
+      hosts_output: mq2
+      user: almalinux
+      profile_locations:
+        - test/integration/messaging_tier
+      attrs:
+        - test/integration/multi-node/mq.yml
+      sudo: true
+    - name: mq3
+      backend: ssh
+      hosts_output: mq3
+      user: almalinux
+      profile_locations:
+        - test/integration/messaging_tier
+      attrs:
+        - test/integration/multi-node/mq.yml
       sudo: true
 <% if ENV['TF_VAR_region2'] == '1' %>
     - name: controller_region2

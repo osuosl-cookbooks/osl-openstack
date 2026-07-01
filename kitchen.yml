@@ -24,9 +24,13 @@ provisioner:
 
 suites:
   - name: mon
+    excludes:
+      - almalinux-10
     run_list:
       - recipe[osl-openstack::mon]
   - name: ha
+    excludes:
+      - almalinux-10
     attributes:
       osl-openstack:
         databag_item: ha
@@ -35,12 +39,28 @@ suites:
       - recipe[osl-openstack::ha]
       - recipe[osl-openstack::mon]
   - name: ops_messaging
+    excludes:
+      - almalinux-10
     driver_config:
       server_name: "ops-messaging-<%= ENV['USER'] %>"
     run_list:
       - role[openstack_tk]
       - recipe[osl-openstack::ops_messaging]
+  - name: messaging_tier
+    driver_config:
+      server_name: "messaging-tier-<%= ENV['USER'] %>"
+    attributes:
+      osl-openstack:
+        databag_item: messaging_tier
+    run_list:
+      - role[openstack_tk]
+      - recipe[osl-openstack::ops_messaging]
+    verifier:
+      inspec_tests:
+        - test/integration/messaging_tier
   - name: identity
+    excludes:
+      - almalinux-10
     driver_config:
       server_name: "identity-<%= ENV['USER'] %>"
     run_list:
@@ -51,6 +71,8 @@ suites:
         - test/integration/identity
         - test/integration/ops_messaging
   - name: image
+    excludes:
+      - almalinux-10
     driver_config:
       server_name: "image-<%= ENV['USER'] %>"
     run_list:
@@ -65,6 +87,8 @@ suites:
         - test/integration/image
         - test/integration/ops_messaging
   - name: image-local-storage
+    excludes:
+      - almalinux-10
     driver_config:
       server_name: "image-local-storage<%= ENV['USER'] %>"
       user_data: userdata-node1.txt
@@ -81,6 +105,8 @@ suites:
         - test/integration/image
         - test/integration/ops_messaging
   - name: network_controller
+    excludes:
+      - almalinux-10
     driver_config:
       server_name: "network-controller-<%= ENV['USER'] %>"
     run_list:
@@ -94,6 +120,8 @@ suites:
         - test/integration/network
         - test/integration/ops_messaging
   - name: network
+    excludes:
+      - almalinux-10
     driver_config:
       server_name: "network-<%= ENV['USER'] %>"
     run_list:
@@ -111,6 +139,8 @@ suites:
         - test/integration/network
         - test/integration/ops_messaging
   - name: compute_controller
+    excludes:
+      - almalinux-10
     driver_config:
       server_name: "compute-controller-<%= ENV['USER'] %>"
     run_list:
@@ -125,6 +155,8 @@ suites:
         - test/integration/identity
         - test/integration/ops_messaging
   - name: compute_controller_local_storage
+    excludes:
+      - almalinux-10
     driver_config:
       server_name: "compute-controller-<%= ENV['USER'] %>"
       user_data: userdata-node1.txt
@@ -141,6 +173,8 @@ suites:
         - test/integration/identity
         - test/integration/ops_messaging
   - name: compute
+    excludes:
+      - almalinux-10
     driver_config:
       server_name: "compute-<%= ENV['USER'] %>"
     run_list:
@@ -162,6 +196,8 @@ suites:
         - test/integration/ops_messaging
         - test/integration/telemetry_compute
   - name: compute-local-storage
+    excludes:
+      - almalinux-10
     driver_config:
       server_name: "compute-<%= ENV['USER'] %>"
       user_data: userdata-node1.txt
@@ -185,6 +221,8 @@ suites:
         - test/integration/ops_messaging
         - test/integration/telemetry_compute
   - name: dashboard
+    excludes:
+      - almalinux-10
     driver_config:
       server_name: "dashboard-<%= ENV['USER'] %>"
     run_list:
@@ -198,6 +236,8 @@ suites:
         - test/integration/identity
         - test/integration/ops_messaging
   - name: block_storage_controller
+    excludes:
+      - almalinux-10
     driver_config:
       server_name: "block-storage-controller-<%= ENV['USER'] %>"
     run_list:
@@ -212,6 +252,8 @@ suites:
         - test/integration/ops_messaging
         - test/integration/block_storage_controller
   - name: block_storage
+    excludes:
+      - almalinux-10
     driver_config:
       server_name: "block-storage-<%= ENV['USER'] %>"
     run_list:
@@ -233,6 +275,8 @@ suites:
         - test/integration/image
         - test/integration/ops_messaging
   - name: telemetry_controller
+    excludes:
+      - almalinux-10
     driver_config:
       server_name: "telemetry-<%= ENV['USER'] %>"
     run_list:
@@ -251,6 +295,8 @@ suites:
         - test/integration/ops_messaging
         - test/integration/telemetry_controller
   - name: telemetry_compute
+    excludes:
+      - almalinux-10
     driver_config:
       server_name: "telemetry-<%= ENV['USER'] %>"
     run_list:
@@ -270,6 +316,8 @@ suites:
         - test/integration/telemetry_controller
         - test/integration/telemetry_compute
   - name: orchestration
+    excludes:
+      - almalinux-10
     driver_config:
       server_name: "orchestration-<%= ENV['USER'] %>"
     run_list:
@@ -283,6 +331,8 @@ suites:
         - test/integration/ops_messaging
         - test/integration/orchestration
   - name: controller
+    excludes:
+      - almalinux-10
     driver_config:
       server_name: "controller-<%= ENV['USER'] %>"
       flavor_ref: 'r2.local.8c24m100d'
@@ -305,6 +355,8 @@ suites:
         - test/integration/orchestration
         - test/integration/telemetry_controller
   - name: allinone
+    excludes:
+      - almalinux-10
     driver_config:
       server_name: "allinone-<%= ENV['USER'] %>"
       flavor_ref: 'r2.local.8c24m100d'
@@ -339,6 +391,8 @@ suites:
         - test/integration/telemetry_compute
         - test/integration/telemetry_controller
   - name: upgrade
+    excludes:
+      - almalinux-10
     driver_config:
       flavor_ref: 'r2.local.8c24m100d'
       server_name: "upgrade-<%= ENV['USER'] %>"

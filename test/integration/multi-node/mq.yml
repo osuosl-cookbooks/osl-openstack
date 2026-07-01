@@ -1,0 +1,6 @@
+# Inputs for the mq1/mq2/mq3 tier nodes: assert the 'multinode' vhost,
+# 3-node membership, and CMR on top of the base TLS checks.
+vhost: multinode
+vhost_user: openstack
+cluster_size: 3
+cmr_target_group_size: 3

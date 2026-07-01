@@ -162,6 +162,16 @@ Notes:
 - `network.ha = true` flips
   [templates/neutron.conf.erb:14-16](../templates/neutron.conf.erb#L14-L16).
   Existing routers stay non-HA until you migrate them (D2).
+- **Do NOT set `messaging.quorum_queues` in this MR.** Quorum queues
+  (durable, Raft-replicated — the real fix for the classic-queue loss
+  that desyncs the cluster on a node restart) are gated on a *separate*
+  `messaging.quorum_queues` flag, not the `ha` block, on purpose: a
+  queue's type is immutable and a quorum queue's replica set is fixed
+  at declaration, so the queues must be created only once **both**
+  controllers are clustered. Enabling them mid-cutover would error out
+  and/or yield 1-replica queues. Leave the flag off here and enable it
+  as a deliberate post-cutover step — see
+  [C4 — Enable RabbitMQ quorum queues](#c4--enable-rabbitmq-quorum-queues).
 - Don't remove the old single-string forms — *replace* them. The old
   string form will not be valid once the keys become arrays.
 - Get the MR reviewed and approved, but **leave it un-merged** until
@@ -240,7 +250,16 @@ Confirm:
 # C. HA cutover (THE OUTAGE WINDOW)
 
 This is the maintenance window. Steps C1–C3 take **~30s–2m** of API
-unavailability total (mostly during C2's service restarts).
+unavailability total (mostly during C2's service restarts); C4 adds a
+longer outage while all OpenStack daemons stop for the RabbitMQ purge.
+
+**Before you begin, pause the chef-client cron on both controllers and
+every hypervisor** so an automatic converge can't fire mid-cutover and
+restart services or recreate queues out from under you. The cron fires
+at the top of the hour and at :30 and a run takes up to ~10 minutes, so
+**don't begin a stop/restart step inside the :00–:10 or :30–:40
+windows**, and confirm none is in flight (`pgrep -af chef-client`)
+before starting. Re-enable it in D4 once the migration is verified.
 
 ## C1 — Merge the data-bag MR
 
@@ -259,11 +278,12 @@ the same port.
 1. **Drain the manual VIP** on `controller1`. The VIP must not
    already be bound to the interface when keepalived starts
    (keepalived will not steal an address it didn't put there, and
-   the duplicate bind will look like split-brain). Either:
-   - Reuse the existing IP: `ip addr del <vip>/<mask> dev <vrrp-iface>`
-     (immediately before the chef run), **or**
-   - Tear down the systemd unit / NetworkManager profile / shell
-     script that pins the VIP today.
+   the duplicate bind will look like split-brain). Don't run a manual
+   `ip addr del` — instead **remove the VIP from the network data bag**
+   so chef tears it down for you: drop the VIP entry from the
+   interface definition and merge that change before the cutover run.
+   The chef run in C2 then converges the interface without the VIP,
+   leaving it free for keepalived to claim.
 
 2. **Pre-cutover snapshot** for rollback comparison:
 
@@ -274,7 +294,46 @@ the same port.
    openstack endpoint list > /root/pre-ha-endpoints.txt
    ```
 
-3. **Run chef on `controller1`**:
+3. **Stop the listeners that hold the API ports** *before* the chef
+   run. HAProxy is going to bind the VIP on the same ports these
+   processes currently hold on `0.0.0.0`. If they're still listening
+   when HAProxy starts, the bind fails and the run aborts. Stop Apache
+   and every native daemon that isn't fronted by Apache:
+
+   ```bash
+   systemctl stop httpd
+   systemctl stop \
+     openstack-glance-api \
+     neutron-server \
+     openstack-heat-api \
+     openstack-heat-api-cfn \
+     openstack-nova-novncproxy
+   ```
+
+   Then **confirm nothing is still bound** to the API ports.
+   `neutron-server` in particular doesn't always release its socket
+   on stop — its worker processes can linger:
+
+   ```bash
+   ss -tlnp | grep -E ':(5000|8774|8776|9292|9696|8004|8000|6080|80|443) '
+   ```
+
+   If anything is still listening, kill the leftover PIDs (the
+   `pid=` is shown in the `ss` output) and re-check:
+
+   ```bash
+   kill -9 <pid>
+   ```
+
+4. **Clear the old Apache vhosts** so the first chef run can re-render
+   them on the per-host listen IP without the package-default
+   wildcard vhosts racing HAProxy for the port:
+
+   ```bash
+   rm -f /etc/httpd/sites-enabled/*
+   ```
+
+5. **Run chef on `controller1`**:
 
    ```bash
    sudo cinc-client 2>&1 | tee /root/ha-cutover.log
@@ -299,7 +358,7 @@ the same port.
      delayed restart that fires after the native daemons have
      released their wildcard sockets.
 
-4. **Verify on `controller1`**:
+6. **Verify on `controller1`**:
 
    ```bash
    # VIP held here
@@ -320,7 +379,7 @@ the same port.
    openstack server list
    ```
 
-5. **Second chef pass** on `controller1`. Must be idempotent — only
+7. **Second chef pass** on `controller1`. Must be idempotent — only
    `service[haproxy] :reload` (if any haproxy bind set changed)
    should fire. Anything else updating means an ordering bug.
 
@@ -367,6 +426,160 @@ If anything in this step fails badly, see [Rollback](#rollback).
    # API still works
    openstack endpoint list
    ```
+
+4. **Expect a degraded control plane until C4 — don't bounce daemons
+   here.** The `join_cluster` step restarts RabbitMQ underneath the
+   already-running controller daemons (conductor, scheduler,
+   neutron-server, the neutron/ceilometer agents) and the hypervisor
+   agents. oslo.messaging reconnects but can come back half-dead: it
+   re-declares its `*_fanout_*` queues (so casts/notifications work)
+   yet never re-subscribes to its shared RPC *call* queue — so every
+   `call` silently times out (`MessagingTimeout: Timed out waiting for
+   a reply ...`, "Timed out waiting for nova-conductor") while the
+   process looks healthy. **Don't restart them here**: C4 (next) stops,
+   purges, and restarts every daemon cleanly, which resolves this *and*
+   migrates to quorum in one pass — a restart now would just be undone
+   seconds later.
+
+   Only if you must pause between C3 and C4 (leaving `controller2`
+   serving traffic on classic queues) do you need to restore RPC in the
+   interim: restart the full controller daemon set plus `httpd` (the
+   stop list in [C4 step 2](#c4--enable-rabbitmq-quorum-queues)), then
+   `openstack-nova-compute` / `openstack-ceilometer-compute` /
+   `neutron-linuxbridge-agent` on every hypervisor, and confirm the
+   shared `conductor` call queue is
+   consumed from both nodes:
+   `rabbitmqctl list_queues name consumers | grep -E '^conductor[[:space:]]'`.
+
+---
+
+## C4 — Enable RabbitMQ quorum queues
+
+> **Superseded for production.** Enabling quorum on the controllers'
+> *2-node* RabbitMQ cluster yields 2-member queues that tolerate **zero**
+> failures — rebooting either controller drops below majority and NACKs
+> publishes. The production answer is the shared **3-node** tier in
+> [SHARED_MESSAGING_TIER.md](SHARED_MESSAGING_TIER.md). Only run C4
+> in-place if this cloud's RabbitMQ cluster has **≥3 members**; on a
+> 2-node controller pair it is not real HA.
+
+Do this in the **same maintenance window as C3**, immediately after the
+C3 cluster-health check and **before the D1 failover test**. Ordering
+matters: running D1 against classic queues would validate failover
+behavior that isn't your production config, and every minute the
+cluster runs on classic queues is exposure to the node-restart desync
+this whole exercise is fixing. Requires both rabbit nodes clustered
+with `partitions: (none)` (verified at the end of C3).
+
+**Why it's its own step and not the `ha` block.** Quorum queues
+(durable, Raft-replicated) are what stop a clustered rabbit node from
+losing its non-replicated transient queues — and desyncing the cluster
+— when it restarts. Two RabbitMQ rules force *when* they can be turned
+on:
+
+- A queue's **type is immutable** — you can't convert classic→quorum in
+  place, so the existing queues must be deleted and redeclared
+  (declaring over a surviving classic queue fails `PRECONDITION_FAILED`).
+- A quorum queue's **replica set is fixed at declaration** and does
+  **not** auto-grow when a node joins later (RabbitMQ 3.9 has no
+  Continuous Membership Reconciliation). So the queues must be
+  (re)declared while **both** controllers are already in the cluster —
+  declaring them on `controller1` before C3 would leave them
+  single-replica and not actually HA.
+
+Hence this lands *after* C3 (cluster formed), never before: enable
+quorum with all clients stopped and rabbit purged, so every queue is
+recreated as quorum with a replica on each node.
+
+1. **Merge a one-line data-bag change** adding the flag (this is the
+   merge you deliberately held back from the C1 MR):
+
+   ```jsonc
+   "messaging": {
+     "endpoint": ["controller1.<domain>", "controller2.<domain>"],
+     "quorum_queues": true
+     // ...existing keys
+   }
+   ```
+   This flips `openstack_rabbit_quorum_queue?`
+   ([libraries/helpers.rb](../libraries/helpers.rb)), which makes every
+   service render `[oslo_messaging_rabbit]\nrabbit_quorum_queue = true`.
+   Merging alone changes nothing until the steps below run.
+
+2. **Stop every RabbitMQ client** so nothing recreates a classic queue
+   mid-migration. On **both controllers** (`httpd` covers the mod_wsgi
+   services — keystone, nova-api, nova-metadata, placement, cinder-api,
+   horizon):
+
+   ```bash
+   systemctl stop httpd \
+     openstack-nova-conductor openstack-nova-scheduler openstack-nova-novncproxy \
+     neutron-server neutron-dhcp-agent neutron-l3-agent neutron-linuxbridge-agent \
+     neutron-metadata-agent neutron-metering-agent \
+     openstack-cinder-scheduler openstack-cinder-volume \
+     openstack-heat-api openstack-heat-api-cfn openstack-heat-engine \
+     openstack-glance-api \
+     openstack-ceilometer-central openstack-ceilometer-notification
+   # catch any stragglers — must come back empty before continuing:
+   systemctl list-units 'openstack-*' 'neutron-*' --state=running
+   ```
+
+   And on **every hypervisor**:
+
+   ```bash
+   systemctl stop openstack-nova-compute openstack-ceilometer-compute \
+     neutron-linuxbridge-agent
+   # confirm nothing OpenStack is still running on the hypervisor:
+   systemctl list-units 'openstack-*' 'neutron-*' --state=running
+   ```
+
+3. **Purge the existing (classic) queues** while the clients are down,
+   so the redeclare can't collide. **Delete and recreate the `/` vhost**
+   — this drops every queue, exchange, and binding at once, including
+   *unresponsive* ones, without enumerating them. Do **not** use a
+   `list_queues`/`delete_queue` loop: `list_queues` hangs with `Some
+   queue(s) are unresponsive` the moment a classic queue is wedged, so
+   the loop never runs. On **one** controller (it's cluster-wide):
+
+   ```bash
+   rabbitmqctl delete_vhost /
+   rabbitmqctl add_vhost /
+   rabbitmqctl set_permissions -p / <rabbit-user> ".*" ".*" ".*"
+   rabbitmqctl list_queues -p / name | wc -l   # 0 — clean slate
+   ```
+
+   The rabbit user (`messaging.user`) survives — users are global; you
+   only re-grant its permissions on the recreated vhost. If
+   `delete_vhost` itself hangs on a wedged queue process, fully **stop**
+   `rabbitmq-server` on **both** nodes, **start** them again, then
+   re-run the three commands.
+
+4. **Run chef on both controllers.** It renders the quorum config and
+   restarts the daemons; with rabbit purged and both nodes clustered,
+   every queue is declared fresh as `quorum` with a replica on each
+   node. Conductor first is fine, but a full converge handles it.
+
+5. **Start the hypervisor agents** — `openstack-nova-compute`,
+   `openstack-ceilometer-compute`, `neutron-linuxbridge-agent` (stopped
+   in step 2) — so they reconnect and declare their own queues as
+   quorum.
+
+6. **Verify** the queues are quorum and replicated on both nodes:
+
+   ```bash
+   # type column should read "quorum" for the RPC queues
+   rabbitmqctl list_queues name type members | grep -E 'conductor|scheduler|q-'
+   # members should list BOTH rabbit@controller1 and rabbit@controller2
+   openstack compute service list && openstack network agent list
+   ```
+
+   If a service logs `PRECONDITION_FAILED ... inequivalent arg
+   'x-queue-type'`, a classic queue of that name survived the purge —
+   stop that service, `rabbitmqctl delete_queue <name>`, start it again.
+
+`reply_*` and `*_fanout_*` queues stay transient/classic by design
+(oslo doesn't make them quorum, and they can't be); only the durable
+RPC/notification queues become quorum. That's expected.
 
 ---
 
@@ -445,30 +658,39 @@ second agent on its own once `controller2`'s L3 agent is up and
 `openstack network agent add router <agent_id> <router_id>` if
 needed.
 
-For each non-HA router that needs HA:
+Flip every non-HA router in one pass. Neutron only lets you flip
+`--ha` while the router is admin-down; the gateway, fixed IPs, and any
+attached floating IPs are preserved across the flip — no need to
+unset/re-attach.
 
 ```bash
-ROUTER=<router-id>
-
-# Neutron only lets you flip --ha while the router is admin-down.
-# The gateway, fixed IPs, and any attached floating IPs are
-# preserved across the flip - no need to unset/re-attach.
-openstack router set --disable --ha $ROUTER
-openstack router set --enable $ROUTER
+# Same selector as above: every router whose HA column is False.
+openstack router list --long -f value -c ID -c HA \
+  | awk '$NF == "False" { print $1 }' \
+  | while read -r ROUTER; do
+      echo "=== flipping $ROUTER ==="
+      openstack router set --disable --ha "$ROUTER" || { echo "FAILED to disable/set-ha $ROUTER"; continue; }
+      openstack router set --enable "$ROUTER"       || echo "FAILED to re-enable $ROUTER"
+    done
 ```
 
-Verify it actually flipped:
+Then verify every router flipped and picked up two L3 agents:
 
 ```bash
-openstack router show $ROUTER -c ha
-openstack network agent list --router $ROUTER
-# Should show two L3 agents binding the router once
+openstack router list -f value -c ID -c Name | while read -r id name; do
+  ha=$(openstack router show "$id" -c ha -f value)
+  count=$(openstack network agent list --router "$id" -f value | wc -l)
+  echo "$ha $count $id $name"
+done
+# Want: ha=True and count=2 for every router once
 # max_l3_agents_per_router=2 + dhcp_agents_per_network=2 are in play.
 ```
 
 Each flip causes a brief data-plane interruption for tenants behind
-that router (the L3 agent re-creates the qrouter namespace). Schedule
-per-tenant.
+that router (the L3 agent re-creates the qrouter namespace). Looping
+hits every tenant in quick succession, so run the loop inside the
+maintenance window — or break it into per-tenant batches if you need
+to schedule the interruptions individually.
 
 **If `set --ha` fails on your neutron version** ("router has a
 gateway", "cannot change ha on attached router", etc.), you have to
@@ -496,6 +718,9 @@ volume operation.
 
 ## D4 — Post-migration cleanup
 
+- [ ] **Re-enable the chef-client cron** on both controllers and every
+      hypervisor (paused at the top of phase C). Run one converge by
+      hand first and confirm it's a no-op / no unexpected restarts.
 - [ ] Remove the manual-VIP scripts / NetworkManager profiles /
       systemd units from `controller1`. They're no longer load-bearing
       and will conflict if accidentally re-enabled.
@@ -590,3 +815,76 @@ that point is forward — fix the issue rather than tear it down.
   ([test/integration/data_bags/openstack/ha.json](../test/integration/data_bags/openstack/ha.json))
   exercises only the `osl-openstack::ha` recipe in isolation, not
   the full controller stack.
+
+## Recovering an inconsistent RabbitMQ cluster
+
+Symptoms: `rabbitmqctl list_queues` returns **different totals on each
+node**, or hangs with *"Some queue(s) are unresponsive"*; services log
+`MessagingTimeout` even though `cluster_status` shows
+`Network Partitions: (none)`. This happens when a clustered rabbit node
+is **rebooted or restarted under load** — classic transient queues
+(`reply_*`, `*_fanout_*`) are not replicated, so the nodes' mnesia
+views diverge and don't reconverge. (Quorum queues, enabled by the `ha`
+block, are the fix going forward; this runbook recovers a cluster that
+got into the bad state.)
+
+OpenStack RPC queue state is **disposable** — durable state lives in
+MySQL, and transient queues do not survive a broker restart. So the
+recovery is: stop every client, flush the brokers, confirm the nodes
+agree, restart clients. The VIP is unaffected (keepalived is
+independent of the rabbit app).
+
+**First, pause the chef-client cron on all controllers and
+hypervisors** (re-enable when done) — an automatic converge mid-recovery
+will restart services and recreate queues, undoing the flush. Don't
+start a step inside the :00–:10 or :30–:40 cron windows, and check
+`pgrep -af chef-client` first.
+
+1. **Stop ALL OpenStack clients** — `httpd` + every standalone daemon
+   on **both controllers** (the explicit stop list is in
+   [C4 step 2](#c4--enable-rabbitmq-quorum-queues)), and
+   `openstack-nova-compute` + `openstack-ceilometer-compute` +
+   `neutron-linuxbridge-agent` on **every hypervisor**. Confirm nothing
+   is left:
+   `systemctl list-units 'openstack-*' 'neutron-*' --state=running`.
+
+2. **Flush transient queues** with a rolling broker restart (keeps the
+   cluster formed). Restart the BACKUP/peer first, then the VIP holder:
+   `systemctl restart rabbitmq-server` on controller2, wait for
+   `cluster_status` healthy, then the same on controller1.
+
+3. **Gate — the two nodes must now AGREE.** Run on both:
+   `rabbitmqctl list_queues name | wc -l`. If the counts match and are
+   small (just the durable `notifications.*` survivors), the cluster is
+   consistent → go to step 5.
+
+4. **If they still disagree** (or `list_queues` hangs on unresponsive
+   queues), rebuild from a single authoritative node. With clients
+   still stopped, make controller1 the clean seed:
+
+   ```bash
+   # controller2: leave the cluster
+   rabbitmqctl stop_app
+   # controller1: drop controller2, then flush
+   rabbitmqctl forget_cluster_node rabbit@controller2.<domain>
+   systemctl restart rabbitmq-server
+   rabbitmqctl list_queues name        # fast now; users/perms intact
+   # controller2: wipe and rejoin
+   rabbitmqctl reset
+   rabbitmqctl join_cluster rabbit@controller1.<domain>
+   rabbitmqctl start_app
+   ```
+   (If `reset` hangs: `systemctl stop rabbitmq-server` on controller2,
+   `rm -rf /var/lib/rabbitmq/mnesia/*`, start it, then `stop_app` /
+   `join_cluster` / `start_app`.) Re-run the step-3 gate.
+
+5. **Start OpenStack back** — controllers first (conductor first, then
+   the other daemons, the neutron/ceilometer agents, then `httpd`),
+   then the hypervisors. Confirm the `conductor` queue shows the same
+   consumer count from both nodes, then `openstack compute service
+   list` / `network agent list` / `server list`.
+
+Do not skip step 1: a broker flush with clients still connected just
+re-creates the inconsistent transient queues. And until the quorum-queue
+config is deployed everywhere, **don't reboot a controller** without
+draining clients first.

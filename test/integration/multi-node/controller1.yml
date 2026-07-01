@@ -1,9 +1,11 @@
 db_endpoint: db.testing.osuosl.org
 physical_interface_mappings: public:eth1.42
 prometheus_endpoint: controller.testing.osuosl.org
-# RabbitMQ / memcached are clustered on the controller backends, not the
-# VIP, so transport_url / memcache(d)_servers point at controller1.
-messaging_host: controller1.testing.osuosl.org
+# RabbitMQ moved to the mq tier (mq1, TLS 5671); memcached stays on the
+# controllers.
+messaging_host: mq1.testing.osuosl.org
+messaging_port: 5671
+memcached_host: controller1.testing.osuosl.org
 # Skip ssl-baseline in multi-node: Apache binds the per-host private IP
 # (10.1.2.3), which the InSpec runner cannot reach (sslshake opens a
 # direct TCP socket from the runner, not via the SSH transport).
