@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+18.4.0 (2026-07-15)
+-------------------
+- Messaging tier: production deployment docs + chef-managed plugins
+
 18.3.0 (2026-07-01)
 -------------------
 - Add shared RabbitMQ messaging tier (TLS + quorum queues)
