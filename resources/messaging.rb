@@ -23,6 +23,9 @@ property :tls_only, [true, false], default: false
 # up to this size.
 property :cmr_target_group_size, Integer
 
+# RabbitMQ plugins to enable (management UI + prometheus metrics).
+property :plugins, Array, default: %w(rabbitmq_management rabbitmq_prometheus)
+
 action :create do
   # rabbitmq-server comes from the Messaging SIG repo below, not the RDO
   # repos (no EL10 build), so we don't pull osl_repos_openstack here -
@@ -140,6 +143,14 @@ action :create do
             })
     unit_name 'rabbitmq-server.service'
     notifies :restart, 'service[rabbitmq-server]'
+  end
+
+  # Hot-enables on the running broker; no restart needed.
+  new_resource.plugins.each do |plugin|
+    execute "rabbitmq: enable plugin #{plugin}" do
+      command "rabbitmq-plugins enable #{plugin}"
+      not_if { openstack_rabbitmq_plugin?(plugin) }
+    end
   end
 
   execute "rabbitmq: add user #{new_resource.user}" do

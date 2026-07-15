@@ -20,7 +20,6 @@
 include_recipe 'osl-nrpe'
 
 s = os_secrets
-cluster = s['database_server']['suffix']
 
 # Increase load threshold on openpower nodes (double the default values)
 if node['kernel']['machine'] == 'ppc64le'
@@ -88,7 +87,7 @@ if node['osl-openstack']['node_type'] == 'controller'
   end
 
   file '/usr/local/etc/os_cluster' do
-    content "export OS_CLUSTER=#{cluster}\n"
+    content "export OS_CLUSTER=#{s['database_server']['suffix']}\n"
   end
 
   chef_gem 'prometheus_reporter' do
@@ -107,5 +106,52 @@ if node['osl-openstack']['node_type'] == 'controller'
   cron 'openstack-prometheus' do
     command '/usr/local/libexec/openstack-prometheus'
     minute '*/10'
+  end
+end
+
+# Shared RabbitMQ messaging tier nodes.
+if node['osl-openstack']['node_type'] == 'messaging'
+  m = s['messaging']
+  listen_port = m['tls'] ? 5671 : 5672
+
+  # check_rabbitmq_cluster parses cluster_status JSON with python3.
+  package 'python3'
+
+  # rabbitmq-diagnostics/rabbitmqctl need the Erlang cookie (root).
+  node.default['authorization']['sudo']['include_sudoers_d'] = true
+  %w(nagios nrpe).each do |u|
+    sudo "check_rabbitmq-#{u}" do
+      user u
+      runas 'root'
+      nopasswd true
+      commands %w(
+        /usr/sbin/rabbitmq-diagnostics
+        /usr/sbin/rabbitmqctl
+      )
+    end
+  end
+
+  cookbook_file "#{node['nrpe']['plugin_dir']}/check_rabbitmq_cluster" do
+    mode '755'
+  end
+
+  nrpe_check 'check_rabbitmq_running' do
+    command 'sudo /usr/sbin/rabbitmq-diagnostics'
+    parameters '-q check_running'
+  end
+
+  nrpe_check 'check_rabbitmq_alarms' do
+    command 'sudo /usr/sbin/rabbitmq-diagnostics'
+    parameters '-q check_alarms'
+  end
+
+  nrpe_check 'check_rabbitmq_cluster' do
+    command "#{node['nrpe']['plugin_dir']}/check_rabbitmq_cluster"
+    parameters((m['cmr_target_group_size'] || 3).to_s)
+  end
+
+  nrpe_check 'check_rabbitmq_listener' do
+    command 'sudo /usr/sbin/rabbitmq-diagnostics'
+    parameters "-q check_port_listener #{listen_port}"
   end
 end

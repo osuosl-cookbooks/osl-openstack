@@ -1,6 +1,9 @@
 # Design: shared 3-node RabbitMQ messaging tier
 
-Status: proposal / pre-implementation.
+Status: implemented in the cookbook and validated in the multi-node test
+env (3-node EL10 tier, TLS-only, CMR, quorum queues verified). See
+[Production deployment](#production-deployment-bringing-the-tier-online)
+for the build-out steps.
 
 ## Motivation
 
@@ -118,11 +121,10 @@ the controllers — they no longer host a broker.
    holds 2 of 3), validating the production topology in CI before any
    real cloud cuts over. This is also the rig to develop the
    `messaging.vhost` helper and tier-provisioning recipe against.
-   **Status: unimplemented** — no `mq*` nodes exist, `main.tf` still
-   gives the controllers `ops_messaging`, `multinode.json` still has the
-   embedded 2-node schema, and the kitchen/terraform platforms are
-   EL8/EL9 only (no EL10 target for a 4.2 tier). Until this lands, the
-   "CI proves the production topology" claim is **not yet met**.
+   **Status: done** — `main.tf` deploys mq1/mq2/mq3 (EL10, converged
+   before the controllers), the controllers no longer run
+   `ops_messaging`, and inspec asserts the 3-node cluster, CMR, TLS-only
+   listener, and a real quorum queue in the cloud vhost.
 7. **RabbitMQ 4.2 repo support — DONE.** `openstack_rabbitmq_repo`
    ([libraries/helpers.rb:52-64](../libraries/helpers.rb#L52)) now has a
    `when 10` arm pointing at the SIG **`rabbitmq-4`** subdir (4.x).
@@ -132,16 +134,143 @@ the controllers — they no longer host a broker.
    Messaging key in `resources/messaging.rb` signs `rabbitmq-4` too.
    Remaining: an EL10 test platform to exercise it in CI (change 6).
 
+## Production deployment: bringing the tier online
+
+This is Phase 0 of the migration in concrete steps — build and verify
+the tier once, before any cloud cuts over. Everything the broker needs
+(repo, package, dir ownership, cookie, clustering, TLS, vhosts, CMR,
+firewall) is handled by `osl-openstack::ops_messaging`; the manual work
+is VMs, DNS, a data bag, a role, and converge order.
+
+### 1. Provision the VMs
+
+Three identical Ganeti VMs per [VM specs](#vm-specs): **AlmaLinux 10**,
+8 vCPU / 16 GB / 60-100 GB **plain (local) SSD** disk — no DRBD — and
+**one per physical host** (anti-affinity is load-bearing; see VM specs).
+Add DNS A records for `mq1`/`mq2`/`mq3.bak.osuosl.org`. The standard
+wildcard cert does not cover this domain, so the tier needs a
+`*.bak.osuosl.org` cert in its own `certificates` bag item, selected via
+`messaging.ssl_search_id` (step 2).
+
+### 2. Create the tier data bag item
+
+The mq nodes read their own encrypted `openstack` bag item — they are
+not part of any cloud's item. Generate the Erlang cookie and per-cloud
+passwords (`openssl rand -hex 20` each):
+
+```json
+{
+  "id": "messaging_tier",
+  "messaging": {
+    "user": "openstack",
+    "pass": "<admin pass>",
+    "cookie": "<cookie>",
+    "primary_node": "rabbit@mq1.bak.osuosl.org",
+    "tls": true,
+    "tls_only": true,
+    "ssl_search_id": "wildcard-bak",
+    "cmr_target_group_size": 3,
+    "vhosts": [
+      { "vhost": "arm",   "user": "arm",   "pass": "<arm pass>" },
+      { "vhost": "ppc64", "user": "ppc64", "pass": "<ppc64 pass>" },
+      { "vhost": "x86",   "user": "x86",   "pass": "<x86 pass>" }
+    ]
+  }
+}
+```
+
+`tls_only: true` from day one: no cloud ever speaks plaintext to the
+tier (each arrives with `messaging.tls` at its cutover), so 5672 never
+needs to be offered. `ssl_search_id` names the `certificates` bag item
+holding the `*.bak.osuosl.org` cert (`wildcard-bak` here; defaults to
+`wildcard` when unset).
+
+### 3. Create the role
+
+`roles/openstack_messaging.json`, mirroring how the per-cloud roles
+select their bag item:
+
+```json
+{
+  "name": "openstack_messaging",
+  "description": "Shared RabbitMQ messaging tier node",
+  "json_class": "Chef::Role",
+  "chef_type": "role",
+  "run_list": [
+    "recipe[osl-openstack::ops_messaging]",
+    "recipe[osl-openstack::mon]"
+  ],
+  "default_attributes": {
+    "osl-openstack": {
+      "databag_item": "messaging_tier",
+      "node_type": "messaging"
+    }
+  }
+}
+```
+
+Requires the osl-firewall release with 5671/15692 in `rabbitmq_mgt`
+(already merged) — the resource opens all tier ports itself, OSL-only.
+
+### 4. Bootstrap, then converge in order: mq1 first
+
+Bootstrap all three nodes with the normal method (no role), then add
+the role and converge **one node at a time, mq1 (the primary) first** —
+it starts the broker, writes the TLS config, and creates the three
+vhosts/users. mq2 and mq3 join mq1 (`join_cluster`) and receive the
+vhosts/users via Khepri replication.
+
+```
+# per node, mq1 first:
+knife node edit mq1.bak.osuosl.org   # add role[openstack_messaging] to the run list
+ssh mq1.bak.osuosl.org sudo cinc-client
+# verify (step 5 subset), then repeat for mq2, then mq3
+```
+
+### 5. Verify the tier
+
+```
+# on each mq node
+rabbitmqctl cluster_status              # 3 running nodes, khepri store
+rabbitmqctl -t 60 await_online_nodes 3
+rabbitmqctl -q list_vhosts              # arm / ppc64 / x86 on ALL nodes
+ss -tlnp | grep -E ':(5671|5672)'       # 5671 listening, 5672 absent
+
+# from a controller of each cloud (reachability + cert)
+openssl s_client -connect mq1.bak.osuosl.org:5671 -brief </dev/null
+```
+
+`list_vhosts` succeeding on mq2/mq3 doubles as the replication check —
+the vhosts only exist there via Khepri.
+
+### 6. Monitoring — before the first cutover
+
+Chef handles the node side: the management + prometheus plugins are
+enabled by default (`messaging.plugins` overrides), the mon recipe
+(via `node_type: messaging`) installs the NRPE checks from
+[Security & monitoring](#security--monitoring), and the Prometheus
+server scrapes the tier via the `rabbitmq` job in
+`osl-prometheus::server`. Remaining manual work: the Nagios server
+service definitions for the new checks, the alert rules, and the
+3-VMs-on-3-distinct-Ganeti-hosts check. Paging on quorum loss is the
+blast-radius mitigation — it must exist before a cloud depends on the
+tier.
+
+### 7. Failover validation
+
+While nothing depends on the tier yet, reboot one mq node: the other
+two must keep serving (`await_online_nodes 2` succeeds), and the
+rebooted node must rejoin to 3. This is the exact failure the tier
+exists to survive — cheapest to prove now.
+
+Then start the per-cloud cutovers below, in the decided order
+`arm → ppc64 → x86`.
+
 ## Migration (per cloud, one at a time)
 
-Stand up the tier first, then cut each cloud over in its own window.
-
-**Phase 0 — build the tier (once):**
-1. Provision 3 rabbit VMs; cluster them; verify `cluster_status` shows
-   3 running nodes, `partitions: (none)`, and the Khepri metadata store.
-   Configure the TLS listener (5671, wildcard cert) and open the tier
-   firewall (5671, plus 5672 during migration) to the cloud subnets.
-2. Pre-create each cloud's vhost + user.
+Stand up the tier first
+([Production deployment](#production-deployment-bringing-the-tier-online)),
+then cut each cloud over in its own window.
 
 **Phase N — cut over one cloud:**
 1. Pause the chef-client cron on that cloud's controllers + hypervisors.
@@ -217,9 +346,12 @@ tier node → quorum holds (2 of 3) → all clouds keep RPC.
 ### TLS (decided: yes — TLS on 5671, wildcard cert)
 
 Per-cloud AMQP creds now cross the network to a shared tier, so
-client↔broker traffic is TLS. **Reuse the existing wildcard cert** (the
-`certificates/wildcard` data bag haproxy already uses): `*.<domain>`
-covers `mq1`/`mq2`/`mq3.<domain>`, so one cert serves all three nodes.
+client↔broker traffic is TLS. One wildcard cert serves all three nodes;
+`messaging.ssl_search_id` names the `certificates` bag item holding it
+(default `wildcard`). Production runs the tier under `bak.osuosl.org`,
+which the standard wildcard does **not** cover, so it uses its own
+`*.bak.osuosl.org` cert item (see
+[Production deployment](#production-deployment-bringing-the-tier-online)).
 
 - **Broker:** RabbitMQ TLS listener on **5671** (AMQPS) via
   `rabbitmq.conf` `ssl_options` — certfile/keyfile from the wildcard
@@ -232,25 +364,26 @@ covers `mq1`/`mq2`/`mq3.<domain>`, so one cert serves all three nodes.
   endpoint port is **5671** — the `openstack_transport_url` helper
   switches the port when a new `messaging.tls` flag is set (folds into
   the vhost change, cookbook change 1).
-- **Migration:** keep 5672 (plaintext) open during the per-cloud
-  cutovers, then **disable the plaintext listener** (`listeners.tcp =
-  none`) once all three clouds are on 5671. Tier firewall: open 5671,
-  close 5672 at the end.
+- **Migration:** every cloud connects over TLS from its cutover, so the
+  tier runs `tls_only` (`listeners.tcp = none`) from day one — 5672 is
+  never offered.
 
 ### Monitoring (Nagios + Prometheus)
 
 - **Prometheus:** RabbitMQ 4.2 ships the built-in `rabbitmq_prometheus`
-  plugin — scrape `/metrics` on **15692** of all 3 nodes (+ node_exporter
-  for disk / fsync latency). Alert on: memory/disk-free alarms
+  plugin (chef-enabled by default); the `rabbitmq` scrape job in
+  `osl-prometheus::server` reads `/metrics` on **15692** of all 3 nodes
+  (+ node_exporter for disk / fsync latency). Alert on: memory/disk-free alarms
   (`rabbitmq_alarms_*`); cluster size < 3 nodes; **any quorum queue
   without an online majority / no leader** (the failure this design
   exists to survive); queue depth not draining
   (`rabbitmq_queue_messages_ready`); FDs near limit; connection-count
   spikes; publish-confirm latency (fsync proxy).
-- **Nagios (NRPE, via the `osl-openstack::mon` pattern):** per-node
-  `rabbitmq-diagnostics` checks — `ping`/`check_running`, `check_alarms`,
-  `cluster_status` (expect 3 nodes) — plus a TCP check on **5671**. Page
-  on node down, alarm set, or < 3 members.
+- **Nagios (NRPE, chef-managed):** `osl-openstack::mon` on `node_type`
+  `messaging` installs per-node checks — `check_rabbitmq_running`,
+  `check_rabbitmq_alarms`, `check_rabbitmq_cluster` (expect 3 running
+  members, from `cmr_target_group_size`), and `check_rabbitmq_listener`
+  (5671). Page on node down, alarm set, or < 3 members.
 - This is the concrete form of the blast-radius mitigation: since one
   incident hits all three clouds, the quorum-loss and alarm checks must
   **page**, not just dashboard.
@@ -369,8 +502,9 @@ remain on 3 distinct hosts after any migration.
    Trade-off to manage: whichever cloud goes last sits on the fragile
    embedded 2-node broker the longest, so keep the gaps between cutovers
    short.
-6. **TLS:** yes — TLS on **5671** using the existing wildcard cert; plain
-   5672 disabled after all clouds migrate. See
+6. **TLS:** yes — TLS on **5671**, cert selected by
+   `messaging.ssl_search_id` (prod: `*.bak.osuosl.org`); plaintext 5672
+   never offered (`tls_only`). See
    [Security & monitoring](#security--monitoring).
 7. **Monitoring:** Nagios (NRPE `rabbitmq-diagnostics` checks) +
    Prometheus (`rabbitmq_prometheus` on 15692), paging on quorum loss /
@@ -381,13 +515,8 @@ remain on 3 distinct hosts after any migration.
 
 ## Open items before build
 
-TLS, monitoring, secrets, migration order, and the EL10 repo arm are now
-decided/done (see Decisions, Security & monitoring, cookbook change 7).
-Remaining:
-- **EL10 in the test matrix.** Unit/integration platforms are EL8/EL9
-  only; add an AlmaLinux-10 platform so the `rabbitmq-4` repo arm and a
-  4.2 tier are exercised in CI (part of change 6).
-- **osl-firewall:** add 5671 + 15692 to the `rabbitmq_mgt` named port.
-- **Build the tier code:** `messaging.vhost` + `messaging.tls` in the
-  helper/templates, vhost-aware tier provisioning, drop `ops_messaging`
-  from controllers (changes 1-3, 6).
+All done: EL10 is in the test matrix (the `messaging_tier` kitchen suite
+and the multi-node terraform env), osl-firewall ships 5671/15692 in
+`rabbitmq_mgt`, and the tier code (changes 1-3, 6) is implemented and
+verified in the multi-node env. Production build-out steps:
+[Production deployment](#production-deployment-bringing-the-tier-online).

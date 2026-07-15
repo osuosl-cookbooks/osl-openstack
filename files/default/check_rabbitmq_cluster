@@ -1,0 +1,19 @@
+#!/bin/bash
+# NRPE check: CRITICAL when running RabbitMQ cluster members < expected.
+expected="${1:?usage: check_rabbitmq_cluster <expected_nodes>}"
+
+running=$(sudo /usr/sbin/rabbitmqctl -q cluster_status --formatter json 2>/dev/null |
+  /usr/bin/python3 -c 'import json,sys; print(len(json.load(sys.stdin)["running_nodes"]))' 2>/dev/null)
+
+if [ -z "$running" ]; then
+  echo 'RABBITMQ CLUSTER UNKNOWN: unable to read cluster_status'
+  exit 3
+fi
+
+if [ "$running" -lt "$expected" ]; then
+  echo "RABBITMQ CLUSTER CRITICAL: ${running}/${expected} nodes running"
+  exit 2
+fi
+
+echo "RABBITMQ CLUSTER OK: ${running}/${expected} nodes running"
+exit 0

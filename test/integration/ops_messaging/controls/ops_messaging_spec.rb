@@ -9,6 +9,14 @@ control 'ops_messaging' do
     its('protocols') { should include 'tcp' }
   end
 
+  # Management (15672) + prometheus (15692) plugins, enabled by default.
+  describe port 15672 do
+    it { should be_listening }
+  end
+  describe port 15692 do
+    it { should be_listening }
+  end
+
   describe iptables do
     it { should have_rule '-A amqp -p tcp -m tcp --dport 5672 -j osl_only' }
     it { should have_rule '-A rabbitmq_mgt -p tcp -m tcp --dport 15672 -j osl_only' }

@@ -40,6 +40,13 @@ describe 'osl-openstack::ops_messaging' do
 
       it { is_expected.to enable_service 'rabbitmq-server' }
       it { is_expected.to start_service 'rabbitmq-server' }
+      %w(rabbitmq_management rabbitmq_prometheus).each do |plugin|
+        it do
+          is_expected.to run_execute("rabbitmq: enable plugin #{plugin}").with(
+            command: "rabbitmq-plugins enable #{plugin}"
+          )
+        end
+      end
       case pltfrm
       when ALMA_8
         it do
@@ -147,6 +154,27 @@ describe 'osl-openstack::ops_messaging' do
         it { is_expected.to render_file('/etc/rabbitmq/rabbitmq.conf').with_content('ssl_options.certfile = /etc/rabbitmq/ssl/certs/cert.pem') }
         it { is_expected.to render_file('/etc/rabbitmq/rabbitmq.conf').with_content(/^listeners.tcp = none$/) }
         it { is_expected.to render_file('/etc/rabbitmq/rabbitmq.conf').with_content('target_group_size = 3') }
+      end
+
+      context 'custom ssl_search_id' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm.dup.merge(
+            step_into: %w(osl_openstack_messaging)
+          )).converge(described_recipe)
+        end
+
+        before do
+          stub_data_bag_item('openstack', 'x86').and_return(
+            openstack_secrets_stub.merge(
+              'messaging' => openstack_secrets_stub['messaging'].merge(
+                'tls' => true,
+                'ssl_search_id' => 'wildcard-bak'
+              )
+            )
+          )
+        end
+
+        it { is_expected.to create_certificate_manage('wildcard-rabbitmq').with(search_id: 'wildcard-bak') }
       end
     end
   end

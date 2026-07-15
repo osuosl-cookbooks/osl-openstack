@@ -1,7 +1,8 @@
 require_relative '../../spec_helper'
 
 describe 'osl-openstack::mon' do
-  ALL_PLATFORMS.each do |pltfrm|
+  # EL10: the shared messaging tier is the only thing running there.
+  [*ALL_PLATFORMS, ALMA_10].each do |pltfrm|
     context "#{pltfrm[:platform]} #{pltfrm[:version]}" do
       cached(:chef_run) do
         ChefSpec::SoloRunner.new(pltfrm).converge(described_recipe)
@@ -131,6 +132,77 @@ describe 'osl-openstack::mon' do
           it "passes the api_listen_ip to #{name}" do
             expect(chef_run).to add_nrpe_check(name).with(parameters: params)
           end
+        end
+      end
+
+      context 'messaging' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm) do |node|
+            node.normal['osl-openstack']['node_type'] = 'messaging'
+          end.converge(described_recipe)
+        end
+
+        it { is_expected.to_not install_package 'nagios-plugins-http' }
+        it { is_expected.to install_package 'python3' }
+
+        %w(nagios nrpe).each do |u|
+          it do
+            is_expected.to create_sudo("check_rabbitmq-#{u}").with(
+              user: [u],
+              runas: 'root',
+              nopasswd: true,
+              commands: %w(/usr/sbin/rabbitmq-diagnostics /usr/sbin/rabbitmqctl)
+            )
+          end
+        end
+
+        it { is_expected.to create_cookbook_file('/usr/lib64/nagios/plugins/check_rabbitmq_cluster').with(mode: '755') }
+
+        it do
+          is_expected.to add_nrpe_check('check_rabbitmq_running').with(
+            command: 'sudo /usr/sbin/rabbitmq-diagnostics',
+            parameters: '-q check_running'
+          )
+        end
+        it do
+          is_expected.to add_nrpe_check('check_rabbitmq_alarms').with(
+            command: 'sudo /usr/sbin/rabbitmq-diagnostics',
+            parameters: '-q check_alarms'
+          )
+        end
+        it do
+          is_expected.to add_nrpe_check('check_rabbitmq_cluster').with(
+            command: '/usr/lib64/nagios/plugins/check_rabbitmq_cluster',
+            parameters: '3'
+          )
+        end
+        it do
+          is_expected.to add_nrpe_check('check_rabbitmq_listener').with(
+            command: 'sudo /usr/sbin/rabbitmq-diagnostics',
+            parameters: '-q check_port_listener 5672'
+          )
+        end
+
+        context 'TLS tier' do
+          cached(:chef_run) do
+            ChefSpec::SoloRunner.new(pltfrm) do |node|
+              node.normal['osl-openstack']['node_type'] = 'messaging'
+            end.converge(described_recipe)
+          end
+
+          before do
+            stub_data_bag_item('openstack', 'x86').and_return(
+              openstack_secrets_stub.merge(
+                'messaging' => openstack_secrets_stub['messaging'].merge(
+                  'tls' => true,
+                  'cmr_target_group_size' => 3
+                )
+              )
+            )
+          end
+
+          it { is_expected.to add_nrpe_check('check_rabbitmq_listener').with(parameters: '-q check_port_listener 5671') }
+          it { is_expected.to add_nrpe_check('check_rabbitmq_cluster').with(parameters: '3') }
         end
       end
 
