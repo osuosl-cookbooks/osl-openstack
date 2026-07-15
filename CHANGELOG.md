@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+18.4.1 (2026-07-15)
+-------------------
+- Fix EL10 plugin enable + concrete per-cloud cutover runbook
+
 18.4.0 (2026-07-15)
 -------------------
 - Messaging tier: production deployment docs + chef-managed plugins
