@@ -56,6 +56,11 @@ module OSLOpenstack
         cmd.stdout.match?(/^#{Regexp.escape(vhost)}\s*$/)
       end
 
+      def openstack_rabbitmq_plugin?(plugin)
+        cmd = shell_out!('rabbitmq-plugins -q list -e -m')
+        cmd.stdout.match?(/^#{Regexp.escape(plugin)}$/)
+      end
+
       # Messaging SIG selects version by subdir: EL8/9 use rabbitmq-38
       # (3.9.x), EL10 only ships rabbitmq-4 (4.x).
       def openstack_rabbitmq_repo

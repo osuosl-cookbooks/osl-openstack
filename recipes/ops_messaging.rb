@@ -25,6 +25,7 @@ osl_openstack_messaging 'default' do
   primary_node s['primary_node'] if s['primary_node']
   vhosts s['vhosts'] if s['vhosts']
   cmr_target_group_size s['cmr_target_group_size'] if s['cmr_target_group_size']
+  plugins s['plugins'] if s['plugins']
   if s['tls']
     tls true
     tls_only true if s['tls_only']

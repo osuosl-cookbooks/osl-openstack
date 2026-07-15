@@ -289,6 +289,11 @@ shared_context 'common_stubs' do
     stubs_for_resource('execute[rabbitmq: set permissions openstack]') do |resource|
       allow(resource).to receive_shell_out('rabbitmqctl -q list_permissions')
     end
+    %w(rabbitmq_management rabbitmq_prometheus).each do |plugin|
+      stubs_for_resource("execute[rabbitmq: enable plugin #{plugin}]") do |resource|
+        allow(resource).to receive_shell_out('rabbitmq-plugins -q list -e -m')
+      end
+    end
     allow(File).to receive(:read).and_call_original
     allow(File).to receive(:read).with('/etc/ceph/ceph.conf').and_return('fsid = 8102bb29-f48b-4f6e-81d7-4c59d80ec6b8')
     allow(File).to receive(:readlines).and_call_original

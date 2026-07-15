@@ -52,12 +52,16 @@ suites:
     attributes:
       osl-openstack:
         databag_item: messaging_tier
+        node_type: messaging
     run_list:
       - role[openstack_tk]
       - recipe[osl-openstack::ops_messaging]
+      - recipe[osl-openstack::mon]
     verifier:
       inspec_tests:
         - test/integration/messaging_tier
+      inputs:
+        nrpe_checks: true
   - name: identity
     excludes:
       - almalinux-10
