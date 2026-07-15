@@ -48,8 +48,9 @@ action :create do
   package 'rabbitmq-server'
 
   # The EL10 package ships these root-owned, so the rabbitmq user can't
-  # start (200/CHDIR, then can't write its log). No-op on EL8/9.
-  %w(/var/lib/rabbitmq /var/log/rabbitmq).each do |dir|
+  # start (200/CHDIR, can't write its log) or enable plugins (the 4.x
+  # node rewrites /etc/rabbitmq/enabled_plugins itself). No-op on EL8/9.
+  %w(/etc/rabbitmq /var/lib/rabbitmq /var/log/rabbitmq).each do |dir|
     directory dir do
       owner 'rabbitmq'
       group 'rabbitmq'
