@@ -23,7 +23,7 @@ describe 'osl-openstack::ops_messaging' do
       it { is_expected.to accept_osl_firewall_port('amqp').with(osl_only: true) }
       it { is_expected.to accept_osl_firewall_port('rabbitmq_mgt').with(osl_only: true) }
       it { is_expected.to install_package 'rabbitmq-server' }
-      %w(/var/lib/rabbitmq /var/log/rabbitmq).each do |dir|
+      %w(/etc/rabbitmq /var/lib/rabbitmq /var/log/rabbitmq).each do |dir|
         it { is_expected.to create_directory(dir).with(owner: 'rabbitmq', group: 'rabbitmq') }
       end
 

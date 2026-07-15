@@ -223,7 +223,7 @@ vhosts/users via Khepri replication.
 ```
 # per node, mq1 first:
 knife node edit mq1.bak.osuosl.org   # add role[openstack_messaging] to the run list
-ssh mq1.bak.osuosl.org sudo cinc-client
+ssh mq1.bak.osuosl.org cinc-client
 # verify (step 5 subset), then repeat for mq2, then mq3
 ```
 
@@ -272,40 +272,131 @@ Stand up the tier first
 ([Production deployment](#production-deployment-bringing-the-tier-online)),
 then cut each cloud over in its own window.
 
-**Phase N — cut over one cloud:**
-1. Pause the chef-client cron on that cloud's controllers + hypervisors.
-2. Stop all OpenStack clients on that cloud (controllers + hypervisors)
-   — the C4 stop list. RPC/notifications are disposable (durable state
-   is in MySQL), but the control plane is *down* between here and step
-   5 — so first quiesce long-running async work (no in-flight live
-   migrations, volume create/migrate, or snapshots) and announce the
-   API outage window.
-3. Merge the cloud's data-bag change (endpoint → tier, add `vhost`,
-   per-cloud creds, `quorum_queues: true`, drop `cookie`/`primary_node`;
-   remove `ops_messaging` from the run-list).
-4. Run chef on the controllers → services connect to the tier and
-   declare quorum queues in their vhost (3 replicas). No purge dance
-   needed — it's a brand-new vhost, nothing to collide with.
-5. Start the hypervisor agents.
-6. Verify: `rabbitmqctl list_queues -p x86 name type members` shows
-   `quorum` with members on all 3 tier nodes; `openstack server list`.
-7. Re-enable the chef cron.
-8. **Soak, then decommission.** Leave the embedded rabbit *installed but
-   stopped + disabled* on the controllers through a soak period (e.g. a
-   few days stable) — that's what keeps the rollback below possible.
-   Only after the soak, remove the package/data.
+**One-time pre-work (before the first cloud):** `ops_messaging` sits in
+the shared `openstack_controller` role, so it can't be dropped per
+cloud. Detach it once — pin it onto every controller node, then remove
+it from the role:
 
-**Rollback (per cloud).** The window from step 2 to a healthy step 6 is
+```bash
+for n in $(knife search node 'roles:openstack_controller' -i 2>/dev/null \
+    | awk 'NF && !/items found/'); do
+  knife node run_list add "$n" 'recipe[osl-openstack::ops_messaging]'
+done
+# then delete it from roles/openstack_controller.json and upload the role
+```
+
+**Phase N — cut over one cloud** (from the jumphost with dsh; `arm`
+shown). RPC/notifications are disposable (durable state is in MySQL),
+but the control plane is *down* from step 3 to step 5 — quiesce
+long-running async work first (no in-flight live migrations, volume
+create/migrate, or snapshots) and announce the API outage window.
+
+1. Build the dsh groups from chef:
+
+   ```bash
+   CLOUD=arm
+   mkdir -p ~/.dsh/group
+   knife search node "roles:openstack_${CLOUD} AND roles:openstack_controller" -i 2>/dev/null \
+     | awk 'NF && !/items found/' > ~/.dsh/group/${CLOUD}-controllers
+   knife search node "roles:openstack_${CLOUD} AND roles:openstack_compute" -i 2>/dev/null \
+     | awk 'NF && !/items found/' > ~/.dsh/group/${CLOUD}-hypervisors
+   cat ~/.dsh/group/${CLOUD}-controllers ~/.dsh/group/${CLOUD}-hypervisors \
+     > ~/.dsh/group/${CLOUD}-all
+   wc -l ~/.dsh/group/${CLOUD}-*   # 2 controllers + expected hypervisor count
+   ```
+
+2. Pause the chef-client cron everywhere (don't start inside the
+   :00–:10 / :30–:40 cron windows) and confirm no run is in flight:
+
+   ```bash
+   dsh -M -c -g ${CLOUD}-all -- 'rm -f /etc/cron.d/chef-client'
+   dsh -M -c -g ${CLOUD}-all -- 'pgrep -af "chef-client|cinc-client" || true'  # must be empty
+   ```
+
+3. Stop every RabbitMQ client (the
+   [C4 stop list](HA_MIGRATION.md#c4--enable-rabbitmq-quorum-queues)):
+
+   ```bash
+   dsh -M -c -g ${CLOUD}-controllers -- 'systemctl stop httpd \
+     openstack-nova-conductor openstack-nova-scheduler openstack-nova-novncproxy \
+     neutron-server neutron-dhcp-agent neutron-l3-agent neutron-linuxbridge-agent \
+     neutron-metadata-agent neutron-metering-agent \
+     openstack-cinder-scheduler openstack-cinder-volume \
+     openstack-heat-api openstack-heat-api-cfn openstack-heat-engine \
+     openstack-glance-api \
+     openstack-ceilometer-central openstack-ceilometer-notification'
+
+   dsh -M -c -g ${CLOUD}-hypervisors -- 'systemctl stop \
+     openstack-nova-compute openstack-ceilometer-compute neutron-linuxbridge-agent'
+   ```
+
+   Verify — both must come back empty (`neutron-server` workers
+   sometimes hold their sockets; `kill -9` leftovers and re-check):
+
+   ```bash
+   dsh -M -c -g ${CLOUD}-all -- \
+     'systemctl list-units "openstack-*" "neutron-*" --state=running --no-legend'
+   dsh -M -c -g ${CLOUD}-controllers -- \
+     'ss -tlnp | grep -E ":(9696|8774|8776|9292|8004|8000)" || true'
+   ```
+
+4. Merge the cloud's data-bag change (endpoint → the tier, add `vhost`
+   + per-cloud creds, `tls: true`, `quorum_queues: true`, drop
+   `cookie`/`primary_node`) and drop the embedded broker from this
+   cloud's controllers:
+
+   ```bash
+   knife data bag edit openstack ${CLOUD}
+   knife node run_list remove <controller1-fqdn> 'recipe[osl-openstack::ops_messaging]'
+   knife node run_list remove <controller2-fqdn> 'recipe[osl-openstack::ops_messaging]'
+   ```
+
+5. Converge — controllers one at a time, then the hypervisors fanned
+   out. Services connect to the tier and declare quorum queues in the
+   fresh vhost (no purge dance — nothing to collide with). These runs
+   also rewrite `/etc/cron.d/chef-client`, undoing step 2:
+
+   ```bash
+   dsh -M -g ${CLOUD}-controllers -- 'cinc-client'           # no -c: serial
+   dsh -M -c -F 10 -g ${CLOUD}-hypervisors -- 'cinc-client'  # -F caps fanout
+   ```
+
+6. Verify the cloud is on the tier, then `openstack server list` /
+   boot a test instance:
+
+   ```bash
+   ssh mq1.bak.osuosl.org \
+     "rabbitmqctl -q list_queues -p ${CLOUD} name type members | head"
+                             # type=quorum, members list all 3 mq nodes
+   dsh -M -c -g ${CLOUD}-all -- 'ls /etc/cron.d/chef-client'  # cron restored
+   ```
+
+7. **Stop the now-unused embedded broker, soak, then decommission.**
+   The C4 stop list doesn't touch `rabbitmq-server`, and with
+   `ops_messaging` off the run list nothing manages it — stop it
+   explicitly:
+
+   ```bash
+   dsh -M -c -g ${CLOUD}-controllers -- 'systemctl disable --now rabbitmq-server'
+   ```
+
+   It stays *installed but stopped* through the soak (e.g. a few days
+   stable) — that's what keeps the rollback below possible. Only after
+   the soak, remove the package/data.
+
+**Rollback (per cloud).** The window from step 3 to a healthy step 6 is
 an API outage; if the tier is unreachable, a vhost/cred is wrong, or
 quorum won't form, revert:
-1. Restore the data bag: `messaging.endpoint` → the two controllers,
-   re-add `cookie`/`primary_node`, drop `vhost`/`quorum_queues`, and put
-   `recipe[osl-openstack::ops_messaging]` back on the run-list.
+1. Restore the data bag (`knife data bag edit openstack ${CLOUD}`):
+   `messaging.endpoint` → the two controllers, re-add
+   `cookie`/`primary_node`, drop `vhost`/`tls`/`quorum_queues`. Re-add
+   the broker to both controllers:
+   `knife node run_list add <fqdn> 'recipe[osl-openstack::ops_messaging]'`.
 2. Start the still-installed embedded `rabbitmq-server` on both
    controllers (classic queues — no purge needed).
-3. Reconverge the controllers, restart the hypervisor agents, confirm
-   `openstack server list`.
-Don't run step 8's removal until the soak passes — that's what makes
+3. Reconverge the controllers (serial `dsh` as in step 5), rerun
+   `cinc-client` on the hypervisors, confirm `openstack server list`.
+Don't run step 7's removal until the soak passes — that's what makes
 this rollback available.
 
 Because each cloud lands in a fresh, empty vhost, the classic→quorum
