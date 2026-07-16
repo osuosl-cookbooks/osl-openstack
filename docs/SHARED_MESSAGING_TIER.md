@@ -287,7 +287,7 @@ done
 
 **Phase N — cut over one cloud** (from the jumphost with dsh; `arm`
 shown). RPC/notifications are disposable (durable state is in MySQL),
-but the control plane is *down* from step 3 to step 5 — quiesce
+but the control plane is *down* from step 3 to step 6 — quiesce
 long-running async work first (no in-flight live migrations, volume
 create/migrate, or snapshots) and announce the API outage window.
 
@@ -361,7 +361,23 @@ create/migrate, or snapshots) and announce the API outage window.
    dsh -M -c -F 10 -g ${CLOUD}-hypervisors -- 'cinc-client'  # -F caps fanout
    ```
 
-6. Verify the cloud is on the tier, then `openstack server list` /
+6. **Repoint nova's cell1 at the tier.** Nova stores a per-cell
+   `transport_url` in the `nova_api` DB (set once by `create_cell`,
+   never updated by chef) and nova-api/conductor/scheduler use *that*
+   for cell RPC — not nova.conf. Skipping this leaves them dialing the
+   old broker (ECONNREFUSED loops) with perfectly clean config files.
+   On one controller (its nova.conf already has the tier URL;
+   `update_cell` reads unspecified values from config):
+
+   ```bash
+   nova-manage cell_v2 list_cells --verbose   # cell1 shows the OLD url
+   nova-manage cell_v2 update_cell --cell_uuid <cell1-uuid>
+   nova-manage cell_v2 list_cells --verbose   # now the tier url
+   dsh -M -g ${CLOUD}-controllers -- \
+     'systemctl restart httpd openstack-nova-conductor openstack-nova-scheduler openstack-nova-novncproxy'
+   ```
+
+7. Verify the cloud is on the tier, then `openstack server list` /
    boot a test instance:
 
    ```bash
@@ -371,7 +387,7 @@ create/migrate, or snapshots) and announce the API outage window.
    dsh -M -c -g ${CLOUD}-all -- 'ls /etc/cron.d/chef-client'  # cron restored
    ```
 
-7. **Stop the now-unused embedded broker, soak, then decommission.**
+8. **Stop the now-unused embedded broker, soak, then decommission.**
    The C4 stop list doesn't touch `rabbitmq-server`, and with
    `ops_messaging` off the run list nothing manages it — stop it
    explicitly:
@@ -384,7 +400,7 @@ create/migrate, or snapshots) and announce the API outage window.
    stable) — that's what keeps the rollback below possible. Only after
    the soak, remove the package/data.
 
-**Rollback (per cloud).** The window from step 3 to a healthy step 6 is
+**Rollback (per cloud).** The window from step 3 to a healthy step 7 is
 an API outage; if the tier is unreachable, a vhost/cred is wrong, or
 quorum won't form, revert:
 1. Restore the data bag (`knife data bag edit openstack ${CLOUD}`):
@@ -395,8 +411,10 @@ quorum won't form, revert:
 2. Start the still-installed embedded `rabbitmq-server` on both
    controllers (classic queues — no purge needed).
 3. Reconverge the controllers (serial `dsh` as in step 5), rerun
-   `cinc-client` on the hypervisors, confirm `openstack server list`.
-Don't run step 7's removal until the soak passes — that's what makes
+   `cinc-client` on the hypervisors, and rerun step 6's `update_cell`
+   (cell1 must point back at the embedded broker) + nova restarts.
+   Confirm `openstack server list`.
+Don't run step 8's removal until the soak passes — that's what makes
 this rollback available.
 
 Because each cloud lands in a fresh, empty vhost, the classic→quorum
