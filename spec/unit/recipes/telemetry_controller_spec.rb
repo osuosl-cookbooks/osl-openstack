@@ -48,6 +48,12 @@ describe 'osl-openstack::telemetry_controller' do
           }
         )
       end
+      # Meter pipeline only - no event store is deployed, so the default
+      # meter,event set would fill event.sample with unconsumed messages.
+      it do
+        is_expected.to render_file('/etc/ceilometer/ceilometer.conf')
+          .with_content(/^\[notification\]$.*^pipelines = meter$/m)
+      end
       it do
         is_expected.to create_template('/etc/ceilometer/pipeline.yaml').with(
           owner: 'ceilometer',
