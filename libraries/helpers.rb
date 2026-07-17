@@ -84,34 +84,28 @@ module OSLOpenstack
       # the brokers are isolated and OpenStack RPC reply queues become
       # undeliverable when request and reply go through different nodes.
       def openstack_rabbitmq_join_cluster(primary_node_name)
-        # Extract the primary's short hostname from "rabbit@<host>.<domain>"
-        # and compare exactly to node['hostname'] - substring matching
-        # would conflate "controller" with "controller2".
+        Chef::Log.info("Joining RabbitMQ cluster with primary '#{primary_node_name}'.")
+        shell_out!('rabbitmqctl stop_app')
+        shell_out!("rabbitmqctl join_cluster #{primary_node_name}")
+        shell_out!('rabbitmqctl start_app')
+      rescue Mixlib::ShellOut::ShellCommandFailed => e
+        Chef::Log.error("RabbitMQ join_cluster failed: #{e.message}")
+        shell_out('rabbitmqctl start_app')
+        raise 'Failed to join RabbitMQ cluster; see chef logs.'
+      end
+
+      # True when this node should join the primary's cluster: it isn't
+      # the primary itself and isn't already a member.
+      def openstack_rabbitmq_join_needed?(primary_node_name)
+        # Compare short hostnames exactly ("rabbit@mq1.bak.osuosl.org" ->
+        # "mq1"); substring matching would conflate mq1 with mq10.
         primary_short_hostname = primary_node_name.split('@', 2).last.split('.', 2).first
-        if primary_short_hostname == node['hostname']
-          Chef::Log.info("This node IS the RabbitMQ primary ('#{primary_node_name}'). No join needed.")
-          return false
-        end
-        # rabbitmqctl 3.8 doesn't accept --format json on cluster_status.
-        # Parse the plain text output - if the primary's node name shows
-        # up at all, we're already clustered with it.
+        return false if primary_short_hostname == node['hostname']
+        # rabbitmqctl 3.8 doesn't accept --format json on cluster_status;
+        # if the primary's node name shows up, we're already clustered.
         cluster_status = shell_out('rabbitmqctl cluster_status')
         cluster_status.error!
-        if cluster_status.stdout.include?(primary_node_name)
-          Chef::Log.info("Already clustered with '#{primary_node_name}'. Skipping.")
-          return false
-        end
-        Chef::Log.info("Joining RabbitMQ cluster with primary '#{primary_node_name}'.")
-        begin
-          shell_out!('rabbitmqctl stop_app')
-          shell_out!("rabbitmqctl join_cluster #{primary_node_name}")
-          shell_out!('rabbitmqctl start_app')
-          true
-        rescue Mixlib::ShellOut::ShellCommandFailed => e
-          Chef::Log.error("RabbitMQ join_cluster failed: #{e.message}")
-          shell_out('rabbitmqctl start_app')
-          raise 'Failed to join RabbitMQ cluster; see chef logs.'
-        end
+        !cluster_status.stdout.include?(primary_node_name)
       end
 
       def openstack_services
