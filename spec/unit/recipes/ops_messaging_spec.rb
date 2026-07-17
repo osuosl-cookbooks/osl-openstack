@@ -91,6 +91,12 @@ describe 'osl-openstack::ops_messaging' do
         )
       end
 
+      it do
+        is_expected.to run_execute('rabbitmq: set user tags openstack').with(
+          command: 'rabbitmqctl set_user_tags openstack administrator'
+        )
+      end
+
       context 'user created' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm.dup.merge(
@@ -101,10 +107,12 @@ describe 'osl-openstack::ops_messaging' do
         before do
           allow_any_instance_of(OSLOpenstack::Cookbook::Helpers).to receive(:openstack_rabbitmq_user?).and_return(true)
           allow_any_instance_of(OSLOpenstack::Cookbook::Helpers).to receive(:openstack_rabbitmq_permissions?).and_return(true)
+          allow_any_instance_of(OSLOpenstack::Cookbook::Helpers).to receive(:openstack_rabbitmq_user_tag?).and_return(true)
         end
 
         it { is_expected.to nothing_execute('rabbitmq: add user openstack') }
         it { is_expected.to nothing_execute('rabbitmq: set permissions openstack') }
+        it { is_expected.to nothing_execute('rabbitmq: set user tags openstack') }
       end
 
       context 'shared messaging tier (vhosts + TLS + CMR)' do

@@ -166,9 +166,19 @@ action :create do
     not_if { openstack_rabbitmq_permissions?(new_resource.user) }
   end
 
-  converge_by "join RabbitMQ cluster with primary #{new_resource.primary_node}" do
-    openstack_rabbitmq_join_cluster(new_resource.primary_node)
-  end if new_resource.primary_node
+  # administrator tag = management UI (15672) login for the main user.
+  execute "rabbitmq: set user tags #{new_resource.user}" do
+    command "rabbitmqctl set_user_tags #{new_resource.user} administrator"
+    not_if { openstack_rabbitmq_user_tag?(new_resource.user, 'administrator') }
+  end
+
+  # Gate converge_by on the predicate so steady-state runs (and the
+  # primary itself) report nothing instead of a phantom join every run.
+  if new_resource.primary_node && openstack_rabbitmq_join_needed?(new_resource.primary_node)
+    converge_by "join RabbitMQ cluster with primary #{new_resource.primary_node}" do
+      openstack_rabbitmq_join_cluster(new_resource.primary_node)
+    end
+  end
 
   # Per-cloud vhosts/users. After the join so metadata replicates; not_if
   # guards keep secondaries idempotent (they exist there post-join).

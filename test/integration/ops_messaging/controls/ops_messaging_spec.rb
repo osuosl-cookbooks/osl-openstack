@@ -28,7 +28,7 @@ control 'ops_messaging' do
   end
 
   describe command('rabbitmqctl -q list_users') do
-    its('stdout') { should match(/openstack.*\[\]/) }
+    its('stdout') { should match(/openstack.*\[administrator\]/) }
   end
 
   describe command 'systemctl cat rabbitmq-server' do

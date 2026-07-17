@@ -137,6 +137,40 @@ describe OSLOpenstack::Cookbook::Helpers do
     end
   end
 
+  describe '#openstack_rabbitmq_join_needed?' do
+    let(:primary) { 'rabbit@mq1.bak.osuosl.org' }
+
+    def stub_cluster_status(stdout)
+      status = double(stdout: stdout)
+      allow(status).to receive(:error!)
+      allow(helper).to receive(:shell_out).with('rabbitmqctl cluster_status').and_return(status)
+    end
+
+    it 'is false on the primary itself (multi-label domain -> short hostname)' do
+      allow(helper).to receive(:node).and_return('hostname' => 'mq1')
+      expect(helper).to_not receive(:shell_out)
+      expect(helper.openstack_rabbitmq_join_needed?(primary)).to be false
+    end
+
+    it 'is false on a secondary already clustered with the primary' do
+      allow(helper).to receive(:node).and_return('hostname' => 'mq2')
+      stub_cluster_status("Running Nodes\n\nrabbit@mq1.bak.osuosl.org\nrabbit@mq2.bak.osuosl.org\n")
+      expect(helper.openstack_rabbitmq_join_needed?(primary)).to be false
+    end
+
+    it 'is true on an unclustered secondary' do
+      allow(helper).to receive(:node).and_return('hostname' => 'mq2')
+      stub_cluster_status("Running Nodes\n\nrabbit@mq2.bak.osuosl.org\n")
+      expect(helper.openstack_rabbitmq_join_needed?(primary)).to be true
+    end
+
+    it 'does not conflate the primary hostname with one it prefixes' do
+      allow(helper).to receive(:node).and_return('hostname' => 'mq10')
+      stub_cluster_status("Running Nodes\n\nrabbit@mq10.bak.osuosl.org\n")
+      expect(helper.openstack_rabbitmq_join_needed?(primary)).to be true
+    end
+  end
+
   describe '#openstack_transport_url' do
     let(:messaging) do
       { 'user' => 'openstack', 'pass' => 's3cret',
