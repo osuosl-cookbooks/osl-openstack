@@ -39,6 +39,7 @@ control 'telemetry-controller' do
   describe ini('/etc/ceilometer/ceilometer.conf') do
     its('DEFAULT.transport_url') { should match(%r{^rabbit://openstack:openstack@#{Regexp.escape(messaging_host)}:#{messaging_port}}) }
     its('cache.memcache_servers') { should match(/#{Regexp.escape(memcached_host)}:11211/) }
+    its('notification.pipelines') { should cmp 'meter' }
     its('service_credentials.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
     its('service_credentials.password') { should cmp 'ceilometer' }
   end
