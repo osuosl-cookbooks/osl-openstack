@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+18.4.3 (2026-07-17)
+-------------------
+- Disable the ceilometer event pipeline
+
 18.4.2 (2026-07-17)
 -------------------
 - RabbitMQ: management UI login + accurate cluster-join reporting
