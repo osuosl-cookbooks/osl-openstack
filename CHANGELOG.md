@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+18.4.2 (2026-07-17)
+-------------------
+- RabbitMQ: management UI login + accurate cluster-join reporting
+
 18.4.1 (2026-07-15)
 -------------------
 - Fix EL10 plugin enable + concrete per-cloud cutover runbook
