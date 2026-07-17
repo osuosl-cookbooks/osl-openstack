@@ -61,6 +61,11 @@ module OSLOpenstack
         cmd.stdout.match?(/^#{Regexp.escape(plugin)}$/)
       end
 
+      def openstack_rabbitmq_user_tag?(user, tag)
+        cmd = shell_out!('rabbitmqctl -q list_users')
+        cmd.stdout.match?(/^#{Regexp.escape(user)}\s+\[[^\]]*#{Regexp.escape(tag)}/)
+      end
+
       # Messaging SIG selects version by subdir: EL8/9 use rabbitmq-38
       # (3.9.x), EL10 only ships rabbitmq-4 (4.x).
       def openstack_rabbitmq_repo

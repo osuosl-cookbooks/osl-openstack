@@ -493,6 +493,9 @@ which the standard wildcard does **not** cover, so it uses its own
   `check_rabbitmq_alarms`, `check_rabbitmq_cluster` (expect 3 running
   members, from `cmr_target_group_size`), and `check_rabbitmq_listener`
   (5671). Page on node down, alarm set, or < 3 members.
+- **Management UI:** `http://mqN.bak.osuosl.org:15672` (OSL-only). Log
+  in as `messaging.user` — chef tags it `administrator`; the per-cloud
+  vhost users stay untagged (AMQP-only).
 - This is the concrete form of the blast-radius mitigation: since one
   incident hits all three clouds, the quorum-loss and alarm checks must
   **page**, not just dashboard.

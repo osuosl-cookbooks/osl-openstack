@@ -166,6 +166,12 @@ action :create do
     not_if { openstack_rabbitmq_permissions?(new_resource.user) }
   end
 
+  # administrator tag = management UI (15672) login for the main user.
+  execute "rabbitmq: set user tags #{new_resource.user}" do
+    command "rabbitmqctl set_user_tags #{new_resource.user} administrator"
+    not_if { openstack_rabbitmq_user_tag?(new_resource.user, 'administrator') }
+  end
+
   converge_by "join RabbitMQ cluster with primary #{new_resource.primary_node}" do
     openstack_rabbitmq_join_cluster(new_resource.primary_node)
   end if new_resource.primary_node

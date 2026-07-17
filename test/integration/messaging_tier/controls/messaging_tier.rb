@@ -63,6 +63,11 @@ control 'messaging_tier' do
     it { should be_listening }
   end
 
+  # Main user tagged administrator for the management UI.
+  describe command('rabbitmqctl -q list_users') do
+    its('stdout') { should match(/^openstack\s+\[administrator\]/) }
+  end
+
   # Per-cloud vhost + user with vhost-scoped permissions.
   describe command('rabbitmqctl -q list_vhosts') do
     its('stdout') { should match(/^#{Regexp.escape(vhost)}$/) }

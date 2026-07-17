@@ -289,6 +289,9 @@ shared_context 'common_stubs' do
     stubs_for_resource('execute[rabbitmq: set permissions openstack]') do |resource|
       allow(resource).to receive_shell_out('rabbitmqctl -q list_permissions')
     end
+    stubs_for_resource('execute[rabbitmq: set user tags openstack]') do |resource|
+      allow(resource).to receive_shell_out('rabbitmqctl -q list_users')
+    end
     %w(rabbitmq_management rabbitmq_prometheus).each do |plugin|
       stubs_for_resource("execute[rabbitmq: enable plugin #{plugin}]") do |resource|
         allow(resource).to receive_shell_out('rabbitmq-plugins -q list -e -m')
