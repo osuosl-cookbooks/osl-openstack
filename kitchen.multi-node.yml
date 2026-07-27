@@ -60,6 +60,7 @@ verifier:
       hosts_output: mq1
       user: almalinux
       profile_locations:
+        - test/integration/coordination_tier
         - test/integration/messaging_tier
       attrs:
         - test/integration/multi-node/mq.yml
@@ -69,6 +70,7 @@ verifier:
       hosts_output: mq2
       user: almalinux
       profile_locations:
+        - test/integration/coordination_tier
         - test/integration/messaging_tier
       attrs:
         - test/integration/multi-node/mq.yml
@@ -78,6 +80,7 @@ verifier:
       hosts_output: mq3
       user: almalinux
       profile_locations:
+        - test/integration/coordination_tier
         - test/integration/messaging_tier
       attrs:
         - test/integration/multi-node/mq.yml

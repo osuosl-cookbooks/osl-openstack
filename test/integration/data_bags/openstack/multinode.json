@@ -75,6 +75,15 @@
       "pass": "nova"
     }
   },
+  "coordination": {
+    "endpoint": [
+      "mq1.testing.osuosl.org",
+      "mq2.testing.osuosl.org",
+      "mq3.testing.osuosl.org"
+    ],
+    "primary": "mq1.testing.osuosl.org",
+    "pass": "oslocks"
+  },
   "dashboard": {
     "aliases":[
       "controller1.testing.osuosl.org"

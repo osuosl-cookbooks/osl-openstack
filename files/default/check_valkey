@@ -1,0 +1,13 @@
+#!/bin/bash
+# NRPE check: valkey answers an authenticated PING. Reads requirepass
+# from valkey.conf (root-only), so this runs under sudo.
+pass=$(awk '/^requirepass /{gsub(/"/, "", $2); print $2}' /etc/valkey/valkey.conf)
+out=$(REDISCLI_AUTH="$pass" /usr/bin/valkey-cli ping 2>&1)
+
+if [ "$out" = "PONG" ]; then
+  echo 'VALKEY OK: PONG'
+  exit 0
+fi
+
+echo "VALKEY CRITICAL: ${out:-no reply}"
+exit 2

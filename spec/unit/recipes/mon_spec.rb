@@ -183,6 +183,69 @@ describe 'osl-openstack::mon' do
           )
         end
 
+        # No coordination block in the bag: no valkey checks.
+        it { is_expected.to_not add_nrpe_check 'check_valkey' }
+
+        context 'coordination tier' do
+          cached(:chef_run) do
+            ChefSpec::SoloRunner.new(pltfrm) do |node|
+              node.normal['osl-openstack']['node_type'] = 'messaging'
+            end.converge(described_recipe)
+          end
+
+          before do
+            stub_data_bag_item('openstack', 'x86').and_return(
+              openstack_secrets_stub.merge(
+                'coordination' => {
+                  'endpoint' => %w(
+                    mq1.testing.osuosl.org
+                    mq2.testing.osuosl.org
+                    mq3.testing.osuosl.org
+                  ),
+                  'primary' => 'mq1.testing.osuosl.org',
+                  'pass' => 'oslocks',
+                }
+              )
+            )
+          end
+
+          %w(check_valkey check_valkey_replication check_valkey_sentinel).each do |chk|
+            it { is_expected.to create_cookbook_file("/usr/lib64/nagios/plugins/#{chk}").with(mode: '755') }
+          end
+
+          %w(nagios nrpe).each do |u|
+            it do
+              is_expected.to create_sudo("check_valkey-#{u}").with(
+                user: [u],
+                runas: 'root',
+                nopasswd: true,
+                commands: %w(
+                  /usr/lib64/nagios/plugins/check_valkey
+                  /usr/lib64/nagios/plugins/check_valkey_replication
+                )
+              )
+            end
+          end
+
+          it do
+            is_expected.to add_nrpe_check('check_valkey').with(
+              command: 'sudo /usr/lib64/nagios/plugins/check_valkey'
+            )
+          end
+          it do
+            is_expected.to add_nrpe_check('check_valkey_replication').with(
+              command: 'sudo /usr/lib64/nagios/plugins/check_valkey_replication',
+              parameters: '3'
+            )
+          end
+          it do
+            is_expected.to add_nrpe_check('check_valkey_sentinel').with(
+              command: '/usr/lib64/nagios/plugins/check_valkey_sentinel',
+              parameters: 'oslocks 3'
+            )
+          end
+        end
+
         context 'TLS tier' do
           cached(:chef_run) do
             ChefSpec::SoloRunner.new(pltfrm) do |node|

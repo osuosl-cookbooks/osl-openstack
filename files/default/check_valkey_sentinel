@@ -1,0 +1,26 @@
+#!/bin/bash
+# NRPE check: sentinel reaches quorum + failover authorization for the
+# lock service and has discovered every other member's sentinel. No
+# auth: sentinel takes none (tooz yoga clients cannot send it), access
+# is limited by the OSL-only firewall.
+name="${1:?usage: check_valkey_sentinel <service_name> <cluster_size>}"
+expected="${2:?usage: check_valkey_sentinel <service_name> <cluster_size>}"
+
+ck=$(/usr/bin/valkey-cli -p 26379 sentinel ckquorum "$name" 2>&1)
+case "$ck" in
+  OK*) ;;
+  *)
+    echo "VALKEY SENTINEL CRITICAL: ${ck:-no reply}"
+    exit 2
+    ;;
+esac
+
+others=$(/usr/bin/valkey-cli -p 26379 sentinel master "$name" 2>/dev/null |
+  tr -d '\r' | awk '/^num-other-sentinels$/{getline; print}')
+if [ -z "$others" ] || [ "$others" -lt $((expected - 1)) ]; then
+  echo "VALKEY SENTINEL CRITICAL: ${others:-0}/$((expected - 1)) other sentinels known"
+  exit 2
+fi
+
+echo "VALKEY SENTINEL OK: ${ck}"
+exit 0
