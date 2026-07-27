@@ -51,6 +51,7 @@ describe 'osl-openstack::block_storage_controller' do
       end
       it { is_expected.to include_recipe 'osl-openstack::block_storage_common' }
       it { is_expected.to install_package 'openstack-cinder' }
+      it { is_expected.to install_package 'python3-redis' }
       it do
         is_expected.to create_template('/etc/cinder/cinder.conf').with(
           owner: 'root',
@@ -65,7 +66,7 @@ describe 'osl-openstack::block_storage_controller' do
             block_ssd_rbd_pool: 'volumes_ssd',
             cluster: nil,
             compute_pass: 'nova',
-            coordination_url: 'mysql://cinder_x86:cinder@localhost:3306/cinder_x86',
+            coordination_url: nil,
             database_connection: 'mysql+pymysql://cinder_x86:cinder@localhost:3306/cinder_x86',
             image_api_servers: 'http://controller.testing.osuosl.org:9292',
             memcached_endpoint: 'controller.testing.osuosl.org:11211',
@@ -110,6 +111,40 @@ describe 'osl-openstack::block_storage_controller' do
       it do
         expect(chef_run.service('openstack-cinder-scheduler')).to \
           subscribe_to('template[/etc/cinder/cinder.conf]').on(:restart)
+      end
+      it { is_expected.to_not render_file('/etc/cinder/cinder.conf').with_content(/^\[coordination\]$/) }
+
+      context 'valkey coordination' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm).converge(described_recipe)
+        end
+
+        before do
+          stub_data_bag_item('openstack', 'x86').and_return(
+            openstack_secrets_stub.merge(
+              'coordination' => {
+                'endpoint' => %w(
+                  mq1.testing.osuosl.org
+                  mq2.testing.osuosl.org
+                  mq3.testing.osuosl.org
+                ),
+                'primary' => 'mq1.testing.osuosl.org',
+                'pass' => 'oslocks',
+                'db' => 1,
+              }
+            )
+          )
+        end
+
+        it do
+          is_expected.to render_file('/etc/cinder/cinder.conf').with_content(
+            'backend_url = redis://:oslocks@mq1.testing.osuosl.org:26379' \
+            '?sentinel=oslocks' \
+            '&sentinel_fallback=mq2.testing.osuosl.org:26379' \
+            '&sentinel_fallback=mq3.testing.osuosl.org:26379' \
+            '&db=1'
+          )
+        end
       end
     end
   end

@@ -22,12 +22,11 @@ state_path = /var/lib/cinder
 transport_url = <%= @transport_url %>
 volume_clear_size = 256
 
-<% if @cluster -%>
+<% if @coordination_url -%>
 [coordination]
 backend_url = <%= @coordination_url %>
 
 <% end -%>
-
 [cache]
 memcache_servers = <%= @memcached_endpoint %>
 enabled = true

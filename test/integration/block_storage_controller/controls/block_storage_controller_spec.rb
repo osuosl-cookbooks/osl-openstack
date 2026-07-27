@@ -2,6 +2,9 @@ db_endpoint = input('db_endpoint')
 # memcached_host = the memcached backend (controller1 on multi-node);
 # this profile has no transport_url check.
 memcached_host = input('memcached_host', value: 'controller.testing.osuosl.org')
+# tooz backend_url; set by the multi-node env (valkey on the mq tier),
+# empty on the single-node suites (no coordination block in the bag).
+coordination_url = input('coordination_url', value: '')
 
 control 'block-storage-controller' do
   describe package 'openstack-cinder' do
@@ -65,6 +68,12 @@ control 'block-storage-controller' do
     its('nova.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
     its('nova.password') { should cmp 'nova' }
     its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
+  end
+
+  unless coordination_url.empty?
+    describe ini('/etc/cinder/cinder.conf') do
+      its('coordination.backend_url') { should cmp coordination_url }
+    end
   end
 
   openstack = 'bash -c "source /root/openrc && /usr/bin/openstack'

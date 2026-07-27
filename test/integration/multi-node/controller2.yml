@@ -15,3 +15,5 @@ haproxy_tls: true
 # recipes - those run only on the primary controller. Skip the
 # corresponding InSpec checks so this controller doesn't fail them.
 primary_controller: false
+# cinder tooz locks via valkey/sentinel on the mq tier.
+coordination_url: redis://:oslocks@mq1.testing.osuosl.org:26379?sentinel=oslocks&sentinel_fallback=mq2.testing.osuosl.org:26379&sentinel_fallback=mq3.testing.osuosl.org:26379&db=0

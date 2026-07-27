@@ -220,6 +220,22 @@ module OSLOpenstack
         openstack_memcached_endpoints.join(',')
       end
 
+      # tooz backend_url for the shared valkey coordination tier, in the
+      # redis:// sentinel form with the per-cloud db index. nil when the
+      # cloud has no coordination block (no [coordination] section
+      # renders). tooz 2.10.1 (yoga) accepts sentinel/sentinel_fallback/
+      # db as query args and only the userinfo password, so the sentinels
+      # themselves are unauthenticated; see docs/COORDINATION_TIER.md.
+      def openstack_coordination_url
+        c = safe_dig(os_secrets, 'coordination')
+        return unless c
+        first, *fallbacks = Array(c['endpoint']).sort
+        args = ["sentinel=#{c['service_name'] || 'oslocks'}"]
+        args += fallbacks.map { |host| "sentinel_fallback=#{host}:26379" }
+        args << "db=#{c['db'] || 0}"
+        "redis://:#{c['pass']}@#{first}:26379?#{args.join('&')}"
+      end
+
       # Per-host listen address for Apache/WSGI vhosts so that HAProxy can
       # bind to the VIP on the same port. Returns '*' when the cloud is not
       # configured for HA (back-compat with single-controller deployments).
