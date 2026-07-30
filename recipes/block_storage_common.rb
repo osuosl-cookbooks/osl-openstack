@@ -25,6 +25,9 @@ include_recipe 'osl-ceph'
 
 package 'openstack-cinder'
 
+# redis client for the tooz redis:// coordination driver.
+package 'python3-redis'
+
 db_connection = openstack_database_connection('block-storage')
 
 template '/etc/cinder/cinder.conf' do
@@ -40,7 +43,7 @@ template '/etc/cinder/cinder.conf' do
     block_ssd_rbd_pool: b['ceph']['block_ssd_rbd_pool'],
     cluster: b['cluster'],
     compute_pass: s['compute']['service']['pass'],
-    coordination_url: db_connection.sub('mysql+pymysql', 'mysql'),
+    coordination_url: openstack_coordination_url,
     database_connection: db_connection,
     image_api_servers: openstack_image_api_servers,
     memcached_endpoint: openstack_memcached_servers,

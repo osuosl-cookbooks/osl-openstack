@@ -1,8 +1,9 @@
 # Design: shared valkey coordination (tooz lock) tier
 
-Status: tier implemented in the cookbook (`ops_coordination` on the mq
-nodes); the client side (cinder pointing tooz at it) lands as a
-follow-up change. Runs on the same three mq nodes as the
+Status: implemented in the cookbook, tier (`ops_coordination` on the
+mq nodes) and client side (cinder renders the redis:// backend_url
+when the cloud's bag item has a `coordination` block). Runs on the
+same three mq nodes as the
 [shared RabbitMQ messaging tier](SHARED_MESSAGING_TIER.md).
 
 ## Motivation
@@ -16,9 +17,13 @@ On top of that, `GET_LOCK` locks are local to the server a session is
 connected to and are not Galera-replicated, so the mysql driver never
 provided real cross-node exclusion behind the HA frontend.
 
-The follow-up cinder change drops the mysql `backend_url` and points
-tooz at this tier via the `redis://` driver (valkey is
-protocol-compatible with redis), restoring working distributed locks.
+The cinder change drops the mysql `backend_url` entirely and renders
+the tooz `redis://` form against this tier (valkey is
+protocol-compatible with redis) once a cloud's bag item carries a
+`coordination` block. A cloud without the block renders no
+`[coordination]` section at all, so cinder falls back to node-local
+oslo file locks; that restores attach on its own and makes the
+per-cloud cutover a data bag edit, not a code deploy.
 
 Rejected alternatives: etcd (fine, but valkey is preferred for reuse
 potential and operator familiarity); patching the tooz mysql driver to
@@ -201,25 +206,38 @@ services) is chef-managed.
    owns the topology after the seed. A converge during or after a
    failover is a no-op on the configs.
 
-## Client side (follow-up change)
+## Client side (per-cloud cutover)
 
-Each cloud's `cinder.conf` gets, via its data bag item's
-`coordination` block:
+Adding the `coordination` block (with the cloud's `db` index) to a
+cloud's bag item makes `openstack_coordination_url` render in that
+cloud's `cinder.conf`:
 
 ```ini
 [coordination]
 backend_url = redis://:<pass>@mq1:26379?sentinel=oslocks&sentinel_fallback=mq2:26379&sentinel_fallback=mq3:26379&db=<N>
 ```
 
-Controllers need `python3-redis` (in the yoga RDO repos, noarch, all
-arches). Rollout x86 first (it has the known-broken attach to verify
-against), then arm, then ppc. Verification per cloud: attach/detach
-smoke test on a scratch VM, stuck `reserved` attachments cleaned up,
-and lock keys visible during an attach:
+The converge installs `python3-redis` (yoga RDO repos, noarch, all
+arches) and restarts cinder-scheduler and cinder-volume plus reloads
+httpd (cinder-api runs under mod_wsgi; its log is
+/var/log/httpd/cinder-api) via the existing cinder.conf subscriptions.
+cinder-backup is not chef-managed; restart it by hand where it runs.
+
+Rollout x86 first (it has the known-broken attach to verify against),
+then arm, then ppc. Verification per cloud:
+
+- attach/detach smoke test on a scratch VM
+- stuck `reserved` attachments cleaned up
+  (`openstack volume attachment list`)
+- lock keys visible during an attach:
 
 ```bash
 valkey-cli -a "$PASS" --no-auth-warning -n <db> --scan --pattern '_tooz*'
 ```
+
+cinder is the only tooz consumer in this cookbook (no other rendered
+config sets a `backend_url`); designate/octavia/gnocchi are not
+deployed here.
 
 ## Monitoring
 

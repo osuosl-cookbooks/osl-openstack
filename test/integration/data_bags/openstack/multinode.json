@@ -82,7 +82,8 @@
       "mq3.testing.osuosl.org"
     ],
     "primary": "mq1.testing.osuosl.org",
-    "pass": "oslocks"
+    "pass": "oslocks",
+    "db": 0
   },
   "dashboard": {
     "aliases":[

@@ -16,3 +16,5 @@ skip_ssl_baseline: true
 # Tells the dashboard / compute_controller controls to skip
 # localhost:443-HTTPS probes and the local novnc cert assertions.
 haproxy_tls: true
+# cinder tooz locks via valkey/sentinel on the mq tier.
+coordination_url: redis://:oslocks@mq1.testing.osuosl.org:26379?sentinel=oslocks&sentinel_fallback=mq2.testing.osuosl.org:26379&sentinel_fallback=mq3.testing.osuosl.org:26379&db=0

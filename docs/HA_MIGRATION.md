@@ -704,9 +704,20 @@ SNAT outbound from instances must keep the same address.
 
 `block-storage.cluster` was added in the A2 data-bag MR, so by this
 point `cinder.conf` on both controllers renders the `cluster =
-<name>` and `[coordination] backend_url = mysql://...` blocks. After
-both `cinder-volume` services have restarted (which C2 / C3 take care
-of), verify:
+<name>` block. After both `cinder-volume` services have restarted
+(which C2 / C3 take care of), verify:
+
+> **Note:** the original migration also rendered `[coordination]
+> backend_url = mysql://...` here. That was removed: the tooz mysql
+> driver passes lock names to `GET_LOCK()` raw, and cinder's
+> `cinder-attachment_update-<uuid>-<host>` names exceed MySQL 8.0's
+> 64-char limit, failing every attachment update with HTTP 500 (and
+> `GET_LOCK` locks are per-server, not Galera-replicated, so the
+> driver never provided cross-node exclusion anyway). The section now
+> renders only when the cloud's bag item has a `coordination` block
+> pointing at the shared valkey tier (see
+> [COORDINATION_TIER.md](COORDINATION_TIER.md)); without one, cinder
+> falls back to local oslo file locks.
 
 ```bash
 cinder-manage cluster list
