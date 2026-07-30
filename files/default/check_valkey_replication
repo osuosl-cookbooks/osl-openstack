@@ -1,0 +1,32 @@
+#!/bin/bash
+# NRPE check: this member is a primary with all expected replicas
+# connected, or a replica with its link up. Reads requirepass from
+# valkey.conf (root-only), so this runs under sudo.
+expected="${1:?usage: check_valkey_replication <cluster_size>}"
+pass=$(awk '/^requirepass /{gsub(/"/, "", $2); print $2}' /etc/valkey/valkey.conf)
+info=$(REDISCLI_AUTH="$pass" /usr/bin/valkey-cli info replication 2>/dev/null | tr -d '\r')
+
+role=$(awk -F: '/^role:/{print $2}' <<< "$info")
+case "$role" in
+  master)
+    slaves=$(awk -F: '/^connected_slaves:/{print $2}' <<< "$info")
+    if [ "${slaves:-0}" -lt $((expected - 1)) ]; then
+      echo "VALKEY REPLICATION CRITICAL: primary with ${slaves:-0}/$((expected - 1)) replicas connected"
+      exit 2
+    fi
+    echo "VALKEY REPLICATION OK: primary, ${slaves}/$((expected - 1)) replicas connected"
+    ;;
+  slave)
+    link=$(awk -F: '/^master_link_status:/{print $2}' <<< "$info")
+    if [ "$link" != "up" ]; then
+      echo "VALKEY REPLICATION CRITICAL: replica link ${link:-unknown}"
+      exit 2
+    fi
+    echo 'VALKEY REPLICATION OK: replica, link up'
+    ;;
+  *)
+    echo 'VALKEY REPLICATION UNKNOWN: unable to read replication info'
+    exit 3
+    ;;
+esac
+exit 0

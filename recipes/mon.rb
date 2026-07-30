@@ -154,4 +154,46 @@ if node['osl-openstack']['node_type'] == 'messaging'
     command 'sudo /usr/sbin/rabbitmq-diagnostics'
     parameters "-q check_port_listener #{listen_port}"
   end
+
+  # Valkey coordination (tooz lock) service on the same tier nodes.
+  if s['coordination']
+    c = s['coordination']
+    cluster_size = c['endpoint'] ? Array(c['endpoint']).count : 1
+
+    %w(check_valkey check_valkey_replication check_valkey_sentinel).each do |chk|
+      cookbook_file "#{node['nrpe']['plugin_dir']}/#{chk}" do
+        mode '755'
+      end
+    end
+
+    # check_valkey and check_valkey_replication read requirepass out of
+    # /etc/valkey/valkey.conf (root-only), so they run through the same
+    # sudo grant pattern as the rabbitmq checks; the sentinel check
+    # needs no auth at all.
+    %w(nagios nrpe).each do |u|
+      sudo "check_valkey-#{u}" do
+        user u
+        runas 'root'
+        nopasswd true
+        commands [
+          "#{node['nrpe']['plugin_dir']}/check_valkey",
+          "#{node['nrpe']['plugin_dir']}/check_valkey_replication",
+        ]
+      end
+    end
+
+    nrpe_check 'check_valkey' do
+      command "sudo #{node['nrpe']['plugin_dir']}/check_valkey"
+    end
+
+    nrpe_check 'check_valkey_replication' do
+      command "sudo #{node['nrpe']['plugin_dir']}/check_valkey_replication"
+      parameters cluster_size.to_s
+    end
+
+    nrpe_check 'check_valkey_sentinel' do
+      command "#{node['nrpe']['plugin_dir']}/check_valkey_sentinel"
+      parameters "#{c['service_name'] || 'oslocks'} #{cluster_size}"
+    end
+  end
 end

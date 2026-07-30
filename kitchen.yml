@@ -47,6 +47,10 @@ suites:
       - role[openstack_tk]
       - recipe[osl-openstack::ops_messaging]
   - name: messaging_tier
+    # The tier runs on EL10 only (RabbitMQ 4.2 + valkey from AppStream).
+    excludes:
+      - almalinux-8
+      - almalinux-9
     driver_config:
       server_name: "messaging-tier-<%= ENV['USER'] %>"
     attributes:
@@ -56,9 +60,11 @@ suites:
     run_list:
       - role[openstack_tk]
       - recipe[osl-openstack::ops_messaging]
+      - recipe[osl-openstack::ops_coordination]
       - recipe[osl-openstack::mon]
     verifier:
       inspec_tests:
+        - test/integration/coordination_tier
         - test/integration/messaging_tier
       inputs:
         nrpe_checks: true

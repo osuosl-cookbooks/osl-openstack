@@ -585,7 +585,7 @@ resource "null_resource" "mq1" {
             knife bootstrap -c test/chef-config/knife.rb \
                 ${var.ssh_user_name}@${openstack_compute_instance_v2.mq1.network.0.fixed_ip_v4} \
                 --bootstrap-version ${var.chef_version} -y -N mq1 --sudo \
-                -r 'role[openstack_tf],recipe[osl-selinux],recipe[openstack_test::hosts_tf],recipe[osl-openstack::ops_messaging]'
+                -r 'role[openstack_tf],recipe[osl-selinux],recipe[openstack_test::hosts_tf],recipe[osl-openstack::ops_messaging],recipe[osl-openstack::ops_coordination]'
             EOF
         environment = {
             CHEF_SERVER = "${openstack_compute_instance_v2.chef_zero.network.0.fixed_ip_v4}"
@@ -619,7 +619,7 @@ resource "null_resource" "mq2" {
             knife bootstrap -c test/chef-config/knife.rb \
                 ${var.ssh_user_name}@${openstack_compute_instance_v2.mq2.network.0.fixed_ip_v4} \
                 --bootstrap-version ${var.chef_version} -y -N mq2 --sudo \
-                -r 'role[openstack_tf],recipe[osl-selinux],recipe[openstack_test::hosts_tf],recipe[osl-openstack::ops_messaging]'
+                -r 'role[openstack_tf],recipe[osl-selinux],recipe[openstack_test::hosts_tf],recipe[osl-openstack::ops_messaging],recipe[osl-openstack::ops_coordination]'
             EOF
         environment = {
             CHEF_SERVER = "${openstack_compute_instance_v2.chef_zero.network.0.fixed_ip_v4}"
@@ -653,7 +653,7 @@ resource "null_resource" "mq3" {
             knife bootstrap -c test/chef-config/knife.rb \
                 ${var.ssh_user_name}@${openstack_compute_instance_v2.mq3.network.0.fixed_ip_v4} \
                 --bootstrap-version ${var.chef_version} -y -N mq3 --sudo \
-                -r 'role[openstack_tf],recipe[osl-selinux],recipe[openstack_test::hosts_tf],recipe[osl-openstack::ops_messaging]'
+                -r 'role[openstack_tf],recipe[osl-selinux],recipe[openstack_test::hosts_tf],recipe[osl-openstack::ops_messaging],recipe[osl-openstack::ops_coordination]'
             EOF
         environment = {
             CHEF_SERVER = "${openstack_compute_instance_v2.chef_zero.network.0.fixed_ip_v4}"

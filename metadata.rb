@@ -24,6 +24,7 @@ depends 'osl-nrpe'
 depends 'osl-prometheus'
 depends 'osl-repos'
 depends 'osl-resources'
+depends 'osl-valkey'
 depends 'yum-kernel-osuosl'
 depends 'yum-osuosl'
 

@@ -1,5 +1,8 @@
 {
   "id": "messaging_tier",
+  "coordination": {
+    "pass": "oslocks"
+  },
   "messaging": {
     "user": "openstack",
     "pass": "openstack",
