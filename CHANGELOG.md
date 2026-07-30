@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+18.5.0 (2026-07-30)
+-------------------
+- Add valkey + sentinel coordination tier on the mq nodes
+
 18.4.3 (2026-07-17)
 -------------------
 - Disable the ceilometer event pipeline
