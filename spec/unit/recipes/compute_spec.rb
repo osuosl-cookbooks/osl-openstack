@@ -30,6 +30,22 @@ describe 'osl-openstack::compute' do
       end
       it { is_expected.to install_kernel_module 'tun' }
       it { is_expected.to load_kernel_module 'tun' }
+      it do
+        is_expected.to install_kernel_module('nf_conntrack').with(options: %w(hashsize=524288))
+      end
+      it { is_expected.to load_kernel_module 'nf_conntrack' }
+      # sysctl and osl_sysfs_param both coerce value to a String
+      it do
+        is_expected.to apply_sysctl('net.netfilter.nf_conntrack_max').with(value: '2097152')
+      end
+      it do
+        is_expected.to apply_sysctl('net.netfilter.nf_conntrack_tcp_timeout_established')
+          .with(value: '86400')
+      end
+      it do
+        is_expected.to set_osl_sysfs_param('/sys/module/nf_conntrack/parameters/hashsize')
+          .with(value: '524288')
+      end
       case pltfrm
       when ALMA_8
         it { is_expected.to create_cookbook_file '/etc/sysconfig/network' }

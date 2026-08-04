@@ -162,6 +162,27 @@ control 'compute' do
     its('content') { should cmp "options kvm_intel nested=1\n" }
   end if os.arch == 'x86_64'
 
+  describe kernel_module('nf_conntrack') do
+    it { should be_loaded }
+  end
+
+  describe file '/etc/modprobe.d/options_nf_conntrack.conf' do
+    its('content') { should cmp "options nf_conntrack hashsize=524288\n" }
+  end
+
+  describe kernel_parameter('net.netfilter.nf_conntrack_max') do
+    its('value') { should eq 2097152 }
+  end
+
+  describe kernel_parameter('net.netfilter.nf_conntrack_tcp_timeout_established') do
+    its('value') { should eq 86400 }
+  end
+
+  # Applied at runtime, so it holds without the reboot the modprobe option needs
+  describe file '/sys/module/nf_conntrack/parameters/hashsize' do
+    its('content') { should cmp "524288\n" }
+  end
+
   if os.arch == 'ppc64le'
     describe kernel_module('kvm_hv') do
       it { should be_loaded }

@@ -137,6 +137,57 @@ describe OSLOpenstack::Cookbook::Helpers do
     end
   end
 
+  describe 'conntrack helpers' do
+    def stub_conntrack(conntrack)
+      allow(helper).to receive(:os_secrets).and_return(
+        'compute' => conntrack.nil? ? {} : { 'conntrack' => conntrack }
+      )
+    end
+
+    describe '#openstack_conntrack_max' do
+      it 'defaults when the conntrack block is absent' do
+        stub_conntrack(nil)
+        expect(helper.openstack_conntrack_max).to eq(2_097_152)
+      end
+
+      it 'returns the configured value' do
+        stub_conntrack('max' => 4_194_304)
+        expect(helper.openstack_conntrack_max).to eq(4_194_304)
+      end
+    end
+
+    describe '#openstack_conntrack_tcp_timeout_established' do
+      it 'defaults to a day rather than the kernel default of 5 days' do
+        stub_conntrack(nil)
+        expect(helper.openstack_conntrack_tcp_timeout_established).to eq(86_400)
+      end
+
+      it 'returns the configured value' do
+        stub_conntrack('tcp_timeout_established' => 43_200)
+        expect(helper.openstack_conntrack_tcp_timeout_established).to eq(43_200)
+      end
+    end
+
+    describe '#openstack_conntrack_hashsize' do
+      it 'derives a quarter of the default max' do
+        stub_conntrack(nil)
+        expect(helper.openstack_conntrack_hashsize).to eq(524_288)
+      end
+
+      # The hashtable does not scale with the sysctl, so an overridden max
+      # has to carry through to the module parameter.
+      it 'derives a quarter of an overridden max' do
+        stub_conntrack('max' => 4_194_304)
+        expect(helper.openstack_conntrack_hashsize).to eq(1_048_576)
+      end
+
+      it 'prefers an explicit hashsize over the derived value' do
+        stub_conntrack('max' => 4_194_304, 'hashsize' => 65_536)
+        expect(helper.openstack_conntrack_hashsize).to eq(65_536)
+      end
+    end
+  end
+
   describe '#openstack_rabbitmq_join_needed?' do
     let(:primary) { 'rabbit@mq1.bak.osuosl.org' }
 

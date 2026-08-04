@@ -189,6 +189,25 @@ end
 include_recipe 'osl-openstack::network'
 include_recipe 'osl-openstack::telemetry_compute'
 
+kernel_module 'nf_conntrack' do
+  options ["hashsize=#{openstack_conntrack_hashsize}"]
+  action [:install, :load]
+end
+
+sysctl 'net.netfilter.nf_conntrack_max' do
+  value openstack_conntrack_max
+end
+
+sysctl 'net.netfilter.nf_conntrack_tcp_timeout_established' do
+  value openstack_conntrack_tcp_timeout_established
+end
+
+# Applies hashsize without a reboot. The modprobe option above already covers
+# boot, so no persist here.
+osl_sysfs_param '/sys/module/nf_conntrack/parameters/hashsize' do
+  value openstack_conntrack_hashsize
+end
+
 unless openstack_cinder_disabled?
   package 'openstack-cinder'
 
