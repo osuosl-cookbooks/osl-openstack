@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+18.5.2 (2026-08-04)
+-------------------
+- Tune nf_conntrack for multi-tenant KVM hypervisors
+
 18.5.1 (2026-07-30)
 -------------------
 - Point cinder tooz coordination at the valkey tier
