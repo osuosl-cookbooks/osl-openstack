@@ -475,6 +475,23 @@ module OSLOpenstack
         end
       end
 
+      # Guest traffic is bridged through the host conntrack table, so 40+
+      # VMs per hypervisor outgrow the stock ceiling.
+      def openstack_conntrack_max
+        safe_dig(os_secrets, 'compute', 'conntrack', 'max') || 2_097_152
+      end
+
+      # Stock 432000 (5 days) is excessive and lets dead entries accumulate.
+      def openstack_conntrack_tcp_timeout_established
+        safe_dig(os_secrets, 'compute', 'conntrack', 'tcp_timeout_established') || 86_400
+      end
+
+      # The hashtable is a module parameter and does not scale with the
+      # sysctl, so size it off max unless overridden directly.
+      def openstack_conntrack_hashsize
+        safe_dig(os_secrets, 'compute', 'conntrack', 'hashsize') || openstack_conntrack_max / 4
+      end
+
       # OpenStack API helpers
       def os_conn
         return OSLOpenstack::Cookbook::Helpers.conn_cache if OSLOpenstack::Cookbook::Helpers.conn_cache
