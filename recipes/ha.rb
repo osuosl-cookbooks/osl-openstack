@@ -183,6 +183,24 @@ end
 # HAProxy needs one bind directive per address family, so we declare
 # the resource twice per service: first call sets all properties,
 # second call adds only the IPv6 bind.
+# Per-source connection rate limit on every VIP listener: an external
+# scanner hammering the APIs (2026-08-14, ~200k conntrack entries on
+# arm-controller1) gets rejected at the edge instead of per-IP firewall
+# whack-a-mole. Infra ranges are exempt from tracking; tune both via
+# ha.haproxy.throttle {conn_rate, exempt} in the data bag. The rate is
+# per source IP over 10s, so 50 still leaves CLI/API users a wide berth.
+throttle = stats['throttle'] || {}
+throttle_rate = throttle['conn_rate'] || 50
+throttle_exempt = throttle['exempt'] || %w(10.0.0.0/8 127.0.0.0/8 140.211.0.0/16)
+throttle_opts = {
+  # type ipv6 holds both families (v4 arrives IPv4-mapped).
+  'stick-table' => 'type ipv6 size 100k expire 10m store conn_rate(10s)',
+  'tcp-request' => [
+    'connection track-sc0 src if !throttle_exempt',
+    "connection reject if { sc0_conn_rate gt #{throttle_rate} }",
+  ],
+}
+
 openstack_ha_services.each do |svc|
   port = svc[:port]
   servers = controllers.map { |fqdn| "#{fqdn} #{listen_ips[fqdn]}:#{port} check" }
@@ -190,6 +208,7 @@ openstack_ha_services.each do |svc|
 
   haproxy_listen svc[:name] do
     bind "#{vip4}:#{port}#{cert_opt}"
+    acl ["throttle_exempt src #{throttle_exempt.join(' ')}"]
     if svc[:redirect_to_https]
       # Plain-HTTP listener whose only job is to 301 to https. Apache
       # used to do this in its wsgi-horizon :80 vhost; that rewrite is
@@ -198,6 +217,7 @@ openstack_ha_services.each do |svc|
       # No backend servers - every request terminates here.
       mode 'http'
       http_request ['redirect scheme https code 301']
+      extra_options(throttle_opts)
     else
       mode svc[:tls] ? 'http' : 'tcp'
       option ['forwardfor'] if svc[:tls]
@@ -209,7 +229,7 @@ openstack_ha_services.each do |svc|
         'set-header X-Forwarded-Proto https if { ssl_fc }',
         'set-header X-Forwarded-Proto http if !{ ssl_fc }',
       ] if svc[:tls]
-      extra_options('balance' => svc[:balance] || 'roundrobin')
+      extra_options(throttle_opts.merge('balance' => svc[:balance] || 'roundrobin'))
       server servers
     end
   end

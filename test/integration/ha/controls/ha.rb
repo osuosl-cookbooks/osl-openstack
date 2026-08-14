@@ -50,6 +50,11 @@ control 'haproxy' do
     its('content') { should match(/option forwardfor/) }
     its('content') { should match(/balance source/) }       # horizon
     its('content') { should match(/balance roundrobin/) }   # everything else
+    # Per-source conn-rate throttle with infra ranges exempt.
+    its('content') { should match(%r{acl throttle_exempt src 10\.0\.0\.0/8 127\.0\.0\.0/8 140\.211\.0\.0/16}) }
+    its('content') { should match(/stick-table type ipv6 size 100k expire 10m store conn_rate\(10s\)/) }
+    its('content') { should match(/tcp-request connection track-sc0 src if !throttle_exempt/) }
+    its('content') { should match(/tcp-request connection reject if \{ sc0_conn_rate gt 50 \}/) }
   end
 end
 

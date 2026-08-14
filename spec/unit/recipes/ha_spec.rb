@@ -103,6 +103,23 @@ describe 'osl-openstack::ha' do
         expect(horizon_http.server).to be_nil
       end
 
+      it 'rate-limits every listener per source IP with infra exempt' do
+        # Default throttle: track non-exempt sources in a per-listener
+        # stick-table and reject >50 conns/10s (the 2026-08-14 scanner).
+        %w(keystone glance-api horizon-http).each do |name|
+          listen = chef_run.find_resources(:haproxy_listen)
+                           .find { |r| r.name == name }
+          expect(listen.acl).to include('throttle_exempt src 10.0.0.0/8 127.0.0.0/8 140.211.0.0/16')
+          expect(listen.extra_options['stick-table']).to eq('type ipv6 size 100k expire 10m store conn_rate(10s)')
+          expect(listen.extra_options['tcp-request']).to eq(
+            [
+              'connection track-sc0 src if !throttle_exempt',
+              'connection reject if { sc0_conn_rate gt 50 }',
+            ]
+          )
+        end
+      end
+
       it 'builds the haproxy wildcard PEM bundle' do
         expect(chef_run).to create_directory('/etc/haproxy/certs').with(
           owner: 'haproxy', group: 'haproxy', mode: '0700'
