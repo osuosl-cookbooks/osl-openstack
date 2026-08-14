@@ -56,6 +56,11 @@ module OSLOpenstack
         cmd.stdout.match?(/^#{Regexp.escape(vhost)}\s*$/)
       end
 
+      def openstack_rabbitmq_policy?(vhost, policy)
+        cmd = shell_out!("rabbitmqctl -q list_policies -p #{vhost}")
+        cmd.stdout.match?(/^#{Regexp.escape(vhost)}\s+#{Regexp.escape(policy)}\s/)
+      end
+
       def openstack_rabbitmq_plugin?(plugin)
         cmd = shell_out!('rabbitmq-plugins -q list -e -m')
         cmd.stdout.match?(/^#{Regexp.escape(plugin)}$/)

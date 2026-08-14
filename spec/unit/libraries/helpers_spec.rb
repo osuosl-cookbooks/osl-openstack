@@ -188,6 +188,23 @@ describe OSLOpenstack::Cookbook::Helpers do
     end
   end
 
+  describe '#openstack_rabbitmq_policy?' do
+    def stub_list_policies(stdout)
+      allow(helper).to receive(:shell_out!)
+        .with('rabbitmqctl -q list_policies -p x86').and_return(double(stdout: stdout))
+    end
+
+    it 'is true when the policy exists on the vhost' do
+      stub_list_policies("x86\tstale-heat-queues\t^(heat-engine-listener|engine_worker)\\.\tqueues\t{\"expires\":3600000}\t0\n")
+      expect(helper.openstack_rabbitmq_policy?('x86', 'stale-heat-queues')).to be true
+    end
+
+    it 'is false when the vhost has no such policy' do
+      stub_list_policies('')
+      expect(helper.openstack_rabbitmq_policy?('x86', 'stale-heat-queues')).to be false
+    end
+  end
+
   describe '#openstack_rabbitmq_join_needed?' do
     let(:primary) { 'rabbit@mq1.bak.osuosl.org' }
 

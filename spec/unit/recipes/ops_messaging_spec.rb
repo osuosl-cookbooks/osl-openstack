@@ -136,6 +136,7 @@ describe 'osl-openstack::ops_messaging' do
           allow_any_instance_of(OSLOpenstack::Cookbook::Helpers).to receive(:openstack_rabbitmq_vhost?).and_return(false)
           allow_any_instance_of(OSLOpenstack::Cookbook::Helpers).to receive(:openstack_rabbitmq_user?).and_return(false)
           allow_any_instance_of(OSLOpenstack::Cookbook::Helpers).to receive(:openstack_rabbitmq_permissions?).and_return(false)
+          allow_any_instance_of(OSLOpenstack::Cookbook::Helpers).to receive(:openstack_rabbitmq_policy?).and_return(false)
         end
 
         it do
@@ -155,6 +156,12 @@ describe 'osl-openstack::ops_messaging' do
         it do
           is_expected.to run_execute('rabbitmq: set permissions x86 on x86').with(
             command: 'rabbitmqctl set_permissions -p x86 x86 ".*" ".*" ".*"'
+          )
+        end
+        it do
+          is_expected.to run_execute('rabbitmq: set policy stale-heat-queues on x86').with(
+            command: 'rabbitmqctl set_policy -p x86 stale-heat-queues ' \
+                     '\'^(heat-engine-listener|engine_worker)\\.\' \'{"expires":3600000}\' --apply-to queues'
           )
         end
 

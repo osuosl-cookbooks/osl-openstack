@@ -131,8 +131,10 @@ if node['osl-openstack']['node_type'] == 'messaging'
     end
   end
 
-  cookbook_file "#{node['nrpe']['plugin_dir']}/check_rabbitmq_cluster" do
-    mode '755'
+  %w(check_rabbitmq_cluster check_rabbitmq_queues).each do |chk|
+    cookbook_file "#{node['nrpe']['plugin_dir']}/#{chk}" do
+      mode '755'
+    end
   end
 
   # rabbitmq-diagnostics prints failure detail to stderr and exits with
@@ -155,6 +157,13 @@ if node['osl-openstack']['node_type'] == 'messaging'
   nrpe_check 'check_rabbitmq_listener' do
     command 'sudo /usr/sbin/rabbitmq-diagnostics'
     parameters "-q check_port_listener #{listen_port} 2>&1 || exit 2"
+  end
+
+  # Leaked RPC queues (heat listener/engine_worker) melted the tier on
+  # 2026-08-13; alert well before the count gets dangerous again.
+  nrpe_check 'check_rabbitmq_queues' do
+    command "#{node['nrpe']['plugin_dir']}/check_rabbitmq_queues"
+    parameters "#{m['queue_count_warn'] || 2000} #{m['queue_count_crit'] || 3000}"
   end
 
   # Valkey coordination (tooz lock) service on the same tier nodes.
