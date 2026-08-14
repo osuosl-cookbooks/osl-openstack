@@ -135,14 +135,16 @@ if node['osl-openstack']['node_type'] == 'messaging'
     mode '755'
   end
 
+  # rabbitmq-diagnostics prints failure detail to stderr and exits with
+  # sysexits codes (e.g. 69), so fold both into Nagios conventions.
   nrpe_check 'check_rabbitmq_running' do
     command 'sudo /usr/sbin/rabbitmq-diagnostics'
-    parameters '-q check_running'
+    parameters '-q check_running 2>&1 || exit 2'
   end
 
   nrpe_check 'check_rabbitmq_alarms' do
     command 'sudo /usr/sbin/rabbitmq-diagnostics'
-    parameters '-q check_alarms'
+    parameters '-q check_alarms 2>&1 || exit 2'
   end
 
   nrpe_check 'check_rabbitmq_cluster' do
@@ -152,7 +154,7 @@ if node['osl-openstack']['node_type'] == 'messaging'
 
   nrpe_check 'check_rabbitmq_listener' do
     command 'sudo /usr/sbin/rabbitmq-diagnostics'
-    parameters "-q check_port_listener #{listen_port}"
+    parameters "-q check_port_listener #{listen_port} 2>&1 || exit 2"
   end
 
   # Valkey coordination (tooz lock) service on the same tier nodes.

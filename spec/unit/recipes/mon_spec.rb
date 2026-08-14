@@ -161,13 +161,13 @@ describe 'osl-openstack::mon' do
         it do
           is_expected.to add_nrpe_check('check_rabbitmq_running').with(
             command: 'sudo /usr/sbin/rabbitmq-diagnostics',
-            parameters: '-q check_running'
+            parameters: '-q check_running 2>&1 || exit 2'
           )
         end
         it do
           is_expected.to add_nrpe_check('check_rabbitmq_alarms').with(
             command: 'sudo /usr/sbin/rabbitmq-diagnostics',
-            parameters: '-q check_alarms'
+            parameters: '-q check_alarms 2>&1 || exit 2'
           )
         end
         it do
@@ -179,7 +179,7 @@ describe 'osl-openstack::mon' do
         it do
           is_expected.to add_nrpe_check('check_rabbitmq_listener').with(
             command: 'sudo /usr/sbin/rabbitmq-diagnostics',
-            parameters: '-q check_port_listener 5672'
+            parameters: '-q check_port_listener 5672 2>&1 || exit 2'
           )
         end
 
@@ -264,7 +264,7 @@ describe 'osl-openstack::mon' do
             )
           end
 
-          it { is_expected.to add_nrpe_check('check_rabbitmq_listener').with(parameters: '-q check_port_listener 5671') }
+          it { is_expected.to add_nrpe_check('check_rabbitmq_listener').with(parameters: '-q check_port_listener 5671 2>&1 || exit 2') }
           it { is_expected.to add_nrpe_check('check_rabbitmq_cluster').with(parameters: '3') }
         end
       end

@@ -109,6 +109,14 @@ control 'messaging_tier' do
       its('exit_status') { should eq 0 }
     end
 
+    # Failure path through the full nrpe.cfg command line: diagnostics
+    # prints to stderr and exits with sysexits codes, so the shell fold
+    # must surface the message on stdout and remap to CRITICAL (2).
+    describe command('sudo -u nrpe sh -c "sudo /usr/sbin/rabbitmq-diagnostics -q check_port_listener 9999 2>&1 || exit 2"') do
+      its('exit_status') { should eq 2 }
+      its('stdout') { should_not be_empty }
+    end
+
     # The cluster plugin: OK at the real member count, CRITICAL when a
     # member is missing (expected count + 1 can never be satisfied).
     describe command("sudo -u nrpe /usr/lib64/nagios/plugins/check_rabbitmq_cluster #{cluster_size}") do
