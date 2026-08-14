@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+18.5.3 (2026-08-14)
+-------------------
+- Surface rabbitmq-diagnostics failures in the NRPE checks
+
 18.5.2 (2026-08-04)
 -------------------
 - Tune nf_conntrack for multi-tenant KVM hypervisors
