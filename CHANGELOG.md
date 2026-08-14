@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+18.5.4 (2026-08-14)
+-------------------
+- Rate-limit VIP connections per source IP in haproxy
+
 18.5.3 (2026-08-14)
 -------------------
 - Surface rabbitmq-diagnostics failures in the NRPE checks
