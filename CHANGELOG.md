@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+18.5.5 (2026-08-14)
+-------------------
+- Expire leaked heat RPC queues and monitor total queue count
+
 18.5.4 (2026-08-14)
 -------------------
 - Rate-limit VIP connections per source IP in haproxy
