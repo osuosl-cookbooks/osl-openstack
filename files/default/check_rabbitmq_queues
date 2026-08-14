@@ -1,0 +1,29 @@
+#!/bin/bash
+# NRPE check: total queue count across all vhosts. A runaway count of
+# leaked RPC queues melts quorum-queue Raft under any brief stall.
+warn="${1:?usage: check_rabbitmq_queues <warn> <crit>}"
+crit="${2:?usage: check_rabbitmq_queues <warn> <crit>}"
+
+vhosts=$(sudo /usr/sbin/rabbitmqctl -q list_vhosts --no-table-headers 2>/dev/null)
+
+if [ -z "$vhosts" ]; then
+  echo 'RABBITMQ QUEUES UNKNOWN: unable to list vhosts'
+  exit 3
+fi
+
+count=0
+for vh in $vhosts; do
+  n=$(sudo /usr/sbin/rabbitmqctl -q list_queues -p "$vh" --no-table-headers name 2>/dev/null | wc -l)
+  count=$((count + n))
+done
+
+if [ "$count" -ge "$crit" ]; then
+  echo "RABBITMQ QUEUES CRITICAL: ${count} queues (>= ${crit})"
+  exit 2
+elif [ "$count" -ge "$warn" ]; then
+  echo "RABBITMQ QUEUES WARNING: ${count} queues (>= ${warn})"
+  exit 1
+fi
+
+echo "RABBITMQ QUEUES OK: ${count} queues"
+exit 0

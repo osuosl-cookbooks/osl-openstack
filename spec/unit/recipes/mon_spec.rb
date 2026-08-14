@@ -156,7 +156,9 @@ describe 'osl-openstack::mon' do
           end
         end
 
-        it { is_expected.to create_cookbook_file('/usr/lib64/nagios/plugins/check_rabbitmq_cluster').with(mode: '755') }
+        %w(check_rabbitmq_cluster check_rabbitmq_queues).each do |chk|
+          it { is_expected.to create_cookbook_file("/usr/lib64/nagios/plugins/#{chk}").with(mode: '755') }
+        end
 
         it do
           is_expected.to add_nrpe_check('check_rabbitmq_running').with(
@@ -180,6 +182,12 @@ describe 'osl-openstack::mon' do
           is_expected.to add_nrpe_check('check_rabbitmq_listener').with(
             command: 'sudo /usr/sbin/rabbitmq-diagnostics',
             parameters: '-q check_port_listener 5672 2>&1 || exit 2'
+          )
+        end
+        it do
+          is_expected.to add_nrpe_check('check_rabbitmq_queues').with(
+            command: '/usr/lib64/nagios/plugins/check_rabbitmq_queues',
+            parameters: '2000 3000'
           )
         end
 

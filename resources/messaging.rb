@@ -203,6 +203,14 @@ action :create do
       sensitive true
       not_if { openstack_rabbitmq_permissions?(vh_user, vhost) }
     end
+
+    # heat-engine leaks a UUID-named listener/engine_worker queue set per
+    # restart (2026-08-13 meltdown); expire any unused for an hour.
+    execute "rabbitmq: set policy stale-heat-queues on #{vhost}" do
+      command "rabbitmqctl set_policy -p #{vhost} stale-heat-queues " \
+              "'^(heat-engine-listener|engine_worker)\\.' '{\"expires\":3600000}' --apply-to queues"
+      not_if { openstack_rabbitmq_policy?(vhost, 'stale-heat-queues') }
+    end
   end
 end
 

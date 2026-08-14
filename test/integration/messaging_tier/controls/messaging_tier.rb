@@ -76,6 +76,11 @@ control 'messaging_tier' do
     its('stdout') { should match(/^#{Regexp.escape(vhost_user)}\s+\.\*\s+\.\*\s+\.\*/) }
   end
 
+  # Leaked heat RPC queues expire after an hour of disuse.
+  describe command("rabbitmqctl -q list_policies -p #{vhost}") do
+    its('stdout') { should match(/stale-heat-queues\s+\^\(heat-engine-listener\|engine_worker\)/) }
+  end
+
   # Multi-node: the services must declare quorum queues in the vhost.
   # Assert one is present, not the absence of classic (reply/fanout
   # queues are legitimately classic).
@@ -94,6 +99,7 @@ control 'messaging_tier' do
       check_rabbitmq_alarms
       check_rabbitmq_cluster
       check_rabbitmq_listener
+      check_rabbitmq_queues
     ).each do |chk|
       describe file("/etc/nagios/nrpe.d/#{chk}.cfg") do
         it { should exist }
@@ -115,6 +121,16 @@ control 'messaging_tier' do
     describe command('sudo -u nrpe sh -c "sudo /usr/sbin/rabbitmq-diagnostics -q check_port_listener 9999 2>&1 || exit 2"') do
       its('exit_status') { should eq 2 }
       its('stdout') { should_not be_empty }
+    end
+
+    # Queue-count plugin: OK at sane thresholds, WARNING at warn 0 (a
+    # bare tier has zero queues, and 0 >= 0 trips the threshold).
+    describe command('sudo -u nrpe /usr/lib64/nagios/plugins/check_rabbitmq_queues 2000 3000') do
+      its('exit_status') { should eq 0 }
+      its('stdout') { should match(/^RABBITMQ QUEUES OK: \d+ queues$/) }
+    end
+    describe command('sudo -u nrpe /usr/lib64/nagios/plugins/check_rabbitmq_queues 0 3000') do
+      its('exit_status') { should eq 1 }
     end
 
     # The cluster plugin: OK at the real member count, CRITICAL when a
