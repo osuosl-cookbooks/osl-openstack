@@ -86,6 +86,9 @@ describe 'osl-openstack::image' do
       it { expect(chef_run.osl_ceph_keyring('glance')).to notify('service[openstack-glance-api]').to(:restart) }
       it { is_expected.to enable_service 'openstack-glance-api' }
       it { is_expected.to start_service 'openstack-glance-api' }
+      # Renders even without quorum queues or TLS
+      it { is_expected.to render_file('/etc/glance/glance-api.conf').with_content('[oslo_messaging_rabbit]') }
+      it { is_expected.to render_file('/etc/glance/glance-api.conf').with_content(/^heartbeat_in_pthread = false$/) }
 
       context 'with quorum queues enabled' do
         cached(:chef_run) do

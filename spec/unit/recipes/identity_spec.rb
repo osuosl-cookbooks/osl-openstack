@@ -88,6 +88,9 @@ describe 'osl-openstack::identity' do
       end
       it { expect(chef_run.template('/etc/keystone/keystone.conf')).to notify('execute[keystone: db_sync]').to(:run).immediately }
       it { expect(chef_run.template('/etc/keystone/keystone.conf')).to notify('apache2_service[osuosl]').to(:reload) }
+      # keystone is wsgi-only, so it takes the opposite value from the eventlet services
+      it { is_expected.to render_file('/etc/keystone/keystone.conf').with_content('[oslo_messaging_rabbit]') }
+      it { is_expected.to render_file('/etc/keystone/keystone.conf').with_content(/^heartbeat_in_pthread = true$/) }
       it do
         is_expected.to nothing_execute('keystone: db_sync').with(
           command: 'keystone-manage db_sync',

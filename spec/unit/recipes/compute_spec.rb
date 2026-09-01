@@ -150,6 +150,10 @@ describe 'osl-openstack::compute' do
       it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/force_raw_images = False/) }
       it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/cpu_mode = none/) }
       it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/disk_cachemodes = file=writeback/) }
+      # Renders even without quorum queues or TLS
+      it { is_expected.to render_file('/etc/nova/nova.conf').with_content('[oslo_messaging_rabbit]') }
+      it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/^heartbeat_in_pthread = false$/) }
+      it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/^rabbit_quorum_queue/) }
       it { is_expected.to_not include_recipe 'yum-kernel-osuosl::install' }
       it { is_expected.to modify_user('nova').with(shell: '/bin/sh') }
 

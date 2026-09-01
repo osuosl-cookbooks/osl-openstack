@@ -120,8 +120,10 @@ notify_on_state_change = vm_and_task_state
 [oslo_concurrency]
 lock_path = /var/lib/nova/tmp
 
-<% if @rabbit_quorum_queue || @rabbit_tls -%>
 [oslo_messaging_rabbit]
+<%# kolla sets True only for the wsgi nova-api; this file is shared with
+    nova-compute/conductor, which True breaks (LP #2035113), so False wins. -%>
+heartbeat_in_pthread = false
 <% if @rabbit_quorum_queue -%>
 rabbit_quorum_queue = true
 <% end -%>
@@ -132,7 +134,6 @@ ssl_ca_file = <%= @rabbit_ssl_ca_file %>
 <% end -%>
 <% end -%>
 
-<% end -%>
 [oslo_messaging_notifications]
 driver = messagingv2
 <% if @pci_alias -%>
