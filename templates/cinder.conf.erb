@@ -90,8 +90,10 @@ username = nova
 [oslo_concurrency]
 lock_path = /var/lib/cinder/tmp
 
-<% if @rabbit_quorum_queue || @rabbit_tls -%>
 [oslo_messaging_rabbit]
+<%# kolla sets True only for the wsgi cinder-api; this file is shared with
+    cinder-scheduler/volume, which True breaks (LP #2035113), so False wins. -%>
+heartbeat_in_pthread = false
 <% if @rabbit_quorum_queue -%>
 rabbit_quorum_queue = true
 <% end -%>
@@ -102,6 +104,5 @@ ssl_ca_file = <%= @rabbit_ssl_ca_file %>
 <% end -%>
 <% end -%>
 
-<% end -%>
 [oslo_messaging_notifications]
 driver = messagingv2

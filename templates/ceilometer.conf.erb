@@ -14,8 +14,10 @@ backend = dogpile.cache.memcached
 # fill event.sample with messages nothing consumes.
 pipelines = meter
 
-<% if @rabbit_quorum_queue || @rabbit_tls -%>
 [oslo_messaging_rabbit]
+<%# heartbeat_in_pthread defaults to True on yoga: the heartbeat stalls for the
+    length of an RPC call, so rabbit drops the connection (LP #2035113). -%>
+heartbeat_in_pthread = false
 <% if @rabbit_quorum_queue -%>
 rabbit_quorum_queue = true
 <% end -%>
@@ -26,7 +28,6 @@ ssl_ca_file = <%= @rabbit_ssl_ca_file %>
 <% end -%>
 <% end -%>
 
-<% end -%>
 [oslo_messaging_notifications]
 driver = messagingv2
 
