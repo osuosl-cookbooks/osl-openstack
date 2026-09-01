@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+18.5.6 (2026-09-01)
+-------------------
+- Set heartbeat_in_pthread per service execution model
+
 18.5.5 (2026-08-14)
 -------------------
 - Expire leaked heat RPC queues and monitor total queue count
