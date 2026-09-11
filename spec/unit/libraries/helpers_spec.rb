@@ -381,8 +381,13 @@ describe OSLOpenstack::Cookbook::Helpers do
       expect(helper.openstack_nova_pseries_acpi_patched?(path)).to be false
     end
 
+    it 'ignores a similar-looking comment that is not our marker' do
+      path = driver_with("# pseries has no ACPI, libvirt rejects <acpi/>\n")
+      expect(helper.openstack_nova_pseries_acpi_patched?(path)).to be false
+    end
+
     it 'is true once the patch marker is present' do
-      path = driver_with("# OSL: pseries has no ACPI; libvirt >= 9.2 rejects <acpi/>\n")
+      path = driver_with("# OSL-PATCH nova-pseries-acpi: libvirt >= 9.2 rejects <acpi/> here\n")
       expect(helper.openstack_nova_pseries_acpi_patched?(path)).to be true
     end
   end

@@ -8,7 +8,7 @@ pseries reports no ACPI support. Skip it on ppc64 hosts. For nova 25.x (yoga).
  
          if CONF.libvirt.virt_type in ('qemu', 'kvm'):
 -            guest.features.append(vconfig.LibvirtConfigGuestFeatureACPI())
-+            # OSL: pseries has no ACPI; libvirt >= 9.2 rejects <acpi/>
++            # OSL-PATCH nova-pseries-acpi: libvirt >= 9.2 rejects <acpi/> here
 +            caps = self._host.get_capabilities()
 +            if caps.host.cpu.arch not in (fields.Architecture.PPC64,
 +                                          fields.Architecture.PPC64LE):
