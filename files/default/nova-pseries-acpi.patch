@@ -1,0 +1,18 @@
+libvirt >= 9.2 rejects the <acpi/> feature nova adds unconditionally, and
+pseries reports no ACPI support. Skip it on ppc64 hosts. For nova 25.x (yoga).
+
+--- a/nova/virt/libvirt/driver.py
++++ b/nova/virt/libvirt/driver.py
+@@ -6052,7 +6052,11 @@
+                 image_meta.properties.get('img_hide_hypervisor_id'))
+ 
+         if CONF.libvirt.virt_type in ('qemu', 'kvm'):
+-            guest.features.append(vconfig.LibvirtConfigGuestFeatureACPI())
++            # OSL: pseries has no ACPI; libvirt >= 9.2 rejects <acpi/>
++            caps = self._host.get_capabilities()
++            if caps.host.cpu.arch not in (fields.Architecture.PPC64,
++                                          fields.Architecture.PPC64LE):
++                guest.features.append(vconfig.LibvirtConfigGuestFeatureACPI())
+             if not CONF.workarounds.libvirt_disable_apic:
+                 guest.features.append(vconfig.LibvirtConfigGuestFeatureAPIC())
+ 

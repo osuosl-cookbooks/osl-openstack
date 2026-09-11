@@ -480,6 +480,11 @@ module OSLOpenstack
         end
       end
 
+      # Marker comment left in nova's libvirt driver by the pseries ACPI patch
+      def openstack_nova_pseries_acpi_patched?(driver = '/usr/lib/python3.9/site-packages/nova/virt/libvirt/driver.py')
+        ::File.exist?(driver) && ::File.read(driver).include?('pseries has no ACPI')
+      end
+
       # Guest traffic is bridged through the host conntrack table, so 40+
       # VMs per hypervisor outgrow the stock ceiling.
       def openstack_conntrack_max
