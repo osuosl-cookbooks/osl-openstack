@@ -133,7 +133,22 @@ case node['kernel']['machine']
 when 'ppc64le'
   include_recipe 'yum-kernel-osuosl::install' if openstack_power10? && node['platform_version'].to_i < 9
 
-  package 'kernel-kvm' if node['platform_version'].to_i == 9
+  if node['platform_version'].to_i == 9
+    package %w(kernel-kvm patch)
+
+    # libvirt >= 9.2 rejects the <acpi/> feature nova adds on pseries; patch the
+    # RDO driver in place (re-applies after a nova package update)
+    cookbook_file "#{Chef::Config[:file_cache_path]}/nova-pseries-acpi.patch" do
+      source 'nova-pseries-acpi.patch'
+    end
+
+    execute 'patch nova libvirt driver for pseries ACPI' do
+      command "patch -p1 --no-backup-if-mismatch -i #{Chef::Config[:file_cache_path]}/nova-pseries-acpi.patch"
+      cwd '/usr/lib/python3.9/site-packages'
+      not_if { openstack_nova_pseries_acpi_patched? }
+      notifies :restart, 'service[openstack-nova-compute]'
+    end
+  end
 
   kernel_module 'kvm_pr' do
     action [:install, :load]

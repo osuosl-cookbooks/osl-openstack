@@ -361,4 +361,34 @@ describe OSLOpenstack::Cookbook::Helpers do
       expect(tls_redirects).to be_empty
     end
   end
+
+  describe '#openstack_nova_pseries_acpi_patched?' do
+    require 'tempfile'
+
+    def driver_with(content)
+      f = Tempfile.new('driver.py')
+      f.write(content)
+      f.close
+      f.path
+    end
+
+    it 'is false when the driver is missing' do
+      expect(helper.openstack_nova_pseries_acpi_patched?('/nonexistent/driver.py')).to be false
+    end
+
+    it 'is false on an unpatched driver' do
+      path = driver_with("guest.features.append(vconfig.LibvirtConfigGuestFeatureACPI())\n")
+      expect(helper.openstack_nova_pseries_acpi_patched?(path)).to be false
+    end
+
+    it 'ignores a similar-looking comment that is not our marker' do
+      path = driver_with("# pseries has no ACPI, libvirt rejects <acpi/>\n")
+      expect(helper.openstack_nova_pseries_acpi_patched?(path)).to be false
+    end
+
+    it 'is true once the patch marker is present' do
+      path = driver_with("# OSL-PATCH nova-pseries-acpi: libvirt >= 9.2 rejects <acpi/> here\n")
+      expect(helper.openstack_nova_pseries_acpi_patched?(path)).to be true
+    end
+  end
 end
