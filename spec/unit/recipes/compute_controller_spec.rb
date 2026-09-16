@@ -305,6 +305,15 @@ describe 'osl-openstack::compute_controller' do
       end
 
       it do
+        is_expected.to create_cookbook_file('/root/nova-cold-migrate-host.py').with(
+          source: 'cold-migrate-host.py',
+          owner: 'root',
+          group: 'root',
+          mode: '0700'
+        )
+      end
+
+      it do
         is_expected.to create_directory('/root/.nova-flavor-fixes/backups').with(
           owner: 'root',
           group: 'root',

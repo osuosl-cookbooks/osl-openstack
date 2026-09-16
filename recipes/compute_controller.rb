@@ -261,3 +261,11 @@ directory '/root/.nova-flavor-fixes/backups' do
   mode '0700'
   recursive true
 end
+
+# Deploy cold migration script (host-to-host, e.g. AlmaLinux 8 -> 9 on POWER9)
+cookbook_file '/root/nova-cold-migrate-host.py' do
+  source 'cold-migrate-host.py'
+  owner 'root'
+  group 'root'
+  mode '0700'
+end
