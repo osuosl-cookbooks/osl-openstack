@@ -269,3 +269,11 @@ cookbook_file '/root/nova-cold-migrate-host.py' do
   group 'root'
   mode '0700'
 end
+
+# Deploy read-only audit for leftover resize/migration debris (snaps, contexts, volumes)
+cookbook_file '/root/nova-resize-debris-check.py' do
+  source 'resize-debris-check.py'
+  owner 'root'
+  group 'root'
+  mode '0700'
+end

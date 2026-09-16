@@ -1,0 +1,406 @@
+#!/usr/bin/env python3
+"""Read-only sweep for leftover state from failed or unfinished nova resizes
+and migrations (the c24a44da incident taxonomy):
+
+  1. stale nova-resize RBD snapshots         -> next resize fails ImageExists
+  2. stale migration_context on instances    -> resource tracker kills new migrations
+  3. cinder volumes stuck in transient state -> resize can't reserve volumes
+  4. instances parked in VERIFY_RESIZE       -> double allocations, future leaks
+  5. dead in-progress migration records
+  6. recently errored migrations (debris signal; instance may need recovery)
+  7. placement allocation orphans (via nova-manage)
+
+Prints findings with suggested fix commands. NEVER changes anything itself.
+Run on a controller with admin OpenStack credentials sourced. RBD checks
+need ceph admin access. DB checks read the connection URL from nova.conf's
+[database] section and need the pymysql module.
+"""
+
+import argparse
+import configparser
+import datetime
+import os
+import shutil
+import subprocess
+import sys
+import urllib.parse
+
+import openstack
+from keystoneauth1 import exceptions as ks_exc
+from openstack import exceptions as os_exc
+
+try:
+    import pymysql
+    DB_ERRORS = (pymysql.MySQLError,)
+except ImportError:  # DB checks are skipped without it
+    pymysql = None
+    DB_ERRORS = ()
+
+STUCK_VOLUME_STATES = ('attaching', 'detaching', 'reserved', 'creating', 'deleting',
+                       'error_deleting', 'maintenance', 'downloading')
+# Every non-terminal migration.status nova sets: live migrations go
+# accepted -> queued -> preparing -> running, cold/resize go pre-migrating ->
+# migrating -> post-migrating -> finished -> confirming/reverting.
+LIVE_MIGRATION_STATES = ('accepted', 'queued', 'preparing', 'running', 'pre-migrating',
+                         'migrating', 'post-migrating', 'confirming', 'reverting')
+# Terminal failure statuses: 'error' for cold/resize and conductor failures,
+# 'failed' for live migrations rolled back on the compute side.
+FAILED_MIGRATION_STATES = ('error', 'failed')
+TIMESTAMP_FORMATS = ('%Y-%m-%dT%H:%M:%SZ', '%Y-%m-%dT%H:%M:%S.%fZ',
+                     '%Y-%m-%dT%H:%M:%S', '%Y-%m-%dT%H:%M:%S.%f')
+
+
+def parse_args():
+    env = os.environ.get
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument('--rbd-pool', default=env('RBD_POOL', 'vms'),
+                    help='RBD pool holding instance disks (default vms)')
+    ap.add_argument('--nova-conf', default=env('NOVA_CONF', '/etc/nova/nova.conf'),
+                    help='nova.conf to read the [database] connection from')
+    ap.add_argument('--stale-hours', type=int, default=int(env('STALE_HOURS', 1)),
+                    help='min age before a transient volume state counts as stuck (default 1)')
+    ap.add_argument('--verify-days', type=int, default=int(env('VERIFY_DAYS', 2)),
+                    help='min age before VERIFY_RESIZE counts as parked (default 2)')
+    ap.add_argument('--error-days', type=int, default=int(env('ERROR_DAYS', 7)),
+                    help='how far back to surface errored migrations (default 7)')
+    ap.add_argument('-x', '--exit-code', action='store_true',
+                    help='exit 2 when there are findings (for cron/NRPE)')
+    return ap.parse_args()
+
+
+def parse_timestamp(value):
+    """ISO timestamp as the OpenStack APIs return it -> aware UTC datetime, or None."""
+    if not value:
+        return None
+    for fmt in TIMESTAMP_FORMATS:
+        try:
+            return datetime.datetime.strptime(value, fmt).replace(tzinfo=datetime.timezone.utc)
+        except ValueError:
+            continue
+    return None
+
+
+class Report:
+    """Collects findings and prints them as it goes, like the shell version."""
+
+    def __init__(self, out=None):
+        self.findings = 0
+        self.out = out or sys.stdout
+
+    def section(self, title):
+        print(f'\n=== {title} ===', file=self.out)
+
+    def finding(self, msg):
+        self.findings += 1
+        print(f'FINDING: {msg}', file=self.out)
+
+    def suggest(self, cmd):
+        print(f'  fix> {cmd}', file=self.out)
+
+    def note(self, msg):
+        print(msg, file=self.out)
+
+
+class NovaDB:
+    """Read-only access to the nova cell DB named in nova.conf.
+
+    nova stores naive UTC timestamps, so age windows compare against
+    UTC_TIMESTAMP() rather than NOW(), which follows the DB server's zone.
+    """
+
+    def __init__(self, nova_conf):
+        self.params = self._parse(nova_conf)
+
+    @staticmethod
+    def _parse(nova_conf):
+        # oslo.config tolerates repeated keys and % in values; so must we
+        cfg = configparser.ConfigParser(interpolation=None, strict=False)
+        if not cfg.read(nova_conf):
+            return None
+        url = cfg.get('database', 'connection', fallback=None)
+        if not url:
+            return None
+        p = urllib.parse.urlsplit(url)  # mysql+pymysql://user:pass@host:port/db?charset=...
+        if not p.hostname:
+            return None
+        return {'host': p.hostname, 'port': p.port or 3306,
+                'user': urllib.parse.unquote(p.username or ''),
+                'password': urllib.parse.unquote(p.password or ''),
+                'database': p.path.lstrip('/').split('?')[0]}
+
+    @property
+    def available(self):
+        return bool(self.params) and pymysql is not None
+
+    def describe(self):
+        if not self.params:
+            return 'unavailable (no [database] connection in nova.conf)'
+        if pymysql is None:
+            return 'unavailable (python3 pymysql module missing)'
+        p = self.params
+        return f"{p['database']} on {p['host']}:{p['port']} as {p['user']}"
+
+    def cli(self):
+        """Printable mysql command for fix suggestions (password kept out of argv)."""
+        p = self.params
+        return f"MYSQL_PWD=... mysql -h {p['host']} -P {p['port']} -u {p['user']} {p['database']}"
+
+    def query(self, sql, params=()):
+        conn = pymysql.connect(connect_timeout=10, **self.params)
+        try:
+            with conn.cursor() as cur:
+                cur.execute(sql, params)
+                return cur.fetchall()
+        finally:
+            conn.close()
+
+
+def run(cmd):
+    """Run a command, return (rc, combined output)."""
+    proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                          universal_newlines=True)
+    return proc.returncode, proc.stdout
+
+
+def list_volumes(conn, status):
+    """Volumes in a state across all projects, as raw API dicts.
+
+    Raw because the SDK's Volume model at the version RDO ships has no
+    updated_at field. Follows cinder's pagination links.
+    """
+    url, params = '/volumes/detail', {'all_tenants': 'True', 'status': status}
+    volumes = []
+    while url:
+        resp = conn.block_storage.get(url, params=params)
+        os_exc.raise_from_response(resp, error_message='volume list failed')
+        body = resp.json()
+        volumes.extend(body.get('volumes', []))
+        nxt = [l['href'] for l in body.get('volumes_links', []) if l.get('rel') == 'next']
+        url, params = (nxt[0], None) if nxt else (None, None)
+    return volumes
+
+
+# ------------------------------------------------------------------ checks
+
+def check_resizing(ctx, rep):
+    rep.section('Instances currently mid-resize (context for later checks)')
+    ctx.verify_resize = list(ctx.conn.compute.servers(
+        details=True, all_projects=True, status='VERIFY_RESIZE'))
+    ctx.resizing = {s.id for s in ctx.verify_resize}
+    ctx.resizing.update(s.id for s in ctx.conn.compute.servers(
+        details=False, all_projects=True, status='RESIZE'))
+    rep.note('\n'.join(sorted(ctx.resizing)) if ctx.resizing else 'none')
+
+
+def check_rbd_snaps(ctx, rep):
+    rep.section(f'1. Stale nova-resize RBD snapshots (pool: {ctx.args.rbd_pool})')
+    if not shutil.which('rbd'):
+        rep.note('skipped: rbd not available on this host')
+        return
+    rc, out = run(['rbd', '-p', ctx.args.rbd_pool, 'ls', '-l'])
+    if rc != 0:
+        rep.note(f'skipped: rbd ls failed (rc={rc}): {out.strip()}')
+        return
+    for line in out.splitlines():
+        name = line.split()[0] if line.split() else ''
+        if not name.endswith('_disk@nova-resize'):
+            continue
+        uuid = name[:-len('_disk@nova-resize')]
+        if uuid in ctx.resizing:
+            rep.note(f'ok: {uuid} has a snap but is mid-resize (legit)')
+        else:
+            rep.finding(f'stale nova-resize snap on {uuid}')
+            rep.suggest(f'rbd snap rm {ctx.args.rbd_pool}/{uuid}_disk@nova-resize')
+
+
+def check_migration_context(ctx, rep):
+    rep.section('2. Instances carrying a migration_context while not mid-move')
+    # vm_state 'resized' (VERIFY_RESIZE) legitimately holds one; so does any
+    # instance with a task_state set. Anything else is debris that gets new
+    # migrations killed by the resource tracker.
+    if not ctx.db.available:
+        rep.note('skipped: no DB access')
+        return
+    rows = ctx.db.query("""
+        SELECT i.uuid, i.hostname, i.vm_state,
+               JSON_UNQUOTE(JSON_EXTRACT(ie.migration_context,
+                 '$."nova_object.data".migration_id'))
+          FROM instance_extra ie
+          JOIN instances i ON i.uuid = ie.instance_uuid
+         WHERE ie.migration_context IS NOT NULL
+           AND i.deleted = 0
+           AND i.task_state IS NULL
+           AND i.vm_state NOT IN ('resized')""")
+    for uuid, hostname, vm_state, mig_id in rows:
+        rep.finding(f'{uuid} ({hostname}, {vm_state}) holds migration_context '
+                    f'for migration {mig_id}')
+        rep.suggest('verify no migration in flight, then:')
+        rep.suggest(f'{ctx.db.cli()} -e "UPDATE instance_extra SET migration_context = NULL '
+                    f"WHERE instance_uuid = '{uuid}';\"")
+
+
+def check_stuck_volumes(ctx, rep):
+    rep.section(f'3. Cinder volumes stuck in transient states > {ctx.args.stale_hours}h')
+    for state in STUCK_VOLUME_STATES:
+        try:
+            volumes = list_volumes(ctx.conn, state)
+        except (os_exc.SDKException, ks_exc.ClientException) as e:
+            # no cinder in the catalog, or it is down: not a reason to lose
+            # the rest of the audit
+            rep.note(f'skipped: block storage API unavailable: {e}')
+            return
+        for vol in volumes:
+            vid, vname, vstatus = vol.get('id'), vol.get('name'), vol.get('status')
+            updated = parse_timestamp(vol.get('updated_at')) or parse_timestamp(vol.get('created_at'))
+            if updated is None:
+                rep.note(f'note: volume {vid} in {vstatus!r} has no parsable timestamp; check by hand')
+                continue
+            age_h = int((ctx.now - updated).total_seconds() // 3600)
+            if age_h < ctx.args.stale_hours:
+                continue
+            attach = 'present' if vol.get('attachments') else 'empty'
+            rep.finding(f"volume {vid} ({vname}) stuck in '{vstatus}' for {age_h}h, "
+                        f'attachments: {attach}')
+            if vstatus in ('deleting', 'error_deleting'):
+                rep.suggest(f'openstack volume set --state error {vid} && '
+                            f'openstack volume delete {vid}   # was mid-delete; retry it')
+            else:
+                if attach == 'empty':
+                    rep.suggest(f'openstack volume set --state available {vid}')
+                else:
+                    rep.suggest(f'openstack volume set --state in-use {vid}   '
+                                '# attachments exist; verify guest first')
+                rep.suggest('then reconcile with: openstack server volume list <owner-instance>')
+
+
+def check_parked_verify_resize(ctx, rep):
+    rep.section(f'4. Instances parked in VERIFY_RESIZE > {ctx.args.verify_days}d')
+    for s in ctx.verify_resize:
+        updated = parse_timestamp(s.updated_at)
+        if updated is None:
+            rep.note(f'note: {s.name} ({s.id}) has no parsable updated timestamp; check by hand')
+            continue
+        age_d = int((ctx.now - updated).total_seconds() // 86400)
+        if age_d >= ctx.args.verify_days:
+            rep.finding(f'{s.name} ({s.id}) unconfirmed for {age_d}d, '
+                        'double allocations, leak risk')
+            rep.suggest(f"openstack server resize confirm {s.id}   # (or 'resize revert')")
+
+
+def check_dead_migrations(ctx, rep):
+    rep.section('5. Migration records in live states with no recent activity (>1d)')
+    if not ctx.db.available:
+        rep.note('skipped: no DB access')
+        return
+    placeholders = ', '.join(['%s'] * len(LIVE_MIGRATION_STATES))
+    rows = ctx.db.query(f"""
+        SELECT id, instance_uuid, status, source_compute, dest_compute, updated_at
+          FROM migrations
+         WHERE deleted = 0
+           AND status IN ({placeholders})
+           AND updated_at < UTC_TIMESTAMP() - INTERVAL 1 DAY""", LIVE_MIGRATION_STATES)
+    for mid, uuid, mstatus, src, dst, upd in rows:
+        rep.finding(f"migration {mid} ({uuid}) stuck in '{mstatus}' since {upd} ({src} -> {dst})")
+        rep.suggest('verify the instance is healthy and NOT actually moving, '
+                    'then mark the record dead:')
+        rep.suggest(f"{ctx.db.cli()} -e \"UPDATE migrations SET status='error' "
+                    f"WHERE id={mid} AND status='{mstatus}';\"")
+    rep.note("(note: status 'finished' = awaiting confirm; covered by check 4)")
+
+
+def check_errored_migrations(ctx, rep):
+    rep.section(f'6. Migrations that errored in the last {ctx.args.error_days}d')
+    # An error record is terminal and harmless by itself, but a recent one is
+    # the strongest signal that debris exists for that instance, and if the
+    # instance is still in ERROR it needs recovery now.
+    if not ctx.db.available:
+        rep.note('skipped: no DB access')
+        return
+    placeholders = ', '.join(['%s'] * len(FAILED_MIGRATION_STATES))
+    rows = ctx.db.query(f"""
+        SELECT m.id, m.instance_uuid, m.migration_type, m.status,
+               m.source_compute, m.dest_compute, i.vm_state, m.updated_at
+          FROM migrations m
+          JOIN instances i ON i.uuid = m.instance_uuid
+         WHERE m.deleted = 0 AND i.deleted = 0
+           AND m.status IN ({placeholders})
+           AND m.updated_at > UTC_TIMESTAMP() - INTERVAL %s DAY""",
+        FAILED_MIGRATION_STATES + (ctx.args.error_days,))
+    for mid, uuid, mtype, mstatus, src, dst, vm_state, upd in rows:
+        if vm_state == 'error':
+            rep.finding(f'{mtype} migration {mid} of {uuid} {mstatus} {upd} '
+                        'AND instance is still in ERROR')
+            rep.suggest(f'recover: openstack server reboot --hard {uuid}   '
+                        '# (or reset-state --active, stop, start)')
+            rep.suggest('then check this instance against sections 1-3 before retrying the move')
+        else:
+            rep.note(f'note: {mtype} migration {mid} of {uuid} {mstatus} {upd} '
+                     f'(instance now {vm_state}), cross-check sections 1-3 for its debris')
+
+
+def check_placement(ctx, rep):
+    rep.section('7. Placement allocation audit')
+    if not shutil.which('nova-manage'):
+        rep.note('skipped: nova-manage not available on this host')
+        return
+    # nova-manage return codes: 0 clean, 3 orphans found, 1 unexpected
+    # error, 127 placement not reachable
+    rc, out = run(['nova-manage', 'placement', 'audit', '--verbose'])
+    lines = [l for l in out.splitlines() if 'eventlet monkey patching' not in l]
+    if rc not in (0, 3):
+        rep.note(f'skipped: nova-manage placement audit failed (rc={rc}):')
+        rep.note('\n'.join(lines[-5:]))
+        return
+    orphans = sum('can be deleted' in l for l in lines)
+    if rc == 3 and not orphans:  # message wording changed; trust the exit code
+        orphans = 1
+    # show everything when there are orphans, else just the tail
+    rep.note('\n'.join(lines if orphans else lines[-5:]))
+    if orphans:
+        rep.finding(f'{orphans} orphaned placement allocation(s), details above')
+        rep.suggest('targeted: openstack resource provider allocation delete <consumer-uuid>'
+                    '   # needs osc-placement plugin')
+        rep.suggest('or bulk:  nova-manage placement audit --delete')
+
+
+CHECKS = (check_resizing, check_rbd_snaps, check_migration_context, check_stuck_volumes,
+          check_parked_verify_resize, check_dead_migrations, check_errored_migrations,
+          check_placement)
+
+
+class Context:
+    def __init__(self, args, conn, db):
+        self.args, self.conn, self.db = args, conn, db
+        self.now = datetime.datetime.now(datetime.timezone.utc)
+        self.verify_resize = []
+        self.resizing = set()
+
+
+def main():
+    args = parse_args()
+    rep = Report()
+    db = NovaDB(args.nova_conf)
+    rep.note(f'nova DB: {db.describe()} (from {args.nova_conf})'
+             if db.available else f'nova DB: {db.describe()}, DB checks will be skipped')
+    try:
+        conn = openstack.connect()
+        ctx = Context(args, conn, db)
+        for check in CHECKS:
+            check(ctx, rep)
+    except (os_exc.SDKException, ks_exc.ClientException) as e:
+        sys.exit(f'OpenStack API error (is an admin openrc sourced?): {e}')
+    except DB_ERRORS as e:
+        sys.exit(f'nova DB query failed: {e}')
+
+    rep.section('Summary')
+    if rep.findings == 0:
+        rep.note('No resize/migration debris found.')
+    else:
+        rep.note(f'{rep.findings} finding(s) above. Also run on each hypervisor:')
+        rep.note('  ls -d /var/lib/nova/instances/*_resize   # leftover source dirs')
+    return 2 if args.exit_code and rep.findings else 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

@@ -8,7 +8,7 @@ With RBD-backed instances no disk data is copied.
 
 Instances are migrated one at a time and each resize is confirmed before the
 next one starts. Run on a controller with admin OpenStack credentials
-sourced. Run resize-debris-check.sh first: stale nova-resize snapshots,
+sourced. Run nova-resize-debris-check.py first: stale nova-resize snapshots,
 migration contexts or stuck volumes make the resize path fail.
 """
 
