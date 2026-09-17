@@ -10,6 +10,12 @@ Instances are migrated one at a time and each resize is confirmed before the
 next one starts. Run on a controller with admin OpenStack credentials
 sourced. Run nova-resize-debris-check.py first: stale nova-resize snapshots,
 migration contexts or stuck volumes make the resize path fail.
+
+Usage:
+    cold-migrate-host.py [options] SRC_HOST DST_HOST [INSTANCE_UUID ...]
+
+Give options before the hosts; argparse on Python 3.9 rejects them placed
+between the hosts and the UUIDs.
 """
 
 import argparse
@@ -33,7 +39,7 @@ class MigrationFailed(Exception):
     pass
 
 
-def parse_args():
+def parse_args(argv=None):
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('src', help='source compute host')
@@ -54,7 +60,7 @@ def parse_args():
                     help='pause between instances (default 0)')
     ap.add_argument('-l', '--log', metavar='FILE',
                     help='log file (default /root/cold-migrate-SRC-DST-DATE.log)')
-    return ap.parse_args()
+    return ap.parse_args(argv)
 
 
 def setup_logging(path):
@@ -144,8 +150,8 @@ def migrate_one(conn, server, args, position):
     log.info('OK   %s on %s, %s', server.id, args.dst, before)
 
 
-def main():
-    args = parse_args()
+def main(argv=None):
+    args = parse_args(argv)
     if args.src == args.dst:
         sys.exit('source and destination host are the same')
     if not args.log:

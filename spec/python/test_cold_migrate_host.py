@@ -93,9 +93,10 @@ def response(body):
     return types.SimpleNamespace(json=lambda: body)
 
 
-def make_args(*extra, src='src', dst='dst'):
-    with mock.patch.object(sys, 'argv', ['cold-migrate-host', src, dst, *extra]):
-        return cmh.parse_args()
+def make_args(*flags, src='src', dst='dst', uuids=()):
+    # options first, then the hosts, then the UUIDs: the one order every
+    # argparse accepts (3.9 rejects options between the hosts and the UUIDs)
+    return cmh.parse_args([*flags, src, dst, *uuids])
 
 
 class Base(unittest.TestCase):
@@ -135,11 +136,20 @@ class ParseArgsTest(Base):
 
     def test_flags_and_uuids(self):
         a = make_args('-n', '-k', '-c', '-t', '60', '-i', '2', '-p', '5',
-                      '-l', '/tmp/x.log', 'u1', 'u2')
+                      '-l', '/tmp/x.log', uuids=('u1', 'u2'))
         self.assertTrue(a.dry_run and a.keep_going and a.no_confirm)
         self.assertEqual((a.timeout, a.interval, a.pause), (60, 2, 5))
         self.assertEqual(a.log, '/tmp/x.log')
         self.assertEqual(a.instances, ['u1', 'u2'])
+
+    def test_documented_argument_orders_parse_on_every_python(self):
+        # 3.13 accepts options between the hosts and the UUIDs, 3.9 does not,
+        # so pin the two orders the help text promises
+        for argv in (['-k', 'src', 'dst', 'u1', 'u2'],
+                     ['src', 'dst', 'u1', 'u2', '-k']):
+            a = cmh.parse_args(argv)
+            self.assertEqual((a.src, a.dst, a.instances), ('src', 'dst', ['u1', 'u2']), argv)
+            self.assertTrue(a.keep_going, argv)
 
 
 class HelpersTest(Base):
@@ -339,10 +349,8 @@ class MainTest(Base):
 
     def run_main(self, *extra, src='src', dst='dst'):
         out = io.StringIO()
-        with mock.patch.object(sys, 'argv',
-                               ['cold-migrate-host', '-l', self.log, src, dst, *extra]), \
-                contextlib.redirect_stdout(out):
-            rc = cmh.main()
+        with contextlib.redirect_stdout(out):
+            rc = cmh.main(['-l', self.log, src, dst, *extra])
         return rc, out.getvalue()
 
     def assert_exits(self, pattern, *extra, **kw):
