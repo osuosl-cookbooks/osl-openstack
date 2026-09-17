@@ -471,6 +471,107 @@ class FixedSectionsTest(Base):
         self.assertEqual(self.rep.fixes, 0)
 
 
+class DuplicateAttachmentTest(Base):
+    """Section 8, modelled on volume 52c460c1: a live attachment plus a
+    leftover 'reserved' one from a cold migration that failed in finish_resize."""
+
+    ATTACHED = {'id': '90d32868', 'volume_id': '52c460c1', 'status': 'attached',
+                'instance': '82292e08'}
+    RESERVED = {'id': 'f1900f5b', 'volume_id': '52c460c1', 'status': 'reserved',
+                'instance': '82292e08'}
+
+    def wire(self, attachments, volume):
+        def get(url, params=None, microversion=None):
+            if url.startswith('/attachments'):
+                return response({'attachments': attachments})
+            return response({'volume': volume})
+        self.conn.block_storage.get.side_effect = get
+
+    def test_leftover_attachment_is_named_and_the_live_one_is_not(self):
+        self.wire([self.ATTACHED, self.RESERVED], {'status': 'in-use', 'multiattach': False})
+        self.db.query.return_value = [('52c460c1', '90d32868')]
+        rdc.check_duplicate_attachments(self.ctx, self.rep)
+        t = self.text()
+        self.assertEqual(self.rep.findings, 1)
+        self.assertIn('volume 52c460c1 (in-use) has 2 attachments, 1 orphaned', t)
+        self.assertIn("90d32868  attached  instance=82292e08  nova's BDM points here", t)
+        self.assertIn('f1900f5b  reserved  instance=82292e08  orphan', t)
+        self.assertIn('volume attachment delete f1900f5b', t)
+        self.assertNotIn('volume attachment delete 90d32868', t)
+
+    def test_nova_pointing_at_a_reserved_one_suggests_no_deletion(self):
+        # the real 52c460c1 case: the failed migration left nova's BDM on the
+        # new reserved attachment while the old attached one still serves the
+        # disk. Naming the attached one an orphan would detach a running volume.
+        self.wire([self.ATTACHED, self.RESERVED], {'status': 'in-use', 'multiattach': False})
+        self.db.query.return_value = [('52c460c1', 'f1900f5b')]
+        rdc.check_duplicate_attachments(self.ctx, self.rep)
+        t = self.text()
+        self.assertIn('nova points at a reserved one; do NOT delete anything here', t)
+        self.assertNotIn('volume attachment delete', t)
+        self.assertIn("f1900f5b  reserved  instance=82292e08  nova's BDM points here", t)
+        self.assertIn('90d32868  attached  instance=82292e08  carries the live connection', t)
+        self.assertIn('nova-manage volume_attachment refresh 82292e08 52c460c1', t)
+
+    def test_all_reserved_on_an_available_volume_is_still_resolvable(self):
+        # nothing is attached, so the extras are safe to name
+        extra = dict(self.RESERVED, id='b10944b5')
+        self.wire([self.RESERVED, extra], {'status': 'available', 'multiattach': False})
+        self.db.query.return_value = [('52c460c1', 'f1900f5b')]
+        rdc.check_duplicate_attachments(self.ctx, self.rep)
+        t = self.text()
+        self.assertIn('has 2 attachments, 1 orphaned', t)
+        self.assertIn('volume attachment delete b10944b5', t)
+        self.assertNotIn('volume attachment delete f1900f5b', t)
+
+    def test_single_attachment_is_not_reported(self):
+        self.wire([self.ATTACHED], {'status': 'in-use', 'multiattach': False})
+        rdc.check_duplicate_attachments(self.ctx, self.rep)
+        self.assertEqual(self.rep.findings, 0)
+
+    def test_multiattach_volumes_are_expected_to_have_several(self):
+        self.wire([self.ATTACHED, self.RESERVED], {'status': 'in-use', 'multiattach': True})
+        self.db.query.return_value = [('52c460c1', '90d32868')]
+        rdc.check_duplicate_attachments(self.ctx, self.rep)
+        self.assertEqual(self.rep.findings, 0)
+
+    def test_without_nova_bdms_it_refuses_to_name_an_orphan(self):
+        self.wire([self.ATTACHED, self.RESERVED], {'status': 'available', 'multiattach': False})
+        self.db.available = False
+        rdc.check_duplicate_attachments(self.ctx, self.rep)
+        t = self.text()
+        self.assertEqual(self.rep.findings, 1)
+        self.assertIn('has 2 attachments and nova has no BDM for it', t)
+        self.assertIn('unverified', t)
+        self.assertIn('confirm the volume is unused before deleting any attachment', t)
+        self.assertNotIn('volume attachment delete', t)
+
+    def test_attachment_list_uses_all_tenants_at_microversion_327(self):
+        self.wire([], {})
+        rdc.check_duplicate_attachments(self.ctx, self.rep)
+        self.conn.block_storage.get.assert_called_once_with(
+            '/attachments/detail', params={'all_tenants': 'True'}, microversion='3.27')
+
+    def test_api_failure_skips_the_section_only(self):
+        self.conn.block_storage.get.side_effect = EXC.SDKException('404 attachments')
+        rdc.check_duplicate_attachments(self.ctx, self.rep)
+        self.assertIn('skipped: could not list attachments', self.text())
+        self.assertEqual(self.rep.findings, 0)
+
+    def test_fix_mode_never_deletes_an_attachment(self):
+        # detaching the wrong volume from a running instance is not something
+        # --fix should ever be able to do
+        self.wire([self.ATTACHED, self.RESERVED], {'status': 'in-use', 'multiattach': False})
+        self.db.query.return_value = [('52c460c1', '90d32868')]
+        ctx = self.ctx_with('--fix')
+        rdc.check_duplicate_attachments(ctx, self.rep)
+        self.assertEqual((self.rep.fixes, self.rep.fix_failures), (0, 0))
+        self.run.assert_not_called()
+        self.db.execute.assert_not_called()
+        self.assertIn('fix> openstack --os-volume-api-version 3.27 '
+                      'volume attachment delete f1900f5b', self.text())
+
+
 class CephHelpersTest(Base):
     def test_libvirt_settings(self):
         d = Path(tempfile.mkdtemp())

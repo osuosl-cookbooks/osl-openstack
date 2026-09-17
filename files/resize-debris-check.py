@@ -9,6 +9,7 @@ and migrations (the c24a44da incident taxonomy):
   5. dead in-progress migration records
   6. recently errored migrations (debris signal; instance may need recovery)
   7. placement allocation orphans (via nova-manage)
+  8. cinder volumes carrying more than one attachment
 
 Reports findings with suggested fix commands and changes nothing by default.
 --dry-run previews the fixes it could apply, --fix applies them. Only pure
@@ -50,6 +51,7 @@ LIVE_MIGRATION_STATES = ('accepted', 'queued', 'preparing', 'running', 'pre-migr
 # Terminal failure statuses: 'error' for cold/resize and conductor failures,
 # 'failed' for live migrations rolled back on the compute side.
 FAILED_MIGRATION_STATES = ('error', 'failed')
+ATTACHMENT_MICROVERSION = '3.27'
 TIMESTAMP_FORMATS = ('%Y-%m-%dT%H:%M:%SZ', '%Y-%m-%dT%H:%M:%S.%fZ',
                      '%Y-%m-%dT%H:%M:%S', '%Y-%m-%dT%H:%M:%S.%f')
 
@@ -266,22 +268,48 @@ def sql_fix(ctx, rep, sql, params, printable, what):
         rep.fix_failed(f'{what}: matched no rows, the state changed since the scan')
 
 
-def list_volumes(conn, status):
-    """Volumes in a state across all projects, as raw API dicts.
+def paginated(conn, url, params, key, microversion=None):
+    """Follow cinder's pagination links and return every item.
 
-    Raw because the SDK's Volume model at the version RDO ships has no
-    updated_at field. Follows cinder's pagination links.
+    Raw dicts because the SDK models at the version RDO ships are missing
+    fields we need, such as a volume's updated_at.
     """
-    url, params = '/volumes/detail', {'all_tenants': 'True', 'status': status}
-    volumes = []
+    items = []
     while url:
-        resp = conn.block_storage.get(url, params=params)
-        os_exc.raise_from_response(resp, error_message='volume list failed')
+        kwargs = {'params': params}
+        if microversion:
+            kwargs['microversion'] = microversion
+        resp = conn.block_storage.get(url, **kwargs)
+        os_exc.raise_from_response(resp, error_message=f'{key} list failed')
         body = resp.json()
-        volumes.extend(body.get('volumes', []))
-        nxt = [l['href'] for l in body.get('volumes_links', []) if l.get('rel') == 'next']
+        items.extend(body.get(key, []))
+        nxt = [l['href'] for l in body.get(f'{key}_links', []) if l.get('rel') == 'next']
         url, params = (nxt[0], None) if nxt else (None, None)
-    return volumes
+    return items
+
+
+def list_volumes(conn, status):
+    return paginated(conn, '/volumes/detail',
+                     {'all_tenants': 'True', 'status': status}, 'volumes')
+
+
+def list_attachments(conn):
+    # /attachments arrived in microversion 3.27
+    return paginated(conn, '/attachments/detail', {'all_tenants': 'True'},
+                     'attachments', microversion=ATTACHMENT_MICROVERSION)
+
+
+def get_volume(conn, volume_id):
+    resp = conn.block_storage.get(f'/volumes/{volume_id}')
+    os_exc.raise_from_response(resp, error_message='volume fetch failed')
+    return resp.json().get('volume', {})
+
+
+def nova_attachment_ids(db):
+    """volume_id -> the attachment id nova actually uses, from its BDMs."""
+    rows = db.query('SELECT volume_id, attachment_id FROM block_device_mapping '
+                    'WHERE deleted = 0 AND attachment_id IS NOT NULL')
+    return {volume_id: attachment_id for volume_id, attachment_id in rows}
 
 
 # ------------------------------------------------------------------ checks
@@ -470,6 +498,86 @@ def check_errored_migrations(ctx, rep):
                      f'(instance now {vm_state}), cross-check sections 1-3 for its debris')
 
 
+def check_duplicate_attachments(ctx, rep):
+    rep.section('8. Cinder volumes carrying more than one attachment')
+    # a volume can sit healthily in 'in-use' with a leftover attachment, which
+    # section 3 cannot see; cinder then refuses the next cold migration with
+    # "duplicate connectors detected"
+    try:
+        attachments = list_attachments(ctx.conn)
+    except (os_exc.SDKException, ks_exc.ClientException) as e:
+        rep.note(f'skipped: could not list attachments: {e}')
+        return
+    by_volume = {}
+    for attachment in attachments:
+        by_volume.setdefault(attachment.get('volume_id'), []).append(attachment)
+    suspects = sorted(v for v, rows in by_volume.items() if v and len(rows) > 1)
+    if not suspects:
+        return
+
+    live = {}
+    if ctx.db.available:
+        try:
+            live = nova_attachment_ids(ctx.db)
+        except DB_ERRORS as e:
+            rep.note(f'note: could not read nova BDMs, cannot tell which is live: {e}')
+    else:
+        rep.note('note: no DB access, so which attachment nova uses is unknown')
+
+    for volume_id in suspects:
+        rows = by_volume[volume_id]
+        try:
+            volume = get_volume(ctx.conn, volume_id)
+        except (os_exc.SDKException, ks_exc.ClientException) as e:
+            rep.note(f'note: could not fetch volume {volume_id}: {e}')
+            continue
+        if volume.get('multiattach'):
+            continue  # many attachments are the whole point of a multiattach volume
+        status = volume.get('status')
+        keep = live.get(volume_id)
+        keep_row = next((a for a in rows if a.get('id') == keep), None)
+        serving = [a for a in rows if a.get('status') == 'attached']
+        # a reserved attachment carries no connection info, so it cannot be the
+        # one serving a running disk. nova pointing at one while another is
+        # attached means the two sides disagree, and neither is safe to delete.
+        disagree = bool(keep_row and keep_row.get('status') != 'attached' and serving)
+
+        if keep_row is None:
+            rep.finding(f'volume {volume_id} ({status}) has {len(rows)} attachments and nova '
+                        'has no BDM for it')
+        elif disagree:
+            rep.finding(f'volume {volume_id} ({status}) has {len(rows)} attachments and nova '
+                        f"points at a {keep_row.get('status')} one; do NOT delete anything here")
+        else:
+            orphans = [a for a in rows if a.get('id') != keep]
+            rep.finding(f'volume {volume_id} ({status}) has {len(rows)} attachments, '
+                        f'{len(orphans)} orphaned; the next cold migration of it will fail')
+
+        for attachment in rows:
+            if attachment.get('id') == keep:
+                role = "nova's BDM points here"
+            elif attachment.get('status') == 'attached':
+                role = 'carries the live connection'
+            else:
+                role = 'orphan' if keep_row else 'unverified'
+            rep.note(f"    {attachment.get('id')}  {attachment.get('status')}  "
+                     f"instance={attachment.get('instance')}  {role}")
+
+        if keep_row is None:
+            rep.suggest('confirm the volume is unused before deleting any attachment')
+        elif disagree:
+            rep.suggest('nova and cinder disagree, so deleting either one risks detaching a '
+                        'live disk. Repair it instead, with the instance stopped:')
+            rep.suggest('nova-manage volume_attachment get_connector   # on the compute host')
+            rep.suggest(f"nova-manage volume_attachment refresh {keep_row.get('instance')} "
+                        f'{volume_id} <connector.json>')
+        else:
+            for attachment in rows:
+                if attachment.get('id') != keep:
+                    rep.suggest(f'openstack --os-volume-api-version {ATTACHMENT_MICROVERSION} '
+                                f"volume attachment delete {attachment.get('id')}")
+
+
 def check_placement(ctx, rep):
     rep.section('7. Placement allocation audit')
     if not shutil.which('nova-manage'):
@@ -502,7 +610,7 @@ def check_placement(ctx, rep):
 
 CHECKS = (check_resizing, check_rbd_snaps, check_migration_context, check_stuck_volumes,
           check_parked_verify_resize, check_dead_migrations, check_errored_migrations,
-          check_placement)
+          check_placement, check_duplicate_attachments)
 
 
 class Context:
