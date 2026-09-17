@@ -246,7 +246,7 @@ def project_names(conn, project_ids):
     for project_id in project_ids:
         try:
             names[project_id] = conn.identity.get_project(project_id).name
-        except (os_exc.ResourceNotFound, os_exc.ForbiddenException):
+        except os_exc.HttpException:
             names[project_id] = 'Unknown (%s)' % project_id
     return names
 
@@ -262,7 +262,7 @@ def lookup_user(conn, user_id, cache):
                 'enabled': bool(getattr(user, 'is_enabled', True))}
     except os_exc.ResourceNotFound:
         info = {'id': user_id, 'name': 'Unknown (%s)' % user_id, 'email': None, 'enabled': False}
-    except os_exc.ForbiddenException:
+    except os_exc.HttpException:
         info = {'id': user_id, 'name': 'Access denied (%s)' % user_id,
                 'email': None, 'enabled': False}
     cache[user_id] = info
@@ -284,7 +284,7 @@ def project_member_ids(conn, project_id, member_roles, expand_groups=True):
         # the SDK hands back a lazy generator, so the request only fires on
         # iteration; force it inside the guard or a deleted project escapes it
         assignments = list(conn.identity.role_assignments(**query))
-    except (os_exc.ResourceNotFound, os_exc.ForbiddenException):
+    except os_exc.HttpException:
         return ids
     for assignment in assignments:
         user = getattr(assignment, 'user', None)
