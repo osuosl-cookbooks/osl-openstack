@@ -109,9 +109,13 @@ class Base(unittest.TestCase):
 
     @staticmethod
     def make_args(*extra):
-        with mock.patch.object(sys, 'argv', ['resize-debris-check', *extra]), \
-                mock.patch.dict(os.environ, {}, clear=True):
-            return rdc.parse_args()
+        argv = list(extra)
+        # point at a nova.conf that cannot exist, so running the suite on a
+        # real controller does not pick up its pool and rbd_user
+        if '--nova-conf' not in argv:
+            argv += ['--nova-conf', '/nonexistent/nova.conf']
+        with mock.patch.dict(os.environ, {}, clear=True):
+            return rdc.parse_args(argv)
 
     def text(self):
         return self.out.getvalue()
@@ -120,16 +124,41 @@ class Base(unittest.TestCase):
 class ParseArgsTest(Base):
     def test_defaults(self):
         a = self.make_args()
-        self.assertEqual((a.rbd_pool, a.nova_conf), ('vms', '/etc/nova/nova.conf'))
+        self.assertEqual((a.rbd_pool, a.ceph_user), ('vms', 'cinder'))
         self.assertEqual((a.stale_hours, a.verify_days, a.error_days), (1, 2, 7))
         self.assertFalse(a.exit_code)
+        with mock.patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(rdc.parse_args([]).nova_conf, '/etc/nova/nova.conf')
 
     def test_flags(self):
         a = self.make_args('--rbd-pool', 'p', '--stale-hours', '3', '--verify-days', '9',
-                           '--error-days', '30', '--nova-conf', '/x', '-x')
-        self.assertEqual((a.rbd_pool, a.nova_conf), ('p', '/x'))
+                           '--error-days', '30', '--nova-conf', '/x', '--ceph-user', 'glance', '-x')
+        self.assertEqual((a.rbd_pool, a.nova_conf, a.ceph_user), ('p', '/x', 'glance'))
         self.assertEqual((a.stale_hours, a.verify_days, a.error_days), (3, 9, 30))
         self.assertTrue(a.exit_code)
+
+    def test_pool_and_client_come_from_nova_conf(self):
+        # the controller has no client.admin keyring, so follow what nova uses
+        conf = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, str(conf))
+        path = conf / 'nova.conf'
+        path.write_text('[libvirt]\nrbd_user = cinder\nimages_rbd_pool = vms_ppc64\n')
+        a = self.make_args('--nova-conf', str(path))
+        self.assertEqual((a.rbd_pool, a.ceph_user), ('vms_ppc64', 'cinder'))
+        # an explicit flag still wins
+        a = self.make_args('--nova-conf', str(path), '--ceph-user', 'glance',
+                           '--rbd-pool', 'other')
+        self.assertEqual((a.rbd_pool, a.ceph_user), ('other', 'glance'))
+
+    def test_env_beats_nova_conf(self):
+        conf = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, str(conf))
+        path = conf / 'nova.conf'
+        path.write_text('[libvirt]\nrbd_user = cinder\nimages_rbd_pool = vms_ppc64\n')
+        with mock.patch.dict(os.environ, {'RBD_POOL': 'env-pool', 'CEPH_USER': 'env-user'},
+                             clear=True):
+            a = rdc.parse_args(['--nova-conf', str(path)])
+        self.assertEqual((a.rbd_pool, a.ceph_user), ('env-pool', 'env-user'))
 
     def test_env_defaults_like_the_shell_version(self):
         with mock.patch.dict(os.environ, {'RBD_POOL': 'other', 'STALE_HOURS': '4',
@@ -259,13 +288,44 @@ class RbdSnapsTest(Base):
         self.run.return_value = (0, self.LS)
         self.ctx.resizing = {'22222222-2222-2222-2222-222222222222'}
         rdc.check_rbd_snaps(self.ctx, self.rep)
-        self.run.assert_called_once_with(['rbd', '-p', 'vms', 'ls', '-l'])
+        self.run.assert_called_once_with(['rbd', '--id', 'cinder', '-p', 'vms', 'ls', '-l'])
         self.assertEqual(self.rep.findings, 1)
         t = self.text()
         self.assertIn('FINDING: stale nova-resize snap on 11111111-1111-1111-1111-111111111111', t)
-        self.assertIn('fix> rbd snap rm vms/11111111-1111-1111-1111-111111111111_disk@nova-resize', t)
+        self.assertIn('fix> rbd --id cinder snap rm '
+                      'vms/11111111-1111-1111-1111-111111111111_disk@nova-resize', t)
         self.assertIn('ok: 22222222-2222-2222-2222-222222222222 has a snap but is mid-resize', t)
         self.assertNotIn('33333333', t)
+
+    def test_auth_failure_names_the_keyrings_this_host_has(self):
+        # what the controller hit: rbd defaulted to client.admin, which has no
+        # keyring there, and the message gave no hint about what to use instead
+        self.run.return_value = (2, 'auth: unable to find a keyring on '
+                                    '/etc/ceph/ceph.client.admin.keyring: (2) No such file\n'
+                                    'rbd: couldn\'t connect to the cluster!')
+        self.ctx.args = self.make_args('--ceph-user', 'admin')
+        with mock.patch.object(rdc, 'ceph_keyring_users',
+                               return_value=['cinder', 'cinder-backup', 'glance']):
+            rdc.check_rbd_snaps(self.ctx, self.rep)
+        t = self.text()
+        self.assertIn('skipped: rbd ls failed (rc=2)', t)
+        self.assertIn('no keyring for client.admin; this host has: '
+                      'cinder, cinder-backup, glance', t)
+        self.assertIn('re-run with --ceph-user cinder', t)
+        self.assertEqual(self.rep.findings, 0)
+
+    def test_no_keyring_hint_when_the_client_is_one_we_have(self):
+        self.run.return_value = (1, 'rbd: error opening pool vms: (2) No such file')
+        with mock.patch.object(rdc, 'ceph_keyring_users', return_value=['cinder']):
+            rdc.check_rbd_snaps(self.ctx, self.rep)
+        self.assertIn('skipped: rbd ls failed (rc=1)', self.text())
+        self.assertNotIn('no keyring for', self.text())
+
+    def test_section_heading_names_pool_and_client(self):
+        self.run.return_value = (0, '')
+        rdc.check_rbd_snaps(self.ctx, self.rep)
+        self.assertIn('1. Stale nova-resize RBD snapshots (pool: vms, client.cinder)',
+                      self.text())
 
     def test_rbd_missing_or_failing(self):
         self.which.return_value = None
@@ -276,6 +336,31 @@ class RbdSnapsTest(Base):
         rdc.check_rbd_snaps(self.ctx, self.rep)
         self.assertIn('skipped: rbd ls failed (rc=1): error connecting', self.text())
         self.assertEqual(self.rep.findings, 0)
+
+
+class CephHelpersTest(Base):
+    def test_libvirt_settings(self):
+        d = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, str(d))
+        (d / 'full').write_text('[libvirt]\nrbd_user = cinder\nimages_rbd_pool = vms\n')
+        self.assertEqual(rdc.libvirt_settings(str(d / 'full')),
+                         {'user': 'cinder', 'pool': 'vms'})
+        (d / 'nolibvirt').write_text('[DEFAULT]\nx = 1\n')
+        self.assertEqual(rdc.libvirt_settings(str(d / 'nolibvirt')),
+                         {'user': None, 'pool': None})
+        self.assertEqual(rdc.libvirt_settings('/nonexistent/nova.conf'), {})
+        (d / 'junk').write_text('not an ini file at all\n')
+        self.assertEqual(rdc.libvirt_settings(str(d / 'junk')), {})
+
+    def test_ceph_keyring_users(self):
+        d = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, str(d))
+        for name in ('ceph.client.cinder.keyring', 'ceph.client.cinder-backup.keyring',
+                     'ceph.client.glance.keyring', 'ceph.conf', 'rbdmap'):
+            (d / name).write_text('x')
+        self.assertEqual(rdc.ceph_keyring_users(str(d)),
+                         ['cinder', 'cinder-backup', 'glance'])
+        self.assertEqual(rdc.ceph_keyring_users('/nonexistent'), [])
 
 
 class MigrationContextTest(Base):
@@ -397,10 +482,10 @@ class ErroredMigrationsTest(Base):
         rdc.check_errored_migrations(self.ctx, self.rep)
         self.assertEqual(self.rep.findings, 1)
         t = self.text()
-        self.assertIn('FINDING: migration migration 1 of u-err error 2026-09-15 01:00:00 AND instance is still in ERROR', t)
+        self.assertIn('FINDING: migration record 1 for u-err error 2026-09-15 01:00:00 AND instance is still in ERROR', t)
         self.assertIn('fix> recover: openstack server reboot --hard u-err', t)
-        self.assertIn('note: resize migration 2 of u-ok error 2026-09-14 01:00:00 (instance now active)', t)
-        self.assertIn('note: live-migration migration 3 of u-lm failed 2026-09-13 01:00:00 (instance now active)', t)
+        self.assertIn('note: resize record 2 for u-ok error 2026-09-14 01:00:00 (instance now active)', t)
+        self.assertIn('note: live-migration record 3 for u-lm failed 2026-09-13 01:00:00 (instance now active)', t)
         sql, params = self.db.query.call_args.args
         # both terminal failure statuses, then the day window, all parameterised
         self.assertEqual(params, ('error', 'failed', 3))

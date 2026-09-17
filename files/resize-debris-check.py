@@ -50,14 +50,18 @@ TIMESTAMP_FORMATS = ('%Y-%m-%dT%H:%M:%SZ', '%Y-%m-%dT%H:%M:%S.%fZ',
                      '%Y-%m-%dT%H:%M:%S', '%Y-%m-%dT%H:%M:%S.%f')
 
 
-def parse_args():
+def parse_args(argv=None):
     env = os.environ.get
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--rbd-pool', default=env('RBD_POOL', 'vms'),
-                    help='RBD pool holding instance disks (default vms)')
+    ap.add_argument('--rbd-pool', default=None,
+                    help='RBD pool holding instance disks '
+                         '(default: [libvirt] images_rbd_pool from nova.conf, else vms)')
+    ap.add_argument('--ceph-user', default=None, metavar='NAME',
+                    help='Ceph client to run rbd as, without the "client." prefix '
+                         '(default: [libvirt] rbd_user from nova.conf, else cinder)')
     ap.add_argument('--nova-conf', default=env('NOVA_CONF', '/etc/nova/nova.conf'),
-                    help='nova.conf to read the [database] connection from')
+                    help='nova.conf to read the [database] and [libvirt] sections from')
     ap.add_argument('--stale-hours', type=int, default=int(env('STALE_HOURS', 1)),
                     help='min age before a transient volume state counts as stuck (default 1)')
     ap.add_argument('--verify-days', type=int, default=int(env('VERIFY_DAYS', 2)),
@@ -66,7 +70,15 @@ def parse_args():
                     help='how far back to surface errored migrations (default 7)')
     ap.add_argument('-x', '--exit-code', action='store_true',
                     help='exit 2 when there are findings (for cron/NRPE)')
-    return ap.parse_args()
+    args = ap.parse_args(argv)
+    # controllers have no client.admin keyring, so take the pool and client
+    # nova itself uses rather than rbd's admin defaults
+    libvirt = libvirt_settings(args.nova_conf)
+    if args.rbd_pool is None:
+        args.rbd_pool = env('RBD_POOL') or libvirt.get('pool') or 'vms'
+    if args.ceph_user is None:
+        args.ceph_user = env('CEPH_USER') or libvirt.get('user') or 'cinder'
+    return args
 
 
 def parse_timestamp(value):
@@ -79,6 +91,29 @@ def parse_timestamp(value):
         except ValueError:
             continue
     return None
+
+
+def libvirt_settings(nova_conf):
+    """rbd_user and images_rbd_pool from nova.conf's [libvirt] section."""
+    cfg = configparser.ConfigParser(interpolation=None, strict=False)
+    try:
+        if not cfg.read(nova_conf):
+            return {}
+    except configparser.Error:
+        return {}
+    return {'user': cfg.get('libvirt', 'rbd_user', fallback=None),
+            'pool': cfg.get('libvirt', 'images_rbd_pool', fallback=None)}
+
+
+def ceph_keyring_users(ceph_dir='/etc/ceph'):
+    """Client names this host holds a keyring for, e.g. ['cinder', 'glance']."""
+    prefix, suffix = 'ceph.client.', '.keyring'
+    try:
+        names = os.listdir(ceph_dir)
+    except OSError:
+        return []
+    return sorted(n[len(prefix):-len(suffix)] for n in names
+                  if n.startswith(prefix) and n.endswith(suffix))
 
 
 class Report:
@@ -194,13 +229,18 @@ def check_resizing(ctx, rep):
 
 
 def check_rbd_snaps(ctx, rep):
-    rep.section(f'1. Stale nova-resize RBD snapshots (pool: {ctx.args.rbd_pool})')
+    pool, user = ctx.args.rbd_pool, ctx.args.ceph_user
+    rep.section(f'1. Stale nova-resize RBD snapshots (pool: {pool}, client.{user})')
     if not shutil.which('rbd'):
         rep.note('skipped: rbd not available on this host')
         return
-    rc, out = run(['rbd', '-p', ctx.args.rbd_pool, 'ls', '-l'])
+    rc, out = run(['rbd', '--id', user, '-p', pool, 'ls', '-l'])
     if rc != 0:
         rep.note(f'skipped: rbd ls failed (rc={rc}): {out.strip()}')
+        have = ceph_keyring_users()
+        if have and user not in have:
+            rep.note(f'  no keyring for client.{user}; this host has: {", ".join(have)}')
+            rep.note(f'  re-run with --ceph-user {have[0]}')
         return
     for line in out.splitlines():
         name = line.split()[0] if line.split() else ''
@@ -211,7 +251,7 @@ def check_rbd_snaps(ctx, rep):
             rep.note(f'ok: {uuid} has a snap but is mid-resize (legit)')
         else:
             rep.finding(f'stale nova-resize snap on {uuid}')
-            rep.suggest(f'rbd snap rm {ctx.args.rbd_pool}/{uuid}_disk@nova-resize')
+            rep.suggest(f'rbd --id {user} snap rm {pool}/{uuid}_disk@nova-resize')
 
 
 def check_migration_context(ctx, rep):
@@ -329,13 +369,13 @@ def check_errored_migrations(ctx, rep):
         FAILED_MIGRATION_STATES + (ctx.args.error_days,))
     for mid, uuid, mtype, mstatus, src, dst, vm_state, upd in rows:
         if vm_state == 'error':
-            rep.finding(f'{mtype} migration {mid} of {uuid} {mstatus} {upd} '
+            rep.finding(f'{mtype} record {mid} for {uuid} {mstatus} {upd} '
                         'AND instance is still in ERROR')
             rep.suggest(f'recover: openstack server reboot --hard {uuid}   '
                         '# (or reset-state --active, stop, start)')
             rep.suggest('then check this instance against sections 1-3 before retrying the move')
         else:
-            rep.note(f'note: {mtype} migration {mid} of {uuid} {mstatus} {upd} '
+            rep.note(f'note: {mtype} record {mid} for {uuid} {mstatus} {upd} '
                      f'(instance now {vm_state}), cross-check sections 1-3 for its debris')
 
 
@@ -377,8 +417,8 @@ class Context:
         self.resizing = set()
 
 
-def main():
-    args = parse_args()
+def main(argv=None):
+    args = parse_args(argv)
     rep = Report()
     db = NovaDB(args.nova_conf)
     rep.note(f'nova DB: {db.describe()} (from {args.nova_conf})'
