@@ -1,0 +1,23 @@
+Subject: Scheduled Maintenance - $date - $hosts
+
+Hello,
+
+We are writing to inform you of scheduled maintenance that will affect your
+virtual machine(s) on $host_label.
+
+Scheduled Date: $date
+Maintenance Window: $window
+
+During this maintenance window, the following virtual machines will be
+temporarily unavailable:
+
+$instance_list
+
+The virtual machines will be gracefully shut down before the work begins and
+started again once it is complete. No action is needed on your side, though we
+recommend avoiding scheduled jobs during the window.
+
+If you have any questions or concerns, please reply to this email or contact
+us at $support_email.
+
+We apologize for any inconvenience this may cause.

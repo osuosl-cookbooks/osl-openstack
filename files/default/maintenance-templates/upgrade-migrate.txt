@@ -1,0 +1,27 @@
+Subject: Scheduled Host Upgrade - $date - $hosts
+
+Hello,
+
+We are writing to inform you of scheduled maintenance that will affect your
+virtual machine(s) on $host_label.
+
+We are upgrading the operating system on this hardware. Your virtual machines
+will be moved to another host in the same cluster before the work begins, so
+each one will be shut down, relocated, and started again.
+
+Scheduled Date: $date
+Maintenance Window: $window
+
+The following virtual machines are affected:
+
+$instance_list
+
+Each virtual machine is unavailable only while it is being moved, normally a
+few minutes, rather than for the whole window. Your data is held on shared
+storage and is not affected by the move. No action is needed on your side,
+though we recommend avoiding scheduled jobs during the window.
+
+If you have any questions or concerns, please reply to this email or contact
+us at $support_email.
+
+We apologize for any inconvenience this may cause.

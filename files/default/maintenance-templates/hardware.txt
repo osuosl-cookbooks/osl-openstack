@@ -1,0 +1,24 @@
+Subject: Scheduled Hardware Maintenance - $date - $hosts
+
+Hello,
+
+We are writing to inform you of hardware maintenance that will affect your
+virtual machine(s) on $host_label.
+
+Scheduled Date: $date
+Maintenance Window: $window
+
+During this maintenance window, the following virtual machines will be
+unavailable:
+
+$instance_list
+
+Because this work involves physical hardware, the outage may run longer than
+the window above. We will follow up if we expect to exceed it. Your virtual
+machines will be gracefully shut down beforehand and started again as soon as
+the hardware work is finished and the host has been verified.
+
+If you have any questions or concerns, please reply to this email or contact
+us at $support_email.
+
+We apologize for any inconvenience this may cause.

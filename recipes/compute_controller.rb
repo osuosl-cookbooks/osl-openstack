@@ -277,3 +277,21 @@ cookbook_file '/root/nova-resize-debris-check.py' do
   group 'root'
   mode '0700'
 end
+
+# Deploy maintenance notice generator and its email templates
+cookbook_file '/root/nova-maintenance-notice.py' do
+  source 'maintenance-notice.py'
+  owner 'root'
+  group 'root'
+  mode '0700'
+end
+
+remote_directory '/root/nova-maintenance-templates' do
+  source 'maintenance-templates'
+  owner 'root'
+  group 'root'
+  mode '0700'
+  files_owner 'root'
+  files_group 'root'
+  files_mode '0600'
+end
