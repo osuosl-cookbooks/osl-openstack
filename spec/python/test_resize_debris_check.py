@@ -109,27 +109,61 @@ class Base(unittest.TestCase):
 
     @staticmethod
     def make_args(*extra):
-        with mock.patch.object(sys, 'argv', ['resize-debris-check', *extra]), \
-                mock.patch.dict(os.environ, {}, clear=True):
-            return rdc.parse_args()
+        argv = list(extra)
+        # point at a nova.conf that cannot exist, so running the suite on a
+        # real controller does not pick up its pool and rbd_user
+        if '--nova-conf' not in argv:
+            argv += ['--nova-conf', '/nonexistent/nova.conf']
+        with mock.patch.dict(os.environ, {}, clear=True):
+            return rdc.parse_args(argv)
 
     def text(self):
         return self.out.getvalue()
+
+    def ctx_with(self, *flags):
+        ctx = rdc.Context(self.make_args(*flags), self.conn, self.db)
+        ctx.now = NOW
+        return ctx
 
 
 class ParseArgsTest(Base):
     def test_defaults(self):
         a = self.make_args()
-        self.assertEqual((a.rbd_pool, a.nova_conf), ('vms', '/etc/nova/nova.conf'))
+        self.assertEqual((a.rbd_pool, a.ceph_user), ('vms', 'cinder'))
         self.assertEqual((a.stale_hours, a.verify_days, a.error_days), (1, 2, 7))
         self.assertFalse(a.exit_code)
+        with mock.patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(rdc.parse_args([]).nova_conf, '/etc/nova/nova.conf')
 
     def test_flags(self):
         a = self.make_args('--rbd-pool', 'p', '--stale-hours', '3', '--verify-days', '9',
-                           '--error-days', '30', '--nova-conf', '/x', '-x')
-        self.assertEqual((a.rbd_pool, a.nova_conf), ('p', '/x'))
+                           '--error-days', '30', '--nova-conf', '/x', '--ceph-user', 'glance', '-x')
+        self.assertEqual((a.rbd_pool, a.nova_conf, a.ceph_user), ('p', '/x', 'glance'))
         self.assertEqual((a.stale_hours, a.verify_days, a.error_days), (3, 9, 30))
         self.assertTrue(a.exit_code)
+
+    def test_pool_and_client_come_from_nova_conf(self):
+        # the controller has no client.admin keyring, so follow what nova uses
+        conf = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, str(conf))
+        path = conf / 'nova.conf'
+        path.write_text('[libvirt]\nrbd_user = cinder\nimages_rbd_pool = vms_ppc64\n')
+        a = self.make_args('--nova-conf', str(path))
+        self.assertEqual((a.rbd_pool, a.ceph_user), ('vms_ppc64', 'cinder'))
+        # an explicit flag still wins
+        a = self.make_args('--nova-conf', str(path), '--ceph-user', 'glance',
+                           '--rbd-pool', 'other')
+        self.assertEqual((a.rbd_pool, a.ceph_user), ('other', 'glance'))
+
+    def test_env_beats_nova_conf(self):
+        conf = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, str(conf))
+        path = conf / 'nova.conf'
+        path.write_text('[libvirt]\nrbd_user = cinder\nimages_rbd_pool = vms_ppc64\n')
+        with mock.patch.dict(os.environ, {'RBD_POOL': 'env-pool', 'CEPH_USER': 'env-user'},
+                             clear=True):
+            a = rdc.parse_args(['--nova-conf', str(path)])
+        self.assertEqual((a.rbd_pool, a.ceph_user), ('env-pool', 'env-user'))
 
     def test_env_defaults_like_the_shell_version(self):
         with mock.patch.dict(os.environ, {'RBD_POOL': 'other', 'STALE_HOURS': '4',
@@ -259,13 +293,44 @@ class RbdSnapsTest(Base):
         self.run.return_value = (0, self.LS)
         self.ctx.resizing = {'22222222-2222-2222-2222-222222222222'}
         rdc.check_rbd_snaps(self.ctx, self.rep)
-        self.run.assert_called_once_with(['rbd', '-p', 'vms', 'ls', '-l'])
+        self.run.assert_called_once_with(['rbd', '--id', 'cinder', '-p', 'vms', 'ls', '-l'])
         self.assertEqual(self.rep.findings, 1)
         t = self.text()
         self.assertIn('FINDING: stale nova-resize snap on 11111111-1111-1111-1111-111111111111', t)
-        self.assertIn('fix> rbd snap rm vms/11111111-1111-1111-1111-111111111111_disk@nova-resize', t)
+        self.assertIn('fix> rbd --id cinder snap rm '
+                      'vms/11111111-1111-1111-1111-111111111111_disk@nova-resize', t)
         self.assertIn('ok: 22222222-2222-2222-2222-222222222222 has a snap but is mid-resize', t)
         self.assertNotIn('33333333', t)
+
+    def test_auth_failure_names_the_keyrings_this_host_has(self):
+        # what the controller hit: rbd defaulted to client.admin, which has no
+        # keyring there, and the message gave no hint about what to use instead
+        self.run.return_value = (2, 'auth: unable to find a keyring on '
+                                    '/etc/ceph/ceph.client.admin.keyring: (2) No such file\n'
+                                    'rbd: couldn\'t connect to the cluster!')
+        self.ctx.args = self.make_args('--ceph-user', 'admin')
+        with mock.patch.object(rdc, 'ceph_keyring_users',
+                               return_value=['cinder', 'cinder-backup', 'glance']):
+            rdc.check_rbd_snaps(self.ctx, self.rep)
+        t = self.text()
+        self.assertIn('skipped: rbd ls failed (rc=2)', t)
+        self.assertIn('no keyring for client.admin; this host has: '
+                      'cinder, cinder-backup, glance', t)
+        self.assertIn('re-run with --ceph-user cinder', t)
+        self.assertEqual(self.rep.findings, 0)
+
+    def test_no_keyring_hint_when_the_client_is_one_we_have(self):
+        self.run.return_value = (1, 'rbd: error opening pool vms: (2) No such file')
+        with mock.patch.object(rdc, 'ceph_keyring_users', return_value=['cinder']):
+            rdc.check_rbd_snaps(self.ctx, self.rep)
+        self.assertIn('skipped: rbd ls failed (rc=1)', self.text())
+        self.assertNotIn('no keyring for', self.text())
+
+    def test_section_heading_names_pool_and_client(self):
+        self.run.return_value = (0, '')
+        rdc.check_rbd_snaps(self.ctx, self.rep)
+        self.assertIn('1. Stale nova-resize RBD snapshots (pool: vms, client.cinder)',
+                      self.text())
 
     def test_rbd_missing_or_failing(self):
         self.which.return_value = None
@@ -276,6 +341,260 @@ class RbdSnapsTest(Base):
         rdc.check_rbd_snaps(self.ctx, self.rep)
         self.assertIn('skipped: rbd ls failed (rc=1): error connecting', self.text())
         self.assertEqual(self.rep.findings, 0)
+
+
+class FixModeTest(Base):
+    def test_flags_select_the_mode(self):
+        plain, dry, fix = self.ctx_with(), self.ctx_with('--dry-run'), self.ctx_with('--fix')
+        self.assertEqual((plain.fixing, plain.applying), (False, False))
+        self.assertEqual((dry.fixing, dry.applying), (True, False))
+        self.assertEqual((fix.fixing, fix.applying), (True, True))
+        # --fix --dry-run previews rather than applying, so the safer flag wins
+        both = self.ctx_with('--fix', '--dry-run')
+        self.assertEqual((both.fixing, both.applying), (True, False))
+        self.assertTrue(self.ctx_with('-n').fixing)
+
+    def test_run_fix_previews_under_dry_run(self):
+        rdc.run_fix(self.ctx_with('--dry-run'), self.rep, ['rbd', 'snap', 'rm', 'x'], 'removed x')
+        self.assertIn('would run> rbd snap rm x', self.text())
+        self.run.assert_not_called()
+        self.assertEqual((self.rep.fixes, self.rep.fix_failures), (0, 0))
+
+    def test_run_fix_applies_and_reports(self):
+        self.run.return_value = (0, '')
+        rdc.run_fix(self.ctx_with('--fix'), self.rep, ['rbd', 'snap', 'rm', 'x'], 'removed x')
+        self.run.assert_called_once_with(['rbd', 'snap', 'rm', 'x'])
+        self.assertIn('FIXED: removed x', self.text())
+        self.assertEqual(self.rep.fixes, 1)
+
+    def test_run_fix_reports_a_failure_with_the_output(self):
+        self.run.return_value = (16, 'rbd: snapshot is protected')
+        rdc.run_fix(self.ctx_with('--fix'), self.rep, ['rbd', 'snap', 'rm', 'x'], 'removed x')
+        self.assertIn('FIX FAILED: rbd snap rm x (rc=16): rbd: snapshot is protected', self.text())
+        self.assertEqual((self.rep.fixes, self.rep.fix_failures), (0, 1))
+
+    def test_run_fix_honours_extra_success_codes(self):
+        self.run.return_value = (4, 'deleted')
+        rdc.run_fix(self.ctx_with('--fix'), self.rep, ['nova-manage'], 'deleted orphans',
+                    ok_codes=(0, 4))
+        self.assertEqual((self.rep.fixes, self.rep.fix_failures), (1, 0))
+
+    def test_sql_fix_previews_under_dry_run(self):
+        rdc.sql_fix(self.ctx_with('--dry-run'), self.rep, 'UPDATE x', ('u',), 'mysql -e ...', 'did x')
+        self.assertIn('would run> mysql -e ...', self.text())
+        self.db.execute.assert_not_called()
+
+    def test_sql_fix_applies_and_counts_rows(self):
+        self.db.execute.return_value = 1
+        rdc.sql_fix(self.ctx_with('--fix'), self.rep, 'UPDATE x', ('u',), 'p', 'cleared u')
+        self.db.execute.assert_called_once_with('UPDATE x', ('u',))
+        self.assertIn('FIXED: cleared u (1 row)', self.text())
+
+    def test_sql_fix_treats_zero_rows_as_a_failure(self):
+        # the guards in the WHERE clause mean the instance started moving again
+        self.db.execute.return_value = 0
+        rdc.sql_fix(self.ctx_with('--fix'), self.rep, 'UPDATE x', ('u',), 'p', 'cleared u')
+        self.assertIn('FIX FAILED: cleared u: matched no rows, the state changed', self.text())
+        self.assertEqual(self.rep.fix_failures, 1)
+
+    def test_sql_fix_reports_a_db_error(self):
+        self.db.execute.side_effect = PYMYSQL.MySQLError('Access denied')
+        rdc.sql_fix(self.ctx_with('--fix'), self.rep, 'UPDATE x', ('u',), 'p', 'cleared u')
+        self.assertIn('FIX FAILED: cleared u: Access denied', self.text())
+
+
+class FixedSectionsTest(Base):
+    def test_stale_snapshot_is_removed(self):
+        self.run.return_value = (0, RbdSnapsTest.LS)
+        ctx = self.ctx_with('--fix')
+        ctx.resizing = set()
+        self.run.reset_mock()
+        self.run.side_effect = [(0, RbdSnapsTest.LS), (0, ''), (0, '')]
+        rdc.check_rbd_snaps(ctx, self.rep)
+        removals = [c.args[0] for c in self.run.call_args_list if 'snap' in c.args[0]]
+        self.assertEqual(removals, [
+            ['rbd', '--id', 'cinder', 'snap', 'rm',
+             'vms/11111111-1111-1111-1111-111111111111_disk@nova-resize'],
+            ['rbd', '--id', 'cinder', 'snap', 'rm',
+             'vms/22222222-2222-2222-2222-222222222222_disk@nova-resize']])
+        self.assertEqual(self.rep.fixes, 2)
+
+    def test_migration_context_update_repeats_the_scan_guards(self):
+        self.db.query.return_value = [('u-1', 'web1', 'active', '4918')]
+        self.db.execute.return_value = 1
+        rdc.check_migration_context(self.ctx_with('--fix'), self.rep)
+        sql, params = self.db.execute.call_args.args
+        self.assertEqual(params, ('u-1',))
+        self.assertIn('i.task_state IS NULL', sql)
+        self.assertIn("i.vm_state NOT IN ('resized')", sql)
+        self.assertIn('i.deleted = 0', sql)
+        self.assertIn('FIXED: cleared the migration_context on u-1', self.text())
+
+    def test_dead_migration_update_repeats_the_scan_guards(self):
+        self.db.query.return_value = [(9028, 'u-9', 'confirming', 'a', 'b', '2024-11-01')]
+        self.db.execute.return_value = 1
+        rdc.check_dead_migrations(self.ctx_with('--fix'), self.rep)
+        sql, params = self.db.execute.call_args.args
+        self.assertEqual(params, (9028, 'confirming'))
+        self.assertIn('UTC_TIMESTAMP() - INTERVAL 1 DAY', sql)
+        self.assertIn('deleted = 0', sql)
+        self.assertIn('FIXED: marked migration record 9028 dead', self.text())
+
+    def test_placement_orphans_are_deleted_and_exit_4_is_success(self):
+        self.which.return_value = '/usr/bin/nova-manage'
+        self.run.side_effect = [(3, PlacementTest.AUDIT), (4, 'deleted')]
+        rdc.check_placement(self.ctx_with('--fix'), self.rep)
+        self.assertEqual(self.run.call_args_list[-1].args[0],
+                         ['nova-manage', 'placement', 'audit', '--delete'])
+        self.assertIn('FIXED: deleted 2 orphaned placement allocation(s)', self.text())
+
+    def test_advisory_sections_are_never_touched_by_fix(self):
+        # stuck volumes, parked resizes and ERROR instances involve live
+        # workloads, so --fix must still only advise on them
+        ctx = self.ctx_with('--fix')
+        self.conn.block_storage.get.side_effect = (
+            lambda url, params=None: response(
+                {'volumes': [vol('v1', updated_at=ago(hours=9))]}
+                if params['status'] == 'attaching' else {'volumes': []}))
+        ctx.verify_resize = [server('parked', 'vm', ago(days=30))]
+        self.db.query.return_value = [
+            (1, 'u-err', 'migration', 'error', 'a', 'b', 'error', '2026-09-15')]
+        rdc.check_stuck_volumes(ctx, self.rep)
+        rdc.check_parked_verify_resize(ctx, self.rep)
+        rdc.check_errored_migrations(ctx, self.rep)
+        self.db.execute.assert_not_called()
+        self.run.assert_not_called()
+        t = self.text()
+        self.assertIn('fix> openstack volume set --state available v1', t)
+        self.assertIn('fix> openstack server resize confirm parked', t)
+        self.assertIn('fix> recover: openstack server reboot --hard u-err', t)
+        self.assertEqual(self.rep.fixes, 0)
+
+
+class DuplicateAttachmentTest(Base):
+    """Section 8, modelled on volume 52c460c1: a live attachment plus a
+    leftover 'reserved' one from a cold migration that failed in finish_resize."""
+
+    ATTACHED = {'id': '90d32868', 'volume_id': '52c460c1', 'status': 'attached',
+                'instance': '82292e08'}
+    RESERVED = {'id': 'f1900f5b', 'volume_id': '52c460c1', 'status': 'reserved',
+                'instance': '82292e08'}
+
+    def wire(self, attachments, volume):
+        def get(url, params=None, microversion=None):
+            if url.startswith('/attachments'):
+                return response({'attachments': attachments})
+            return response({'volume': volume})
+        self.conn.block_storage.get.side_effect = get
+
+    def test_leftover_attachment_is_named_and_the_live_one_is_not(self):
+        self.wire([self.ATTACHED, self.RESERVED], {'status': 'in-use', 'multiattach': False})
+        self.db.query.return_value = [('52c460c1', '90d32868')]
+        rdc.check_duplicate_attachments(self.ctx, self.rep)
+        t = self.text()
+        self.assertEqual(self.rep.findings, 1)
+        self.assertIn('volume 52c460c1 (in-use) has 2 attachments, 1 orphaned', t)
+        self.assertIn("90d32868  attached  instance=82292e08  nova's BDM points here", t)
+        self.assertIn('f1900f5b  reserved  instance=82292e08  orphan', t)
+        self.assertIn('volume attachment delete f1900f5b', t)
+        self.assertNotIn('volume attachment delete 90d32868', t)
+
+    def test_nova_pointing_at_a_reserved_one_suggests_no_deletion(self):
+        # the real 52c460c1 case: the failed migration left nova's BDM on the
+        # new reserved attachment while the old attached one still serves the
+        # disk. Naming the attached one an orphan would detach a running volume.
+        self.wire([self.ATTACHED, self.RESERVED], {'status': 'in-use', 'multiattach': False})
+        self.db.query.return_value = [('52c460c1', 'f1900f5b')]
+        rdc.check_duplicate_attachments(self.ctx, self.rep)
+        t = self.text()
+        self.assertIn('nova points at a reserved one; do NOT delete anything here', t)
+        self.assertNotIn('volume attachment delete', t)
+        self.assertIn("f1900f5b  reserved  instance=82292e08  nova's BDM points here", t)
+        self.assertIn('90d32868  attached  instance=82292e08  carries the live connection', t)
+        self.assertIn('nova-manage volume_attachment refresh 82292e08 52c460c1', t)
+
+    def test_all_reserved_on_an_available_volume_is_still_resolvable(self):
+        # nothing is attached, so the extras are safe to name
+        extra = dict(self.RESERVED, id='b10944b5')
+        self.wire([self.RESERVED, extra], {'status': 'available', 'multiattach': False})
+        self.db.query.return_value = [('52c460c1', 'f1900f5b')]
+        rdc.check_duplicate_attachments(self.ctx, self.rep)
+        t = self.text()
+        self.assertIn('has 2 attachments, 1 orphaned', t)
+        self.assertIn('volume attachment delete b10944b5', t)
+        self.assertNotIn('volume attachment delete f1900f5b', t)
+
+    def test_single_attachment_is_not_reported(self):
+        self.wire([self.ATTACHED], {'status': 'in-use', 'multiattach': False})
+        rdc.check_duplicate_attachments(self.ctx, self.rep)
+        self.assertEqual(self.rep.findings, 0)
+
+    def test_multiattach_volumes_are_expected_to_have_several(self):
+        self.wire([self.ATTACHED, self.RESERVED], {'status': 'in-use', 'multiattach': True})
+        self.db.query.return_value = [('52c460c1', '90d32868')]
+        rdc.check_duplicate_attachments(self.ctx, self.rep)
+        self.assertEqual(self.rep.findings, 0)
+
+    def test_without_nova_bdms_it_refuses_to_name_an_orphan(self):
+        self.wire([self.ATTACHED, self.RESERVED], {'status': 'available', 'multiattach': False})
+        self.db.available = False
+        rdc.check_duplicate_attachments(self.ctx, self.rep)
+        t = self.text()
+        self.assertEqual(self.rep.findings, 1)
+        self.assertIn('has 2 attachments and nova has no BDM for it', t)
+        self.assertIn('unverified', t)
+        self.assertIn('confirm the volume is unused before deleting any attachment', t)
+        self.assertNotIn('volume attachment delete', t)
+
+    def test_attachment_list_uses_all_tenants_at_microversion_327(self):
+        self.wire([], {})
+        rdc.check_duplicate_attachments(self.ctx, self.rep)
+        self.conn.block_storage.get.assert_called_once_with(
+            '/attachments/detail', params={'all_tenants': 'True'}, microversion='3.27')
+
+    def test_api_failure_skips_the_section_only(self):
+        self.conn.block_storage.get.side_effect = EXC.SDKException('404 attachments')
+        rdc.check_duplicate_attachments(self.ctx, self.rep)
+        self.assertIn('skipped: could not list attachments', self.text())
+        self.assertEqual(self.rep.findings, 0)
+
+    def test_fix_mode_never_deletes_an_attachment(self):
+        # detaching the wrong volume from a running instance is not something
+        # --fix should ever be able to do
+        self.wire([self.ATTACHED, self.RESERVED], {'status': 'in-use', 'multiattach': False})
+        self.db.query.return_value = [('52c460c1', '90d32868')]
+        ctx = self.ctx_with('--fix')
+        rdc.check_duplicate_attachments(ctx, self.rep)
+        self.assertEqual((self.rep.fixes, self.rep.fix_failures), (0, 0))
+        self.run.assert_not_called()
+        self.db.execute.assert_not_called()
+        self.assertIn('fix> openstack --os-volume-api-version 3.27 '
+                      'volume attachment delete f1900f5b', self.text())
+
+
+class CephHelpersTest(Base):
+    def test_libvirt_settings(self):
+        d = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, str(d))
+        (d / 'full').write_text('[libvirt]\nrbd_user = cinder\nimages_rbd_pool = vms\n')
+        self.assertEqual(rdc.libvirt_settings(str(d / 'full')),
+                         {'user': 'cinder', 'pool': 'vms'})
+        (d / 'nolibvirt').write_text('[DEFAULT]\nx = 1\n')
+        self.assertEqual(rdc.libvirt_settings(str(d / 'nolibvirt')),
+                         {'user': None, 'pool': None})
+        self.assertEqual(rdc.libvirt_settings('/nonexistent/nova.conf'), {})
+        (d / 'junk').write_text('not an ini file at all\n')
+        self.assertEqual(rdc.libvirt_settings(str(d / 'junk')), {})
+
+    def test_ceph_keyring_users(self):
+        d = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, str(d))
+        for name in ('ceph.client.cinder.keyring', 'ceph.client.cinder-backup.keyring',
+                     'ceph.client.glance.keyring', 'ceph.conf', 'rbdmap'):
+            (d / name).write_text('x')
+        self.assertEqual(rdc.ceph_keyring_users(str(d)),
+                         ['cinder', 'cinder-backup', 'glance'])
+        self.assertEqual(rdc.ceph_keyring_users('/nonexistent'), [])
 
 
 class MigrationContextTest(Base):
@@ -397,10 +716,10 @@ class ErroredMigrationsTest(Base):
         rdc.check_errored_migrations(self.ctx, self.rep)
         self.assertEqual(self.rep.findings, 1)
         t = self.text()
-        self.assertIn('FINDING: migration migration 1 of u-err error 2026-09-15 01:00:00 AND instance is still in ERROR', t)
+        self.assertIn('FINDING: migration record 1 for u-err error 2026-09-15 01:00:00 AND instance is still in ERROR', t)
         self.assertIn('fix> recover: openstack server reboot --hard u-err', t)
-        self.assertIn('note: resize migration 2 of u-ok error 2026-09-14 01:00:00 (instance now active)', t)
-        self.assertIn('note: live-migration migration 3 of u-lm failed 2026-09-13 01:00:00 (instance now active)', t)
+        self.assertIn('note: resize record 2 for u-ok error 2026-09-14 01:00:00 (instance now active)', t)
+        self.assertIn('note: live-migration record 3 for u-lm failed 2026-09-13 01:00:00 (instance now active)', t)
         sql, params = self.db.query.call_args.args
         # both terminal failure statuses, then the day window, all parameterised
         self.assertEqual(params, ('error', 'failed', 3))
@@ -505,6 +824,27 @@ class MainTest(Base):
         self.assertEqual(rc, 0)
         self.assertIn('nova DB: unavailable (python3 pymysql module missing), DB checks will be skipped', out)
         self.assertEqual(out.count('skipped: no DB access'), 3)
+
+    def test_dry_run_says_nothing_changed(self):
+        rc, out = self.run_main('--dry-run')
+        self.assertEqual(rc, 0)
+        self.assertIn('Dry run: nothing was changed. Re-run with --fix to apply.', out)
+
+    def test_fix_reports_the_tally(self):
+        self.db.query.side_effect = lambda sql, params=(): (
+            [('u-1', 'h', 'active', '1')] if 'instance_extra' in sql else [])
+        self.db.execute.return_value = 1
+        rc, out = self.run_main('--fix')
+        self.assertEqual(rc, 0)
+        self.assertIn('1 fix(es) applied, 0 failed.', out)
+
+    def test_a_failed_fix_exits_nonzero_even_without_x(self):
+        self.db.query.side_effect = lambda sql, params=(): (
+            [('u-1', 'h', 'active', '1')] if 'instance_extra' in sql else [])
+        self.db.execute.return_value = 0  # state moved on since the scan
+        rc, out = self.run_main('--fix')
+        self.assertEqual(rc, 1)
+        self.assertIn('0 fix(es) applied, 1 failed.', out)
 
     def test_api_error_exits_cleanly(self):
         self.conn.compute.servers.side_effect = KS_EXC.ClientException('requires authentication')

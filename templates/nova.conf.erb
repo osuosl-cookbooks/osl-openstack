@@ -44,7 +44,14 @@ backend = dogpile.cache.memcached
 <% unless @cinder_disabled -%>
 
 [cinder]
+auth_type = password
+auth_url = https://<%= @auth_endpoint %>:5000/v3
 os_region_name = <%= @region %>
+password = <%= @service_pass %>
+project_domain_name = Default
+project_name = service
+user_domain_name = Default
+username = nova
 <% end -%>
 
 [database]
