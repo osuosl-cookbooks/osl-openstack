@@ -30,15 +30,15 @@ def _stub_modules():
     class SDKException(Exception):
         pass
 
-    class ResourceNotFound(SDKException):
+    class HttpException(SDKException):
         pass
 
-    class ForbiddenException(SDKException):
+    class ResourceNotFound(HttpException):
         pass
 
     exc.SDKException = SDKException
+    exc.HttpException = HttpException
     exc.ResourceNotFound = ResourceNotFound
-    exc.ForbiddenException = ForbiddenException
     pkg = types.ModuleType('openstack')
     pkg.exceptions, pkg.connect = exc, mock.Mock()
     sys.modules['openstack'], sys.modules['openstack.exceptions'] = pkg, exc
@@ -257,7 +257,7 @@ class LookupUserTest(Base):
         info = mn.lookup_user(self.conn, 'u9', {})
         self.assertFalse(info['enabled'])
         self.assertIn('Unknown', info['name'])
-        self.conn.identity.get_user.side_effect = EXC.ForbiddenException('no')
+        self.conn.identity.get_user.side_effect = EXC.HttpException('403 Forbidden')
         self.assertIn('Access denied', mn.lookup_user(self.conn, 'u8', {})['name'])
 
     def test_disabled_user(self):
@@ -290,8 +290,18 @@ class ProjectMemberTest(Base):
         self.assertEqual(mn.project_member_ids(self.conn, 'p1', ['member', 'reader']),
                          {'u1', 'u3'})
 
+    def test_a_deleted_project_is_skipped_not_raised(self):
+        # the SDK hands back a lazy generator, so keystone's 404 for a project
+        # that no longer exists surfaces on iteration, not on the call
+        def lazy(**kwargs):
+            raise EXC.ResourceNotFound('Could not find project: 483844b1')
+            yield  # pragma: no cover
+
+        self.conn.identity.role_assignments.side_effect = lazy
+        self.assertEqual(mn.project_member_ids(self.conn, 'gone', ['member']), set())
+
     def test_api_errors_yield_nothing(self):
-        self.conn.identity.role_assignments.side_effect = EXC.ForbiddenException('no')
+        self.conn.identity.role_assignments.side_effect = EXC.HttpException('403 Forbidden')
         self.assertEqual(mn.project_member_ids(self.conn, 'p1', ['member']), set())
 
 
