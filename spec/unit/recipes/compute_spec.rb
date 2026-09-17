@@ -154,6 +154,11 @@ describe 'osl-openstack::compute' do
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content('[oslo_messaging_rabbit]') }
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/^heartbeat_in_pthread = false$/) }
       it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/^rabbit_quorum_queue/) }
+      # nova-manage and any tokenless admin context need [cinder] credentials;
+      # API-driven calls forward the user's token and never reach this
+      it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/^auth_type = password$/) }
+      it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/^\[cinder\]$/) }
+      it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/^username = nova$/) }
       it { is_expected.to_not include_recipe 'yum-kernel-osuosl::install' }
       it { is_expected.to modify_user('nova').with(shell: '/bin/sh') }
 
