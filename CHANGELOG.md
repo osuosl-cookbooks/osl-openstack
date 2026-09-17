@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+18.5.8 (2026-09-17)
+-------------------
+- Add nova compute host maintenance tooling
+
 18.5.7 (2026-09-11)
 -------------------
 - Patch nova to skip ACPI feature on ppc64le EL9 compute nodes
