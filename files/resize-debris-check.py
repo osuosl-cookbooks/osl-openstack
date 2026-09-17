@@ -10,7 +10,11 @@ and migrations (the c24a44da incident taxonomy):
   6. recently errored migrations (debris signal; instance may need recovery)
   7. placement allocation orphans (via nova-manage)
 
-Prints findings with suggested fix commands. NEVER changes anything itself.
+Reports findings with suggested fix commands and changes nothing by default.
+--dry-run previews the fixes it could apply, --fix applies them. Only pure
+leftover state is ever touched: stale snapshots, stale rows, dead records and
+orphaned allocations. Anything involving a live instance or volume stays
+advisory.
 Run on a controller with admin OpenStack credentials sourced. RBD checks
 need ceph admin access. DB checks read the connection URL from nova.conf's
 [database] section and need the pymysql module.
@@ -70,6 +74,13 @@ def parse_args(argv=None):
                     help='how far back to surface errored migrations (default 7)')
     ap.add_argument('-x', '--exit-code', action='store_true',
                     help='exit 2 when there are findings (for cron/NRPE)')
+    ap.add_argument('-n', '--dry-run', action='store_true',
+                    help='show exactly what --fix would do, without doing it')
+    ap.add_argument('--fix', action='store_true',
+                    help='apply the safe fixes: stale nova-resize snapshots, stale '
+                         'migration_context rows, dead migration records and placement '
+                         'orphans. Stuck volumes, parked resizes and ERROR instances are '
+                         'never touched.')
     args = ap.parse_args(argv)
     # controllers have no client.admin keyring, so take the pool and client
     # nova itself uses rather than rbd's admin defaults
@@ -121,6 +132,8 @@ class Report:
 
     def __init__(self, out=None):
         self.findings = 0
+        self.fixes = 0
+        self.fix_failures = 0
         self.out = out or sys.stdout
 
     def section(self, title):
@@ -135,6 +148,17 @@ class Report:
 
     def note(self, msg):
         print(msg, file=self.out)
+
+    def would(self, cmd):
+        print(f'  would run> {cmd}', file=self.out)
+
+    def fixed(self, msg):
+        self.fixes += 1
+        print(f'  FIXED: {msg}', file=self.out)
+
+    def fix_failed(self, msg):
+        self.fix_failures += 1
+        print(f'  FIX FAILED: {msg}', file=self.out)
 
 
 class NovaDB:
@@ -181,6 +205,17 @@ class NovaDB:
         p = self.params
         return f"MYSQL_PWD=... mysql -h {p['host']} -P {p['port']} -u {p['user']} {p['database']}"
 
+    def execute(self, sql, params=()):
+        """Run a write, return the number of rows it changed."""
+        conn = pymysql.connect(connect_timeout=10, **self.params)
+        try:
+            with conn.cursor() as cur:
+                changed = cur.execute(sql, params)
+            conn.commit()
+            return changed
+        finally:
+            conn.close()
+
     def query(self, sql, params=()):
         conn = pymysql.connect(connect_timeout=10, **self.params)
         try:
@@ -196,6 +231,39 @@ def run(cmd):
     proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                           universal_newlines=True)
     return proc.returncode, proc.stdout
+
+
+def run_fix(ctx, rep, cmd, what, ok_codes=(0,)):
+    """Run a shell fix, or print it under --dry-run."""
+    printable = ' '.join(cmd)
+    if not ctx.applying:
+        rep.would(printable)
+        return
+    rc, out = run(cmd)
+    if rc in ok_codes:
+        rep.fixed(what)
+    else:
+        rep.fix_failed(f'{printable} (rc={rc}): {out.strip()}')
+
+
+def sql_fix(ctx, rep, sql, params, printable, what):
+    """Apply a DB fix, or print it under --dry-run.
+
+    Every statement repeats the scan's own guards in its WHERE clause, so an
+    instance that started moving since the scan simply matches no rows.
+    """
+    if not ctx.applying:
+        rep.would(printable)
+        return
+    try:
+        changed = ctx.db.execute(sql, params)
+    except DB_ERRORS as e:
+        rep.fix_failed(f'{what}: {e}')
+        return
+    if changed:
+        rep.fixed(f'{what} ({changed} row)')
+    else:
+        rep.fix_failed(f'{what}: matched no rows, the state changed since the scan')
 
 
 def list_volumes(conn, status):
@@ -251,7 +319,11 @@ def check_rbd_snaps(ctx, rep):
             rep.note(f'ok: {uuid} has a snap but is mid-resize (legit)')
         else:
             rep.finding(f'stale nova-resize snap on {uuid}')
-            rep.suggest(f'rbd --id {user} snap rm {pool}/{uuid}_disk@nova-resize')
+            cmd = ['rbd', '--id', user, 'snap', 'rm', f'{pool}/{uuid}_disk@nova-resize']
+            if ctx.fixing:
+                run_fix(ctx, rep, cmd, f'removed the nova-resize snap on {uuid}')
+            else:
+                rep.suggest(' '.join(cmd))
 
 
 def check_migration_context(ctx, rep):
@@ -275,9 +347,20 @@ def check_migration_context(ctx, rep):
     for uuid, hostname, vm_state, mig_id in rows:
         rep.finding(f'{uuid} ({hostname}, {vm_state}) holds migration_context '
                     f'for migration {mig_id}')
-        rep.suggest('verify no migration in flight, then:')
-        rep.suggest(f'{ctx.db.cli()} -e "UPDATE instance_extra SET migration_context = NULL '
-                    f"WHERE instance_uuid = '{uuid}';\"")
+        printable = (f'{ctx.db.cli()} -e "UPDATE instance_extra SET migration_context = NULL '
+                     f"WHERE instance_uuid = '{uuid}';\"")
+        if ctx.fixing:
+            # the join repeats the scan's guards, so an instance that started
+            # moving in the meantime matches nothing
+            sql_fix(ctx, rep,
+                    'UPDATE instance_extra ie JOIN instances i ON i.uuid = ie.instance_uuid '
+                    'SET ie.migration_context = NULL '
+                    'WHERE ie.instance_uuid = %s AND i.deleted = 0 AND i.task_state IS NULL '
+                    "AND i.vm_state NOT IN ('resized')",
+                    (uuid,), printable, f'cleared the migration_context on {uuid}')
+        else:
+            rep.suggest('verify no migration in flight, then:')
+            rep.suggest(printable)
 
 
 def check_stuck_volumes(ctx, rep):
@@ -342,10 +425,18 @@ def check_dead_migrations(ctx, rep):
            AND updated_at < UTC_TIMESTAMP() - INTERVAL 1 DAY""", LIVE_MIGRATION_STATES)
     for mid, uuid, mstatus, src, dst, upd in rows:
         rep.finding(f"migration {mid} ({uuid}) stuck in '{mstatus}' since {upd} ({src} -> {dst})")
-        rep.suggest('verify the instance is healthy and NOT actually moving, '
-                    'then mark the record dead:')
-        rep.suggest(f"{ctx.db.cli()} -e \"UPDATE migrations SET status='error' "
-                    f"WHERE id={mid} AND status='{mstatus}';\"")
+        printable = (f"{ctx.db.cli()} -e \"UPDATE migrations SET status='error' "
+                     f"WHERE id={mid} AND status='{mstatus}';\"")
+        if ctx.fixing:
+            sql_fix(ctx, rep,
+                    "UPDATE migrations SET status='error' "
+                    'WHERE id = %s AND status = %s AND deleted = 0 '
+                    'AND updated_at < UTC_TIMESTAMP() - INTERVAL 1 DAY',
+                    (mid, mstatus), printable, f'marked migration record {mid} dead')
+        else:
+            rep.suggest('verify the instance is healthy and NOT actually moving, '
+                        'then mark the record dead:')
+            rep.suggest(printable)
     rep.note("(note: status 'finished' = awaiting confirm; covered by check 4)")
 
 
@@ -399,9 +490,14 @@ def check_placement(ctx, rep):
     rep.note('\n'.join(lines if orphans else lines[-5:]))
     if orphans:
         rep.finding(f'{orphans} orphaned placement allocation(s), details above')
-        rep.suggest('targeted: openstack resource provider allocation delete <consumer-uuid>'
-                    '   # needs osc-placement plugin')
-        rep.suggest('or bulk:  nova-manage placement audit --delete')
+        if ctx.fixing:
+            # audit --delete exits 4 when it deleted something, 0 when clean
+            run_fix(ctx, rep, ['nova-manage', 'placement', 'audit', '--delete'],
+                    f'deleted {orphans} orphaned placement allocation(s)', ok_codes=(0, 4))
+        else:
+            rep.suggest('targeted: openstack resource provider allocation delete <consumer-uuid>'
+                        '   # needs osc-placement plugin')
+            rep.suggest('or bulk:  nova-manage placement audit --delete')
 
 
 CHECKS = (check_resizing, check_rbd_snaps, check_migration_context, check_stuck_volumes,
@@ -412,6 +508,8 @@ CHECKS = (check_resizing, check_rbd_snaps, check_migration_context, check_stuck_
 class Context:
     def __init__(self, args, conn, db):
         self.args, self.conn, self.db = args, conn, db
+        self.fixing = args.fix or args.dry_run
+        self.applying = args.fix and not args.dry_run
         self.now = datetime.datetime.now(datetime.timezone.utc)
         self.verify_resize = []
         self.resizing = set()
@@ -439,6 +537,12 @@ def main(argv=None):
     else:
         rep.note(f'{rep.findings} finding(s) above. Also run on each hypervisor:')
         rep.note('  ls -d /var/lib/nova/instances/*_resize   # leftover source dirs')
+    if args.dry_run:
+        rep.note('Dry run: nothing was changed. Re-run with --fix to apply.')
+    elif args.fix:
+        rep.note(f'{rep.fixes} fix(es) applied, {rep.fix_failures} failed.')
+    if rep.fix_failures:
+        return 1
     return 2 if args.exit_code and rep.findings else 0
 
 
