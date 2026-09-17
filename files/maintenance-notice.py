@@ -281,7 +281,9 @@ def project_member_ids(conn, project_id, member_roles, expand_groups=True):
         query['effective'] = True
     ids = set()
     try:
-        assignments = conn.identity.role_assignments(**query)
+        # the SDK hands back a lazy generator, so the request only fires on
+        # iteration; force it inside the guard or a deleted project escapes it
+        assignments = list(conn.identity.role_assignments(**query))
     except (os_exc.ResourceNotFound, os_exc.ForbiddenException):
         return ids
     for assignment in assignments:

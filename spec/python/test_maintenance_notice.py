@@ -290,6 +290,16 @@ class ProjectMemberTest(Base):
         self.assertEqual(mn.project_member_ids(self.conn, 'p1', ['member', 'reader']),
                          {'u1', 'u3'})
 
+    def test_a_deleted_project_is_skipped_not_raised(self):
+        # the SDK hands back a lazy generator, so keystone's 404 for a project
+        # that no longer exists surfaces on iteration, not on the call
+        def lazy(**kwargs):
+            raise EXC.ResourceNotFound('Could not find project: 483844b1')
+            yield  # pragma: no cover
+
+        self.conn.identity.role_assignments.side_effect = lazy
+        self.assertEqual(mn.project_member_ids(self.conn, 'gone', ['member']), set())
+
     def test_api_errors_yield_nothing(self):
         self.conn.identity.role_assignments.side_effect = EXC.ForbiddenException('no')
         self.assertEqual(mn.project_member_ids(self.conn, 'p1', ['member']), set())
