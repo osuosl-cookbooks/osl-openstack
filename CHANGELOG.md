@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+18.5.10 (2026-09-17)
+--------------------
+- Fix maintenance notice aborting on a deleted project
+
 18.5.9 (2026-09-17)
 -------------------
 - Extend the resize debris check and configure [cinder] auth
