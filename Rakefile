@@ -14,7 +14,7 @@ encrypted_data_bag_secret_path = 'test/integration/encrypted_data_bag_secret'
 task default: ['test']
 
 desc 'Run all tests'
-task test: [:style, :unit]
+task test: [:style, :unit, :python]
 
 def run_command(command)
   if File.exist?('Gemfile.lock')
@@ -127,4 +127,9 @@ desc 'Run RSpec (unit) tests'
 task :unit do
   run_command('rm -f Berksfile.lock')
   run_command('rspec --format documentation --color')
+end
+
+desc 'Run Python unit tests for scripts under files/'
+task :python do
+  sh 'PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s spec/python -v'
 end

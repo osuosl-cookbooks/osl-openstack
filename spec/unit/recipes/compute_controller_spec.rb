@@ -305,6 +305,43 @@ describe 'osl-openstack::compute_controller' do
       end
 
       it do
+        is_expected.to create_cookbook_file('/root/nova-cold-migrate-host.py').with(
+          source: 'cold-migrate-host.py',
+          owner: 'root',
+          group: 'root',
+          mode: '0700'
+        )
+      end
+
+      it do
+        is_expected.to create_cookbook_file('/root/nova-resize-debris-check.py').with(
+          source: 'resize-debris-check.py',
+          owner: 'root',
+          group: 'root',
+          mode: '0700'
+        )
+      end
+
+      it do
+        is_expected.to create_cookbook_file('/root/nova-maintenance-notice.py').with(
+          source: 'maintenance-notice.py',
+          owner: 'root',
+          group: 'root',
+          mode: '0700'
+        )
+      end
+
+      it do
+        is_expected.to create_remote_directory('/root/nova-maintenance-templates').with(
+          source: 'maintenance-templates',
+          owner: 'root',
+          group: 'root',
+          mode: '0700',
+          files_mode: '0600'
+        )
+      end
+
+      it do
         is_expected.to create_directory('/root/.nova-flavor-fixes/backups').with(
           owner: 'root',
           group: 'root',
