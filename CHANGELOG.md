@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+18.5.12 (2026-09-18)
+--------------------
+- Run the Kmods SIG 6.18 kernel on AlmaLinux 9 POWER10 hosts
+
 18.5.11 (2026-09-18)
 --------------------
 - Tune live migration so busy guests converge or post-copy in minutes
