@@ -95,9 +95,11 @@ control 'compute-controller' do
       its('libvirt.inject_key') { should cmp 'false' }
       its('libvirt.inject_partition') { should cmp '-2' }
       its('libvirt.inject_password') { should cmp 'false' }
+      its('libvirt.live_migration_completion_timeout') { should cmp '8' }
       its('libvirt.live_migration_downtime') { should cmp '1000' }
-      its('libvirt.live_migration_downtime_delay') { should cmp '30' }
-      its('libvirt.live_migration_flag') { should cmp 'VIR_MIGRATE_UNDEFINE_SOURCE,VIR_MIGRATE_PEER2PEER,VIR_MIGRATE_LIVE,VIR_MIGRATE_PERSIST_DEST,VIR_MIGRATE_TUNNELLED' }
+      its('libvirt.live_migration_downtime_delay') { should cmp '3' }
+      its('libvirt.live_migration_downtime_steps') { should cmp '3' }
+      its('libvirt.live_migration_flag') { should be_nil }
       its('libvirt.live_migration_permit_post_copy') { should cmp 'true' }
       its('libvirt.live_migration_timeout_action') { should cmp 'force_complete' }
       its('libvirt.rbd_secret_uuid') { should cmp 'ae3f1d03-bacd-4a90-b869-1a4fabb107f2' }
