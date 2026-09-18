@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+18.5.11 (2026-09-18)
+--------------------
+- Tune live migration so busy guests converge or post-copy in minutes
+
 18.5.10 (2026-09-17)
 --------------------
 - Fix maintenance notice aborting on a deleted project
