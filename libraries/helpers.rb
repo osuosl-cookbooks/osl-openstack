@@ -302,6 +302,14 @@ module OSLOpenstack
         false
       end
 
+      # True when the running kernel ships the module as a loadable file;
+      # false for built-in modules and for kernels without it
+      def kernel_module_available?(name)
+        shell_out('modinfo', '-n', name).exitstatus.zero?
+      rescue
+        false
+      end
+
       # Reachability probe for the keystone API on the controller VIP.
       # nova-compute makes a blocking keystone call at startup and exits
       # non-zero if the VIP isn't reachable yet - on a fresh converge a

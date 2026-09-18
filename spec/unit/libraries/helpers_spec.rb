@@ -294,6 +294,25 @@ describe OSLOpenstack::Cookbook::Helpers do
     end
   end
 
+  describe '#kernel_module_available?' do
+    it 'is true when modinfo finds the module' do
+      shellout = instance_double(Mixlib::ShellOut, exitstatus: 0)
+      allow(helper).to receive(:shell_out).with('modinfo', '-n', 'kvm_hv').and_return(shellout)
+      expect(helper.kernel_module_available?('kvm_hv')).to be true
+    end
+
+    it 'is false when the module is built in or missing' do
+      shellout = instance_double(Mixlib::ShellOut, exitstatus: 1)
+      allow(helper).to receive(:shell_out).with('modinfo', '-n', 'kvm_hv').and_return(shellout)
+      expect(helper.kernel_module_available?('kvm_hv')).to be false
+    end
+
+    it 'is false (not raising) when modinfo is unavailable' do
+      allow(helper).to receive(:shell_out).and_raise(Errno::ENOENT)
+      expect(helper.kernel_module_available?('kvm_hv')).to be false
+    end
+  end
+
   describe '#openstack_keystone_reachable?' do
     before do
       allow(helper).to receive(:os_secrets)

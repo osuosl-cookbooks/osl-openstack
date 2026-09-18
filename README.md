@@ -7,6 +7,20 @@ Cookbook for deploying OpenStack at the OSUOSL
 - OpenStack Train release
 - AlmaLinux 8
 
+## ppc64le compute kernels
+
+The compute recipe picks the KVM-capable kernel from the CPU and release:
+
+- AlmaLinux 8 on POWER10: the OSL-built mainline kernel from `yum-kernel-osuosl`
+- AlmaLinux 9 on POWER10: the CentOS Kmods SIG 6.18 kernel via
+  `osl_repos_centos_kmods`, because AlmaLinux's `kernel-kvm` (5.14) lacks the
+  nested-v2 support needed to host KVM guests inside a PowerVM LPAR
+- AlmaLinux 9 on POWER8/POWER9 bare metal: AlmaLinux's `kernel-kvm`
+
+`kvm_hv` is only loaded when the running kernel ships it as a module, so the
+first converge after a leapp upgrade installs the new kernel and the module
+loads after the reboot.
+
 # Multi-host test integration
 
 This cookbook utilizes [kitchen-terraform](https://github.com/newcontext-oss/kitchen-terraform) to test deploying
