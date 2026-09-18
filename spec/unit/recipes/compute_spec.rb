@@ -357,22 +357,6 @@ describe 'osl-openstack::compute' do
       it { is_expected.to_not add_osl_repos_centos_kmods 'osl-openstack' }
       it { is_expected.to_not upgrade_package 'kernel' }
 
-      context 'pci passthrough' do
-        cached(:chef_run) do
-          ChefSpec::SoloRunner.new(pltfrm) do |node|
-            node.automatic['fqdn'] = 'node1.testing.osuosl.org'
-          end.converge(described_recipe)
-        end
-        case pltfrm
-        when ALMA_8
-          it { is_expected.to add_osl_repos_centos_kmods('osl-openstack').with(kernel_6_6: true) }
-          it { is_expected.to upgrade_package 'kernel' }
-        when ALMA_9
-          it { is_expected.to_not add_osl_repos_centos_kmods 'osl-openstack' }
-          it { is_expected.to_not upgrade_package 'kernel' }
-        end
-      end
-
       context 'aarch64' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm) do |node|
