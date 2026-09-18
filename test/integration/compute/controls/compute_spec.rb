@@ -188,9 +188,23 @@ control 'compute' do
       it { should be_loaded }
     end
 
-    describe package('kernel-kvm') do
-      it { should be_installed }
-    end if os_release == 9
+    if os_release == 9
+      # POWER10 hosts under PowerVM run the Kmods SIG 6.18 kernel instead of kernel-kvm
+      if file('/proc/cpuinfo').content.match?(/POWER10/)
+        describe yum.repo('centos-kmods-kernel-6.18') do
+          it { should exist }
+          it { should be_enabled }
+        end
+
+        describe package('kernel-kvm') do
+          it { should_not be_installed }
+        end
+      else
+        describe package('kernel-kvm') do
+          it { should be_installed }
+        end
+      end
+    end
   end
 
   describe file('/var/lib/nova/.ssh/authorized_keys') do

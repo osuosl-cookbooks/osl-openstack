@@ -123,7 +123,21 @@ when 'ppc64le'
   include_recipe 'yum-kernel-osuosl::install' if openstack_power10? && node['platform_version'].to_i < 9
 
   if node['platform_version'].to_i == 9
-    package %w(kernel-kvm patch)
+    if openstack_power10?
+      # KVM as an L1 under PowerVM needs the nested-v2 host code (>= 6.7),
+      # which AlmaLinux's 5.14 kernel-kvm lacks
+      osl_repos_centos_kmods 'osl-openstack' do
+        kernel '6.18'
+      end
+
+      package 'kernel' do
+        action :upgrade
+      end
+    else
+      package 'kernel-kvm'
+    end
+
+    package 'patch'
 
     # libvirt >= 9.2 rejects the <acpi/> feature nova adds on pseries; patch the
     # RDO driver in place (re-applies after a nova package update)
@@ -147,7 +161,11 @@ when 'ppc64le'
 
   kernel_module 'kvm_hv' do
     action [:install, :load]
-    not_if { node.read('cpu', 'hypervisor_vendor').to_s.match?(/KVM|pHyp/) }
+    not_if { node.read('cpu', 'hypervisor_vendor').to_s.match?(/KVM/) }
+    # Built into the EL8 kernel-osuosl, and the stock EL8 kernel cannot host KVM under PowerVM
+    not_if { node.read('cpu', 'hypervisor_vendor').to_s.match?(/pHyp/) && node['platform_version'].to_i < 9 }
+    # Absent from the stock EL9 kernel still running on the first converge after leapp
+    only_if { kernel_module_available?('kvm_hv') }
   end
 
   # SMT needs to be on POWER8 systems due to architecture limitations
