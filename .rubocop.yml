@@ -1,8 +1,5 @@
 Metrics/BlockNesting:
   Max: 4
-AllCops:
-  Exclude:
-    - "cookbooks/**/*"
 Chef/Modernize/FoodcriticComments:
   Enabled: true
 Chef/Style/CopyrightCommentFormat:
