@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+18.5.13 (2026-09-24)
+--------------------
+- Let apache_exporter read server-status on the controllers
+
 18.5.12 (2026-09-18)
 --------------------
 - Run the Kmods SIG 6.18 kernel on AlmaLinux 9 POWER10 hosts
