@@ -116,6 +116,9 @@ describe 'osl-openstack::dashboard' do
           %r{<VirtualHost \*:80>\n(.*\n)*  DocumentRoot /var/www/html\n}
         )
       end
+      # The default vhost's ServerName is the fqdn, so it must not sort ahead of Horizon.
+      it { is_expected.to create_template('zzzz_default') }
+      it { is_expected.to delete_file('/etc/httpd/sites-available/000-default.conf') }
       it { expect(chef_run.apache_app('horizon')).to notify('execute[horizon: compress]').to(:run) }
       it { expect(chef_run.apache_app('horizon')).to notify('apache2_service[osuosl]').to(:reload) }
       it do
