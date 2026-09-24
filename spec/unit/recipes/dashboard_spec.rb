@@ -106,6 +106,16 @@ describe 'osl-openstack::dashboard' do
           'RewriteCond "%{HTTP_HOST}" "!^controller\.testing\.osuosl\.org" [NC]'
         )
       end
+      it do
+        is_expected.to render_file('/etc/httpd/sites-available/horizon.conf').with_content(
+          %r{RewriteEngine On\n.*\n  RewriteRule "\^/server-status" - \[L\]\n  RewriteCond "%\{HTTP_HOST\}"}
+        )
+      end
+      it do
+        is_expected.to render_file('/etc/httpd/sites-available/horizon.conf').with_content(
+          %r{<VirtualHost \*:80>\n(.*\n)*  DocumentRoot /var/www/html\n}
+        )
+      end
       it { expect(chef_run.apache_app('horizon')).to notify('execute[horizon: compress]').to(:run) }
       it { expect(chef_run.apache_app('horizon')).to notify('apache2_service[osuosl]').to(:reload) }
       it do

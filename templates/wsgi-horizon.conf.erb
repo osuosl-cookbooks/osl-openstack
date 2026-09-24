@@ -6,7 +6,12 @@ WSGISocketPrefix /var/lock/subsys
   ServerAlias <%= @server_aliases.flatten.join(" ") %>
   <% end %>
 
+  # A readable docroot: without one /server-status maps under /etc/httpd/htdocs and gets a 403.
+  DocumentRoot /var/www/html
+
   RewriteEngine On
+  # mod_status is Require local; let apache_exporter and topurls reach it on this address.
+  RewriteRule "^/server-status" - [L]
   RewriteCond "%{HTTP_HOST}" "!^<%= Regexp.escape(@server_name) %>" [NC]
   RewriteCond "%{HTTP_HOST}" "!^$"
   RewriteRule "^/?(.*)"      "https://<%= @server_name %>/$1" [L,R=permanent,NE]

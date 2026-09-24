@@ -24,6 +24,15 @@ control 'openstack-dashboard' do
     its('headers.location') { should cmp 'https://controller.testing.osuosl.org/' }
   end
 
+  # Same vhost, but server-status is exempt from the redirect so apache_exporter can read it.
+  describe http(
+    'http://127.0.0.1:80/server-status?auto',
+    headers: { 'Host' => 'controller1.testing.osuosl.org' }
+  ) do
+    its('status') { should cmp 200 }
+    its('body') { should match /^Total Accesses: \d+$/ }
+  end
+
   # Localhost HTTPS probes only work when Apache terminates TLS itself
   # (single-controller mode). In HA mode haproxy is the only thing
   # serving TLS, and it binds the VIP rather than 127.0.0.1.
