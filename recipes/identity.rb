@@ -23,6 +23,9 @@ osl_openstack_openrc 'identity'
 
 listen_ip = openstack_api_listen_ip
 node.default['osl-apache']['listen'] = %w(80 443).map { |p| "#{listen_ip}:#{p}" }
+# The default vhost is named for the fqdn, which can be Horizon's endpoint; sort it
+# last so Horizon's :80 redirect wins, as it did before osl-apache cf9c4bb.
+node.default['osl-apache']['default_site_first'] = false
 
 # Declare memcached ourselves so we can open the firewall to all
 # OSL-managed nodes (peer controllers for horizon sessions, compute

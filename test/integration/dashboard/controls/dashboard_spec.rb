@@ -1,3 +1,5 @@
+require 'shellwords'
+
 require_controls 'osuosl-baseline' do
   control 'ssl-baseline'
 end unless input('skip_ssl_baseline', value: false)
@@ -22,6 +24,15 @@ control 'openstack-dashboard' do
   ) do
     its('status') { should cmp 301 }
     its('headers.location') { should cmp 'https://controller.testing.osuosl.org/' }
+  end
+
+  # Same vhost, but server-status is exempt from the redirect so apache_exporter can read it.
+  describe http(
+    'http://127.0.0.1:80/server-status?auto',
+    headers: { 'Host' => 'controller1.testing.osuosl.org' }
+  ) do
+    its('status') { should cmp 200 }
+    its('body') { should match /^Total Accesses: \d+$/ }
   end
 
   # Localhost HTTPS probes only work when Apache terminates TLS itself
@@ -83,18 +94,17 @@ control 'openstack-dashboard' do
   # there.
   unless haproxy_tls
     resolve = '--resolve controller.testing.osuosl.org:443:127.0.0.1'
+    jar = '/tmp/horizon-login-cookies.txt'
+    url = 'https://controller.testing.osuosl.org/auth/login/'
 
-    # Simulate logging into horizon with curl and test the output to ensure the
-    # application is running correctly
-    horizon_command =
-      # 1. Get initial cookbooks for curl
-      # 2. Grab the CSRF token
-      # 3. Try logging into the site with the token
-      "curl -so /dev/null -k -c c.txt -b c.txt #{resolve} https://controller.testing.osuosl.org/auth/login/ && " \
-      'token=$(grep csrftoken c.txt | cut -f7) &&' \
-      'curl -H \'Referer:https://controller.testing.osuosl.org/auth/login/\' -k -c c.txt -b c.txt -d ' \
-      '"login=admin&password=admin&csrfmiddlewaretoken=${token}" -v ' \
-      "#{resolve} https://controller.testing.osuosl.org/auth/login/ 2>&1"
+    # Fetch the CSRF cookie, then log in with it. One bash -c, since kitchen's sudo
+    # only elevates the first command of `a && b` and root's 0600 jar hid the token.
+    horizon_command = 'bash -c ' + Shellwords.escape(
+      "rm -f #{jar} && curl -so /dev/null -k -c #{jar} -b #{jar} #{resolve} #{url} && " \
+      "token=$(grep csrftoken #{jar} | cut -f7) && " \
+      "curl -H \"Referer:#{url}\" -k -c #{jar} -b #{jar} " \
+      "-d \"login=admin&password=admin&csrfmiddlewaretoken=${token}\" -v #{resolve} #{url} 2>&1"
+    )
 
     describe command(horizon_command) do
       its('stdout') { should match(/subject:.*CN=\*.testing.osuosl.org/) }

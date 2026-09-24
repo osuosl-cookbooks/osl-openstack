@@ -106,6 +106,19 @@ describe 'osl-openstack::dashboard' do
           'RewriteCond "%{HTTP_HOST}" "!^controller\.testing\.osuosl\.org" [NC]'
         )
       end
+      it do
+        is_expected.to render_file('/etc/httpd/sites-available/horizon.conf').with_content(
+          %r{RewriteEngine On\n.*\n  RewriteRule "\^/server-status" - \[L\]\n  RewriteCond "%\{HTTP_HOST\}"}
+        )
+      end
+      it do
+        is_expected.to render_file('/etc/httpd/sites-available/horizon.conf').with_content(
+          %r{<VirtualHost \*:80>\n(.*\n)*  DocumentRoot /var/www/html\n}
+        )
+      end
+      # The default vhost's ServerName is the fqdn, so it must not sort ahead of Horizon.
+      it { is_expected.to create_template('zzzz_default') }
+      it { is_expected.to delete_file('/etc/httpd/sites-available/000-default.conf') }
       it { expect(chef_run.apache_app('horizon')).to notify('execute[horizon: compress]').to(:run) }
       it { expect(chef_run.apache_app('horizon')).to notify('apache2_service[osuosl]').to(:reload) }
       it do

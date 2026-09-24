@@ -148,6 +148,7 @@ describe 'osl-openstack::identity' do
       # osl_only opens :11211 to all OSL CIDRs (controllers + computes);
       # iptables rule asserted live in identity InSpec.
       it { expect(chef_run.node['osl-memcached']['default_service']).to be false }
+      it { is_expected.to create_template('zzzz_default') }
       it do
         is_expected.to create_osl_memcached('memcached').with(
           port: 11211,
