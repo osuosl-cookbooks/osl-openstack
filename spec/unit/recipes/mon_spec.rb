@@ -235,16 +235,10 @@ describe 'osl-openstack::mon' do
             end
           end
 
-          it do
-            is_expected.to add_nrpe_check('check_valkey').with(
-              command: 'sudo /usr/lib64/nagios/plugins/check_valkey'
-            )
-          end
-          it do
-            is_expected.to add_nrpe_check('check_valkey_replication').with(
-              command: 'sudo /usr/lib64/nagios/plugins/check_valkey_replication',
-              parameters: '3'
-            )
+          # Replaced by ValkeyDown and ValkeyReplicaLinkDown in osl-prometheus
+          %w(check_valkey check_valkey_replication).each do |chk|
+            it { is_expected.to remove_nrpe_check chk }
+            it { is_expected.to_not add_nrpe_check chk }
           end
           it do
             is_expected.to add_nrpe_check('check_valkey_sentinel').with(

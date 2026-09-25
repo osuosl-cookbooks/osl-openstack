@@ -241,23 +241,25 @@ deployed here.
 
 ## Monitoring
 
+Prometheus, with nothing to add here: `osl-prometheus::default` runs a
+`redis_exporter` on port 9122 on any host with an osl-valkey seed
+marker, reading the password from `/etc/valkey/valkey.conf`, and the
+server's `valkey` job scrapes it as `valkey_instance="coordination"`.
+The Valkey dashboard on dashboard.osuosl.org shows the tier.
+
+- `ValkeyDown` (pages after 10 minutes): a member is not answering
+  authenticated commands, or its exporter is down
+- `ValkeyReplicaLinkDown` (Slack after 5 minutes): a replica has lost
+  its link to the primary; it follows the current role, so it survives
+  failovers
+
 NRPE (chef-managed, via `osl-openstack::mon` on `node_type: messaging`
 when the bag item has a `coordination` block):
 
-- `check_valkey`: authenticated PING (reads requirepass root-only via
-  the same sudo grant pattern as the rabbitmq checks)
-- `check_valkey_replication`: primary has all expected replicas
-  connected, or replica link is up (survives failovers; it checks the
-  current role, not the seeded one)
 - `check_valkey_sentinel`: `sentinel ckquorum` + all other members'
-  sentinels discovered (no auth needed)
+  sentinels discovered (no auth needed). Page on quorum failures; a
+  lock service outage breaks volume attach on all three clouds at once.
 
-Remaining manual work mirrors the rabbitmq tier: Nagios server service
-definitions for the new checks. Page on ping/quorum failures; a lock
-service outage breaks volume attach on all three clouds at once.
-
-Prometheus: valkey has no built-in metrics endpoint, so this needs a
-`redis_exporter` deployment plus a scrape job for the mq nodes, both
-of which belong in the **osl-prometheus** cookbook (the
-`osl_prometheus_exporter` resource is the pattern). Follow-up there,
-not in this cookbook.
+`check_valkey` and `check_valkey_replication` were retired in favour of
+the two alerts above; their `nrpe_check`s are `:remove` for one release
+and their `nagios_services` items are deleted.

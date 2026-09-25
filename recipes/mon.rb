@@ -193,13 +193,12 @@ if node['osl-openstack']['node_type'] == 'messaging'
       end
     end
 
-    nrpe_check 'check_valkey' do
-      command "sudo #{node['nrpe']['plugin_dir']}/check_valkey"
-    end
-
-    nrpe_check 'check_valkey_replication' do
-      command "sudo #{node['nrpe']['plugin_dir']}/check_valkey_replication"
-      parameters cluster_size.to_s
+    # ValkeyDown and ValkeyReplicaLinkDown in osl-prometheus replace these two;
+    # :remove for one release drops the NRPE commands, then the resources go.
+    %w(check_valkey check_valkey_replication).each do |chk|
+      nrpe_check chk do
+        action :remove
+      end
     end
 
     nrpe_check 'check_valkey_sentinel' do
