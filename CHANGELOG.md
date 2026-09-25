@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+18.5.14 (2026-09-25)
+--------------------
+- mon: retire check_valkey and check_valkey_replication
+
 18.5.13 (2026-09-24)
 --------------------
 - Let apache_exporter read server-status on the controllers
