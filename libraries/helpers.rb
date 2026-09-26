@@ -62,6 +62,19 @@ module OSLOpenstack
         openstack_shell_match?('rabbitmqctl -q list_users', /^#{Regexp.escape(user)}\s+\[[^\]]*#{Regexp.escape(tag)}/)
       end
 
+      def openstack_rabbitmq_firewall_ports
+        %w(amqp rabbitmq_mgt)
+      end
+
+      # Config files every ceilometer daemon restarts on
+      def openstack_ceilometer_config_resources
+        %w(
+          template[/etc/ceilometer/ceilometer.conf]
+          template[/etc/ceilometer/pipeline.yaml]
+          cookbook_file[/etc/ceilometer/polling.yaml]
+        )
+      end
+
       # Messaging SIG selects version by subdir: EL9 uses rabbitmq-38
       # (3.9.x), EL10 only ships rabbitmq-4 (4.x).
       def openstack_rabbitmq_repo

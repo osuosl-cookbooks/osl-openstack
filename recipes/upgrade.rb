@@ -28,12 +28,10 @@ osl_firewall_openstack 'upgrade'
 
 if node['osl-openstack']['node_type'] == 'controller'
   osl_firewall_memcached 'upgrade'
-  osl_firewall_port 'amqp' do
-    osl_only true
-  end
-
-  osl_firewall_port 'rabbitmq_mgt' do
-    osl_only true
+  openstack_rabbitmq_firewall_ports.each do |port|
+    osl_firewall_port port do
+      osl_only true
+    end
   end
 
   osl_firewall_port 'http' do

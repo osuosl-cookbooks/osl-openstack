@@ -54,11 +54,9 @@ osl_openstack_api 'heat-cfn' do
   region 'RegionOne'
 end
 
-package %w(
-  openstack-heat-api
-  openstack-heat-api-cfn
-  openstack-heat-engine
-)
+heat_services = %w(openstack-heat-api openstack-heat-api-cfn openstack-heat-engine)
+
+package heat_services
 
 template '/etc/heat/heat.conf' do
   owner 'root'
@@ -87,11 +85,7 @@ execute 'heat: db_sync' do
   action :nothing
 end
 
-%w(
-  openstack-heat-api
-  openstack-heat-api-cfn
-  openstack-heat-engine
-).each do |srv|
+heat_services.each do |srv|
   service srv do
     action [:enable, :start]
     subscribes :restart, 'template[/etc/heat/heat.conf]'

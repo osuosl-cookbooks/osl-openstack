@@ -28,21 +28,15 @@ osl_openstack_service_user t['service']['user'] do
   password t['service']['pass']
 end
 
-package %w(
-  openstack-ceilometer-central
-  openstack-ceilometer-notification
-)
+ceilometer_services = %w(openstack-ceilometer-central openstack-ceilometer-notification)
+
+package ceilometer_services
 
 include_recipe 'osl-openstack::telemetry_common'
 
-%w(
-  openstack-ceilometer-central
-  openstack-ceilometer-notification
-).each do |srv|
+ceilometer_services.each do |srv|
   service srv do
     action [:enable, :start]
-    subscribes :restart, 'template[/etc/ceilometer/ceilometer.conf]'
-    subscribes :restart, 'template[/etc/ceilometer/pipeline.yaml]'
-    subscribes :restart, 'cookbook_file[/etc/ceilometer/polling.yaml]'
+    openstack_ceilometer_config_resources.each { |r| subscribes :restart, r }
   end
 end
