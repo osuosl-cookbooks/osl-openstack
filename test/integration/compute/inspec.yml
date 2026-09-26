@@ -1,5 +1,6 @@
 ---
 name: compute
+version: 0.1.0
 inputs:
   - name: local_storage
     value: false

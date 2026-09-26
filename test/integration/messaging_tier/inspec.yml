@@ -1,2 +1,14 @@
 ---
 name: messaging_tier
+version: 0.1.0
+inputs:
+  - name: vhost
+    value: tier-test
+  - name: vhost_user
+    value: tier
+  - name: cluster_size
+    value: 1
+  - name: cmr_target_group_size
+    value: 0
+  - name: nrpe_checks
+    value: false

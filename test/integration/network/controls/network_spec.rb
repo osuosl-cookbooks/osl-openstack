@@ -2,12 +2,12 @@ controller = input('controller')
 db_endpoint = input('db_endpoint')
 controller_endpoint = input('controller_endpoint')
 physical_interface_mappings = input('physical_interface_mappings')
-primary_controller = input('primary_controller', value: true)
+primary_controller = input('primary_controller')
 # messaging_host = AMQP host (mq tier on multi-node); memcached_host =
 # the memcached backend (controller1 on multi-node).
-messaging_host = input('messaging_host', value: controller_endpoint)
-messaging_port = input('messaging_port', value: 5672)
-memcached_host = input('memcached_host', value: messaging_host)
+messaging_host = input('messaging_host')
+messaging_port = input('messaging_port')
+memcached_host = input('memcached_host')
 
 control 'network' do
   %w(

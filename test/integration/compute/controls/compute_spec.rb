@@ -1,11 +1,7 @@
 local_storage = input('local_storage')
 
 control 'compute' do
-  %w(
-    libvirt-guests
-    openstack-ceilometer-compute
-    openstack-nova-compute
-  ).each do |s|
+  %w(libvirt-guests openstack-nova-compute).each do |s|
     describe service s do
       it { should be_enabled }
       it { should be_running }
@@ -97,9 +93,9 @@ control 'compute' do
     end
   end unless local_storage
 
-  openstack = 'bash -c "source /root/openrc && /usr/bin/openstack'
+  openstack = ->(args) { %(bash -c "source /root/openrc && /usr/bin/openstack #{args}") }
 
-  describe command("#{openstack} compute service list -f value -c Binary -c Status -c State\"") do
+  describe command(openstack.call('compute service list -f value -c Binary -c Status -c State')) do
     its('stdout') { should match(/nova-compute enabled up/) }
   end
 

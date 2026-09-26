@@ -2,12 +2,12 @@
 # tier. Defaults cover the single-node kitchen suite; the multi-node env
 # passes cluster_size 3 via mq.yml to also assert replication and
 # sentinel quorum.
-cluster_size = input('cluster_size', value: 1)
-service_name = input('coordination_service_name', value: 'oslocks')
-valkey_pass = input('valkey_pass', value: 'oslocks')
+cluster_size = input('cluster_size')
+service_name = input('coordination_service_name')
+valkey_pass = input('valkey_pass')
 # Set only by the single-node suite (the multi-node mq systems don't
 # run osl-openstack::mon).
-nrpe_checks = input('nrpe_checks', value: false)
+nrpe_checks = input('nrpe_checks')
 
 control 'coordination_tier' do
   %w(valkey valkey-sentinel).each do |svc|

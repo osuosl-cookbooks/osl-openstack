@@ -1,5 +1,6 @@
 ---
 name: compute-controller
+version: 0.1.0
 inputs:
   - name: db_endpoint
     value: localhost
@@ -13,3 +14,9 @@ inputs:
       Set true when haproxy on the VIP terminates TLS for novnc -
       nova-novncproxy runs without --ssl_only and has no local cert
       files in that mode.
+  - name: messaging_host
+    value: controller.testing.osuosl.org
+  - name: messaging_port
+    value: 5672
+  - name: memcached_host
+    value: controller.testing.osuosl.org

@@ -20,7 +20,7 @@ verifier:
       profile_locations:
         - test/integration/block_storage_controller
         - test/integration/compute_controller
-        - test/integration/ha_master
+        - test/integration/ha
         - test/integration/identity
         - test/integration/image
         - test/integration/network
@@ -36,7 +36,7 @@ verifier:
       profile_locations:
         - test/integration/block_storage_controller
         - test/integration/compute_controller
-        - test/integration/ha_standby
+        - test/integration/ha
         - test/integration/identity
         - test/integration/image
         - test/integration/network
@@ -52,8 +52,6 @@ verifier:
       profile_locations:
         - test/integration/compute
         - test/integration/telemetry_compute
-      attrs:
-        - test/integration/multi-node/compute.yml
       sudo: true
     - name: mq1
       backend: ssh
@@ -98,7 +96,7 @@ verifier:
       attrs:
         - test/integration/multi-node/controller_region2.yml
       sudo: true
-    - name: compute_region3
+    - name: compute_region2
       backend: ssh
       hosts_output: compute_region2
       user: almalinux

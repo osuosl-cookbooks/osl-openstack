@@ -1,14 +1,15 @@
 db_endpoint = input('db_endpoint')
-controller_endpoint = input('controller_endpoint')
 local_storage = input('local_storage')
-primary_controller = input('primary_controller', value: true)
+primary_controller = input('primary_controller')
 # messaging_host = AMQP host (mq tier on multi-node); memcached_host =
 # the memcached backend (controller1 on multi-node).
-messaging_host = input('messaging_host', value: controller_endpoint)
-messaging_port = input('messaging_port', value: 5672)
-memcached_host = input('memcached_host', value: messaging_host)
+messaging_host = input('messaging_host')
+messaging_port = input('messaging_port')
+memcached_host = input('memcached_host')
 
 control 'image' do
+  openstack = ->(args) { %(bash -c "source /root/openrc && /usr/bin/openstack #{args}") }
+
   describe service 'openstack-glance-api' do
     it { should be_enabled }
     it { should be_running }
@@ -47,13 +48,13 @@ control 'image' do
     its('stderr') { should eq '' }
   end if primary_controller
 
-  describe command('bash -c "source /root/openrc && /usr/bin/openstack image list"') do
+  describe command(openstack.call('image list')) do
     its('stdout') do
       should match(/\|\s[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\s\|\salpine.*\s\|\sactive/)
     end
   end
 
-  describe command('bash -c "source /root/openrc && /usr/bin/openstack image show alpine -c properties -f value"') do
+  describe command(openstack.call('image show alpine -c properties -f value')) do
     if local_storage
       its('stdout') { should_not match(/direct_url': 'rbd:/) }
       its('stdout') { should_not match(/'locations':/) }
@@ -72,7 +73,7 @@ control 'image' do
     its('stderr') { should eq '' }
   end if primary_controller
 
-  describe command('bash -c "source /root/openrc && /usr/bin/openstack flavor show default -c ram -c vcpus -c disk -f shell"') do
+  describe command(openstack.call('flavor show default -c ram -c vcpus -c disk -f shell')) do
     its('stdout') { should match(/disk="1"/) }
     its('stdout') { should match(/ram="512"/) }
     its('stdout') { should match(/vcpus="1"/) }

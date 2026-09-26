@@ -1,5 +1,6 @@
 db_endpoint: db-region2.testing.osuosl.org
 controller_endpoint: controller-region2.testing.osuosl.org
 physical_interface_mappings: public:eth1.42
-prometheus_endpoint: controller.testing.osuosl.org
 local_storage: true
+messaging_host: controller-region2.testing.osuosl.org
+memcached_host: controller-region2.testing.osuosl.org

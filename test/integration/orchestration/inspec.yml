@@ -1,5 +1,12 @@
 ---
 name: orchestration
+version: 0.1.0
 inputs:
   - name: db_endpoint
     value: localhost
+  - name: messaging_host
+    value: controller.testing.osuosl.org
+  - name: messaging_port
+    value: 5672
+  - name: memcached_host
+    value: controller.testing.osuosl.org

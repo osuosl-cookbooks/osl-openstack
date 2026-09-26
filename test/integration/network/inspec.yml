@@ -1,5 +1,6 @@
 ---
 name: network
+version: 0.1.0
 inputs:
   - name: controller
     value: true
@@ -11,3 +12,9 @@ inputs:
     value: public:eth1
   - name: primary_controller
     value: true
+  - name: messaging_host
+    value: controller.testing.osuosl.org
+  - name: messaging_port
+    value: 5672
+  - name: memcached_host
+    value: controller.testing.osuosl.org

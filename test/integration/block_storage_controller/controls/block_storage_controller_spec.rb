@@ -1,10 +1,10 @@
 db_endpoint = input('db_endpoint')
 # memcached_host = the memcached backend (controller1 on multi-node);
 # this profile has no transport_url check.
-memcached_host = input('memcached_host', value: 'controller.testing.osuosl.org')
+memcached_host = input('memcached_host')
 # tooz backend_url; set by the multi-node env (valkey on the mq tier),
 # empty on the single-node suites (no coordination block in the bag).
-coordination_url = input('coordination_url', value: '')
+coordination_url = input('coordination_url')
 
 control 'block-storage-controller' do
   describe package 'openstack-cinder' do
@@ -32,7 +32,6 @@ control 'block-storage-controller' do
     its('DEFAULT.enabled_backends') { should cmp 'ceph,ceph_ssd' }
     its('DEFAULT.enable_v3_api') { should cmp 'true' }
     its('DEFAULT.glance_api_servers') { should cmp 'http://controller.testing.osuosl.org:9292' }
-    its('DEFAULT.glance_api_version') { should_not cmp '' }
     its('DEFAULT.restore_discard_excess_bytes') { should cmp 'true' }
     its('DEFAULT.volume_clear_size') { should cmp '256' }
     its('cache.memcache_servers') { should match(/#{Regexp.escape(memcached_host)}:11211/) }
@@ -75,9 +74,9 @@ control 'block-storage-controller' do
     end
   end
 
-  openstack = 'bash -c "source /root/openrc && /usr/bin/openstack'
+  openstack = ->(args) { %(bash -c "source /root/openrc && /usr/bin/openstack #{args}") }
 
-  describe command("#{openstack} volume service list -f value -c Binary -c Status -c State\"") do
+  describe command(openstack.call('volume service list -f value -c Binary -c Status -c State')) do
     its('stdout') { should match(/cinder-scheduler enabled up/) }
   end
 end

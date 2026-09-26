@@ -6,15 +6,20 @@ prometheus_endpoint: controller.testing.osuosl.org
 messaging_host: mq1.testing.osuosl.org
 messaging_port: 5671
 memcached_host: controller1.testing.osuosl.org
-# Skip ssl-baseline in multi-node: Apache binds the per-host private IP
-# (10.1.2.3), which the InSpec runner cannot reach (sslshake opens a
-# direct TCP socket from the runner, not via the SSH transport).
-# Single-node identity/dashboard suites still cover SSL hardening.
+# sslshake connects from the runner, which can't reach Apache's private IP;
+# the single-node identity and dashboard suites cover SSL hardening.
 skip_ssl_baseline: true
-# haproxy on the VIP terminates TLS; Apache serves plain HTTP on the
-# per-host backend IP and nova-novncproxy runs without --ssl_only.
-# Tells the dashboard / compute_controller controls to skip
-# localhost:443-HTTPS probes and the local novnc cert assertions.
+# haproxy terminates TLS, so skip the localhost:443 probes and the local
+# novnc cert checks in the dashboard and compute_controller profiles.
 haproxy_tls: true
 # cinder tooz locks via valkey/sentinel on the mq tier.
 coordination_url: redis://:oslocks@mq1.testing.osuosl.org:26379?sentinel=oslocks&sentinel_fallback=mq2.testing.osuosl.org:26379&sentinel_fallback=mq3.testing.osuosl.org:26379&db=0
+# HA profile: controller1 is the VRRP master and holds the VIP
+vip_v4: 10.1.2.10
+vip_v4_prefix: 23
+vip_v6: fd00:1:2::10
+vip_v6_prefix: 64
+vrrp_iface: ens4
+api_listen_ip: 10.1.2.3
+holds_vip: true
+keystone_probe: true

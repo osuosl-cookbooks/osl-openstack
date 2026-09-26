@@ -10,10 +10,16 @@ skip_ssl_baseline: true
 # haproxy on the VIP terminates TLS; Apache serves plain HTTP on the
 # per-host backend IP and nova-novncproxy runs without --ssl_only.
 haproxy_tls: true
-# controller2's bootstrap intentionally omits the one-time
-# image_upload, create_flavor, create_network, and prometheus exporter
-# recipes - those run only on the primary controller. Skip the
-# corresponding InSpec checks so this controller doesn't fail them.
+# The one-time image, flavor, network and exporter setup only runs on
+# controller1, so skip those checks here.
 primary_controller: false
 # cinder tooz locks via valkey/sentinel on the mq tier.
 coordination_url: redis://:oslocks@mq1.testing.osuosl.org:26379?sentinel=oslocks&sentinel_fallback=mq2.testing.osuosl.org:26379&sentinel_fallback=mq3.testing.osuosl.org:26379&db=0
+# HA profile: controller2 is the standby and must not hold the VIP
+vip_v4: 10.1.2.10
+vip_v4_prefix: 23
+vip_v6: fd00:1:2::10
+vip_v6_prefix: 64
+vrrp_iface: ens4
+api_listen_ip: 10.1.2.13
+holds_vip: false

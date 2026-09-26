@@ -1,5 +1,10 @@
 ---
 name: block-storage-controller
+version: 0.1.0
 inputs:
   - name: db_endpoint
     value: localhost
+  - name: memcached_host
+    value: controller.testing.osuosl.org
+  - name: coordination_url
+    value: ''

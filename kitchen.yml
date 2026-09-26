@@ -141,8 +141,6 @@ suites:
       - recipe[osl-openstack::network]
       - recipe[openstack_test::create_network]
     verifier:
-      inputs:
-        compute: true
       inspec_tests:
         - test/integration/identity
         - test/integration/network
@@ -383,8 +381,6 @@ suites:
       - recipe[openstack_test::image_upload]
       - recipe[openstack_test::create_network]
     verifier:
-      inputs:
-        compute: true
       inspec_tests:
         - test/integration/block_storage
         - test/integration/block_storage_controller
@@ -421,8 +417,6 @@ suites:
       - recipe[openstack_test::image_upload]
       - recipe[openstack_test::create_network]
     verifier:
-      inputs:
-        compute: true
       inspec_tests:
         - test/integration/block_storage
         - test/integration/block_storage_controller
