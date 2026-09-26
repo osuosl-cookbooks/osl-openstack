@@ -127,6 +127,11 @@ describe 'osl-openstack::compute' do
       it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/force_raw_images = False/) }
       it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/cpu_mode = none/) }
       it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/disk_cachemodes = file=writeback/) }
+      it do
+        is_expected.to render_file('/etc/nova/nova.conf').with_content { |c|
+          expect(c[/^\[neutron\]\n(?:[^\[].*\n)*/]).to_not include('disk_allocation_ratio')
+        }
+      end
       # Renders even without quorum queues or TLS
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content('[oslo_messaging_rabbit]') }
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/^heartbeat_in_pthread = false$/) }

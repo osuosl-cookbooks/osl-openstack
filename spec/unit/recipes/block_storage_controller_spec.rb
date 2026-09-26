@@ -102,6 +102,7 @@ describe 'osl-openstack::block_storage_controller' do
         expect(chef_run.apache_app('cinder-api')).to notify('apache2_service[block_storage]').to(:reload).immediately
       end
       it { is_expected.to nothing_apache2_service('block_storage') }
+      it { is_expected.to_not render_file('/etc/cinder/cinder.conf').with_content(/^\[libvirt\]$/) }
       it do
         expect(chef_run.apache2_service('block_storage')).to \
           subscribe_to('template[/etc/cinder/cinder.conf]').on(:reload)

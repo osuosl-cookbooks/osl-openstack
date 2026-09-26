@@ -114,7 +114,6 @@ live_migration_timeout_action = force_complete
 [neutron]
 auth_type = password
 auth_url = https://<%= @auth_endpoint %>:5000/v3
-disk_allocation_ratio = 1.5
 metadata_proxy_shared_secret = <%= @metadata_proxy_shared_secret %>
 password = <%= @neutron_pass %>
 project_domain_name = Default

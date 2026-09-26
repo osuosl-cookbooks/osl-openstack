@@ -31,6 +31,7 @@ template '/etc/ceilometer/ceilometer.conf' do
   variables(
     auth_endpoint: auth_endpoint,
     memcached_endpoint: openstack_memcached_servers,
+    region: t['region'] || s['compute']['region'],
     service_pass: t['service']['pass'],
     rabbit_quorum_queue: openstack_rabbit_quorum_queue?,
     rabbit_tls: openstack_rabbit_tls?,

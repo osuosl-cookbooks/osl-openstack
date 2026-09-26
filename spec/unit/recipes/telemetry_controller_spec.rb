@@ -40,6 +40,7 @@ describe 'osl-openstack::telemetry_controller' do
           variables: {
             auth_endpoint: 'controller.testing.osuosl.org',
             memcached_endpoint: 'controller.testing.osuosl.org:11211',
+            region: 'RegionOne',
             service_pass: 'ceilometer',
             rabbit_quorum_queue: false,
             rabbit_tls: false,
@@ -53,6 +54,10 @@ describe 'osl-openstack::telemetry_controller' do
       it do
         is_expected.to render_file('/etc/ceilometer/ceilometer.conf')
           .with_content(/^\[notification\]$.*^pipelines = meter$/m)
+      end
+      it do
+        is_expected.to render_file('/etc/ceilometer/ceilometer.conf')
+          .with_content(/^\[service_credentials\]$.*^region_name = RegionOne$/m)
       end
       it do
         is_expected.to create_template('/etc/ceilometer/pipeline.yaml').with(

@@ -42,6 +42,7 @@ control 'telemetry-controller' do
     its('notification.pipelines') { should cmp 'meter' }
     its('service_credentials.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
     its('service_credentials.password') { should cmp 'ceilometer' }
+    its('service_credentials.region_name') { should cmp 'RegionOne' }
   end
 
   describe http('http://localhost:9091/metrics') do

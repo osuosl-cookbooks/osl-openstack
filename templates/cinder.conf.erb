@@ -73,10 +73,6 @@ user_domain_name = Default
 username = cinder
 www_authenticate_uri = https://<%= @auth_endpoint %>:5000/v3
 
-[libvirt]
-rbd_user = <%= @rbd_user %>
-rbd_secret_uuid = <%= @rbd_secret_uuid %>
-
 [nova]
 auth_type = v3password
 auth_url = https://<%= @auth_endpoint %>:5000/v3

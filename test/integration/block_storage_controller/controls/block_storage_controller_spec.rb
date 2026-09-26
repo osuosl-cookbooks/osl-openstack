@@ -63,8 +63,7 @@ control 'block-storage-controller' do
     its('keystone_authtoken.service_token_roles') { should cmp 'admin' }
     its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
     its('keystone_authtoken.www_authenticate_uri') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
-    its('libvirt.rbd_secret_uuid') { should cmp 'ae3f1d03-bacd-4a90-b869-1a4fabb107f2' }
-    its('libvirt.rbd_user') { should cmp 'cinder' }
+    its('libvirt') { should be_nil }
     its('nova.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
     its('nova.password') { should cmp 'nova' }
     its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
