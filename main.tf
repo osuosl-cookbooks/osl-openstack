@@ -254,7 +254,7 @@ resource "openstack_compute_instance_v2" "database" {
 
 resource "openstack_compute_instance_v2" "ceph" {
     name            = "ceph"
-    image_name      = "AlmaLinux 8"
+    image_name      = "AlmaLinux 9"
     flavor_name     = "m2.local.8c8m100d"
     key_pair        = var.ssh_key_name
     security_groups = ["default"]
@@ -344,7 +344,7 @@ resource "openstack_compute_instance_v2" "compute" {
 
 # Shared RabbitMQ messaging tier. Runs AlmaLinux 10 so the SIG repo
 # yields RabbitMQ 4.2 (the clouds stay EL9/3.9). Image must exist in the
-# cloud (like the hardcoded "AlmaLinux 8" the ceph node uses).
+# cloud (like the hardcoded "AlmaLinux 9" the ceph node uses).
 resource "openstack_compute_instance_v2" "mq1" {
     name            = "mq1"
     image_name      = "AlmaLinux 10"

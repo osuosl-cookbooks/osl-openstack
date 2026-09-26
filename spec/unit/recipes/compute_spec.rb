@@ -46,45 +46,22 @@ describe 'osl-openstack::compute' do
         is_expected.to set_osl_sysfs_param('/sys/module/nf_conntrack/parameters/hashsize')
           .with(value: '524288')
       end
-      case pltfrm
-      when ALMA_8
-        it { is_expected.to create_cookbook_file '/etc/sysconfig/network' }
-      when ALMA_9
-        it { is_expected.to_not create_cookbook_file '/etc/sysconfig/network' }
-      end
-      case pltfrm
-      when ALMA_8
-        it do
-          is_expected.to install_package %w(
-            device-mapper
-            device-mapper-multipath
-            libguestfs-rescue
-            libguestfs-tools
-            libvirt
-            openstack-nova-compute
-            python3-libguestfs
-            sg3_utils
-            sysfsutils
-          )
-        end
-      when ALMA_9
-        it do
-          is_expected.to install_package %w(
-            device-mapper
-            device-mapper-multipath
-            libguestfs-rescue
-            libvirt
-            openstack-nova-compute
-            python3-libguestfs
-            qemu-kvm
-            qemu-kvm-device-display-virtio-gpu
-            qemu-kvm-device-display-virtio-gpu-pci
-            qemu-kvm-device-display-virtio-vga
-            sg3_utils
-            sysfsutils
-            virt-win-reg
-          )
-        end
+      it do
+        is_expected.to install_package %w(
+          device-mapper
+          device-mapper-multipath
+          libguestfs-rescue
+          libvirt
+          openstack-nova-compute
+          python3-libguestfs
+          qemu-kvm
+          qemu-kvm-device-display-virtio-gpu
+          qemu-kvm-device-display-virtio-gpu-pci
+          qemu-kvm-device-display-virtio-vga
+          sg3_utils
+          sysfsutils
+          virt-win-reg
+        )
       end
       it { is_expected.to delete_file '/etc/nova/nova-compute.conf' }
       it { is_expected.to enable_service 'libvirtd-tcp.socket' }
@@ -159,7 +136,6 @@ describe 'osl-openstack::compute' do
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/^auth_type = password$/) }
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/^\[cinder\]$/) }
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/^username = nova$/) }
-      it { is_expected.to_not include_recipe 'yum-kernel-osuosl::install' }
       it { is_expected.to modify_user('nova').with(shell: '/bin/sh') }
 
       it do
@@ -179,33 +155,23 @@ describe 'osl-openstack::compute' do
       it { expect(chef_run.service('openstack-nova-compute')).to subscribe_to('template[/etc/nova/nova.conf]').on(:restart) }
       it { is_expected.to enable_service 'libvirt-guests' }
       it { is_expected.to start_service 'libvirt-guests' }
-      case pltfrm
-      when ALMA_9
-        it { is_expected.to install_package 'ksmtuned' }
-        it do
-          is_expected.to create_template('/etc/ksmtuned.conf').with(
-            variables: {
-              ksm: {
-                'npages_max' => 2500,
-                'thres_coef' => 25,
-                'monitor_interval' => 30,
-              },
-            }
-          )
-        end
-        it { expect(chef_run.template('/etc/ksmtuned.conf')).to notify('service[ksmtuned]').to(:restart) }
-        it { is_expected.to enable_service 'ksm' }
-        it { is_expected.to start_service 'ksm' }
-        it { is_expected.to enable_service 'ksmtuned' }
-        it { is_expected.to start_service 'ksmtuned' }
-      when ALMA_8
-        it { is_expected.to_not install_package 'ksmtuned' }
-        it { is_expected.to_not create_template '/etc/ksmtuned.conf' }
-        it { is_expected.to_not enable_service 'ksm' }
-        it { is_expected.to_not start_service 'ksm' }
-        it { is_expected.to_not enable_service 'ksmtuned' }
-        it { is_expected.to_not start_service 'ksmtuned' }
+      it { is_expected.to install_package 'ksmtuned' }
+      it do
+        is_expected.to create_template('/etc/ksmtuned.conf').with(
+          variables: {
+            ksm: {
+              'npages_max' => 2500,
+              'thres_coef' => 25,
+              'monitor_interval' => 30,
+            },
+          }
+        )
       end
+      it { expect(chef_run.template('/etc/ksmtuned.conf')).to notify('service[ksmtuned]').to(:restart) }
+      it { is_expected.to enable_service 'ksm' }
+      it { is_expected.to start_service 'ksm' }
+      it { is_expected.to enable_service 'ksmtuned' }
+      it { is_expected.to start_service 'ksmtuned' }
 
       # KSM should not be installed when running in a VM (guest)
       context 'when running in a VM' do
@@ -366,38 +332,21 @@ describe 'osl-openstack::compute' do
 
         it { is_expected.to_not include_recipe 'yum-osuosl::virt' }
 
-        case pltfrm
-        when ALMA_8
-          it do
-            is_expected.to install_package %w(
-              device-mapper
-              device-mapper-multipath
-              libguestfs-rescue
-              libguestfs-tools
-              libvirt
-              openstack-nova-compute
-              python3-libguestfs
-              sg3_utils
-              sysfsutils
-            )
-          end
-        when ALMA_9
-          it do
-            is_expected.to install_package %w(
-              device-mapper
-              device-mapper-multipath
-              libguestfs-rescue
-              libvirt
-              openstack-nova-compute
-              python3-libguestfs
-              qemu-kvm
-              qemu-kvm-device-display-virtio-gpu
-              qemu-kvm-device-display-virtio-gpu-pci
-              sg3_utils
-              sysfsutils
-              virt-win-reg
-            )
-          end
+        it do
+          is_expected.to install_package %w(
+            device-mapper
+            device-mapper-multipath
+            libguestfs-rescue
+            libvirt
+            openstack-nova-compute
+            python3-libguestfs
+            qemu-kvm
+            qemu-kvm-device-display-virtio-gpu
+            qemu-kvm-device-display-virtio-gpu-pci
+            sg3_utils
+            sysfsutils
+            virt-win-reg
+          )
         end
         it { is_expected.to_not run_execute 'patch nova libvirt driver for pseries ACPI' }
       end
@@ -412,15 +361,12 @@ describe 'osl-openstack::compute' do
           allow_any_instance_of(OSLOpenstack::Cookbook::Helpers).to receive(:kernel_module_available?).with('kvm_hv').and_return(true)
         end
 
-        it { is_expected.to_not install_kernel_module('kvm_pr') }
-        it { is_expected.to_not load_kernel_module('kvm_pr') }
         it { is_expected.to install_kernel_module('kvm_hv') }
         it { is_expected.to load_kernel_module('kvm_hv') }
         it { is_expected.to_not install_kernel_module('kvm_intel') }
         it { is_expected.to_not install_kernel_module('kvm_amd') }
         it { is_expected.to_not enable_service 'smt_off' }
         it { is_expected.to_not start_service 'smt_off' }
-        it { is_expected.to_not include_recipe 'yum-kernel-osuosl::install' }
 
         context 'KVM hypervisor' do
           cached(:chef_run) do
@@ -429,66 +375,39 @@ describe 'osl-openstack::compute' do
               node.automatic['cpu']['hypervisor_vendor'] = 'KVM'
             end.converge(described_recipe)
           end
-          case pltfrm
-          when ALMA_8
-            it { is_expected.to install_kernel_module('kvm_pr') }
-            it { is_expected.to load_kernel_module('kvm_pr') }
-          when ALMA_9
-            it { is_expected.to_not install_kernel_module('kvm_pr') }
-            it { is_expected.to_not load_kernel_module('kvm_pr') }
-          end
           it { is_expected.to_not install_kernel_module('kvm_hv') }
           it { is_expected.to_not load_kernel_module('kvm_hv') }
         end
 
-        case pltfrm
-        when ALMA_8
-          it do
-            is_expected.to install_package %w(
-              device-mapper
-              device-mapper-multipath
-              libguestfs-rescue
-              libguestfs-tools
-              libvirt
-              openstack-nova-compute
-              python3-libguestfs
-              sg3_utils
-              sysfsutils
-            )
-          end
-          it { is_expected.to_not install_package 'kernel-kvm' }
-          it { is_expected.to_not run_execute 'patch nova libvirt driver for pseries ACPI' }
-        when ALMA_9
-          it do
-            is_expected.to install_package %w(
-              device-mapper
-              device-mapper-multipath
-              libguestfs-rescue
-              libvirt
-              openstack-nova-compute
-              python3-libguestfs
-              qemu-kvm
-              qemu-kvm-device-display-virtio-gpu
-              qemu-kvm-device-display-virtio-gpu-pci
-              sg3_utils
-              sysfsutils
-              virt-win-reg
-            )
-          end
-          it { is_expected.to install_package 'kernel-kvm' }
-          it { is_expected.to install_package 'patch' }
-          it { is_expected.to_not add_osl_repos_centos_kmods 'osl-openstack' }
-          it { is_expected.to create_cookbook_file('/var/chef/cache/nova-pseries-acpi.patch').with(source: 'nova-pseries-acpi.patch') }
-          it do
-            is_expected.to run_execute('patch nova libvirt driver for pseries ACPI').with(
-              command: 'patch -p1 --no-backup-if-mismatch -i /var/chef/cache/nova-pseries-acpi.patch',
-              cwd: '/usr/lib/python3.9/site-packages'
-            )
-          end
-          it do
-            expect(chef_run.execute('patch nova libvirt driver for pseries ACPI')).to \
-              notify('service[openstack-nova-compute]').to(:restart)
-          end
+        it do
+          is_expected.to install_package %w(
+            device-mapper
+            device-mapper-multipath
+            libguestfs-rescue
+            libvirt
+            openstack-nova-compute
+            python3-libguestfs
+            qemu-kvm
+            qemu-kvm-device-display-virtio-gpu
+            qemu-kvm-device-display-virtio-gpu-pci
+            sg3_utils
+            sysfsutils
+            virt-win-reg
+          )
+        end
+        it { is_expected.to install_package 'kernel-kvm' }
+        it { is_expected.to install_package 'patch' }
+        it { is_expected.to_not add_osl_repos_centos_kmods 'osl-openstack' }
+        it { is_expected.to create_cookbook_file('/var/chef/cache/nova-pseries-acpi.patch').with(source: 'nova-pseries-acpi.patch') }
+        it do
+          is_expected.to run_execute('patch nova libvirt driver for pseries ACPI').with(
+            command: 'patch -p1 --no-backup-if-mismatch -i /var/chef/cache/nova-pseries-acpi.patch',
+            cwd: '/usr/lib/python3.9/site-packages'
+          )
+        end
+        it do
+          expect(chef_run.execute('patch nova libvirt driver for pseries ACPI')).to \
+            notify('service[openstack-nova-compute]').to(:restart)
         end
         context 'power8' do
           cached(:chef_run) do
@@ -499,14 +418,8 @@ describe 'osl-openstack::compute' do
           end
           it { is_expected.to enable_service 'smt_off' }
           it { is_expected.to start_service 'smt_off' }
-          it { is_expected.to_not include_recipe 'yum-kernel-osuosl::install' }
-          case pltfrm
-          when ALMA_9
-            it { is_expected.to install_package 'kernel-kvm' }
-            it { is_expected.to install_package 'patch' }
-          when ALMA_8
-            it { is_expected.to_not install_package 'kernel-kvm' }
-          end
+          it { is_expected.to install_package 'kernel-kvm' }
+          it { is_expected.to install_package 'patch' }
           it { is_expected.to_not add_osl_repos_centos_kmods 'osl-openstack' }
         end
 
@@ -518,42 +431,28 @@ describe 'osl-openstack::compute' do
               node.automatic['cpu']['hypervisor_vendor'] = 'pHyp'
             end.converge(described_recipe)
           end
-          case pltfrm
-          when ALMA_8
-            it { is_expected.to include_recipe 'yum-kernel-osuosl::install' }
-            it { is_expected.to_not add_osl_repos_centos_kmods 'osl-openstack' }
-            it { is_expected.to_not upgrade_package 'kernel' }
-            it { is_expected.to_not install_package 'kernel-kvm' }
-            # kvm_hv is built into kernel-osuosl and the stock EL8 kernel cannot host KVM under PowerVM
+          it { is_expected.to add_osl_repos_centos_kmods('osl-openstack').with(kernel: '6.18') }
+          it { is_expected.to upgrade_package 'kernel' }
+          it { is_expected.to install_package 'patch' }
+          it { is_expected.to_not install_package 'kernel-kvm' }
+          it { is_expected.to install_kernel_module('kvm_hv') }
+          it { is_expected.to load_kernel_module('kvm_hv') }
+
+          context 'before rebooting into the kmods kernel' do
+            cached(:chef_run) do
+              ChefSpec::SoloRunner.new(pltfrm) do |node|
+                node.automatic['kernel']['machine'] = 'ppc64le'
+                node.automatic['cpu']['model_name'] = 'POWER10 (raw), altivec supported'
+                node.automatic['cpu']['hypervisor_vendor'] = 'pHyp'
+              end.converge(described_recipe)
+            end
+            before do
+              allow_any_instance_of(OSLOpenstack::Cookbook::Helpers).to receive(:kernel_module_available?).with('kvm_hv').and_return(false)
+            end
+            it { is_expected.to upgrade_package 'kernel' }
             it { is_expected.to_not install_kernel_module('kvm_hv') }
             it { is_expected.to_not load_kernel_module('kvm_hv') }
-          when ALMA_9
-            it { is_expected.to_not include_recipe 'yum-kernel-osuosl::install' }
-            it { is_expected.to add_osl_repos_centos_kmods('osl-openstack').with(kernel: '6.18') }
-            it { is_expected.to upgrade_package 'kernel' }
-            it { is_expected.to install_package 'patch' }
-            it { is_expected.to_not install_package 'kernel-kvm' }
-            it { is_expected.to install_kernel_module('kvm_hv') }
-            it { is_expected.to load_kernel_module('kvm_hv') }
-
-            context 'before rebooting into the kmods kernel' do
-              cached(:chef_run) do
-                ChefSpec::SoloRunner.new(pltfrm) do |node|
-                  node.automatic['kernel']['machine'] = 'ppc64le'
-                  node.automatic['cpu']['model_name'] = 'POWER10 (raw), altivec supported'
-                  node.automatic['cpu']['hypervisor_vendor'] = 'pHyp'
-                end.converge(described_recipe)
-              end
-              before do
-                allow_any_instance_of(OSLOpenstack::Cookbook::Helpers).to receive(:kernel_module_available?).with('kvm_hv').and_return(false)
-              end
-              it { is_expected.to upgrade_package 'kernel' }
-              it { is_expected.to_not install_kernel_module('kvm_hv') }
-              it { is_expected.to_not load_kernel_module('kvm_hv') }
-            end
           end
-          it { is_expected.to_not install_kernel_module('kvm_pr') }
-          it { is_expected.to_not load_kernel_module('kvm_pr') }
           it { is_expected.to_not enable_service 'smt_off' }
           it { is_expected.to_not start_service 'smt_off' }
           it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/force_raw_images = false/) }

@@ -17,13 +17,6 @@ ALMA_9 = {
   log_level: :warn,
 }.freeze
 
-ALMA_8 = {
-  platform: 'almalinux',
-  version: '8',
-  file_cache_path: '/var/chef/cache',
-  log_level: :warn,
-}.freeze
-
 # EL10 is only exercised by the messaging suite (the shared RabbitMQ
 # tier runs on AlmaLinux 10 / RabbitMQ 4.2). The rest of the recipes are
 # not EL10-ready, so ALMA_10 is deliberately NOT in ALL_PLATFORMS.
@@ -36,7 +29,6 @@ ALMA_10 = {
 
 ALL_PLATFORMS = [
   ALMA_9,
-  ALMA_8,
 ].freeze
 
 def openstack_secrets_stub

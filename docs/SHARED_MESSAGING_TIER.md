@@ -524,10 +524,10 @@ cluster membership); per-cloud passwords are scoped to one vhost.
 
 ## RabbitMQ version & OS compatibility
 
-The clients (Yoga `oslo.messaging` on AlmaLinux 8/9 controllers +
+The clients (Yoga `oslo.messaging` on AlmaLinux 9 controllers +
 hypervisors) are plain **AMQP 0-9-1** clients and do **not** cluster with
 the broker — there is no Erlang/cookie/OS coupling between a client and
-the tier. AMQP 0-9-1 is stable across RabbitMQ versions, so AlmaLinux 8/9
+the tier. AMQP 0-9-1 is stable across RabbitMQ versions, so AlmaLinux 9
 clients talk to a newer broker on AlmaLinux 10 with no issue. **The
 compatibility axis is the RabbitMQ *version*, not the host OS.**
 

@@ -49,7 +49,6 @@ suites:
   - name: messaging_tier
     # The tier runs on EL10 only (RabbitMQ 4.2 + valkey from AppStream).
     excludes:
-      - almalinux-8
       - almalinux-9
     driver_config:
       server_name: "messaging-tier-<%= ENV['USER'] %>"

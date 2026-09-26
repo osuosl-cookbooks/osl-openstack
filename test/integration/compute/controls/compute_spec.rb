@@ -1,5 +1,4 @@
 local_storage = input('local_storage')
-os_release = os.release.to_i
 
 control 'compute' do
   %w(
@@ -41,44 +40,22 @@ control 'compute' do
     it { should be_loaded }
   end if os.arch == 'x86_64'
 
-  describe file '/etc/sysconfig/network' do
-    its('content') { should match /^NETWORKING=yes$/ }
-    its('content') { should match /^NETWORKING_IPV6=yes$/ }
-    its('content') { should match /^IPV6_AUTOCONF=no$/ }
-  end if os_release <= 8
+  os_pkgs = %w(
+    device-mapper
+    device-mapper-multipath
+    libguestfs-rescue
+    libvirt
+    openstack-nova-compute
+    python3-libguestfs
+    qemu-kvm
+    qemu-kvm-device-display-virtio-gpu
+    qemu-kvm-device-display-virtio-gpu-pci
+    sg3_utils
+    sysfsutils
+    virt-win-reg
+  )
 
-  os_pkgs =
-    case os_release
-    when 8
-      %w(
-        device-mapper
-        device-mapper-multipath
-        libguestfs-rescue
-        libguestfs-tools
-        libvirt
-        openstack-nova-compute
-        python3-libguestfs
-        sg3_utils
-        sysfsutils
-      )
-    when 9
-      %w(
-        device-mapper
-        device-mapper-multipath
-        libguestfs-rescue
-        libvirt
-        openstack-nova-compute
-        python3-libguestfs
-        qemu-kvm
-        qemu-kvm-device-display-virtio-gpu
-        qemu-kvm-device-display-virtio-gpu-pci
-        sg3_utils
-        sysfsutils
-        virt-win-reg
-      )
-    end
-
-  os_pkgs << 'qemu-kvm-device-display-virtio-vga' if os_release >= 9 && os.arch == 'x86_64'
+  os_pkgs << 'qemu-kvm-device-display-virtio-vga' if os.arch == 'x86_64'
 
   os_pkgs.each do |p|
     describe package p do
@@ -188,21 +165,19 @@ control 'compute' do
       it { should be_loaded }
     end
 
-    if os_release == 9
-      # POWER10 hosts under PowerVM run the Kmods SIG 6.18 kernel instead of kernel-kvm
-      if file('/proc/cpuinfo').content.match?(/POWER10/)
-        describe yum.repo('centos-kmods-kernel-6.18') do
-          it { should exist }
-          it { should be_enabled }
-        end
+    # POWER10 hosts under PowerVM run the Kmods SIG 6.18 kernel instead of kernel-kvm
+    if file('/proc/cpuinfo').content.match?(/POWER10/)
+      describe yum.repo('centos-kmods-kernel-6.18') do
+        it { should exist }
+        it { should be_enabled }
+      end
 
-        describe package('kernel-kvm') do
-          it { should_not be_installed }
-        end
-      else
-        describe package('kernel-kvm') do
-          it { should be_installed }
-        end
+      describe package('kernel-kvm') do
+        it { should_not be_installed }
+      end
+    else
+      describe package('kernel-kvm') do
+        it { should be_installed }
       end
     end
   end

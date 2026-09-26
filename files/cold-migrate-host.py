@@ -3,7 +3,7 @@
 
 Cold migration shuts the guest down, rebuilds its domain XML on the
 destination and boots it there, so it sidesteps the live-migration blockers
-between differing qemu/libvirt versions (e.g. AlmaLinux 8 -> 9 on POWER9).
+between differing qemu/libvirt versions (e.g. an EL major upgrade on POWER).
 With RBD-backed instances no disk data is copied.
 
 Instances are migrated one at a time and each resize is confirmed before the

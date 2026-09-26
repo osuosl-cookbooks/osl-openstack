@@ -71,12 +71,10 @@ module OSLOpenstack
         cmd.stdout.match?(/^#{Regexp.escape(user)}\s+\[[^\]]*#{Regexp.escape(tag)}/)
       end
 
-      # Messaging SIG selects version by subdir: EL8/9 use rabbitmq-38
+      # Messaging SIG selects version by subdir: EL9 uses rabbitmq-38
       # (3.9.x), EL10 only ships rabbitmq-4 (4.x).
       def openstack_rabbitmq_repo
         case node['platform_version'].to_i
-        when 8
-          'https://ftp.osuosl.org/pub/osl/vault/$releasever-stream/messaging/$basearch/rabbitmq-38'
         when 9
           'https://centos-stream.osuosl.org/SIGs/$releasever-stream/messaging/$basearch/rabbitmq-38'
         when 10
@@ -131,23 +129,14 @@ module OSLOpenstack
 
       def openstack_python_bin
         case node['platform_version'].to_i
-        when 8, 9
-          '/usr/bin/python3'
-        end
-      end
-
-      def openstack_python_lib
-        case node['platform_version'].to_i
-        when 8
-          '/usr/lib/python3.6'
         when 9
-          '/usr/lib/python3.9'
+          '/usr/bin/python3'
         end
       end
 
       def openstack_client_pkg
         case node['platform_version'].to_i
-        when 8, 9
+        when 9
           %w(
             openstack-selinux
             python3-openstackclient
@@ -157,7 +146,7 @@ module OSLOpenstack
 
       def openstack_compute_controller_pkgs
         case node['platform_version'].to_i
-        when 8, 9
+        when 9
           %w(
             openstack-nova-api
             openstack-nova-conductor
@@ -171,18 +160,6 @@ module OSLOpenstack
 
       def openstack_compute_pkgs
         case node['platform_version'].to_i
-        when 8
-          %w(
-            device-mapper
-            device-mapper-multipath
-            libguestfs-rescue
-            libguestfs-tools
-            libvirt
-            openstack-nova-compute
-            python3-libguestfs
-            sg3_utils
-            sysfsutils
-          )
         when 9
           pkgs =
             %w(

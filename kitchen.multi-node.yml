@@ -111,11 +111,6 @@ verifier:
 <% end %>
 
 platforms:
-  - name: almalinux-8
-    driver:
-      variables:
-        os_image: "AlmaLinux 8"
-        ssh_user_name: "almalinux"
   - name: almalinux-9
     driver:
       variables:

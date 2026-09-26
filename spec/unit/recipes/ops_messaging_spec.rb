@@ -2,7 +2,7 @@ require_relative '../../spec_helper'
 
 describe 'osl-openstack::ops_messaging' do
   # EL10 is included here only — the messaging tier is the one piece
-  # that runs on AlmaLinux 10 (RabbitMQ 4.2). Other suites stay EL8/9.
+  # that runs on AlmaLinux 10 (RabbitMQ 4.2). Other suites stay EL9.
   [*ALL_PLATFORMS, ALMA_10].each do |pltfrm|
     context "#{pltfrm[:platform]} #{pltfrm[:version]}" do
       cached(:chef_run) do
@@ -48,15 +48,6 @@ describe 'osl-openstack::ops_messaging' do
         end
       end
       case pltfrm
-      when ALMA_8
-        it do
-          is_expected.to create_yum_repository('centos-rabbitmq').with(
-            description: 'CentOS $releasever - RabbitMQ',
-            baseurl: 'https://ftp.osuosl.org/pub/osl/vault/$releasever-stream/messaging/$basearch/rabbitmq-38',
-            gpgkey: 'https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Messaging',
-            priority: '20'
-          )
-        end
       when ALMA_9
         it do
           is_expected.to create_yum_repository('centos-rabbitmq').with(
