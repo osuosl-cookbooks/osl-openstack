@@ -20,7 +20,6 @@
 s = os_secrets
 c = s['compute']
 auth_endpoint = openstack_auth_endpoint
-compute = node['osl-openstack']['node_type'] == 'compute'
 
 include_recipe 'osl-ceph' unless openstack_cinder_disabled?
 
@@ -47,7 +46,6 @@ template '/etc/nova/nova.conf' do
     auth_endpoint: auth_endpoint,
     cpu_allocation_ratio: c['cpu_allocation_ratio'],
     cinder_disabled: openstack_cinder_disabled?,
-    compute: compute,
     database_connection: openstack_database_connection('compute'),
     disk_allocation_ratio: c['disk_allocation_ratio'],
     endpoint: c['endpoint'],

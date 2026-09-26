@@ -438,10 +438,4 @@ suites:
         - test/integration/telemetry_controller
     attributes:
       osl-openstack:
-        endpoint_hostname: controller.testing.osuosl.org
-        db_hostname: controller.testing.osuosl.org
         upgrade: <%= ENV['OPENSTACK_UPGRADE'] || true %>
-      openstack:
-        block-storage:
-          volume:
-            create_volume_group: true
