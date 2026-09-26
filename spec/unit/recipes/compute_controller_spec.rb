@@ -4,7 +4,7 @@ describe 'osl-openstack::compute_controller' do
   ALL_PLATFORMS.each do |pltfrm|
     context "#{pltfrm[:platform]} #{pltfrm[:version]}" do
       cached(:chef_run) do
-        ChefSpec::SoloRunner.new(pltfrm) do |node|
+        ChefSpec::SoloRunner.new(pltfrm.merge(step_into: %w(apache_app))) do |node|
           node.normal['osl-openstack']['node_type'] = 'controller'
         end.converge(described_recipe)
       end
@@ -151,24 +151,33 @@ describe 'osl-openstack::compute_controller' do
       it { expect(chef_run.execute('nova: create cell1')).to subscribe_to('template[/etc/nova/nova.conf]').on(:run).immediately }
       it { expect(chef_run.execute('nova: db_sync')).to subscribe_to('template[/etc/nova/nova.conf]').on(:run).immediately }
       it { expect(chef_run.execute('nova: discover hosts')).to subscribe_to('template[/etc/nova/nova.conf]').on(:run).immediately }
-      it do
-        is_expected.to create_apache_app('placement').with(
-          cookbook: 'osl-openstack',
-          template: 'wsgi-placement.conf.erb'
-        )
+      {
+        'placement' => [8778, 'placement-api', 6, 1, 'placement', '/usr/bin/placement-api'],
+        'nova-api' => [8774, 'nova-api', 6, 1, 'nova', '/usr/bin/nova-api-wsgi'],
+        'nova-metadata' => [8775, 'nova-metadata', 6, 1, 'nova', '/usr/bin/nova-metadata-wsgi'],
+      }.each do |app, (port, group, processes, threads, user, script)|
+        it do
+          is_expected.to create_apache_app(app).with(
+            cookbook: 'osl-openstack',
+            template: 'wsgi-api.conf.erb',
+            template_params: hash_including(port: port, group: group, user: user, script: script)
+          )
+        end
+        it do
+          is_expected.to render_file("/etc/httpd/sites-available/#{app}.conf")
+            .with_content("Listen *:#{port}\n\n<VirtualHost *:#{port}>\n  WSGIProcessGroup #{group}\n")
+            .with_content("WSGIDaemonProcess #{group} processes=#{processes} threads=#{threads} user=#{user} group=#{user}")
+            .with_content("WSGIScriptAlias / #{script}\n")
+            .with_content(%r{rotatelogs /var/log/httpd/#{app}(-api)?/error/})
+        end
       end
       it do
-        is_expected.to create_apache_app('nova-api').with(
-          cookbook: 'osl-openstack',
-          template: 'wsgi-nova-api.conf.erb'
-        )
+        is_expected.to render_file('/etc/httpd/sites-available/placement.conf')
+          .with_content("  Alias /placement-api /usr/bin/placement-api\n  <Location /placement-api>\n")
       end
-      it do
-        is_expected.to create_apache_app('nova-metadata').with(
-          cookbook: 'osl-openstack',
-          template: 'wsgi-nova-metadata.conf.erb'
-        )
-      end
+      it { is_expected.to_not render_file('/etc/httpd/sites-available/placement.conf').with_content('WSGISocketPrefix') }
+      it { is_expected.to render_file('/etc/httpd/sites-available/nova-api.conf').with_content("</VirtualHost>\n\nWSGISocketPrefix /var/lock/subsys\n") }
+      it { is_expected.to_not render_file('/etc/httpd/sites-available/nova-api.conf').with_content('<Location') }
       it { expect(chef_run.apache_app('placement')).to notify('apache2_service[compute]').to(:reload).immediately }
       it { expect(chef_run.apache_app('nova-api')).to notify('apache2_service[compute]').to(:reload).immediately }
       it { expect(chef_run.apache_app('nova-metadata')).to notify('apache2_service[compute]').to(:reload).immediately }

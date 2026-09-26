@@ -53,7 +53,11 @@ end
 apache_app 'cinder-api' do
   cookbook 'osl-openstack'
   server_address openstack_api_listen_ip
-  template 'wsgi-cinder-api.conf.erb'
+  template 'wsgi-api.conf.erb'
+  template_params(
+    port: 8776, group: 'cinder-wsgi', processes: 2, threads: 10, user: 'cinder',
+    script: '/usr/bin/cinder-wsgi', log_name: 'cinder-api'
+  )
   notifies :reload, 'apache2_service[block_storage]', :immediately
 end
 

@@ -135,25 +135,27 @@ end
 
 listen_ip = openstack_api_listen_ip
 
-apache_app 'placement' do
-  cookbook 'osl-openstack'
-  server_address listen_ip
-  template 'wsgi-placement.conf.erb'
-  notifies :reload, 'apache2_service[compute]', :immediately
-end
-
-apache_app 'nova-api' do
-  cookbook 'osl-openstack'
-  server_address listen_ip
-  template 'wsgi-nova-api.conf.erb'
-  notifies :reload, 'apache2_service[compute]', :immediately
-end
-
-apache_app 'nova-metadata' do
-  cookbook 'osl-openstack'
-  server_address listen_ip
-  template 'wsgi-nova-metadata.conf.erb'
-  notifies :reload, 'apache2_service[compute]', :immediately
+{
+  'placement' => {
+    port: 8778, group: 'placement-api', processes: 6, threads: 1, user: 'placement',
+    script: '/usr/bin/placement-api', log_name: 'placement', location_alias: '/placement-api', socket_prefix: false
+  },
+  'nova-api' => {
+    port: 8774, group: 'nova-api', processes: 6, threads: 1, user: 'nova',
+    script: '/usr/bin/nova-api-wsgi', log_name: 'nova-api'
+  },
+  'nova-metadata' => {
+    port: 8775, group: 'nova-metadata', processes: 6, threads: 1, user: 'nova',
+    script: '/usr/bin/nova-metadata-wsgi', log_name: 'nova-metadata'
+  },
+}.each do |app, params|
+  apache_app app do
+    cookbook 'osl-openstack'
+    server_address listen_ip
+    template 'wsgi-api.conf.erb'
+    template_params params
+    notifies :reload, 'apache2_service[compute]', :immediately
+  end
 end
 
 apache2_service 'compute' do
@@ -176,10 +178,8 @@ end
   end
 end
 
-# In HA mode haproxy on the VIP terminates TLS for novnc too, and
-# nova-novncproxy runs plain ws:// on the per-host backend IP - no
-# local cert needed. In single-controller mode keep using the
-# nova-novncproxy --ssl_only path with its own cert.
+# haproxy terminates novnc TLS in HA; single controllers keep --ssl_only
+# with a local cert
 unless openstack_tls_on_haproxy?
   certificate_manage 'novnc' do
     cert_path '/etc/nova/pki'
