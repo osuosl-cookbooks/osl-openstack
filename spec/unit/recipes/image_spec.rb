@@ -66,6 +66,13 @@ describe 'osl-openstack::image' do
       it { is_expected.to enable_service 'openstack-glance-api' }
       it { is_expected.to start_service 'openstack-glance-api' }
       it_behaves_like 'oslo messaging config', '/etc/glance/glance-api.conf'
+      it do
+        is_expected.to render_file('/etc/glance/glance-api.conf').with_content { |c|
+          expect(c[/^\[keystone_authtoken\]\n(?:[^\[].*\n)*/]).to include(
+            "auth_type = password\n", "region_name = RegionOne\n", "service_token_roles_required = true\n", "username = glance\n"
+          )
+        }
+      end
 
       context 'with quorum queues and TLS enabled' do
         cached(:chef_run) do

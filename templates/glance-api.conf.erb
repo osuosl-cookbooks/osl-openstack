@@ -39,19 +39,10 @@ filesystem_store_datadir = /var/lib/glance/images
 [paste_deploy]
 flavor = keystone
 
-[keystone_authtoken]
-auth_type = password
-auth_url = https://<%= @auth_endpoint %>:5000/v3
-memcached_servers = <%= @memcached_endpoint %>
-password = <%= @service_pass %>
-project_domain_name = Default
-project_name = service
-region_name = RegionOne
-service_token_roles = admin
-service_token_roles_required = true
-user_domain_name = Default
-username = glance
-www_authenticate_uri = https://<%= @auth_endpoint %>:5000/v3
+<%= render 'keystone_authtoken.conf.erb', variables: {
+  auth_endpoint: @auth_endpoint, memcached_endpoint: @memcached_endpoint, service_pass: @service_pass,
+  username: 'glance', v3password: false, region: true
+} -%>
 
 <%# heartbeat_in_pthread defaults to True on yoga: the heartbeat stalls for the
     length of an RPC call, so rabbit drops the connection (LP #2035113). -%>

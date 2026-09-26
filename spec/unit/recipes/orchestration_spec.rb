@@ -10,6 +10,13 @@ describe 'osl-openstack::orchestration' do
       include_context 'common_stubs'
 
       it_behaves_like 'oslo messaging config', '/etc/heat/heat.conf'
+      it do
+        is_expected.to render_file('/etc/heat/heat.conf').with_content { |c|
+          authtoken = c[/^\[keystone_authtoken\]\n(?:[^\[].*\n)*/]
+          expect(authtoken).to include("auth_type = v3password\n", "service_token_roles_required = True\n", "username = heat\n")
+          expect(authtoken).to_not include('region_name')
+        }
+      end
 
       it { is_expected.to create_osl_openstack_client('orchestration').with(firewall: true, openrc: false) }
       it { is_expected.to create_osl_openstack_service_user('heat').with(password: 'heat') }

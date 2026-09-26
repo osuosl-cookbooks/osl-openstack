@@ -1,0 +1,15 @@
+[keystone_authtoken]
+auth_type = <%= @v3password ? 'v3password' : 'password' %>
+auth_url = https://<%= @auth_endpoint %>:5000/v3
+memcached_servers = <%= @memcached_endpoint %>
+password = <%= @service_pass %>
+project_domain_name = Default
+project_name = service
+<% if @region -%>
+region_name = RegionOne
+<% end -%>
+service_token_roles = admin
+service_token_roles_required = <%= @v3password ? 'True' : 'true' %>
+user_domain_name = Default
+username = <%= @username %>
+www_authenticate_uri = https://<%= @auth_endpoint %>:5000/v3

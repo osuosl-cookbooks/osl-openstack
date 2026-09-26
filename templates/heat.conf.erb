@@ -27,18 +27,10 @@ auth_url = https://<%= @auth_endpoint %>:5000
 [database]
 connection = <%= @database_connection %>
 
-[keystone_authtoken]
-auth_type = v3password
-auth_url = https://<%= @auth_endpoint %>:5000/v3
-memcached_servers = <%= @memcached_endpoint %>
-password = <%= @service_pass %>
-project_domain_name = Default
-project_name = service
-service_token_roles = admin
-service_token_roles_required = True
-user_domain_name = Default
-username = heat
-www_authenticate_uri = https://<%= @auth_endpoint %>:5000/v3
+<%= render 'keystone_authtoken.conf.erb', variables: {
+  auth_endpoint: @auth_endpoint, memcached_endpoint: @memcached_endpoint, service_pass: @service_pass,
+  username: 'heat', v3password: true, region: false
+} -%>
 
 <%# heartbeat_in_pthread defaults to True on yoga: the heartbeat stalls for the
     length of an RPC call, so rabbit drops the connection (LP #2035113). -%>
