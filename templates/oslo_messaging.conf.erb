@@ -1,0 +1,14 @@
+[oslo_messaging_rabbit]
+heartbeat_in_pthread = <%= @heartbeat_in_pthread ? 'true' : 'false' %>
+<% if @rabbit_quorum_queue -%>
+rabbit_quorum_queue = true
+<% end -%>
+<% if @rabbit_tls -%>
+ssl = true
+<% if @rabbit_ssl_ca_file -%>
+ssl_ca_file = <%= @rabbit_ssl_ca_file %>
+<% end -%>
+<% end -%>
+
+[oslo_messaging_notifications]
+driver = messagingv2

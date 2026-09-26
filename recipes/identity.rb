@@ -97,6 +97,7 @@ template '/etc/keystone/keystone.conf' do
   sensitive true
   variables(
     endpoint: endpoint,
+    heartbeat_in_pthread: true,
     **openstack_messaging_template_vars,
     memcached_endpoint: openstack_memcached_servers,
     database_connection: openstack_database_connection('identity')

@@ -19,10 +19,7 @@ bind_host = <%= @listen_ip %>
 bind_host = <%= @listen_ip %>
 <% end -%>
 
-[cache]
-memcache_servers = <%= @memcached_endpoint %>
-enabled = true
-backend = dogpile.cache.memcached
+<%= render 'cache.conf.erb' -%>
 
 [clients_keystone]
 auth_url = https://<%= @auth_endpoint %>:5000
@@ -43,22 +40,9 @@ user_domain_name = Default
 username = heat
 www_authenticate_uri = https://<%= @auth_endpoint %>:5000/v3
 
-[oslo_messaging_rabbit]
 <%# heartbeat_in_pthread defaults to True on yoga: the heartbeat stalls for the
     length of an RPC call, so rabbit drops the connection (LP #2035113). -%>
-heartbeat_in_pthread = false
-<% if @rabbit_quorum_queue -%>
-rabbit_quorum_queue = true
-<% end -%>
-<% if @rabbit_tls -%>
-ssl = true
-<% if @rabbit_ssl_ca_file -%>
-ssl_ca_file = <%= @rabbit_ssl_ca_file %>
-<% end -%>
-<% end -%>
-
-[oslo_messaging_notifications]
-driver = messagingv2
+<%= render 'oslo_messaging.conf.erb' -%>
 
 [trustee]
 auth_type = v3password

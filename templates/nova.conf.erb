@@ -37,10 +37,7 @@ auth_strategy = keystone
 [api_database]
 connection = <%= @api_database_connection %>
 
-[cache]
-memcache_servers = <%= @memcached_endpoint %>
-enabled = true
-backend = dogpile.cache.memcached
+<%= render 'cache.conf.erb' -%>
 <% unless @cinder_disabled -%>
 
 [cinder]
@@ -129,22 +126,9 @@ notify_on_state_change = vm_and_task_state
 [oslo_concurrency]
 lock_path = /var/lib/nova/tmp
 
-[oslo_messaging_rabbit]
 <%# kolla sets True only for the wsgi nova-api; this file is shared with
     nova-compute/conductor, which True breaks (LP #2035113), so False wins. -%>
-heartbeat_in_pthread = false
-<% if @rabbit_quorum_queue -%>
-rabbit_quorum_queue = true
-<% end -%>
-<% if @rabbit_tls -%>
-ssl = true
-<% if @rabbit_ssl_ca_file -%>
-ssl_ca_file = <%= @rabbit_ssl_ca_file %>
-<% end -%>
-<% end -%>
-
-[oslo_messaging_notifications]
-driver = messagingv2
+<%= render 'oslo_messaging.conf.erb' -%>
 <% if @pci_alias -%>
 
 [pci]

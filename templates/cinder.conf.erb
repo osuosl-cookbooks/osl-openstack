@@ -27,10 +27,7 @@ volume_clear_size = 256
 backend_url = <%= @coordination_url %>
 
 <% end -%>
-[cache]
-memcache_servers = <%= @memcached_endpoint %>
-enabled = true
-backend = dogpile.cache.memcached
+<%= render 'cache.conf.erb' -%>
 
 [ceph]
 volume_driver = cinder.volume.drivers.rbd.RBDDriver
@@ -86,19 +83,6 @@ username = nova
 [oslo_concurrency]
 lock_path = /var/lib/cinder/tmp
 
-[oslo_messaging_rabbit]
 <%# kolla sets True only for the wsgi cinder-api; this file is shared with
     cinder-scheduler/volume, which True breaks (LP #2035113), so False wins. -%>
-heartbeat_in_pthread = false
-<% if @rabbit_quorum_queue -%>
-rabbit_quorum_queue = true
-<% end -%>
-<% if @rabbit_tls -%>
-ssl = true
-<% if @rabbit_ssl_ca_file -%>
-ssl_ca_file = <%= @rabbit_ssl_ca_file %>
-<% end -%>
-<% end -%>
-
-[oslo_messaging_notifications]
-driver = messagingv2
+<%= render 'oslo_messaging.conf.erb' -%>

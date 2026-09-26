@@ -4,32 +4,16 @@
 [DEFAULT]
 transport_url = <%= @transport_url %>
 
-[cache]
-memcache_servers = <%= @memcached_endpoint %>
-enabled = true
-backend = dogpile.cache.memcached
+<%= render 'cache.conf.erb' -%>
 
 [notification]
 # No event store (panko) is deployed; the default meter,event set would
 # fill event.sample with messages nothing consumes.
 pipelines = meter
 
-[oslo_messaging_rabbit]
 <%# heartbeat_in_pthread defaults to True on yoga: the heartbeat stalls for the
     length of an RPC call, so rabbit drops the connection (LP #2035113). -%>
-heartbeat_in_pthread = false
-<% if @rabbit_quorum_queue -%>
-rabbit_quorum_queue = true
-<% end -%>
-<% if @rabbit_tls -%>
-ssl = true
-<% if @rabbit_ssl_ca_file -%>
-ssl_ca_file = <%= @rabbit_ssl_ca_file %>
-<% end -%>
-<% end -%>
-
-[oslo_messaging_notifications]
-driver = messagingv2
+<%= render 'oslo_messaging.conf.erb' -%>
 
 [service_credentials]
 auth_type = v3password

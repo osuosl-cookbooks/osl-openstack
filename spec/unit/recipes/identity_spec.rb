@@ -77,6 +77,7 @@ describe 'osl-openstack::identity' do
           sensitive: true,
           variables: {
             endpoint: 'controller.testing.osuosl.org',
+            heartbeat_in_pthread: true,
             rabbit_quorum_queue: false,
             rabbit_tls: false,
             rabbit_ssl_ca_file: nil,
