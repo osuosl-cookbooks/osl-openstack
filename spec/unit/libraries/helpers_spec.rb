@@ -4,8 +4,7 @@ require 'chef/encrypted_data_bag_item'
 require_relative '../../../libraries/helpers'
 
 describe OSLOpenstack::Cookbook::Helpers do
-  # safe_dig is a private instance method on the helper module. Build a
-  # throwaway including-class so we can call it through `send`.
+  # safe_dig is private, so call it through a throwaway including class.
   let(:helper) do
     Class.new { include OSLOpenstack::Cookbook::Helpers }.new
   end
@@ -33,12 +32,8 @@ describe OSLOpenstack::Cookbook::Helpers do
       expect(safe_dig(item, 'ha', 'vip_v4')).to eq('10.0.0.1')
     end
 
-    # Regression: safe_dig used to only match Hash and Chef::DataBagItem.
-    # Chef's DSL returns Chef::EncryptedDataBagItem (a separate sibling
-    # class, NOT a DataBagItem subclass) when the bag is encrypted, so
-    # the old type check silently returned nil on encrypted bags - the
-    # `if safe_dig(os_secrets, 'ha')` gate in controller.rb stayed false
-    # in production even after the data bag was updated.
+    # Encrypted bags are Chef::EncryptedDataBagItem, a sibling class rather
+    # than a DataBagItem subclass, so safe_dig must match it explicitly.
     it 'walks a Chef::EncryptedDataBagItem' do
       secret = 'a' * 32
       enc_hash = {
@@ -408,6 +403,69 @@ describe OSLOpenstack::Cookbook::Helpers do
     it 'is true once the patch marker is present' do
       path = driver_with("# OSL-PATCH nova-pseries-acpi: libvirt >= 9.2 rejects <acpi/> here\n")
       expect(helper.openstack_nova_pseries_acpi_patched?(path)).to be true
+    end
+  end
+
+  describe '#openstack_messaging_template_vars' do
+    it 'bundles the rabbit and transport settings every service template takes' do
+      allow(helper).to receive(:os_secrets).and_return(
+        'messaging' => { 'user' => 'openstack', 'pass' => 'p', 'endpoint' => 'mq1', 'tls' => true }
+      )
+      expect(helper.openstack_messaging_template_vars).to eq(
+        rabbit_quorum_queue: false,
+        rabbit_tls: true,
+        rabbit_ssl_ca_file: nil,
+        transport_url: 'rabbit://openstack:p@mq1:5671/'
+      )
+    end
+  end
+
+  describe 'database naming' do
+    before do
+      allow(helper).to receive(:os_secrets).and_return(
+        'database_server' => { 'suffix' => 'x86', 'endpoint' => 'db.example.org' },
+        'image' => { 'db' => { 'user' => 'glance', 'pass' => 'secret' } }
+      )
+    end
+
+    it { expect(helper.openstack_db_name('image')).to eq('glance_x86') }
+    it { expect(helper.openstack_db_user('image')).to eq('glance_x86') }
+    it do
+      expect(helper.openstack_database_connection('image')).to eq(
+        'mysql+pymysql://glance_x86:secret@db.example.org:3306/glance_x86'
+      )
+    end
+  end
+
+  describe 'per-host data bag lookups' do
+    let(:fqdn) { 'node1.example.org' }
+
+    before { allow(helper).to receive(:node).and_return('fqdn' => fqdn) }
+
+    it 'falls back when the compute and image keys are absent' do
+      allow(helper).to receive(:os_secrets).and_return('compute' => {}, 'image' => {})
+      expect(helper.openstack_pci_alias).to be_nil
+      expect(helper.openstack_pci_passthrough_whitelist).to be_nil
+      expect(helper.openstack_local_storage_compute).to be false
+      expect(helper.openstack_cinder_disabled?).to be false
+      expect(helper.openstack_local_storage_image).to be false
+    end
+
+    it 'returns the value keyed by this node' do
+      allow(helper).to receive(:os_secrets).and_return(
+        'compute' => {
+          'pci_alias' => { fqdn => 'alias' },
+          'pci_passthrough_whitelist' => { fqdn => 'wl' },
+          'local_storage' => { fqdn => true },
+          'cinder_disabled' => { fqdn => true },
+        },
+        'image' => { 'local_storage' => { fqdn => true } }
+      )
+      expect(helper.openstack_pci_alias).to eq('alias')
+      expect(helper.openstack_pci_passthrough_whitelist).to eq('wl')
+      expect(helper.openstack_local_storage_compute).to be true
+      expect(helper.openstack_cinder_disabled?).to be true
+      expect(helper.openstack_local_storage_image).to be true
     end
   end
 end

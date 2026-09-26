@@ -21,7 +21,7 @@ osl_firewall_openstack 'orchestration'
 
 s = os_secrets
 o = s['orchestration']
-auth_endpoint = s['identity']['endpoint']
+auth_endpoint = openstack_auth_endpoint
 
 osl_openstack_user o['service']['user'] do
   domain_name 'default'
@@ -94,10 +94,7 @@ template '/etc/heat/heat.conf' do
     memcached_endpoint: openstack_memcached_servers,
     region: o['region'],
     service_pass: o['service']['pass'],
-    rabbit_quorum_queue: openstack_rabbit_quorum_queue?,
-    rabbit_tls: openstack_rabbit_tls?,
-    rabbit_ssl_ca_file: openstack_rabbit_ssl_ca_file,
-    transport_url: openstack_transport_url
+    **openstack_messaging_template_vars
   )
   notifies :run, 'execute[heat: db_sync]', :immediately
 end

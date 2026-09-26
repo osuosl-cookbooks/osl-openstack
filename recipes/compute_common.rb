@@ -19,7 +19,7 @@
 
 s = os_secrets
 c = s['compute']
-auth_endpoint = s['identity']['endpoint']
+auth_endpoint = openstack_auth_endpoint
 compute = node['osl-openstack']['node_type'] == 'compute'
 
 include_recipe 'osl-ceph' unless openstack_cinder_disabled?
@@ -68,9 +68,6 @@ template '/etc/nova/nova.conf' do
     rbd_secret_uuid: ceph_fsid,
     rbd_user: safe_dig(c, 'ceph', 'rbd_user'),
     service_pass: c['service']['pass'],
-    rabbit_quorum_queue: openstack_rabbit_quorum_queue?,
-    rabbit_tls: openstack_rabbit_tls?,
-    rabbit_ssl_ca_file: openstack_rabbit_ssl_ca_file,
-    transport_url: openstack_transport_url
+    **openstack_messaging_template_vars
   )
 end

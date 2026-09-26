@@ -84,7 +84,7 @@ end
 
 s = os_secrets
 d = s['dashboard']
-auth_endpoint = s['identity']['endpoint']
+auth_endpoint = openstack_auth_endpoint
 
 template '/etc/openstack-dashboard/local_settings' do
   group 'apache'

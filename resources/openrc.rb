@@ -5,7 +5,7 @@ unified_mode true
 
 action :create do
   s = os_secrets
-  endpoint = s['identity']['endpoint']
+  endpoint = openstack_auth_endpoint
   admin_pass = s['users']['admin']
   region = s['openrc']['region']
 

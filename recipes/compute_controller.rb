@@ -24,7 +24,7 @@ osl_firewall_openstack 'compute'
 s = os_secrets
 c = s['compute']
 p = s['placement']
-auth_endpoint = s['identity']['endpoint']
+auth_endpoint = openstack_auth_endpoint
 
 include_recipe 'osl-apache'
 include_recipe 'osl-apache::mod_wsgi'

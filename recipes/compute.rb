@@ -139,7 +139,7 @@ when 'ppc64le'
 
   execute 'patch nova libvirt driver for pseries ACPI' do
     command "patch -p1 --no-backup-if-mismatch -i #{Chef::Config[:file_cache_path]}/nova-pseries-acpi.patch"
-    cwd '/usr/lib/python3.9/site-packages'
+    cwd openstack_python_sitelib
     not_if { openstack_nova_pseries_acpi_patched? }
     notifies :restart, 'service[openstack-nova-compute]'
   end

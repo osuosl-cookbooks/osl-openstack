@@ -62,7 +62,7 @@ certificate_manage 'wildcard-identity' do
   notifies :reload, 'apache2_service[osuosl]'
 end
 
-endpoint = s['identity']['endpoint']
+endpoint = openstack_auth_endpoint
 admin_pass = s['users']['admin']
 fernet_keys = safe_dig(s, 'identity', 'fernet_keys')
 
@@ -97,10 +97,7 @@ template '/etc/keystone/keystone.conf' do
   sensitive true
   variables(
     endpoint: endpoint,
-    rabbit_quorum_queue: openstack_rabbit_quorum_queue?,
-    rabbit_tls: openstack_rabbit_tls?,
-    rabbit_ssl_ca_file: openstack_rabbit_ssl_ca_file,
-    transport_url: openstack_transport_url,
+    **openstack_messaging_template_vars,
     memcached_endpoint: openstack_memcached_servers,
     database_connection: openstack_database_connection('identity')
   )

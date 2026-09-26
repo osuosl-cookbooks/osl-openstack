@@ -26,7 +26,7 @@ include_recipe 'osl-ceph' unless openstack_local_storage_image
 
 s = os_secrets
 i = s['image']
-auth_endpoint = s['identity']['endpoint']
+auth_endpoint = openstack_auth_endpoint
 
 osl_openstack_user i['service']['user'] do
   domain_name 'default'
@@ -70,10 +70,7 @@ template '/etc/glance/glance-api.conf' do
     rbd_store_pool: safe_dig(i, 'ceph', 'rbd_store_pool'),
     rbd_store_user: safe_dig(i, 'ceph', 'rbd_store_user'),
     service_pass: i['service']['pass'],
-    rabbit_quorum_queue: openstack_rabbit_quorum_queue?,
-    rabbit_tls: openstack_rabbit_tls?,
-    rabbit_ssl_ca_file: openstack_rabbit_ssl_ca_file,
-    transport_url: openstack_transport_url
+    **openstack_messaging_template_vars
   )
   notifies :run, 'execute[glance: db_sync]', :immediately
   notifies :restart, 'service[openstack-glance-api]'
