@@ -18,11 +18,6 @@
 
 package 'crudini'
 
-service 'yum-cron' do
-  action [:stop, :disable]
-  not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/yoga-upgrade-done') }
-end
-
 service 'dnf-automatic.timer' do
   action [:stop, :disable]
   not_if { ::File.exist?('/root/upgrade-test') || ::File.exist?('/root/yoga-upgrade-done') }

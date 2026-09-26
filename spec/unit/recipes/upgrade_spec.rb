@@ -10,8 +10,6 @@ describe 'osl-openstack::upgrade' do
       include_context 'common_stubs'
 
       it { is_expected.to install_package 'crudini' }
-      it { is_expected.to stop_service 'yum-cron' }
-      it { is_expected.to disable_service 'yum-cron' }
       it { is_expected.to stop_service 'dnf-automatic.timer' }
       it { is_expected.to disable_service 'dnf-automatic.timer' }
       it { is_expected.to add_osl_repos_openstack 'upgrade' }
@@ -56,8 +54,6 @@ describe 'osl-openstack::upgrade' do
           allow(File).to receive(:exist?).with('/root/yoga-upgrade-done').and_return(true)
         end
         it { is_expected.to_not run_ruby_block 'raise_upgrade_exeception' }
-        it { is_expected.to_not stop_service 'yum-cron' }
-        it { is_expected.to_not disable_service 'yum-cron' }
         it { is_expected.to_not stop_service 'dnf-automatic.timer' }
         it { is_expected.to_not disable_service 'dnf-automatic.timer' }
       end
