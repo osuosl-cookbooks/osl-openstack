@@ -17,7 +17,7 @@ The compute recipe picks the KVM-capable kernel from the CPU:
 - POWER10: the CentOS Kmods SIG 6.18 kernel via `osl_repos_centos_kmods`,
   because AlmaLinux's `kernel-kvm` (5.14) lacks the nested-v2 support needed to
   host KVM guests inside a PowerVM LPAR
-- POWER8/POWER9 bare metal: AlmaLinux's `kernel-kvm`
+- POWER9 bare metal: AlmaLinux's `kernel-kvm`
 
 `kvm_hv` is only loaded when the running kernel ships it as a module, so the
 first converge on a new host installs the KVM kernel and the module loads

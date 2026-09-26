@@ -365,8 +365,6 @@ describe 'osl-openstack::compute' do
         it { is_expected.to load_kernel_module('kvm_hv') }
         it { is_expected.to_not install_kernel_module('kvm_intel') }
         it { is_expected.to_not install_kernel_module('kvm_amd') }
-        it { is_expected.to_not enable_service 'smt_off' }
-        it { is_expected.to_not start_service 'smt_off' }
 
         context 'KVM hypervisor' do
           cached(:chef_run) do
@@ -409,20 +407,6 @@ describe 'osl-openstack::compute' do
           expect(chef_run.execute('patch nova libvirt driver for pseries ACPI')).to \
             notify('service[openstack-nova-compute]').to(:restart)
         end
-        context 'power8' do
-          cached(:chef_run) do
-            ChefSpec::SoloRunner.new(pltfrm) do |node|
-              node.automatic['kernel']['machine'] = 'ppc64le'
-              node.automatic['cpu']['model_name'] = 'POWER8E (raw), altivec supported'
-            end.converge(described_recipe)
-          end
-          it { is_expected.to enable_service 'smt_off' }
-          it { is_expected.to start_service 'smt_off' }
-          it { is_expected.to install_package 'kernel-kvm' }
-          it { is_expected.to install_package 'patch' }
-          it { is_expected.to_not add_osl_repos_centos_kmods 'osl-openstack' }
-        end
-
         context 'power10' do
           cached(:chef_run) do
             ChefSpec::SoloRunner.new(pltfrm) do |node|
@@ -453,8 +437,6 @@ describe 'osl-openstack::compute' do
             it { is_expected.to_not install_kernel_module('kvm_hv') }
             it { is_expected.to_not load_kernel_module('kvm_hv') }
           end
-          it { is_expected.to_not enable_service 'smt_off' }
-          it { is_expected.to_not start_service 'smt_off' }
           it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/force_raw_images = false/) }
           it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/cpu_mode = none/) }
           it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/disk_cachemodes = file=writeback/) }

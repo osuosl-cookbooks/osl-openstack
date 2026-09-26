@@ -150,12 +150,6 @@ when 'ppc64le'
     # Absent from the stock kernel until the node reboots into kernel-kvm or the Kmods kernel
     only_if { kernel_module_available?('kvm_hv') }
   end
-
-  # SMT needs to be on POWER8 systems due to architecture limitations
-  # (unit is part of the powerpc-utils package)
-  service 'smt_off' do
-    action [:enable, :start]
-  end if openstack_power8?
 end
 
 # KSM is not available in VMs
