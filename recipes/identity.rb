@@ -16,10 +16,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-osl_repos_openstack 'identity'
-osl_openstack_client 'identity'
-osl_firewall_openstack 'identity'
-osl_openstack_openrc 'identity'
+osl_openstack_client 'identity' do
+  firewall true
+  openrc true
+end
 
 listen_ip = openstack_api_listen_ip
 node.default['osl-apache']['listen'] = %w(80 443).map { |p| "#{listen_ip}:#{p}" }

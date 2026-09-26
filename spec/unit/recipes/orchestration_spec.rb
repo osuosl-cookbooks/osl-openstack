@@ -9,20 +9,8 @@ describe 'osl-openstack::orchestration' do
 
       include_context 'common_stubs'
 
-      it { is_expected.to add_osl_repos_openstack 'orchestration' }
-      it { is_expected.to create_osl_openstack_client 'orchestration' }
-      it { is_expected.to accept_osl_firewall_openstack 'orchestration' }
-      it do
-        is_expected.to create_osl_openstack_user('heat').with(
-          domain_name: 'default',
-          role_name: 'admin',
-          project_name: 'service',
-          password: 'heat'
-        )
-      end
-      it { is_expected.to grant_role_osl_openstack_user 'heat' }
-      it { is_expected.to create_osl_openstack_service('heat').with(type: 'orchestration') }
-      it { is_expected.to create_osl_openstack_service('heat-cfn').with(type: 'cloudformation') }
+      it { is_expected.to create_osl_openstack_client('orchestration').with(firewall: true, openrc: false) }
+      it { is_expected.to create_osl_openstack_service_user('heat').with(password: 'heat') }
       it { is_expected.to create_osl_openstack_domain('heat') }
       it do
         is_expected.to create_osl_openstack_user('heat_domain_admin').with(
@@ -35,29 +23,21 @@ describe 'osl-openstack::orchestration' do
       it { is_expected.to grant_domain_osl_openstack_user 'heat_domain_admin' }
       it { is_expected.to create_osl_openstack_role('heat_stack_owner') }
       it { is_expected.to create_osl_openstack_role('heat_stack_user') }
-      %w(
-        admin
-        internal
-        public
-      ).each do |int|
-        it do
-          is_expected.to create_osl_openstack_endpoint("orchestration-#{int}").with(
-            endpoint_name: 'orchestration',
-            service_name: 'heat',
-            interface: int,
-            url: 'http://controller.testing.osuosl.org:8004/v1/%(tenant_id)s',
-            region: 'RegionOne'
-          )
-        end
-        it do
-          is_expected.to create_osl_openstack_endpoint("cloudformation-#{int}").with(
-            endpoint_name: 'cloudformation',
-            service_name: 'heat-cfn',
-            interface: int,
-            url: 'http://controller.testing.osuosl.org:8000/v1',
-            region: 'RegionOne'
-          )
-        end
+      it do
+        is_expected.to create_osl_openstack_api('heat').with(
+          type: 'orchestration',
+          endpoint_name: 'orchestration',
+          url: 'http://controller.testing.osuosl.org:8004/v1/%(tenant_id)s',
+          region: 'RegionOne'
+        )
+      end
+      it do
+        is_expected.to create_osl_openstack_api('heat-cfn').with(
+          type: 'cloudformation',
+          endpoint_name: 'cloudformation',
+          url: 'http://controller.testing.osuosl.org:8000/v1',
+          region: 'RegionOne'
+        )
       end
       it do
         is_expected.to install_package(

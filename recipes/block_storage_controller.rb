@@ -17,9 +17,9 @@
 # limitations under the License.
 #
 
-osl_repos_openstack 'block-storage-controller'
-osl_openstack_client 'block-storage-controller'
-osl_firewall_openstack 'block-storage-controller'
+osl_openstack_client 'block-storage-controller' do
+  firewall true
+end
 
 s = os_secrets
 b = s['block-storage']
@@ -27,40 +27,15 @@ b = s['block-storage']
 include_recipe 'osl-apache'
 include_recipe 'osl-apache::mod_wsgi'
 
-osl_openstack_user b['service']['user'] do
-  domain_name 'default'
-  role_name 'admin'
-  project_name 'service'
+osl_openstack_service_user b['service']['user'] do
   password b['service']['pass']
-  action [:create, :grant_role]
 end
 
-osl_openstack_service 'cinderv2' do
-  type 'volumev2'
-end
-
-osl_openstack_service 'cinderv3' do
-  type 'volumev3'
-end
-
-%w(
-  admin
-  internal
-  public
-).each do |int|
-  osl_openstack_endpoint "volumev2-#{int}" do
-    endpoint_name 'volumev2'
-    service_name 'cinderv2'
-    interface int
-    url "http://#{b['endpoint']}:8776/v2/%(project_id)s"
-    region b['region']
-  end
-
-  osl_openstack_endpoint "volumev3-#{int}" do
-    endpoint_name 'volumev3'
-    service_name 'cinderv3'
-    interface int
-    url "http://#{b['endpoint']}:8776/v3/%(project_id)s"
+%w(v2 v3).each do |v|
+  osl_openstack_api "cinder#{v}" do
+    type "volume#{v}"
+    endpoint_name "volume#{v}"
+    url "http://#{b['endpoint']}:8776/#{v}/%(project_id)s"
     region b['region']
   end
 end

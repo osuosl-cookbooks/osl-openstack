@@ -11,10 +11,7 @@ describe 'osl-openstack::identity' do
 
       include_context 'common_stubs'
 
-      it { is_expected.to add_osl_repos_openstack 'identity' }
-      it { is_expected.to create_osl_openstack_client 'identity' }
-      it { is_expected.to accept_osl_firewall_openstack 'identity' }
-      it { is_expected.to create_osl_openstack_openrc 'identity' }
+      it { is_expected.to create_osl_openstack_client('identity').with(firewall: true, openrc: true) }
 
       describe 'osl_openstack_openrc' do
         it { is_expected.to add_osl_repos_openstack 'default' }

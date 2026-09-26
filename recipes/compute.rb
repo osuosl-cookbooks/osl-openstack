@@ -17,10 +17,10 @@
 # limitations under the License.
 #
 
-osl_repos_openstack 'compute'
-osl_openstack_client 'compute'
-osl_openstack_openrc 'compute'
-osl_firewall_openstack 'compute'
+osl_openstack_client 'compute' do
+  firewall true
+  openrc true
+end
 osl_firewall_vnc 'osl-openstack'
 osl_firewall_hpnssh 'osl-openstack'
 osl_hpnssh 'osl-openstack' do

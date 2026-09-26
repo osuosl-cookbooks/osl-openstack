@@ -9,34 +9,16 @@ describe 'osl-openstack::image' do
 
       include_context 'common_stubs'
 
-      it { is_expected.to add_osl_repos_openstack 'image' }
-      it { is_expected.to create_osl_openstack_client 'image' }
-      it { is_expected.to accept_osl_firewall_openstack 'image' }
+      it { is_expected.to create_osl_openstack_client('image').with(firewall: true, openrc: true) }
       it { is_expected.to include_recipe 'osl-ceph' }
+      it { is_expected.to create_osl_openstack_service_user('glance').with(password: 'glance') }
       it do
-        is_expected.to create_osl_openstack_user('glance').with(
-          domain_name: 'default',
-          role_name: 'admin',
-          project_name: 'service',
-          password: 'glance'
+        is_expected.to create_osl_openstack_api('glance').with(
+          type: 'image',
+          endpoint_name: 'image',
+          url: 'http://controller.testing.osuosl.org:9292',
+          region: 'RegionOne'
         )
-      end
-      it { is_expected.to grant_role_osl_openstack_user 'glance' }
-      it { is_expected.to create_osl_openstack_service('glance').with(type: 'image') }
-      %w(
-        admin
-        internal
-        public
-      ).each do |int|
-        it do
-          is_expected.to create_osl_openstack_endpoint("image-#{int}").with(
-            endpoint_name: 'image',
-            service_name: 'glance',
-            interface: int,
-            url: 'http://controller.testing.osuosl.org:9292',
-            region: 'RegionOne'
-          )
-        end
       end
       it { is_expected.to install_package 'openstack-glance' }
       it do
@@ -150,20 +132,13 @@ describe 'osl-openstack::image' do
 
         include_context 'region2_stubs'
 
-        %w(
-          admin
-          internal
-          public
-        ).each do |int|
-          it do
-            is_expected.to create_osl_openstack_endpoint("image-#{int}").with(
-              endpoint_name: 'image',
-              service_name: 'glance',
-              interface: int,
-              url: 'http://controller_region2.testing.osuosl.org:9292',
-              region: 'RegionTwo'
-            )
-          end
+        it do
+          is_expected.to create_osl_openstack_api('glance').with(
+            type: 'image',
+            endpoint_name: 'image',
+            url: 'http://controller_region2.testing.osuosl.org:9292',
+            region: 'RegionTwo'
+          )
         end
 
         it do
@@ -191,6 +166,40 @@ describe 'osl-openstack::image' do
 
         it { is_expected.to_not create_group 'ceph-image' }
         it { is_expected.to_not create_osl_ceph_keyring 'glance' }
+      end
+
+      context 'stepping into the client, service user and api resources' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm.merge(
+            step_into: %w(osl_openstack_client osl_openstack_service_user osl_openstack_api)
+          )).converge(described_recipe)
+        end
+
+        it { is_expected.to add_osl_repos_openstack 'default' }
+        it { is_expected.to install_package %w(openstack-selinux python3-openstackclient) }
+        it { is_expected.to create_osl_openstack_openrc 'image' }
+        it { is_expected.to accept_osl_firewall_openstack 'image' }
+        it do
+          is_expected.to create_osl_openstack_user('glance').with(
+            domain_name: 'default',
+            role_name: 'admin',
+            project_name: 'service',
+            password: 'glance'
+          )
+        end
+        it { is_expected.to grant_role_osl_openstack_user 'glance' }
+        it { is_expected.to create_osl_openstack_service('glance').with(type: 'image') }
+        %w(admin internal public).each do |int|
+          it do
+            is_expected.to create_osl_openstack_endpoint("image-#{int}").with(
+              endpoint_name: 'image',
+              service_name: 'glance',
+              interface: int,
+              url: 'http://controller.testing.osuosl.org:9292',
+              region: 'RegionOne'
+            )
+          end
+        end
       end
     end
   end

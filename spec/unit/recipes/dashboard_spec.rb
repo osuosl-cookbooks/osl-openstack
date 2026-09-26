@@ -11,9 +11,7 @@ describe 'osl-openstack::dashboard' do
 
       include_context 'common_stubs'
 
-      it { is_expected.to add_osl_repos_openstack 'dashboard' }
-      it { is_expected.to create_osl_openstack_client 'dashboard' }
-      it { is_expected.to accept_osl_firewall_openstack 'dashboard' }
+      it { is_expected.to create_osl_openstack_client('dashboard').with(firewall: true, openrc: true) }
       %w(
         osl-apache
         osl-apache::mod_wsgi

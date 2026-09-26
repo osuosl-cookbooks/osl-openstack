@@ -9,45 +9,25 @@ describe 'osl-openstack::block_storage_controller' do
 
       include_context 'common_stubs'
 
-      it { is_expected.to add_osl_repos_openstack 'block-storage-controller' }
-      it { is_expected.to create_osl_openstack_client 'block-storage-controller' }
-      it { is_expected.to accept_osl_firewall_openstack 'block-storage-controller' }
+      it { is_expected.to create_osl_openstack_client('block-storage-controller').with(firewall: true, openrc: false) }
       it { is_expected.to include_recipe 'osl-apache' }
       it { is_expected.to include_recipe 'osl-apache::mod_wsgi' }
+      it { is_expected.to create_osl_openstack_service_user('cinder').with(password: 'cinder') }
       it do
-        is_expected.to create_osl_openstack_user('cinder').with(
-          domain_name: 'default',
-          role_name: 'admin',
-          project_name: 'service',
-          password: 'cinder'
+        is_expected.to create_osl_openstack_api('cinderv2').with(
+          type: 'volumev2',
+          endpoint_name: 'volumev2',
+          url: 'http://controller.testing.osuosl.org:8776/v2/%(project_id)s',
+          region: 'RegionOne'
         )
       end
-      it { is_expected.to grant_role_osl_openstack_user 'cinder' }
-      it { is_expected.to create_osl_openstack_service('cinderv2').with(type: 'volumev2') }
-      it { is_expected.to create_osl_openstack_service('cinderv3').with(type: 'volumev3') }
-      %w(
-        admin
-        internal
-        public
-      ).each do |int|
-        it do
-          is_expected.to create_osl_openstack_endpoint("volumev2-#{int}").with(
-            endpoint_name: 'volumev2',
-            service_name: 'cinderv2',
-            interface: int,
-            url: 'http://controller.testing.osuosl.org:8776/v2/%(project_id)s',
-            region: 'RegionOne'
-          )
-        end
-        it do
-          is_expected.to create_osl_openstack_endpoint("volumev3-#{int}").with(
-            endpoint_name: 'volumev3',
-            service_name: 'cinderv3',
-            interface: int,
-            url: 'http://controller.testing.osuosl.org:8776/v3/%(project_id)s',
-            region: 'RegionOne'
-          )
-        end
+      it do
+        is_expected.to create_osl_openstack_api('cinderv3').with(
+          type: 'volumev3',
+          endpoint_name: 'volumev3',
+          url: 'http://controller.testing.osuosl.org:8776/v3/%(project_id)s',
+          region: 'RegionOne'
+        )
       end
       it { is_expected.to include_recipe 'osl-openstack::block_storage_common' }
       it { is_expected.to install_package 'openstack-cinder' }

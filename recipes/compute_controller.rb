@@ -17,9 +17,9 @@
 # limitations under the License.
 #
 
-osl_repos_openstack 'compute'
-osl_openstack_client 'compute'
-osl_firewall_openstack 'compute'
+osl_openstack_client 'compute' do
+  firewall true
+end
 
 s = os_secrets
 c = s['compute']
@@ -29,50 +29,27 @@ auth_endpoint = openstack_auth_endpoint
 include_recipe 'osl-apache'
 include_recipe 'osl-apache::mod_wsgi'
 
-osl_openstack_user p['service']['user'] do
-  domain_name 'default'
-  role_name 'admin'
-  project_name 'service'
+osl_openstack_service_user p['service']['user'] do
   password p['service']['pass']
-  action [:create, :grant_role]
 end
 
-osl_openstack_user c['service']['user'] do
-  domain_name 'default'
-  role_name 'admin'
-  project_name 'service'
+osl_openstack_service_user c['service']['user'] do
   password c['service']['pass']
-  action [:create, :grant_role]
 end
 
-osl_openstack_service 'placement' do
+osl_openstack_api 'placement' do
   type 'placement'
+  endpoint_name 'placement'
+  url "http://#{p['endpoint']}:8778"
+  region c['region']
 end
 
-osl_openstack_service 'nova' do
+# nova-api shares the placement host in every cloud
+osl_openstack_api 'nova' do
   type 'compute'
-end
-
-%w(
-  admin
-  internal
-  public
-).each do |int|
-  osl_openstack_endpoint "placement-#{int}" do
-    endpoint_name 'placement'
-    service_name 'placement'
-    interface int
-    url "http://#{p['endpoint']}:8778"
-    region c['region']
-  end
-
-  osl_openstack_endpoint "compute-#{int}" do
-    endpoint_name 'compute'
-    service_name 'nova'
-    interface int
-    url "http://#{p['endpoint']}:8774/v2.1"
-    region c['region']
-  end
+  endpoint_name 'compute'
+  url "http://#{p['endpoint']}:8774/v2.1"
+  region c['region']
 end
 
 package openstack_compute_controller_pkgs

@@ -17,19 +17,15 @@
 # limitations under the License.
 #
 
-osl_repos_openstack 'telemetry-controller'
-osl_openstack_client 'telemetry-controller'
-osl_firewall_openstack 'telemetry-controller'
+osl_openstack_client 'telemetry-controller' do
+  firewall true
+end
 
 s = os_secrets
 t = s['telemetry']
 
-osl_openstack_user t['service']['user'] do
-  domain_name 'default'
-  role_name 'admin'
-  project_name 'service'
+osl_openstack_service_user t['service']['user'] do
   password t['service']['pass']
-  action [:create, :grant_role]
 end
 
 package %w(

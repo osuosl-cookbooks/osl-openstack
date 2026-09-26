@@ -10,10 +10,7 @@ describe 'osl-openstack::compute' do
       include_context 'common_stubs'
       include_context 'compute_stubs'
 
-      it { is_expected.to add_osl_repos_openstack 'compute' }
-      it { is_expected.to create_osl_openstack_client 'compute' }
-      it { is_expected.to create_osl_openstack_openrc 'compute' }
-      it { is_expected.to accept_osl_firewall_openstack 'compute' }
+      it { is_expected.to create_osl_openstack_client('compute').with(firewall: true, openrc: true) }
       it { is_expected.to accept_osl_firewall_hpnssh 'osl-openstack' }
       it { is_expected.to install_osl_hpnssh 'osl-openstack' }
       it { is_expected.to include_recipe 'osl-ceph' }
@@ -451,7 +448,7 @@ describe 'osl-openstack::compute' do
       context 'region2 w/o ceph' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm.dup.merge(
-            step_into: %w(osl_openstack_openrc)
+            step_into: %w(osl_openstack_client osl_openstack_openrc)
           )) do |node|
             node.automatic['fqdn'] = 'node1.testing.osuosl.org'
           end.converge(described_recipe)

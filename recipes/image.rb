@@ -17,10 +17,10 @@
 # limitations under the License.
 #
 
-osl_repos_openstack 'image'
-osl_openstack_client 'image'
-osl_openstack_openrc 'image'
-osl_firewall_openstack 'image'
+osl_openstack_client 'image' do
+  firewall true
+  openrc true
+end
 
 include_recipe 'osl-ceph' unless openstack_local_storage_image
 
@@ -28,30 +28,15 @@ s = os_secrets
 i = s['image']
 auth_endpoint = openstack_auth_endpoint
 
-osl_openstack_user i['service']['user'] do
-  domain_name 'default'
-  role_name 'admin'
-  project_name 'service'
+osl_openstack_service_user i['service']['user'] do
   password i['service']['pass']
-  action [:create, :grant_role]
 end
 
-osl_openstack_service 'glance' do
+osl_openstack_api 'glance' do
   type 'image'
-end
-
-%w(
-  admin
-  internal
-  public
-).each do |int|
-  osl_openstack_endpoint "image-#{int}" do
-    endpoint_name 'image'
-    service_name 'glance'
-    interface int
-    url "http://#{i['endpoint']}:9292"
-    region i['region']
-  end
+  endpoint_name 'image'
+  url "http://#{i['endpoint']}:9292"
+  region i['region']
 end
 
 package 'openstack-glance'

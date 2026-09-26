@@ -11,54 +11,26 @@ describe 'osl-openstack::compute_controller' do
 
       include_context 'common_stubs'
 
-      it { is_expected.to add_osl_repos_openstack 'compute' }
-      it { is_expected.to create_osl_openstack_client 'compute' }
-      it { is_expected.to accept_osl_firewall_openstack 'compute' }
+      it { is_expected.to create_osl_openstack_client('compute').with(firewall: true, openrc: false) }
       it { is_expected.to include_recipe 'osl-apache' }
       it { is_expected.to include_recipe 'osl-apache::mod_wsgi' }
+      it { is_expected.to create_osl_openstack_service_user('nova').with(password: 'nova') }
+      it { is_expected.to create_osl_openstack_service_user('placement').with(password: 'placement') }
       it do
-        is_expected.to create_osl_openstack_user('nova').with(
-          domain_name: 'default',
-          role_name: 'admin',
-          project_name: 'service',
-          password: 'nova'
+        is_expected.to create_osl_openstack_api('placement').with(
+          type: 'placement',
+          endpoint_name: 'placement',
+          url: 'http://controller.testing.osuosl.org:8778',
+          region: 'RegionOne'
         )
       end
       it do
-        is_expected.to create_osl_openstack_user('placement').with(
-          domain_name: 'default',
-          role_name: 'admin',
-          project_name: 'service',
-          password: 'placement'
+        is_expected.to create_osl_openstack_api('nova').with(
+          type: 'compute',
+          endpoint_name: 'compute',
+          url: 'http://controller.testing.osuosl.org:8774/v2.1',
+          region: 'RegionOne'
         )
-      end
-      it { is_expected.to grant_role_osl_openstack_user 'nova' }
-      it { is_expected.to grant_role_osl_openstack_user 'placement' }
-      it { is_expected.to create_osl_openstack_service('nova').with(type: 'compute') }
-      it { is_expected.to create_osl_openstack_service('placement').with(type: 'placement') }
-      %w(
-        admin
-        internal
-        public
-      ).each do |int|
-        it do
-          is_expected.to create_osl_openstack_endpoint("placement-#{int}").with(
-            endpoint_name: 'placement',
-            service_name: 'placement',
-            interface: int,
-            url: 'http://controller.testing.osuosl.org:8778',
-            region: 'RegionOne'
-          )
-        end
-        it do
-          is_expected.to create_osl_openstack_endpoint("compute-#{int}").with(
-            endpoint_name: 'compute',
-            service_name: 'nova',
-            interface: int,
-            url: 'http://controller.testing.osuosl.org:8774/v2.1',
-            region: 'RegionOne'
-          )
-        end
       end
       it do
         is_expected.to install_package %w(

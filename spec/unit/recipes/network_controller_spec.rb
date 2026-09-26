@@ -24,33 +24,15 @@ describe 'osl-openstack::network_controller' do
           .and_return(true)
       end
 
-      it { is_expected.to add_osl_repos_openstack 'network' }
-      it { is_expected.to create_osl_openstack_client 'network' }
-      it { is_expected.to accept_osl_firewall_openstack 'network' }
+      it { is_expected.to create_osl_openstack_client('network').with(firewall: true, openrc: false) }
+      it { is_expected.to create_osl_openstack_service_user('neutron').with(password: 'neutron') }
       it do
-        is_expected.to create_osl_openstack_user('neutron').with(
-          domain_name: 'default',
-          role_name: 'admin',
-          project_name: 'service',
-          password: 'neutron'
+        is_expected.to create_osl_openstack_api('neutron').with(
+          type: 'network',
+          endpoint_name: 'network',
+          url: 'http://controller.testing.osuosl.org:9696',
+          region: 'RegionOne'
         )
-      end
-      it { is_expected.to grant_role_osl_openstack_user 'neutron' }
-      it { is_expected.to create_osl_openstack_service('neutron').with(type: 'network') }
-      %w(
-        admin
-        internal
-        public
-      ).each do |int|
-        it do
-          is_expected.to create_osl_openstack_endpoint("network-#{int}").with(
-            endpoint_name: 'network',
-            service_name: 'neutron',
-            interface: int,
-            url: 'http://controller.testing.osuosl.org:9696',
-            region: 'RegionOne'
-          )
-        end
       end
       it do
         is_expected.to install_package %w(
@@ -259,20 +241,13 @@ describe 'osl-openstack::network_controller' do
         end
 
         include_context 'region2_stubs'
-        %w(
-          admin
-          internal
-          public
-        ).each do |int|
-          it do
-            is_expected.to create_osl_openstack_endpoint("network-#{int}").with(
-              endpoint_name: 'network',
-              service_name: 'neutron',
-              interface: int,
-              url: 'http://controller_region2.testing.osuosl.org:9696',
-              region: 'RegionTwo'
-            )
-          end
+        it do
+          is_expected.to create_osl_openstack_api('neutron').with(
+            type: 'network',
+            endpoint_name: 'network',
+            url: 'http://controller_region2.testing.osuosl.org:9696',
+            region: 'RegionTwo'
+          )
         end
 
         it do

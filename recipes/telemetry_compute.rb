@@ -17,9 +17,9 @@
 # limitations under the License.
 #
 
-osl_repos_openstack 'telemetry'
-osl_openstack_client 'telemetry'
-osl_firewall_openstack 'telemetry'
+osl_openstack_client 'telemetry' do
+  firewall true
+end
 
 include_recipe 'osl-openstack::telemetry_common'
 
