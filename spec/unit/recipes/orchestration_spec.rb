@@ -9,6 +9,8 @@ describe 'osl-openstack::orchestration' do
 
       include_context 'common_stubs'
 
+      it_behaves_like 'oslo messaging config', '/etc/heat/heat.conf'
+
       it { is_expected.to create_osl_openstack_client('orchestration').with(firewall: true, openrc: false) }
       it { is_expected.to create_osl_openstack_service_user('heat').with(password: 'heat') }
       it { is_expected.to create_osl_openstack_domain('heat') }
@@ -64,10 +66,7 @@ describe 'osl-openstack::orchestration' do
             memcached_endpoint: 'controller.testing.osuosl.org:11211',
             region: 'RegionOne',
             service_pass: 'heat',
-            rabbit_quorum_queue: false,
-            rabbit_tls: false,
-            rabbit_ssl_ca_file: nil,
-            transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672/',
+            **messaging_vars,
           }
         )
       end

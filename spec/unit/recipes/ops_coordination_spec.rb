@@ -1,15 +1,12 @@
 require_relative '../../spec_helper'
 
 describe 'osl-openstack::ops_coordination' do
-  # The coordination tier runs on the EL10 mq nodes only, so other
-  # platforms are deliberately not tested. The valkey/sentinel
-  # mechanics (configs, services, firewall) are covered by the
-  # osl-valkey cookbook's own specs; here we assert the data bag to
-  # resource mapping.
+  # EL10 mq nodes only; osl-valkey's specs cover the valkey mechanics, so
+  # this asserts the data bag to resource mapping
   [ALMA_10].each do |pltfrm|
     context "#{pltfrm[:platform]} #{pltfrm[:version]}" do
       cached(:chef_run) do
-        ChefSpec::SoloRunner.new(pltfrm.dup.merge(
+        ChefSpec::SoloRunner.new(pltfrm.merge(
           step_into: %w(osl_openstack_coordination)
         )).converge(described_recipe)
       end
@@ -19,7 +16,7 @@ describe 'osl-openstack::ops_coordination' do
       # Single standalone node, like the messaging_tier kitchen suite.
       before do
         stub_data_bag_item('openstack', 'x86').and_return(
-          openstack_secrets_stub.merge('coordination' => { 'pass' => 'oslocks' })
+          openstack_secrets_stub('coordination' => { 'pass' => 'oslocks' })
         )
       end
 
@@ -46,23 +43,15 @@ describe 'osl-openstack::ops_coordination' do
 
       context 'tier primary' do
         cached(:chef_run) do
-          ChefSpec::SoloRunner.new(pltfrm.dup.merge(
+          ChefSpec::SoloRunner.new(pltfrm.merge(
             step_into: %w(osl_openstack_coordination)
           )) { |node| node.automatic['hostname'] = 'mq1' }.converge(described_recipe)
         end
 
         before do
           stub_data_bag_item('openstack', 'x86').and_return(
-            openstack_secrets_stub.merge(
-              'coordination' => {
-                'endpoint' => %w(
-                  mq1.testing.osuosl.org
-                  mq2.testing.osuosl.org
-                  mq3.testing.osuosl.org
-                ),
-                'primary' => 'mq1.testing.osuosl.org',
-                'pass' => 'oslocks',
-              }
+            openstack_secrets_stub(
+              'coordination' => coordination_tier_secrets
             )
           )
         end
@@ -83,23 +72,15 @@ describe 'osl-openstack::ops_coordination' do
 
       context 'tier replica' do
         cached(:chef_run) do
-          ChefSpec::SoloRunner.new(pltfrm.dup.merge(
+          ChefSpec::SoloRunner.new(pltfrm.merge(
             step_into: %w(osl_openstack_coordination)
           )) { |node| node.automatic['hostname'] = 'mq2' }.converge(described_recipe)
         end
 
         before do
           stub_data_bag_item('openstack', 'x86').and_return(
-            openstack_secrets_stub.merge(
-              'coordination' => {
-                'endpoint' => %w(
-                  mq1.testing.osuosl.org
-                  mq2.testing.osuosl.org
-                  mq3.testing.osuosl.org
-                ),
-                'primary' => 'mq1.testing.osuosl.org',
-                'pass' => 'oslocks',
-              }
+            openstack_secrets_stub(
+              'coordination' => coordination_tier_secrets
             )
           )
         end
@@ -120,14 +101,14 @@ describe 'osl-openstack::ops_coordination' do
 
       context 'custom tuning' do
         cached(:chef_run) do
-          ChefSpec::SoloRunner.new(pltfrm.dup.merge(
+          ChefSpec::SoloRunner.new(pltfrm.merge(
             step_into: %w(osl_openstack_coordination)
           )).converge(described_recipe)
         end
 
         before do
           stub_data_bag_item('openstack', 'x86').and_return(
-            openstack_secrets_stub.merge(
+            openstack_secrets_stub(
               'coordination' => {
                 'pass' => 'oslocks',
                 'service_name' => 'oslocks2',

@@ -77,50 +77,11 @@ describe 'osl-openstack::compute' do
           group: 'nova',
           mode: '0640',
           sensitive: true,
-          variables: {
-            allow_resize_to_same_host: nil,
-            api_database_connection: 'mysql+pymysql://nova_x86:nova@localhost:3306/nova_api_x86',
-            auth_endpoint: 'controller.testing.osuosl.org',
-            cinder_disabled: false,
-            cpu_allocation_ratio: nil,
-            database_connection: 'mysql+pymysql://nova_x86:nova@localhost:3306/nova_x86',
-            disk_allocation_ratio: '1.5',
-            enabled_filters: %w(
-              AggregateInstanceExtraSpecsFilter
-              PciPassthroughFilter
-              AvailabilityZoneFilter
-              ComputeFilter
-              ComputeCapabilitiesFilter
-              ImagePropertiesFilter
-              ServerGroupAntiAffinityFilter
-              ServerGroupAffinityFilter
-            ),
-            endpoint: 'controller.testing.osuosl.org',
-            image_api_servers: 'http://controller.testing.osuosl.org:9292',
-            images_rbd_pool: 'vms',
-            listen_ip: '*',
-            local_storage: false,
-            memcached_endpoint: 'controller.testing.osuosl.org:11211',
-            metadata_proxy_shared_secret: '2SJh0RuO67KpZ63z',
-            neutron_pass: 'neutron',
-            pci_alias: nil,
-            pci_passthrough_whitelist: nil,
-            placement_pass: 'placement',
-            power10: false,
-            ram_allocation_ratio: nil,
-            rbd_secret_uuid: '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8',
-            rbd_user: 'cinder',
-            region: 'RegionOne',
-            service_pass: 'nova',
-            rabbit_quorum_queue: false,
-            rabbit_tls: false,
-            rabbit_ssl_ca_file: nil,
-            transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672/',
-          }
+          variables: nova_conf_vars
         )
       end
 
-      it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/force_raw_images = False/) }
+      it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/^force_raw_images = true$/) }
       it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/cpu_mode = none/) }
       it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/disk_cachemodes = file=writeback/) }
       it do
@@ -128,10 +89,7 @@ describe 'osl-openstack::compute' do
           expect(c[/^\[neutron\]\n(?:[^\[].*\n)*/]).to_not include('disk_allocation_ratio')
         }
       end
-      # Renders even without quorum queues or TLS
-      it { is_expected.to render_file('/etc/nova/nova.conf').with_content('[oslo_messaging_rabbit]') }
-      it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/^heartbeat_in_pthread = false$/) }
-      it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/^rabbit_quorum_queue/) }
+      it_behaves_like 'oslo messaging config', '/etc/nova/nova.conf'
       # nova-manage and any tokenless admin context need [cinder] credentials;
       # API-driven calls forward the user's token and never reach this
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/^auth_type = password$/) }
@@ -174,16 +132,7 @@ describe 'osl-openstack::compute' do
       it { is_expected.to enable_service 'ksmtuned' }
       it { is_expected.to start_service 'ksmtuned' }
 
-      # KSM should not be installed when running in a VM (guest)
-      context 'when running in a VM' do
-        cached(:chef_run) do
-          ChefSpec::SoloRunner.new(ALMA_9) do |node|
-            node.automatic['virtualization']['role'] = 'guest'
-          end.converge(described_recipe)
-        end
-        include_context 'common_stubs'
-        include_context 'compute_stubs'
-
+      shared_examples 'no KSM in a guest' do
         it { is_expected.to_not install_package 'ksmtuned' }
         it { is_expected.to_not create_template '/etc/ksmtuned.conf' }
         it { is_expected.to_not enable_service 'ksm' }
@@ -192,23 +141,16 @@ describe 'osl-openstack::compute' do
         it { is_expected.to_not start_service 'ksmtuned' }
       end
 
-      # KSM should not be installed on ppc64le qemu guests
-      context 'when running in a ppc64le qemu guest' do
+      context 'AMD guest' do
         cached(:chef_run) do
-          ChefSpec::SoloRunner.new(ALMA_9) do |node|
-            node.automatic['kernel']['machine'] = 'ppc64le'
-            node.automatic['cpu']['machine'] = 'CHRP IBM pSeries (emulated by qemu)'
+          ChefSpec::SoloRunner.new(pltfrm) do |node|
+            node.automatic['virtualization']['role'] = 'guest'
+            node.automatic['dmi']['processor']['manufacturer'] = 'AMD'
           end.converge(described_recipe)
         end
-        include_context 'common_stubs'
-        include_context 'compute_stubs'
 
-        it { is_expected.to_not install_package 'ksmtuned' }
-        it { is_expected.to_not create_template '/etc/ksmtuned.conf' }
-        it { is_expected.to_not enable_service 'ksm' }
-        it { is_expected.to_not start_service 'ksm' }
-        it { is_expected.to_not enable_service 'ksmtuned' }
-        it { is_expected.to_not start_service 'ksmtuned' }
+        it_behaves_like 'no KSM in a guest'
+        it { is_expected.to install_kernel_module('kvm_amd').with(options: %w(nested=1)) }
       end
 
       it { is_expected.to install_kernel_module('kvm_intel').with(options: %w(nested=1)) }
@@ -271,13 +213,13 @@ describe 'osl-openstack::compute' do
       it do
         is_expected.to add_osl_authorized_keys('nova_public_key').with(
           user: 'nova',
-          key: ['ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDYOuLkP1F/Sm/dCJAA7kme+ObO4J8x2HrZU40W8QqW4yFqRPKnW5HYLeUpRzIFzWen/LIn6R6lxTfSAnnD8qEEuKbFjH5WRqJYCJeAyaTBTRyU1FHlcTR/EQ/HVZ38TQwCztZgboFb5zmWqYc3/BYBHGA6XeYN5jRcHvZbyaGL+YA1/KPIjpbQfqIPXdHfodoSNX4qQQccYBq2c/rq3Puh7Q9oVph6a2lq0wWsqYyq0vTGHPKFYShVpwDl2Z3c8eB3P7yFRzOR2VNuezJlOgoHz6D/mBObLj1n+yi07bcGbpwAH/rLEyiy4gVdru2qQAcbDL9Yibk96lovim/IH4dV nova-migration'],
+          key: [OPENSTACK_SECRETS['compute']['nova_public_key']],
           dir_path: '/var/lib/nova/.ssh'
         )
       end
       it do
         is_expected.to add_osl_ssh_key('nova_migration_key').with(
-          content: "----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA2Dri5D9Rf0pv3QiQAO5JnvjmzuCfMdh62VONFvEKluMhakTy\np1uR2C3lKUcyBc1np/yyJ+kepcU30gJ5w/KhBLimxYx+VkaiWAiXgMmkwU0clNRR\n5XE0fxEPx1Wd/E0MAs7WYG6BW+c5lqmHN/wWARxgOl3mDeY0XB72W8mhi/mANfyj\nyI6W0H6iD13R36HaEjV+KkEHHGAatnP66tz7oe0PaFaYemtpatMFrKmMqtL0xhzy\nhWEoVacA5dmd3PHgdz+8hUczkdlTbnsyZToKB8+g/5gTmy49Z/sotO23Bm6cAB/6\nyxMosuIFXa7tqkAHGwy/WIm5PepaL4pvyB+HVQIDAQABAoIBAQCgKE2yPewBWoMs\ntpDi/5xsMXPTu7BuXSfxHN+eJH9xb15qthL9PufxtVzNjDxS6+dhF9xlj1fx9Pf5\nh3flWStGsfZk0EErajoI9qQw8iokOxd2bSUTyxvVGjATtyjDndXNpqJG3tLV3Zhc\nLclIAGHUBM6JrM8fcGlL6msTZW9QmupEU69ih0rHGR50in2e+Ofp6TWPbwH2PoRn\nvj3SOyBAOfZMpsTweYwZm/FhkpSY+lxXbsPgEasJNm0/F46U7CHlQVSUY248Y+eB\nDzNI7MC5bknqbWg0TDOQtw41RLaGdVUQy9wqC/UlOWb4mteEZXIx3tfNb5W/5V7G\nYedSjwgpAoGBAPQiCzsWTdC7cR9YbF4d8Tv9uKNCmZG1Q4dxTnhQJcSFsBTr2f2a\nps3Ej3nW0wQZfVOVaU6dUcyQxgm4x2fi+TqhAVGdRLSA8iSJTpC99RUn/JdAW/UA\ngvGI0iCrkq/BYCjjrKI7ZsHv6urE3I0jnh5+H969BsZ6XR6IntwmDshrAoGBAOK9\nnzlOEZO54VGTRuBF1m0E3GBsVDhrsoFpZSVcgv3h84MK2idMP0XvEBxvOI/I2hGI\nkVJ23axxWEmpGzWrBNuJrC0sQKD3g6rdwXSwPsGk0OEXyQVrC3LfLZf3iS+GDSI7\nUYPL01joCXy99fQPCf/dCdpviAlZVO/mlO4Tdd8/AoGAHEQk0L6QW+6X9m0ifvMw\njyWdTynS5g/6tZ/k2gFNnidsb7+vCbHyRjjP8+dvnzXkUN0nyDZm1iydAVsnm1uo\nR6WEpZJz9gJIBvru4ctcqQpsMIb/Hqrkflq9GZND9J2LKLDTuCTwjNveczg/4QeS\nsy0fO4bfVfOs/HANFKhDZekCgYBnEalyZDGLRIDPEzKxui1Zy07eKgAy0YoIV7+Z\nty74d6C5HdLC8F8GzEA3nLtKaRPvynO817m2rKNkgJGU2NPRdAinVClgwoLAxiMt\nhvxQDDrDR4uigeFna1oPbX+X8cjAmdRZI+tDy96cLMHEGp4CCBl1iSN+lHQOxXNH\nseLwAwKBgQDx5QqwZOfmlQ0rx6jf2EoHChbS3JYt1cRJbwzIOakcKh2Jn/agxZJ8\ne9o0x8HI89mJd1WejorvSVN1c3IgV5TG10k5PcmOxlv1OhGNFzWgvMXZmvCwwP40\nX0BwCgHRB7FvPAMu0hrDmEIJ87edGd1ziRYXpA9Lke/4VQk249pwzA==\n-----END RSA PRIVATE KEY-----",
+          content: OPENSTACK_SECRETS['compute']['nova_migration_key'],
           key_name: 'id_rsa',
           user: 'nova',
           dir_path: '/var/lib/nova/.ssh'
@@ -312,15 +254,6 @@ describe 'osl-openstack::compute' do
           )
         )
       end
-      context 'AMD' do
-        cached(:chef_run) do
-          ChefSpec::SoloRunner.new(pltfrm) do |node|
-            node.automatic['dmi']['processor']['manufacturer'] = 'AMD'
-          end.converge(described_recipe)
-        end
-        it { is_expected.to install_kernel_module('kvm_amd').with(options: %w(nested=1)) }
-      end
-
       it { is_expected.to_not add_osl_repos_centos_kmods 'osl-openstack' }
       it { is_expected.to_not upgrade_package 'kernel' }
 
@@ -367,13 +300,16 @@ describe 'osl-openstack::compute' do
         it { is_expected.to_not install_kernel_module('kvm_intel') }
         it { is_expected.to_not install_kernel_module('kvm_amd') }
 
-        context 'KVM hypervisor' do
+        context 'qemu guest' do
           cached(:chef_run) do
             ChefSpec::SoloRunner.new(pltfrm) do |node|
               node.automatic['kernel']['machine'] = 'ppc64le'
               node.automatic['cpu']['hypervisor_vendor'] = 'KVM'
+              node.automatic['cpu']['machine'] = 'CHRP IBM pSeries (emulated by qemu)'
             end.converge(described_recipe)
           end
+
+          it_behaves_like 'no KSM in a guest'
           it { is_expected.to_not install_kernel_module('kvm_hv') }
           it { is_expected.to_not load_kernel_module('kvm_hv') }
         end
@@ -446,7 +382,7 @@ describe 'osl-openstack::compute' do
 
       context 'region2 w/o ceph' do
         cached(:chef_run) do
-          ChefSpec::SoloRunner.new(pltfrm.dup.merge(
+          ChefSpec::SoloRunner.new(pltfrm.merge(
             step_into: %w(osl_openstack_client osl_openstack_openrc)
           )) do |node|
             node.automatic['fqdn'] = 'node1.testing.osuosl.org'
@@ -494,46 +430,7 @@ describe 'osl-openstack::compute' do
             group: 'nova',
             mode: '0640',
             sensitive: true,
-            variables: {
-              allow_resize_to_same_host: nil,
-              api_database_connection: 'mysql+pymysql://nova_x86:nova@localhost_region2:3306/nova_api_x86',
-              auth_endpoint: 'controller.testing.osuosl.org',
-              cinder_disabled: true,
-              cpu_allocation_ratio: nil,
-              database_connection: 'mysql+pymysql://nova_x86:nova@localhost_region2:3306/nova_x86',
-              disk_allocation_ratio: '1.5',
-              enabled_filters: %w(
-                AggregateInstanceExtraSpecsFilter
-                PciPassthroughFilter
-                AvailabilityZoneFilter
-                ComputeFilter
-                ComputeCapabilitiesFilter
-                ImagePropertiesFilter
-                ServerGroupAntiAffinityFilter
-                ServerGroupAffinityFilter
-              ),
-              endpoint: 'controller_region2.testing.osuosl.org',
-              image_api_servers: 'http://controller_region2.testing.osuosl.org:9292',
-              images_rbd_pool: nil,
-              listen_ip: '*',
-              local_storage: true,
-              memcached_endpoint: 'controller_region2.testing.osuosl.org:11211',
-              metadata_proxy_shared_secret: '2SJh0RuO67KpZ63z',
-              neutron_pass: 'neutron',
-              pci_alias: '{ "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }',
-              pci_passthrough_whitelist: '{ "vendor_id": "10de", "product_id": "1db5" }',
-              placement_pass: 'placement',
-              power10: false,
-              ram_allocation_ratio: nil,
-              rbd_secret_uuid: nil,
-              rbd_user: nil,
-              region: 'RegionTwo',
-              service_pass: 'nova',
-              rabbit_quorum_queue: false,
-              rabbit_tls: false,
-              rabbit_ssl_ca_file: nil,
-              transport_url: 'rabbit://openstack:openstack@controller_region2.testing.osuosl.org:5672/',
-            }
+            variables: nova_conf_vars(region2: true)
           )
         end
         it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/force_raw_images = false/) }

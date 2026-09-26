@@ -4,7 +4,7 @@ describe 'osl-openstack::dashboard' do
   ALL_PLATFORMS.each do |pltfrm|
     context "#{pltfrm[:platform]} #{pltfrm[:version]}" do
       cached(:chef_run) do
-        ChefSpec::SoloRunner.new(pltfrm.dup.merge(
+        ChefSpec::SoloRunner.new(pltfrm.merge(
           step_into: %w(apache_app)
         )).converge(described_recipe)
       end
@@ -161,10 +161,9 @@ describe 'osl-openstack::dashboard' do
           end.converge(described_recipe)
         end
 
-        include_context 'common_stubs'
         before do
           stub_data_bag_item('openstack', 'x86').and_return(
-            openstack_secrets_stub.merge(
+            openstack_secrets_stub(
               'ha' => {
                 'api_listen_ip' => {
                   'controller1.testing.osuosl.org' => '10.1.2.3',
@@ -179,9 +178,8 @@ describe 'osl-openstack::dashboard' do
         it do
           expect(chef_run.node['osl-nrpe']['check_http']['ipaddress']).to eq('10.1.2.3')
         end
-        # Apache serves no IPv6 of its own in HA (the VIP does), so this
-        # controller drops out of the per-host apache_http6 check even though
-        # it has a public IPv6.
+        # Only the VIP serves IPv6 in HA, so the per-host apache_http6 check
+        # drops this controller despite its public address
         it do
           expect(chef_run.node['nagios']['_http_address6']).to be_nil
         end

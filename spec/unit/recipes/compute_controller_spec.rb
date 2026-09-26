@@ -91,46 +91,7 @@ describe 'osl-openstack::compute_controller' do
           group: 'nova',
           mode: '0640',
           sensitive: true,
-          variables: {
-            allow_resize_to_same_host: nil,
-            api_database_connection: 'mysql+pymysql://nova_x86:nova@localhost:3306/nova_api_x86',
-            auth_endpoint: 'controller.testing.osuosl.org',
-            cinder_disabled: false,
-            cpu_allocation_ratio: nil,
-            database_connection: 'mysql+pymysql://nova_x86:nova@localhost:3306/nova_x86',
-            disk_allocation_ratio: '1.5',
-            endpoint: 'controller.testing.osuosl.org',
-            enabled_filters: %w(
-              AggregateInstanceExtraSpecsFilter
-              PciPassthroughFilter
-              AvailabilityZoneFilter
-              ComputeFilter
-              ComputeCapabilitiesFilter
-              ImagePropertiesFilter
-              ServerGroupAntiAffinityFilter
-              ServerGroupAffinityFilter
-            ),
-            image_api_servers: 'http://controller.testing.osuosl.org:9292',
-            images_rbd_pool: 'vms',
-            listen_ip: '*',
-            local_storage: false,
-            memcached_endpoint: 'controller.testing.osuosl.org:11211',
-            metadata_proxy_shared_secret: '2SJh0RuO67KpZ63z',
-            neutron_pass: 'neutron',
-            pci_alias: nil,
-            pci_passthrough_whitelist: nil,
-            placement_pass: 'placement',
-            power10: false,
-            ram_allocation_ratio: nil,
-            rbd_secret_uuid: '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8',
-            rbd_user: 'cinder',
-            region: 'RegionOne',
-            service_pass: 'nova',
-            rabbit_quorum_queue: false,
-            rabbit_tls: false,
-            rabbit_ssl_ca_file: nil,
-            transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672/',
-          }
+          variables: nova_conf_vars
         )
       end
       it 'is expected to not render pci config' do
@@ -333,21 +294,6 @@ describe 'osl-openstack::compute_controller' do
           is_expected.to render_file('/etc/nova/nova.conf').with_content('alias = { "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }')
           is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/^passthrough_whitelist =/)
         end
-
-        context 'compute node & local storage' do
-          cached(:chef_run) do
-            ChefSpec::SoloRunner.new(pltfrm) do |node|
-              node.automatic['fqdn'] = 'node1.testing.osuosl.org'
-            end.converge(described_recipe)
-          end
-
-          it 'is expected to render pci config' do
-            is_expected.to render_file('/etc/nova/nova.conf').with_content('[pci]')
-            is_expected.to render_file('/etc/nova/nova.conf').with_content('alias = { "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }')
-            is_expected.to render_file('/etc/nova/nova.conf').with_content('passthrough_whitelist = { "vendor_id": "10de", "product_id": "1db5" }')
-          end
-          it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content('images_rbd_pool = vms') }
-        end
       end
 
       context 'region2' do
@@ -365,48 +311,16 @@ describe 'osl-openstack::compute_controller' do
             group: 'nova',
             mode: '0640',
             sensitive: true,
-            variables: {
-              allow_resize_to_same_host: nil,
-              api_database_connection: 'mysql+pymysql://nova_x86:nova@localhost_region2:3306/nova_api_x86',
-              auth_endpoint: 'controller.testing.osuosl.org',
-              cinder_disabled: true,
-              cpu_allocation_ratio: nil,
-              database_connection: 'mysql+pymysql://nova_x86:nova@localhost_region2:3306/nova_x86',
-              disk_allocation_ratio: '1.5',
-              endpoint: 'controller_region2.testing.osuosl.org',
-              enabled_filters: %w(
-                AggregateInstanceExtraSpecsFilter
-                PciPassthroughFilter
-                AvailabilityZoneFilter
-                ComputeFilter
-                ComputeCapabilitiesFilter
-                ImagePropertiesFilter
-                ServerGroupAntiAffinityFilter
-                ServerGroupAffinityFilter
-              ),
-              image_api_servers: 'http://controller_region2.testing.osuosl.org:9292',
-              images_rbd_pool: nil,
-              listen_ip: '*',
-              local_storage: true,
-              memcached_endpoint: 'controller_region2.testing.osuosl.org:11211',
-              metadata_proxy_shared_secret: '2SJh0RuO67KpZ63z',
-              neutron_pass: 'neutron',
-              pci_alias: '{ "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }',
-              pci_passthrough_whitelist: '{ "vendor_id": "10de", "product_id": "1db5" }',
-              placement_pass: 'placement',
-              power10: false,
-              ram_allocation_ratio: nil,
-              rbd_secret_uuid: nil,
-              rbd_user: nil,
-              region: 'RegionTwo',
-              service_pass: 'nova',
-              rabbit_quorum_queue: false,
-              rabbit_tls: false,
-              rabbit_ssl_ca_file: nil,
-              transport_url: 'rabbit://openstack:openstack@controller_region2.testing.osuosl.org:5672/',
-            }
+            variables: nova_conf_vars(region2: true)
           )
         end
+        # node1 has a GPU whitelisted and local storage in region2
+        it 'is expected to render pci config' do
+          is_expected.to render_file('/etc/nova/nova.conf').with_content('[pci]')
+          is_expected.to render_file('/etc/nova/nova.conf').with_content('alias = { "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }')
+          is_expected.to render_file('/etc/nova/nova.conf').with_content('passthrough_whitelist = { "vendor_id": "10de", "product_id": "1db5" }')
+        end
+        it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content('images_rbd_pool = vms') }
       end
     end
   end

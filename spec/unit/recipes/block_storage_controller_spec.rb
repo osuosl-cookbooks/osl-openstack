@@ -54,10 +54,7 @@ describe 'osl-openstack::block_storage_controller' do
             rbd_user: 'cinder',
             region: 'RegionOne',
             service_pass: 'cinder',
-            rabbit_quorum_queue: false,
-            rabbit_tls: false,
-            rabbit_ssl_ca_file: nil,
-            transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672/',
+            **messaging_vars,
           }
         )
       end
@@ -102,17 +99,8 @@ describe 'osl-openstack::block_storage_controller' do
 
         before do
           stub_data_bag_item('openstack', 'x86').and_return(
-            openstack_secrets_stub.merge(
-              'coordination' => {
-                'endpoint' => %w(
-                  mq1.testing.osuosl.org
-                  mq2.testing.osuosl.org
-                  mq3.testing.osuosl.org
-                ),
-                'primary' => 'mq1.testing.osuosl.org',
-                'pass' => 'oslocks',
-                'db' => 1,
-              }
+            openstack_secrets_stub(
+              'coordination' => coordination_tier_secrets('db' => 1)
             )
           )
         end

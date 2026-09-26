@@ -4,7 +4,7 @@ describe 'osl-openstack::identity' do
   ALL_PLATFORMS.each do |pltfrm|
     context "#{pltfrm[:platform]} #{pltfrm[:version]}" do
       cached(:chef_run) do
-        ChefSpec::SoloRunner.new(pltfrm.dup.merge(
+        ChefSpec::SoloRunner.new(pltfrm.merge(
           step_into: %w(apache_app osl_openstack_openrc osl_openstack_client)
         )).converge(described_recipe)
       end
@@ -13,22 +13,11 @@ describe 'osl-openstack::identity' do
 
       it { is_expected.to create_osl_openstack_client('identity').with(firewall: true, openrc: true) }
 
-      describe 'osl_openstack_openrc' do
+      describe 'osl_openstack_client' do
         it { is_expected.to add_osl_repos_openstack 'default' }
         it { is_expected.to install_package %w(openstack-selinux python3-openstackclient) }
-
-        context 'versionlock set' do
-          cached(:chef_run) do
-            ChefSpec::SoloRunner.new(pltfrm.dup.merge(
-              step_into: %w(osl_openstack_client)
-            )).converge(described_recipe)
-          end
-
-          before do
-            allow(File).to receive(:readlines).and_call_original
-            allow(File).to receive(:readlines).with('/etc/yum/pluginconf.d/versionlock.list').and_return(%w(python))
-          end
-        end
+        it { is_expected.to create_osl_openstack_openrc 'identity' }
+        it { is_expected.to accept_osl_firewall_openstack 'identity' }
       end
 
       describe 'osl_openstack_openrc' do
@@ -75,10 +64,7 @@ describe 'osl-openstack::identity' do
           variables: {
             endpoint: 'controller.testing.osuosl.org',
             heartbeat_in_pthread: true,
-            rabbit_quorum_queue: false,
-            rabbit_tls: false,
-            rabbit_ssl_ca_file: nil,
-            transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672/',
+            **messaging_vars,
             memcached_endpoint: 'controller.testing.osuosl.org:11211',
             database_connection: 'mysql+pymysql://keystone_x86:keystone@localhost:3306/keystone_x86',
           }
@@ -87,8 +73,7 @@ describe 'osl-openstack::identity' do
       it { expect(chef_run.template('/etc/keystone/keystone.conf')).to notify('execute[keystone: db_sync]').to(:run).immediately }
       it { expect(chef_run.template('/etc/keystone/keystone.conf')).to notify('apache2_service[osuosl]').to(:reload) }
       # keystone is wsgi-only, so it takes the opposite value from the eventlet services
-      it { is_expected.to render_file('/etc/keystone/keystone.conf').with_content('[oslo_messaging_rabbit]') }
-      it { is_expected.to render_file('/etc/keystone/keystone.conf').with_content(/^heartbeat_in_pthread = true$/) }
+      it_behaves_like 'oslo messaging config', '/etc/keystone/keystone.conf', heartbeat_in_pthread: true
       it do
         is_expected.to nothing_execute('keystone: db_sync').with(
           command: 'keystone-manage db_sync',

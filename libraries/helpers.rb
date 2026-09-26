@@ -399,8 +399,9 @@ module OSLOpenstack
         end
       end
 
-      # Marker comment our nova-pseries-acpi.patch leaves in the libvirt driver
-      NOVA_PSERIES_ACPI_MARKER = '# OSL-PATCH nova-pseries-acpi:'.freeze
+      # Marker comment our nova-pseries-acpi.patch leaves in the libvirt driver;
+      # guarded because the specs load this library before ChefSpec does
+      NOVA_PSERIES_ACPI_MARKER = '# OSL-PATCH nova-pseries-acpi:'.freeze unless defined?(NOVA_PSERIES_ACPI_MARKER)
 
       def openstack_nova_pseries_acpi_patched?(driver = "#{openstack_python_sitelib}/nova/virt/libvirt/driver.py")
         ::File.exist?(driver) && ::File.read(driver).include?(NOVA_PSERIES_ACPI_MARKER)

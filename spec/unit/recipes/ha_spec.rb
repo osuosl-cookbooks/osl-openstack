@@ -1,13 +1,14 @@
 require_relative '../../spec_helper'
 
 describe 'osl-openstack::ha' do
-  ALL_PLATFORMS.each do |p|
-    context "#{p[:platform]} #{p[:version]}" do
+  ALL_PLATFORMS.each do |pltfrm|
+    context "#{pltfrm[:platform]} #{pltfrm[:version]}" do
       cached(:chef_run) do
-        ChefSpec::SoloRunner.new(p).converge(described_recipe)
+        ChefSpec::SoloRunner.new(pltfrm).converge(described_recipe)
       end
 
       before do
+        allow_any_instance_of(OSLOpenstack::Cookbook::Helpers).to receive(:haproxy_running?).and_return(false)
         stub_data_bag_item('openstack', 'x86').and_return(
           'ha' => {
             'keepalived' => {
@@ -52,9 +53,8 @@ describe 'osl-openstack::ha' do
       end
 
       it 'strips the CIDR and appends ssl crt to tls listeners' do
-        # keystone is tls: true in openstack_ha_services, so each bind
-        # has `ssl crt <bundle>` appended. Without the CIDR strip we'd
-        # see '192.168.60.10/24:5000 ssl crt ...'.
+        # keystone binds carry `ssl crt`, so a missed CIDR strip would show as
+        # '192.168.60.10/24:5000 ssl crt ...'
         binds = chef_run.find_resources(:haproxy_listen)
                         .select { |r| r.name == 'keystone' }
                         .map(&:bind)
@@ -91,11 +91,8 @@ describe 'osl-openstack::ha' do
       end
 
       it 'makes horizon-http a 301 redirect to https with no backend' do
-        # Apache's wsgi-horizon :80 vhost used to do the http->https
-        # rewrite; in HA that rewrite is gated off (Apache backends
-        # serve plain HTTP behind haproxy and would loop on %{HTTPS}=off).
-        # haproxy owns the redirect now: mode http, the redirect rule,
-        # no backend servers since every request terminates here.
+        # haproxy owns the http->https redirect in HA: mode http, the rule,
+        # and no backend servers
         horizon_http = chef_run.find_resources(:haproxy_listen)
                                .find { |r| r.name == 'horizon-http' }
         expect(horizon_http.mode).to eq('http')
@@ -135,11 +132,7 @@ describe 'osl-openstack::ha' do
       end
 
       it 'starts haproxy during converge so the VIP serves before keystone calls' do
-        # The ruby_block renders haproxy.cfg and notifies the eager
-        # start; without it a fresh bootstrap fails at osl_openstack_role
-        # with connection-refused on the VIP (haproxy's normal :start is
-        # delayed to end-of-run). Guarded by not_if so it only fires
-        # when haproxy isn't already running (kept idempotent).
+        # Eager start for fresh bootstraps, skipped once haproxy is running
         rb = chef_run.ruby_block('render haproxy.cfg + start haproxy before api calls')
         expect(rb).to notify('service[haproxy_eager_start]').to(:start).immediately
         expect(rb).to notify('service[haproxy_eager_start]').to(:enable).immediately
@@ -147,10 +140,8 @@ describe 'osl-openstack::ha' do
       end
 
       it 'does not write the stub haproxy.cfg or the wildcard-release execute' do
-        # Removed in favor of letting the haproxy.cfg template's
-        # delayed_action :create handle initial rendering. EL9's
-        # haproxy package preset is `disabled`, so the package install
-        # doesn't auto-start the daemon with bind *:5000.
+        # The EL9 package preset leaves haproxy stopped, so these workarounds
+        # for its demo *:5000 config are gone
         expect(chef_run.find_resources(:file).map(&:name)).not_to include('/etc/haproxy/haproxy.cfg')
         expect(chef_run.find_resources(:execute).map(&:name)).not_to include('haproxy_release_wildcards')
       end

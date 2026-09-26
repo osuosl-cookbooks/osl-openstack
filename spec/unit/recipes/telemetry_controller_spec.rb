@@ -9,6 +9,8 @@ describe 'osl-openstack::telemetry_controller' do
 
       include_context 'common_stubs'
 
+      it_behaves_like 'oslo messaging config', '/etc/ceilometer/ceilometer.conf'
+
       it { is_expected.to create_osl_openstack_client('telemetry-controller').with(firewall: true, openrc: false) }
       it { is_expected.to create_osl_openstack_service_user('ceilometer').with(password: 'ceilometer') }
       it do
@@ -32,10 +34,7 @@ describe 'osl-openstack::telemetry_controller' do
             memcached_endpoint: 'controller.testing.osuosl.org:11211',
             region: 'RegionOne',
             service_pass: 'ceilometer',
-            rabbit_quorum_queue: false,
-            rabbit_tls: false,
-            rabbit_ssl_ca_file: nil,
-            transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672/',
+            **messaging_vars,
           }
         )
       end

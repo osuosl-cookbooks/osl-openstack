@@ -1,8 +1,7 @@
 require_relative '../../spec_helper'
 
 describe 'osl-openstack::mon' do
-  # EL10: the shared messaging tier is the only thing running there.
-  [*ALL_PLATFORMS, ALMA_10].each do |pltfrm|
+  ALL_PLATFORMS.each do |pltfrm|
     context "#{pltfrm[:platform]} #{pltfrm[:version]}" do
       cached(:chef_run) do
         ChefSpec::SoloRunner.new(pltfrm).converge(described_recipe)
@@ -114,11 +113,8 @@ describe 'osl-openstack::mon' do
           )
         end
 
-        # Each nrpe_check should target the per-host backend IP from
-        # ha.api_listen_ip, not node['ipaddress']. In HA the keystone
-        # and novnc backends serve plain HTTP / ws (haproxy on the VIP
-        # is the TLS endpoint), so the local check drops --ssl - check
-        # the actual backend, not what the public endpoint speaks.
+        # Checks hit the per-host api_listen_ip, and keystone and novnc drop
+        # --ssl because haproxy terminates TLS in HA
         {
           'check_keystone_api' => '-I 10.1.2.3 -p 5000',
           'check_glance_api' => '-I 10.1.2.3 -p 9292',
@@ -135,142 +131,6 @@ describe 'osl-openstack::mon' do
         end
       end
 
-      context 'messaging' do
-        cached(:chef_run) do
-          ChefSpec::SoloRunner.new(pltfrm) do |node|
-            node.normal['osl-openstack']['node_type'] = 'messaging'
-          end.converge(described_recipe)
-        end
-
-        it { is_expected.to_not install_package 'nagios-plugins-http' }
-        it { is_expected.to install_package 'python3' }
-
-        %w(nagios nrpe).each do |u|
-          it do
-            is_expected.to create_sudo("check_rabbitmq-#{u}").with(
-              user: [u],
-              runas: 'root',
-              nopasswd: true,
-              commands: %w(/usr/sbin/rabbitmq-diagnostics /usr/sbin/rabbitmqctl)
-            )
-          end
-        end
-
-        %w(check_rabbitmq_cluster check_rabbitmq_queues).each do |chk|
-          it { is_expected.to create_cookbook_file("/usr/lib64/nagios/plugins/#{chk}").with(mode: '755') }
-        end
-
-        it do
-          is_expected.to add_nrpe_check('check_rabbitmq_running').with(
-            command: 'sudo /usr/sbin/rabbitmq-diagnostics',
-            parameters: '-q check_running 2>&1 || exit 2'
-          )
-        end
-        it do
-          is_expected.to add_nrpe_check('check_rabbitmq_alarms').with(
-            command: 'sudo /usr/sbin/rabbitmq-diagnostics',
-            parameters: '-q check_alarms 2>&1 || exit 2'
-          )
-        end
-        it do
-          is_expected.to add_nrpe_check('check_rabbitmq_cluster').with(
-            command: '/usr/lib64/nagios/plugins/check_rabbitmq_cluster',
-            parameters: '3'
-          )
-        end
-        it do
-          is_expected.to add_nrpe_check('check_rabbitmq_listener').with(
-            command: 'sudo /usr/sbin/rabbitmq-diagnostics',
-            parameters: '-q check_port_listener 5672 2>&1 || exit 2'
-          )
-        end
-        it do
-          is_expected.to add_nrpe_check('check_rabbitmq_queues').with(
-            command: '/usr/lib64/nagios/plugins/check_rabbitmq_queues',
-            parameters: '2000 3000'
-          )
-        end
-
-        # No coordination block in the bag: no valkey checks.
-        it { is_expected.to_not add_nrpe_check 'check_valkey' }
-
-        context 'coordination tier' do
-          cached(:chef_run) do
-            ChefSpec::SoloRunner.new(pltfrm) do |node|
-              node.normal['osl-openstack']['node_type'] = 'messaging'
-            end.converge(described_recipe)
-          end
-
-          before do
-            stub_data_bag_item('openstack', 'x86').and_return(
-              openstack_secrets_stub.merge(
-                'coordination' => {
-                  'endpoint' => %w(
-                    mq1.testing.osuosl.org
-                    mq2.testing.osuosl.org
-                    mq3.testing.osuosl.org
-                  ),
-                  'primary' => 'mq1.testing.osuosl.org',
-                  'pass' => 'oslocks',
-                }
-              )
-            )
-          end
-
-          %w(check_valkey check_valkey_replication check_valkey_sentinel).each do |chk|
-            it { is_expected.to create_cookbook_file("/usr/lib64/nagios/plugins/#{chk}").with(mode: '755') }
-          end
-
-          %w(nagios nrpe).each do |u|
-            it do
-              is_expected.to create_sudo("check_valkey-#{u}").with(
-                user: [u],
-                runas: 'root',
-                nopasswd: true,
-                commands: %w(
-                  /usr/lib64/nagios/plugins/check_valkey
-                  /usr/lib64/nagios/plugins/check_valkey_replication
-                )
-              )
-            end
-          end
-
-          # Replaced by ValkeyDown and ValkeyReplicaLinkDown in osl-prometheus
-          %w(check_valkey check_valkey_replication).each do |chk|
-            it { is_expected.to remove_nrpe_check chk }
-            it { is_expected.to_not add_nrpe_check chk }
-          end
-          it do
-            is_expected.to add_nrpe_check('check_valkey_sentinel').with(
-              command: '/usr/lib64/nagios/plugins/check_valkey_sentinel',
-              parameters: 'oslocks 3'
-            )
-          end
-        end
-
-        context 'TLS tier' do
-          cached(:chef_run) do
-            ChefSpec::SoloRunner.new(pltfrm) do |node|
-              node.normal['osl-openstack']['node_type'] = 'messaging'
-            end.converge(described_recipe)
-          end
-
-          before do
-            stub_data_bag_item('openstack', 'x86').and_return(
-              openstack_secrets_stub.merge(
-                'messaging' => openstack_secrets_stub['messaging'].merge(
-                  'tls' => true,
-                  'cmr_target_group_size' => 3
-                )
-              )
-            )
-          end
-
-          it { is_expected.to add_nrpe_check('check_rabbitmq_listener').with(parameters: '-q check_port_listener 5671 2>&1 || exit 2') }
-          it { is_expected.to add_nrpe_check('check_rabbitmq_cluster').with(parameters: '3') }
-        end
-      end
-
       context 'ppc64le' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm) do |node|
@@ -284,6 +144,122 @@ describe 'osl-openstack::mon' do
             critical_condition: '18,13,8'
           )
         end
+      end
+    end
+  end
+
+  # Only the messaging tier runs on EL10, and only on messaging nodes
+  context 'almalinux 10' do
+    pltfrm = ALMA_10
+
+    include_context 'common_stubs'
+
+    context 'messaging' do
+      cached(:chef_run) do
+        ChefSpec::SoloRunner.new(pltfrm) do |node|
+          node.normal['osl-openstack']['node_type'] = 'messaging'
+        end.converge(described_recipe)
+      end
+
+      it { is_expected.to_not install_package 'nagios-plugins-http' }
+      it { is_expected.to install_package 'python3' }
+
+      %w(nagios nrpe).each do |u|
+        it do
+          is_expected.to create_sudo("check_rabbitmq-#{u}").with(
+            user: [u],
+            runas: 'root',
+            nopasswd: true,
+            commands: %w(/usr/sbin/rabbitmq-diagnostics /usr/sbin/rabbitmqctl)
+          )
+        end
+      end
+
+      %w(check_rabbitmq_cluster check_rabbitmq_queues).each do |chk|
+        it { is_expected.to create_cookbook_file("/usr/lib64/nagios/plugins/#{chk}").with(mode: '755') }
+      end
+
+      it do
+        is_expected.to add_nrpe_check('check_rabbitmq_running').with(
+          command: 'sudo /usr/sbin/rabbitmq-diagnostics',
+          parameters: '-q check_running 2>&1 || exit 2'
+        )
+      end
+      it do
+        is_expected.to add_nrpe_check('check_rabbitmq_alarms').with(
+          command: 'sudo /usr/sbin/rabbitmq-diagnostics',
+          parameters: '-q check_alarms 2>&1 || exit 2'
+        )
+      end
+      it do
+        is_expected.to add_nrpe_check('check_rabbitmq_cluster').with(
+          command: '/usr/lib64/nagios/plugins/check_rabbitmq_cluster',
+          parameters: '3'
+        )
+      end
+      it do
+        is_expected.to add_nrpe_check('check_rabbitmq_listener').with(
+          command: 'sudo /usr/sbin/rabbitmq-diagnostics',
+          parameters: '-q check_port_listener 5672 2>&1 || exit 2'
+        )
+      end
+      it do
+        is_expected.to add_nrpe_check('check_rabbitmq_queues').with(
+          command: '/usr/lib64/nagios/plugins/check_rabbitmq_queues',
+          parameters: '2000 3000'
+        )
+      end
+
+      # No coordination block in the bag: no valkey checks.
+      it { is_expected.to_not add_nrpe_check 'check_valkey' }
+
+      context 'TLS tier with coordination' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm) do |node|
+            node.normal['osl-openstack']['node_type'] = 'messaging'
+          end.converge(described_recipe)
+        end
+
+        before do
+          stub_data_bag_item('openstack', 'x86').and_return(
+            openstack_secrets_stub(
+              'messaging' => { 'tls' => true, 'cmr_target_group_size' => 5 },
+              'coordination' => coordination_tier_secrets
+            )
+          )
+        end
+
+        %w(check_valkey check_valkey_replication check_valkey_sentinel).each do |chk|
+          it { is_expected.to create_cookbook_file("/usr/lib64/nagios/plugins/#{chk}").with(mode: '755') }
+        end
+
+        %w(nagios nrpe).each do |u|
+          it do
+            is_expected.to create_sudo("check_valkey-#{u}").with(
+              user: [u],
+              runas: 'root',
+              nopasswd: true,
+              commands: %w(
+                /usr/lib64/nagios/plugins/check_valkey
+                /usr/lib64/nagios/plugins/check_valkey_replication
+              )
+            )
+          end
+        end
+
+        # Replaced by ValkeyDown and ValkeyReplicaLinkDown in osl-prometheus
+        %w(check_valkey check_valkey_replication).each do |chk|
+          it { is_expected.to remove_nrpe_check chk }
+          it { is_expected.to_not add_nrpe_check chk }
+        end
+        it do
+          is_expected.to add_nrpe_check('check_valkey_sentinel').with(
+            command: '/usr/lib64/nagios/plugins/check_valkey_sentinel',
+            parameters: 'oslocks 3'
+          )
+        end
+        it { is_expected.to add_nrpe_check('check_rabbitmq_listener').with(parameters: '-q check_port_listener 5671 2>&1 || exit 2') }
+        it { is_expected.to add_nrpe_check('check_rabbitmq_cluster').with(parameters: '5') }
       end
     end
   end
