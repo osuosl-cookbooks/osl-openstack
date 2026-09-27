@@ -23,3 +23,4 @@ vip_v6_prefix: 64
 vrrp_iface: ens4
 api_listen_ip: 10.1.2.13
 holds_vip: false
+keystone_probe: true

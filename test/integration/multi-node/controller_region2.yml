@@ -4,3 +4,7 @@ physical_interface_mappings: public:eth1.42
 local_storage: true
 messaging_host: controller-region2.testing.osuosl.org
 memcached_host: controller-region2.testing.osuosl.org
+# Pinned so they don't carry over from controller2 (see kitchen.multi-node.yml)
+haproxy_tls: false
+primary_controller: true
+messaging_port: 5672

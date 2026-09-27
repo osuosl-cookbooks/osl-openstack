@@ -12,6 +12,8 @@ transport:
 
 verifier:
   name: terraform
+  # Until kitchen-terraform 8.0.1 ships in Workstation, inputs carry over between
+  # systems, so each attrs file pins every input its profiles read.
   systems:
     - name: controller1
       backend: ssh
