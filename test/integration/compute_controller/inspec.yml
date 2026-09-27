@@ -8,6 +8,9 @@ inputs:
     value: controller.testing.osuosl.org
   - name: local_storage
     value: false
+  - name: nova_local_storage
+    value: false
+    description: Whether this node's nova uses local storage (compute.local_storage in the bag).
   - name: haproxy_tls
     value: false
     description: >

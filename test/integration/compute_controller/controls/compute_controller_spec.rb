@@ -1,6 +1,7 @@
 db_endpoint = input('db_endpoint')
 controller_endpoint = input('controller_endpoint')
 local_storage = input('local_storage')
+nova_local_storage = input('nova_local_storage')
 # messaging_host = AMQP host (mq tier on multi-node); memcached_host =
 # the memcached backend (controller1 on multi-node).
 messaging_host = input('messaging_host')
@@ -61,7 +62,7 @@ control 'compute-controller' do
     its('DEFAULT.compute_monitors') { should cmp 'cpu.virt_driver' }
     its('DEFAULT.ram_allocation_ratio') { should cmp '1' }
     its('DEFAULT.disk_allocation_ratio') { should cmp '1.5' }
-    its('DEFAULT.force_raw_images') { should cmp 'true' }
+    its('DEFAULT.force_raw_images') { should cmp nova_local_storage ? 'false' : 'true' }
     its('DEFAULT.instance_usage_audit') { should cmp 'True' }
     its('DEFAULT.instance_usage_audit_period') { should cmp 'hour' }
     its('DEFAULT.resume_guests_state_on_host_boot') { should cmp 'True' }

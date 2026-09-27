@@ -175,6 +175,7 @@ suites:
     verifier:
       inputs:
         local_storage: true
+        nova_local_storage: true
       inspec_tests:
         - test/integration/compute_controller
         - test/integration/identity
@@ -220,6 +221,7 @@ suites:
     verifier:
       inputs:
         local_storage: true
+        nova_local_storage: true
       inspec_tests:
         - test/integration/compute
         - test/integration/compute_controller
