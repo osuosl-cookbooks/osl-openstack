@@ -1,6 +1,7 @@
 db_endpoint = input('db_endpoint')
 local_storage = input('local_storage')
 primary_controller = input('primary_controller')
+nova_api = input('nova_api')
 # messaging_host = AMQP host (mq tier on multi-node); memcached_host =
 # the memcached backend (controller1 on multi-node).
 messaging_host = input('messaging_host')
@@ -68,16 +69,17 @@ control 'image' do
     its('stdout') { should match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/) }
   end unless local_storage
 
+  # Flavors are a nova API; suites without compute_controller set nova_api false
   describe command('/root/create_flavor.sh') do
     its('exit_status') { should eq 0 }
     its('stderr') { should eq '' }
-  end if primary_controller
+  end if primary_controller && nova_api
 
   describe command(openstack.call('flavor show default -c ram -c vcpus -c disk -f shell')) do
     its('stdout') { should match(/disk="1"/) }
     its('stdout') { should match(/ram="512"/) }
     its('stdout') { should match(/vcpus="1"/) }
-  end
+  end if nova_api
 
   describe user('glance') do
     if local_storage

@@ -91,6 +91,8 @@ suites:
       - recipe[osl-openstack::image]
       - recipe[openstack_test::image_upload]
     verifier:
+      inputs:
+        nova_api: false
       inspec_tests:
         - test/integration/identity
         - test/integration/image
@@ -109,6 +111,7 @@ suites:
     verifier:
       inputs:
         local_storage: true
+        nova_api: false
       inspec_tests:
         - test/integration/identity
         - test/integration/image
@@ -298,6 +301,8 @@ suites:
       - recipe[osl-openstack::image]
       - recipe[openstack_test::image_upload]
     verifier:
+      inputs:
+        nova_api: false
       inspec_tests:
         - test/integration/image
         - test/integration/identity
@@ -318,6 +323,8 @@ suites:
       - recipe[osl-openstack::image]
       - recipe[openstack_test::image_upload]
     verifier:
+      inputs:
+        nova_api: false
       inspec_tests:
         - test/integration/image
         - test/integration/identity

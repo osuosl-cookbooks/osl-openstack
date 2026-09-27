@@ -8,6 +8,9 @@ inputs:
     value: false
   - name: primary_controller
     value: true
+  - name: nova_api
+    value: true
+    description: Whether compute_controller is in the run list, so flavors can be created.
   - name: messaging_host
     value: controller.testing.osuosl.org
   - name: messaging_port
