@@ -37,7 +37,7 @@ describe 'osl-openstack::identity' do
       %w(
         osl-memcached
         osl-apache
-        osl-apache::mod_wsgi
+        osl-apache::mod_proxy_uwsgi
         osl-apache::mod_ssl
       ).each do |r|
         it { is_expected.to include_recipe r }
@@ -71,7 +71,7 @@ describe 'osl-openstack::identity' do
         )
       end
       it { expect(chef_run.template('/etc/keystone/keystone.conf')).to notify('execute[keystone: db_sync]').to(:run).immediately }
-      it { expect(chef_run.template('/etc/keystone/keystone.conf')).to notify('apache2_service[osuosl]').to(:reload) }
+      it { expect(chef_run.template('/etc/keystone/keystone.conf')).to notify('service[keystone-uwsgi]').to(:restart) }
       # keystone is wsgi-only, so it takes the opposite value from the eventlet services
       it_behaves_like 'oslo messaging config', '/etc/keystone/keystone.conf', heartbeat_in_pthread: true
       it do
@@ -112,6 +112,24 @@ describe 'osl-openstack::identity' do
         )
       end
       it do
+        is_expected.to create_template('/etc/keystone/keystone-uwsgi.ini').with(
+          source: 'uwsgi.ini.erb',
+          group: 'keystone',
+          mode: '0640',
+          variables: {
+            chdir: '/opt/openstack/keystone',
+            wsgi_file: '/opt/openstack/keystone/bin/keystone-wsgi-public',
+            socket: '/run/keystone/uwsgi.sock',
+            user: 'keystone',
+            processes: 5,
+            threads: 1,
+          }
+        )
+      end
+      it { expect(chef_run.template('/etc/keystone/keystone-uwsgi.ini')).to notify('service[keystone-uwsgi]').to(:restart) }
+      it { is_expected.to enable_service 'keystone-uwsgi' }
+      it { is_expected.to start_service 'keystone-uwsgi' }
+      it do
         is_expected.to create_apache_app('keystone').with(
           server_name: 'controller.testing.osuosl.org',
           server_aliases: %w(controller1.testing.osuosl.org),
@@ -124,6 +142,13 @@ describe 'osl-openstack::identity' do
           'RewriteCond "%{HTTP_HOST}" "!^controller\.testing\.osuosl\.org" [NC]'
         )
       end
+      it do
+        is_expected.to render_file('/etc/httpd/sites-available/keystone.conf')
+          .with_content('SSLEngine On')
+          .with_content(%(  ProxyPass /identity "unix:/run/keystone/uwsgi.sock|uwsgi://localhost/" retry=0\n))
+          .with_content(%(  ProxyPass / "unix:/run/keystone/uwsgi.sock|uwsgi://localhost/" retry=0\n))
+      end
+      it { is_expected.to_not render_file('/etc/httpd/sites-available/keystone.conf').with_content('WSGI') }
       it { expect(chef_run.apache_app('keystone')).to notify('apache2_service[osuosl]').to(:reload) }
       it { is_expected.to create_osl_openstack_role 'service' }
       it { is_expected.to create_osl_openstack_project('service').with(domain_name: 'default') }
@@ -137,6 +162,28 @@ describe 'osl-openstack::identity' do
           port: 11211,
           osl_only: true
         )
+      end
+
+      context 'with fernet keys in the data bag' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm).converge(described_recipe)
+        end
+
+        before do
+          stub_data_bag_item('openstack', 'x86').and_return(
+            openstack_secrets_stub('identity' => { 'fernet_keys' => { '0' => 'key0', '1' => 'key1' } })
+          )
+        end
+
+        it { is_expected.to create_directory('/etc/keystone/fernet-keys').with(owner: 'keystone', group: 'keystone', mode: '0700') }
+        %w(0 1).each do |k|
+          it do
+            is_expected.to create_file("/etc/keystone/fernet-keys/#{k}").with(
+              content: "key#{k}", owner: 'keystone', group: 'keystone', mode: '600', sensitive: true
+            )
+          end
+          it { expect(chef_run.file("/etc/keystone/fernet-keys/#{k}")).to notify('service[keystone-uwsgi]').to(:restart) }
+        end
       end
     end
   end

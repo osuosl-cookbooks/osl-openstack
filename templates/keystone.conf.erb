@@ -12,8 +12,8 @@ backend = oslo_cache.memcache_pool
 enabled = true
 memcache_servers = <%= @memcached_endpoint %>
 
-<%# keystone only ever runs under mod_wsgi, where the eventlet hub stalls
-    between requests and the heartbeat needs a real thread; kolla does the same. -%>
+<%# keystone runs under uWSGI with no eventlet hub to wake between requests,
+    so the heartbeat needs a real thread; kolla does the same. -%>
 <%= render 'oslo_messaging.conf.erb' -%>
 
 [database]

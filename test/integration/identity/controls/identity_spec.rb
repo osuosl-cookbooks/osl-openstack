@@ -16,9 +16,53 @@ control 'openstack-identity' do
     it { should be_installed }
   end
 
-  describe service('httpd') do
-    it { should be_enabled }
-    it { should be_running }
+  %w(osuosl-openstack-common osuosl-openstack-cli).each do |p|
+    describe package p do
+      it { should be_installed }
+    end
+  end
+
+  # httpd proxies to keystone-uwsgi's socket
+  %w(httpd keystone-uwsgi).each do |s|
+    describe service(s) do
+      it { should be_enabled }
+      it { should be_running }
+    end
+  end
+
+  describe user('keystone') do
+    its('group') { should eq 'keystone' }
+    its('groups') { should include 'apache' }
+  end
+
+  describe directory '/etc/keystone' do
+    its('owner') { should eq 'root' }
+    its('group') { should eq 'keystone' }
+    its('mode') { should cmp '0750' }
+  end
+
+  describe file '/etc/keystone/keystone-uwsgi.ini' do
+    its('owner') { should eq 'root' }
+    its('group') { should eq 'keystone' }
+    its('mode') { should cmp '0640' }
+  end
+
+  describe ini '/etc/keystone/keystone-uwsgi.ini' do
+    its('uwsgi.socket') { should cmp '/run/keystone/uwsgi.sock' }
+    its('uwsgi.uid') { should cmp 'keystone' }
+    its('uwsgi.wsgi-file') { should cmp '/opt/openstack/keystone/bin/keystone-wsgi-public' }
+  end
+
+  describe file '/run/keystone/uwsgi.sock' do
+    it { should be_socket }
+    its('owner') { should eq 'keystone' }
+    its('group') { should eq 'apache' }
+  end
+
+  describe json(
+    content: http('https://controller.testing.osuosl.org:5000/identity/v3', ssl_verify: false).body
+  ) do
+    its(%w(version status)) { should cmp 'stable' }
   end
 
   describe service('memcached') do
