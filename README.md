@@ -4,7 +4,10 @@ Cookbook for deploying OpenStack at the OSUOSL
 
 ## Supported Platforms
 
-- OpenStack Yoga release (from `osl_repos_openstack`)
+- OpenStack Yoga release, as the OSL-built `osuosl-openstack-*` venv RPMs from
+  [openstack-packaging](https://git.osuosl.org/rpms/openstack-packaging)
+  (one venv per service under `/opt/openstack/<svc>`), via the `:osuosl`
+  source of `osl_repos_openstack`
 - AlmaLinux 9
 
 The shared messaging tier (`ops_messaging`, `ops_coordination`) also runs on
@@ -33,7 +36,7 @@ re-running them against an existing cloud makes no API writes.
 
 ### osl_openstack_client
 
-Adds the RDO repositories and installs the OpenStack client packages.
+Adds the OSL OpenStack repository and installs `osuosl-openstack-cli`.
 
 | Property   | Default | Description                                               |
 |------------|---------|-----------------------------------------------------------|

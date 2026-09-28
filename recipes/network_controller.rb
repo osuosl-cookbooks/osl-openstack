@@ -38,10 +38,8 @@ end
 package %w(
   conntrack-tools
   ebtables
-  openstack-neutron
-  openstack-neutron-linuxbridge
-  openstack-neutron-metering-agent
-  openstack-neutron-ml2
+  osuosl-openstack-neutron-agent
+  osuosl-openstack-neutron-controller
 )
 
 include_recipe 'osl-openstack::network_common'

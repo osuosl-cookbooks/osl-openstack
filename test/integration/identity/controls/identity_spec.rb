@@ -12,7 +12,7 @@ memcached_host = input('memcached_host')
 control 'openstack-identity' do
   openstack = ->(args) { %(bash -c "source /root/openrc && /usr/bin/openstack #{args}") }
 
-  describe package 'openstack-keystone' do
+  describe package 'osuosl-openstack-keystone' do
     it { should be_installed }
   end
 

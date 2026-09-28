@@ -209,7 +209,7 @@ cron_d 'nova-rowsflush' do
   user 'nova'
   command %W(
     nova-manage db archive_deleted_rows --max_rows 1000 --before `date --date='today - 90 days' +\\%F`
-    --until-complete --all-cells >>/var/log/nova/nova-rowsflush.log 2>&1
+    --until-complete --all-cells 2>&1 | systemd-cat -t nova-rowsflush
   ).join(' ')
 end
 
@@ -219,7 +219,7 @@ cron_d 'nova-rowspurge' do
   user 'nova'
   command %W(
     nova-manage db purge --before `date --date='today - 14 days' +\\%D`
-    --all-cells >>/var/log/nova/nova-rowspurge.log 2>&1
+    --all-cells 2>&1 | systemd-cat -t nova-rowspurge
   ).join(' ')
 end
 

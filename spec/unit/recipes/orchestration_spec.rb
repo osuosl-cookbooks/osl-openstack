@@ -48,15 +48,7 @@ describe 'osl-openstack::orchestration' do
           region: 'RegionOne'
         )
       end
-      it do
-        is_expected.to install_package(
-          %w(
-            openstack-heat-api
-            openstack-heat-api-cfn
-            openstack-heat-engine
-          )
-        )
-      end
+      it { is_expected.to install_package 'osuosl-openstack-heat' }
       it do
         is_expected.to create_template('/etc/heat/heat.conf').with(
           owner: 'root',
