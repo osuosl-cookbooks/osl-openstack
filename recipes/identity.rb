@@ -50,7 +50,7 @@ include_recipe 'osl-apache::mod_ssl'
 # osl-apache has captured the per-host `listen` value).
 include_recipe 'osl-apache::mod_remoteip' if openstack_tls_on_haproxy?
 
-package 'openstack-keystone'
+package 'osuosl-openstack-keystone'
 
 s = os_secrets
 

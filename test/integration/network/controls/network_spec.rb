@@ -10,6 +10,31 @@ messaging_port = input('messaging_port')
 memcached_host = input('memcached_host')
 
 control 'network' do
+  %w(osuosl-openstack-neutron-agent osuosl-openstack-common osuosl-openstack-cli).each do |p|
+    describe package p do
+      it { should be_installed }
+    end
+  end
+
+  describe package 'osuosl-openstack-neutron-controller' do
+    it { should be_installed }
+  end if controller
+
+  # The RPMs create these and seed the paste and rootwrap configs from the venv
+  %w(/etc/neutron /etc/neutron/plugins/ml2).each do |d|
+    describe directory d do
+      its('owner') { should eq 'root' }
+      its('group') { should eq 'neutron' }
+      its('mode') { should cmp '0750' }
+    end
+  end
+
+  %w(api-paste.ini rootwrap.conf).each do |f|
+    describe file "/etc/neutron/#{f}" do
+      it { should exist }
+    end
+  end
+
   %w(
     neutron-dhcp-agent
     neutron-l3-agent
@@ -104,7 +129,8 @@ control 'network' do
     its('ml2_type_vxlan.vni_ranges') { should cmp '1:1000' }
   end if controller
 
-  describe command('bash -c "source /root/openrc && neutron ext-list -c alias -f value"') do
+  # osuosl-openstack-cli ships no deprecated neutron CLI
+  describe command('bash -c "source /root/openrc && /usr/bin/openstack extension list --network -c Alias -f value"') do
     %w(
       address-scope
       agent

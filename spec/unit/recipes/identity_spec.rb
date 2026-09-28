@@ -14,8 +14,8 @@ describe 'osl-openstack::identity' do
       it { is_expected.to create_osl_openstack_client('identity').with(firewall: true, openrc: true) }
 
       describe 'osl_openstack_client' do
-        it { is_expected.to add_osl_repos_openstack 'default' }
-        it { is_expected.to install_package %w(openstack-selinux python3-openstackclient) }
+        it { is_expected.to add_osl_repos_openstack('default').with(source: :osuosl) }
+        it { is_expected.to install_package %w(osuosl-openstack-cli) }
         it { is_expected.to create_osl_openstack_openrc 'identity' }
         it { is_expected.to accept_osl_firewall_openstack 'identity' }
       end
@@ -42,7 +42,7 @@ describe 'osl-openstack::identity' do
       ).each do |r|
         it { is_expected.to include_recipe r }
       end
-      it { is_expected.to install_package 'openstack-keystone' }
+      it { is_expected.to install_package 'osuosl-openstack-keystone' }
       it do
         is_expected.to create_certificate_manage('wildcard-identity').with(
           search_id: 'wildcard',

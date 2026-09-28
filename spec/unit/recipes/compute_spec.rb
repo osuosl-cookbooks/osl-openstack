@@ -47,9 +47,10 @@ describe 'osl-openstack::compute' do
         is_expected.to install_package %w(
           device-mapper
           device-mapper-multipath
+          guestfs-tools
           libguestfs-rescue
           libvirt
-          openstack-nova-compute
+          osuosl-openstack-nova-compute
           python3-libguestfs
           qemu-kvm
           qemu-kvm-device-display-virtio-gpu
@@ -156,7 +157,7 @@ describe 'osl-openstack::compute' do
       it { is_expected.to install_kernel_module('kvm_intel').with(options: %w(nested=1)) }
       it { is_expected.to include_recipe 'osl-openstack::network' }
       it { is_expected.to include_recipe 'osl-openstack::telemetry_compute' }
-      it { is_expected.to install_package 'openstack-cinder' }
+      it { is_expected.to install_package 'osuosl-openstack-cinder' }
       it { is_expected.to create_osl_ceph_keyring('cinder').with(key: 'AQAjbr1aWv+aNBAAoGfqrwX9iSdNmtuvUkwGhA==') }
       it do
         is_expected.to create_osl_ceph_keyring('cinder-backup').with(key: 'AQAxbr1ac4ToKhAAeO6+h90GcsukzHicUNvfLg==')
@@ -270,9 +271,10 @@ describe 'osl-openstack::compute' do
           is_expected.to install_package %w(
             device-mapper
             device-mapper-multipath
+            guestfs-tools
             libguestfs-rescue
             libvirt
-            openstack-nova-compute
+            osuosl-openstack-nova-compute
             python3-libguestfs
             qemu-kvm
             qemu-kvm-device-display-virtio-gpu
@@ -282,7 +284,6 @@ describe 'osl-openstack::compute' do
             virt-win-reg
           )
         end
-        it { is_expected.to_not run_execute 'patch nova libvirt driver for pseries ACPI' }
       end
 
       context 'ppc64le' do
@@ -318,9 +319,10 @@ describe 'osl-openstack::compute' do
           is_expected.to install_package %w(
             device-mapper
             device-mapper-multipath
+            guestfs-tools
             libguestfs-rescue
             libvirt
-            openstack-nova-compute
+            osuosl-openstack-nova-compute
             python3-libguestfs
             qemu-kvm
             qemu-kvm-device-display-virtio-gpu
@@ -331,19 +333,7 @@ describe 'osl-openstack::compute' do
           )
         end
         it { is_expected.to install_package 'kernel-kvm' }
-        it { is_expected.to install_package 'patch' }
         it { is_expected.to_not add_osl_repos_centos_kmods 'osl-openstack' }
-        it { is_expected.to create_cookbook_file('/var/chef/cache/nova-pseries-acpi.patch').with(source: 'nova-pseries-acpi.patch') }
-        it do
-          is_expected.to run_execute('patch nova libvirt driver for pseries ACPI').with(
-            command: 'patch -p1 --no-backup-if-mismatch -i /var/chef/cache/nova-pseries-acpi.patch',
-            cwd: '/usr/lib/python3.9/site-packages'
-          )
-        end
-        it do
-          expect(chef_run.execute('patch nova libvirt driver for pseries ACPI')).to \
-            notify('service[openstack-nova-compute]').to(:restart)
-        end
         context 'power10' do
           cached(:chef_run) do
             ChefSpec::SoloRunner.new(pltfrm) do |node|
@@ -354,7 +344,6 @@ describe 'osl-openstack::compute' do
           end
           it { is_expected.to add_osl_repos_centos_kmods('osl-openstack').with(kernel: '6.18') }
           it { is_expected.to upgrade_package 'kernel' }
-          it { is_expected.to install_package 'patch' }
           it { is_expected.to_not install_package 'kernel-kvm' }
           it { is_expected.to install_kernel_module('kvm_hv') }
           it { is_expected.to load_kernel_module('kvm_hv') }
@@ -393,7 +382,7 @@ describe 'osl-openstack::compute' do
 
         it { is_expected.to_not include_recipe 'osl-ceph' }
         it { is_expected.to_not create_osl_ceph_config 'default' }
-        it { is_expected.to_not install_package 'openstack-cinder' }
+        it { is_expected.to_not install_package 'osuosl-openstack-cinder' }
         it { is_expected.to_not create_osl_ceph_keyring 'cinder' }
         it { is_expected.to_not create_osl_ceph_keyring 'cinder-backup' }
         it { is_expected.to_not create_directory '/var/run/ceph/guests' }

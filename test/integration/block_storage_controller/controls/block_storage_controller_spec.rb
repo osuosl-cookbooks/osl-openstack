@@ -7,7 +7,7 @@ memcached_host = input('memcached_host')
 coordination_url = input('coordination_url')
 
 control 'block-storage-controller' do
-  describe package 'openstack-cinder' do
+  describe package 'osuosl-openstack-cinder' do
     it { should be_installed }
   end
 

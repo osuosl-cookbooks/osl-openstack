@@ -11,8 +11,8 @@ describe 'openstack_test::client' do
       include_context 'common_stubs'
 
       it { is_expected.to create_osl_openstack_client('test').with(firewall: false, openrc: false) }
-      it { is_expected.to add_osl_repos_openstack 'default' }
-      it { is_expected.to install_package %w(openstack-selinux python3-openstackclient) }
+      it { is_expected.to add_osl_repos_openstack('default').with(source: :osuosl) }
+      it { is_expected.to install_package %w(osuosl-openstack-cli) }
       it { is_expected.to_not create_osl_openstack_openrc 'test' }
       it { is_expected.to_not accept_osl_firewall_openstack 'test' }
     end

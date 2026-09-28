@@ -21,7 +21,7 @@ package %w(
   conntrack-tools
   ebtables
   ipset
-  openstack-neutron-linuxbridge
+  osuosl-openstack-neutron-agent
 )
 
 include_recipe 'osl-openstack::network_common'

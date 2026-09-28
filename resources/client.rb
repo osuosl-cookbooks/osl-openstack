@@ -7,7 +7,9 @@ property :firewall, [true, false], default: false
 property :openrc, [true, false], default: false
 
 action :create do
-  osl_repos_openstack 'default'
+  osl_repos_openstack 'default' do
+    source :osuosl
+  end
 
   package openstack_client_pkg
 

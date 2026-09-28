@@ -32,16 +32,7 @@ describe 'osl-openstack::compute_controller' do
           region: 'RegionOne'
         )
       end
-      it do
-        is_expected.to install_package %w(
-          openstack-nova-api
-          openstack-nova-conductor
-          openstack-nova-novncproxy
-          openstack-nova-scheduler
-          openstack-placement-api
-          python3-osc-placement
-        )
-      end
+      it { is_expected.to install_package %w(osuosl-openstack-nova-controller osuosl-openstack-placement) }
       it { is_expected.to delete_file('/etc/httpd/conf.d/00-placement-api.conf') }
       it do
         expect(chef_run.file('/etc/httpd/conf.d/00-placement-api.conf')).to notify('apache2_service[compute]').to(:reload)
@@ -223,7 +214,7 @@ describe 'osl-openstack::compute_controller' do
           minute: 20,
           hour: 5,
           user: 'nova',
-          command: "nova-manage db archive_deleted_rows --max_rows 1000 --before `date --date='today - 90 days' +\\%F` --until-complete --all-cells >>/var/log/nova/nova-rowsflush.log 2>&1"
+          command: "nova-manage db archive_deleted_rows --max_rows 1000 --before `date --date='today - 90 days' +\\%F` --until-complete --all-cells 2>&1 | systemd-cat -t nova-rowsflush"
         )
       end
       it do
@@ -231,7 +222,7 @@ describe 'osl-openstack::compute_controller' do
           minute: 20,
           hour: 6,
           user: 'nova',
-          command: "nova-manage db purge --before `date --date='today - 14 days' +\\%D` --all-cells >>/var/log/nova/nova-rowspurge.log 2>&1"
+          command: "nova-manage db purge --before `date --date='today - 14 days' +\\%D` --all-cells 2>&1 | systemd-cat -t nova-rowspurge"
         )
       end
 

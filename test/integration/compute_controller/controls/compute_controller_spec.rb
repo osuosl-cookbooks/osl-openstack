@@ -200,12 +200,12 @@ control 'compute-controller' do
 
   describe file '/etc/cron.d/nova-rowsflush' do
     its('content') do
-      should match %r{20 5 \* \* \* nova nova-manage db archive_deleted_rows --max_rows 1000 --before `date --date='today - 90 days' \+\\\%F` --until-complete --all-cells >>/var/log/nova/nova-rowsflush.log 2>&1}
+      should match /20 5 \* \* \* nova nova-manage db archive_deleted_rows --max_rows 1000 --before `date --date='today - 90 days' \+\\\%F` --until-complete --all-cells 2>&1 \| systemd-cat -t nova-rowsflush/
     end
   end
   describe file '/etc/cron.d/nova-rowspurge' do
     its('content') do
-      should match %r{20 6 \* \* \* nova nova-manage db purge --before `date --date='today - 14 days' \+\\\%D` --all-cells >>/var/log/nova/nova-rowspurge.log 2>&1}
+      should match /20 6 \* \* \* nova nova-manage db purge --before `date --date='today - 14 days' \+\\\%D` --all-cells 2>&1 \| systemd-cat -t nova-rowspurge/
     end
   end
 

@@ -31,16 +31,7 @@ describe 'osl-openstack::network_controller' do
           region: 'RegionOne'
         )
       end
-      it do
-        is_expected.to install_package %w(
-          conntrack-tools
-          ebtables
-          openstack-neutron
-          openstack-neutron-linuxbridge
-          openstack-neutron-metering-agent
-          openstack-neutron-ml2
-        )
-      end
+      it { is_expected.to install_package %w(conntrack-tools ebtables osuosl-openstack-neutron-agent osuosl-openstack-neutron-controller) }
       it { is_expected.to include_recipe 'osl-openstack::network_common' }
       it do
         is_expected.to create_template('/etc/neutron/neutron.conf').with(

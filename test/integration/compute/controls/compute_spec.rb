@@ -39,9 +39,10 @@ control 'compute' do
   os_pkgs = %w(
     device-mapper
     device-mapper-multipath
+    guestfs-tools
     libguestfs-rescue
     libvirt
-    openstack-nova-compute
+    osuosl-openstack-nova-compute
     python3-libguestfs
     qemu-kvm
     qemu-kvm-device-display-virtio-gpu

@@ -7,14 +7,8 @@ messaging_port = input('messaging_port')
 memcached_host = input('memcached_host')
 
 control 'telemetry-controller' do
-  %w(
-    openstack-ceilometer-central
-    openstack-ceilometer-common
-    openstack-ceilometer-notification
-  ).each do |p|
-    describe package p do
-      it { should be_installed }
-    end
+  describe package 'osuosl-openstack-ceilometer' do
+    it { should be_installed }
   end
 
   %w(
