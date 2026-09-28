@@ -40,6 +40,11 @@ on the service port and proxies it to the unit's socket through
 | nova-api      | 8774 | `openstack-nova-api`      | `/etc/nova/nova-api-uwsgi.ini`       | `/run/nova/api-uwsgi.sock`      |
 | nova-metadata | 8775 | `openstack-nova-metadata` | `/etc/nova/nova-metadata-uwsgi.ini`  | `/run/nova/metadata-uwsgi.sock` |
 | cinder-api    | 8776 | `openstack-cinder-api`    | `/etc/cinder/cinder-api-uwsgi.ini`   | `/run/cinder/api-uwsgi.sock`    |
+| horizon       | 443  | `horizon-uwsgi`           | `/etc/horizon/horizon-uwsgi.ini`     | `/run/horizon/uwsgi.sock`       |
+
+Horizon reads `/etc/horizon/local_settings.py` through a symlink in its venv. Apache
+serves `/static` from `/var/www/horizon/static`, which `collectstatic` and
+`compress` fill whenever the settings or the vhost change.
 
 ## Resources
 
