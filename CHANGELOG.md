@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+19.0.0 (2026-09-28)
+-------------------
+- Drop AlmaLinux 8 and POWER8 support and deduplicate the cookbook
+
 18.5.14 (2026-09-25)
 --------------------
 - mon: retire check_valkey and check_valkey_replication
