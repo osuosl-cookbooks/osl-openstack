@@ -37,10 +37,7 @@ auth_strategy = keystone
 [api_database]
 connection = <%= @api_database_connection %>
 
-[cache]
-memcache_servers = <%= @memcached_endpoint %>
-enabled = true
-backend = dogpile.cache.memcached
+<%= render 'cache.conf.erb' -%>
 <% unless @cinder_disabled -%>
 
 [cinder]
@@ -63,19 +60,10 @@ enabled_filters = <%= @enabled_filters.join(',') %>
 [glance]
 api_servers = <%= @image_api_servers %>
 
-[keystone_authtoken]
-auth_type = v3password
-auth_url = https://<%= @auth_endpoint %>:5000/v3
-memcached_servers = <%= @memcached_endpoint %>
-password = <%= @service_pass %>
-project_domain_name = Default
-project_name = service
-region_name = RegionOne
-service_token_roles = admin
-service_token_roles_required = True
-user_domain_name = Default
-username = nova
-www_authenticate_uri = https://<%= @auth_endpoint %>:5000/v3
+<%= render 'keystone_authtoken.conf.erb', variables: {
+  auth_endpoint: @auth_endpoint, memcached_endpoint: @memcached_endpoint, service_pass: @service_pass,
+  username: 'nova', v3password: true, region: true
+} -%>
 
 [libvirt]
 <% if @power10 -%>
@@ -114,7 +102,6 @@ live_migration_timeout_action = force_complete
 [neutron]
 auth_type = password
 auth_url = https://<%= @auth_endpoint %>:5000/v3
-disk_allocation_ratio = 1.5
 metadata_proxy_shared_secret = <%= @metadata_proxy_shared_secret %>
 password = <%= @neutron_pass %>
 project_domain_name = Default
@@ -130,22 +117,9 @@ notify_on_state_change = vm_and_task_state
 [oslo_concurrency]
 lock_path = /var/lib/nova/tmp
 
-[oslo_messaging_rabbit]
 <%# kolla sets True only for the wsgi nova-api; this file is shared with
     nova-compute/conductor, which True breaks (LP #2035113), so False wins. -%>
-heartbeat_in_pthread = false
-<% if @rabbit_quorum_queue -%>
-rabbit_quorum_queue = true
-<% end -%>
-<% if @rabbit_tls -%>
-ssl = true
-<% if @rabbit_ssl_ca_file -%>
-ssl_ca_file = <%= @rabbit_ssl_ca_file %>
-<% end -%>
-<% end -%>
-
-[oslo_messaging_notifications]
-driver = messagingv2
+<%= render 'oslo_messaging.conf.erb' -%>
 <% if @pci_alias -%>
 
 [pci]

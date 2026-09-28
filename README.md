@@ -4,22 +4,80 @@ Cookbook for deploying OpenStack at the OSUOSL
 
 ## Supported Platforms
 
-- OpenStack Train release
-- AlmaLinux 8
+- OpenStack Yoga release (from `osl_repos_openstack`)
+- AlmaLinux 9
+
+The shared messaging tier (`ops_messaging`, `ops_coordination`) also runs on
+AlmaLinux 10.
 
 ## ppc64le compute kernels
 
-The compute recipe picks the KVM-capable kernel from the CPU and release:
+The compute recipe picks the KVM-capable kernel from the CPU:
 
-- AlmaLinux 8 on POWER10: the OSL-built mainline kernel from `yum-kernel-osuosl`
-- AlmaLinux 9 on POWER10: the CentOS Kmods SIG 6.18 kernel via
-  `osl_repos_centos_kmods`, because AlmaLinux's `kernel-kvm` (5.14) lacks the
-  nested-v2 support needed to host KVM guests inside a PowerVM LPAR
-- AlmaLinux 9 on POWER8/POWER9 bare metal: AlmaLinux's `kernel-kvm`
+- POWER10: the CentOS Kmods SIG 6.18 kernel via `osl_repos_centos_kmods`,
+  because AlmaLinux's `kernel-kvm` (5.14) lacks the nested-v2 support needed to
+  host KVM guests inside a PowerVM LPAR
+- POWER9 bare metal: AlmaLinux's `kernel-kvm`
 
 `kvm_hv` is only loaded when the running kernel ships it as a module, so the
-first converge after a leapp upgrade installs the new kernel and the module
-loads after the reboot.
+first converge on a new host installs the KVM kernel and the module loads
+after the reboot.
+
+## Resources
+
+Every service recipe starts with `osl_openstack_client` and registers itself in
+keystone with `osl_openstack_service_user` and `osl_openstack_api`. The
+lower-level keystone resources (`osl_openstack_user`, `_service`, `_endpoint`,
+`_domain`, `_project`, `_role`) look an object up before creating it, so
+re-running them against an existing cloud makes no API writes.
+
+### osl_openstack_client
+
+Adds the RDO repositories and installs the OpenStack client packages.
+
+| Property   | Default | Description                                               |
+|------------|---------|-----------------------------------------------------------|
+| `firewall` | `false` | Also open the service's ports via `osl_firewall_openstack` |
+| `openrc`   | `false` | Also write `/root/openrc` via `osl_openstack_openrc`      |
+
+```ruby
+osl_openstack_client 'image' do
+  firewall true
+  openrc true
+end
+```
+
+### osl_openstack_service_user
+
+Creates a user in the `default` domain and grants it `admin` on the `service`
+project.
+
+| Property    | Default       | Description         |
+|-------------|---------------|---------------------|
+| `user_name` | resource name | Keystone user name  |
+| `password`  | (required)    | The user's password |
+
+### osl_openstack_api
+
+Creates a keystone service and its `admin`, `internal` and `public` endpoints,
+named `<endpoint_name>-<interface>` in the run.
+
+| Property        | Default       | Description                            |
+|-----------------|---------------|----------------------------------------|
+| `service_name`  | resource name | Keystone service name                  |
+| `type`          | (required)    | Service type, e.g. `image`             |
+| `endpoint_name` | (required)    | Endpoint name, e.g. `image`            |
+| `url`           | (required)    | URL used for all three interfaces      |
+| `region`        | (required)    | Region the endpoints are registered in |
+
+```ruby
+osl_openstack_api 'glance' do
+  type 'image'
+  endpoint_name 'image'
+  url 'http://controller.example.org:9292'
+  region 'RegionOne'
+end
+```
 
 # Multi-host test integration
 

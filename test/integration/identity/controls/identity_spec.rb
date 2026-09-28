@@ -1,15 +1,17 @@
 require_controls 'osuosl-baseline' do
   control 'ssl-baseline'
-end unless input('skip_ssl_baseline', value: false)
+end unless input('skip_ssl_baseline')
 
 db_endpoint = input('db_endpoint')
 # messaging_host = AMQP host (mq tier on multi-node); memcached_host =
 # the memcached backend (controller1 on multi-node).
-messaging_host = input('messaging_host', value: 'controller.testing.osuosl.org')
-messaging_port = input('messaging_port', value: 5672)
-memcached_host = input('memcached_host', value: messaging_host)
+messaging_host = input('messaging_host')
+messaging_port = input('messaging_port')
+memcached_host = input('memcached_host')
 
 control 'openstack-identity' do
+  openstack = ->(args) { %(bash -c "source /root/openrc && /usr/bin/openstack #{args}") }
+
   describe package 'openstack-keystone' do
     it { should be_installed }
   end
@@ -31,9 +33,8 @@ control 'openstack-identity' do
     its('protocols') { should include 'udp' }
   end
 
-  # osl_memcached uses `osl_only: true`: the memcached chain jumps to
-  # the OSL CIDR chain (no -s rule). Local nc still works because
-  # osl-firewall accepts all lo traffic via the 20_loopback chain.
+  # osl_only jumps to the OSL CIDR chain; loopback is accepted separately.
+  # This also covers the peer controller in HA.
   describe iptables do
     it { should have_rule('-A memcached -p tcp -m tcp --dport 11211 -j osl_only') }
     it { should have_rule('-A memcached -p udp -m udp --dport 11211 -j osl_only') }
@@ -64,12 +65,9 @@ control 'openstack-identity' do
     its(%w(version status)) { should cmp 'stable' }
   end
 
-  # The wsgi-keystone canonical-host rewrite (Host !~ server_name ->
-  # 301 to https://server_name:5000/) is gated off when haproxy
-  # terminates TLS: behind the VIP the rewrite would 301 healthchecks
-  # and internal traffic into a loop. In HA, keystone itself answers
-  # with its 300 version-discovery payload instead.
-  unless input('haproxy_tls', value: false)
+  # The canonical-host 301 is off behind haproxy, where it would loop;
+  # keystone answers with its 300 version discovery there instead.
+  unless input('haproxy_tls')
     describe http(
       'https://controller.testing.osuosl.org:5000',
       headers: { 'Host' => 'controller1.testing.osuosl.org' },
@@ -80,12 +78,7 @@ control 'openstack-identity' do
     end
   end
 
-  describe port(11211) do
-    it { should be_listening }
-    its('protocols') { should include 'udp' }
-  end
-
-  describe command('bash -c "source /root/openrc && /usr/bin/openstack token issue"') do
+  describe command(openstack.call('token issue')) do
     its('stdout') { should match(/expires.*[0-9]{4}-[0-9]{2}-[0-9]{2}/) }
     its('stdout') { should match(/id\s*\|\s[0-9a-z]{32}/) }
     its('stdout') { should match(/project_id\s*\|\s[0-9a-z]{32}/) }

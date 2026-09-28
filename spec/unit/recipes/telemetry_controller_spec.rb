@@ -9,18 +9,10 @@ describe 'osl-openstack::telemetry_controller' do
 
       include_context 'common_stubs'
 
-      it { is_expected.to add_osl_repos_openstack 'telemetry-controller' }
-      it { is_expected.to create_osl_openstack_client 'telemetry-controller' }
-      it { is_expected.to accept_osl_firewall_openstack 'telemetry-controller' }
-      it do
-        is_expected.to create_osl_openstack_user('ceilometer').with(
-          domain_name: 'default',
-          role_name: 'admin',
-          project_name: 'service',
-          password: 'ceilometer'
-        )
-      end
-      it { is_expected.to grant_role_osl_openstack_user 'ceilometer' }
+      it_behaves_like 'oslo messaging config', '/etc/ceilometer/ceilometer.conf'
+
+      it { is_expected.to create_osl_openstack_client('telemetry-controller').with(firewall: true, openrc: false) }
+      it { is_expected.to create_osl_openstack_service_user('ceilometer').with(password: 'ceilometer') }
       it do
         is_expected.to install_package(
           %w(
@@ -40,11 +32,9 @@ describe 'osl-openstack::telemetry_controller' do
           variables: {
             auth_endpoint: 'controller.testing.osuosl.org',
             memcached_endpoint: 'controller.testing.osuosl.org:11211',
+            region: 'RegionOne',
             service_pass: 'ceilometer',
-            rabbit_quorum_queue: false,
-            rabbit_tls: false,
-            rabbit_ssl_ca_file: nil,
-            transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672/',
+            **messaging_vars,
           }
         )
       end
@@ -53,6 +43,10 @@ describe 'osl-openstack::telemetry_controller' do
       it do
         is_expected.to render_file('/etc/ceilometer/ceilometer.conf')
           .with_content(/^\[notification\]$.*^pipelines = meter$/m)
+      end
+      it do
+        is_expected.to render_file('/etc/ceilometer/ceilometer.conf')
+          .with_content(/^\[service_credentials\]$.*^region_name = RegionOne$/m)
       end
       it do
         is_expected.to create_template('/etc/ceilometer/pipeline.yaml').with(

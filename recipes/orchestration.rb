@@ -15,28 +15,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-osl_repos_openstack 'orchestration'
-osl_openstack_client 'orchestration'
-osl_firewall_openstack 'orchestration'
+osl_openstack_client 'orchestration' do
+  firewall true
+end
 
 s = os_secrets
 o = s['orchestration']
-auth_endpoint = s['identity']['endpoint']
+auth_endpoint = openstack_auth_endpoint
 
-osl_openstack_user o['service']['user'] do
-  domain_name 'default'
-  role_name 'admin'
-  project_name 'service'
+osl_openstack_service_user o['service']['user'] do
   password o['service']['pass']
-  action [:create, :grant_role]
-end
-
-osl_openstack_service 'heat' do
-  type 'orchestration'
-end
-
-osl_openstack_service 'heat-cfn' do
-  type 'cloudformation'
 end
 
 osl_openstack_domain 'heat'
@@ -51,33 +39,24 @@ end
 osl_openstack_role 'heat_stack_owner'
 osl_openstack_role 'heat_stack_user'
 
-%w(
-  admin
-  internal
-  public
-).each do |int|
-  osl_openstack_endpoint "orchestration-#{int}" do
-    endpoint_name 'orchestration'
-    service_name 'heat'
-    interface int
-    url "http://#{o['endpoint']}:8004/v1/%(tenant_id)s"
-    region 'RegionOne'
-  end
-
-  osl_openstack_endpoint "cloudformation-#{int}" do
-    endpoint_name 'cloudformation'
-    service_name 'heat-cfn'
-    interface int
-    url "http://#{o['endpoint']}:8000/v1"
-    region 'RegionOne'
-  end
+# Heat's endpoints were registered in RegionOne regardless of the bag region
+osl_openstack_api 'heat' do
+  type 'orchestration'
+  endpoint_name 'orchestration'
+  url "http://#{o['endpoint']}:8004/v1/%(tenant_id)s"
+  region 'RegionOne'
 end
 
-package %w(
-  openstack-heat-api
-  openstack-heat-api-cfn
-  openstack-heat-engine
-)
+osl_openstack_api 'heat-cfn' do
+  type 'cloudformation'
+  endpoint_name 'cloudformation'
+  url "http://#{o['endpoint']}:8000/v1"
+  region 'RegionOne'
+end
+
+heat_services = %w(openstack-heat-api openstack-heat-api-cfn openstack-heat-engine)
+
+package heat_services
 
 template '/etc/heat/heat.conf' do
   owner 'root'
@@ -94,10 +73,7 @@ template '/etc/heat/heat.conf' do
     memcached_endpoint: openstack_memcached_servers,
     region: o['region'],
     service_pass: o['service']['pass'],
-    rabbit_quorum_queue: openstack_rabbit_quorum_queue?,
-    rabbit_tls: openstack_rabbit_tls?,
-    rabbit_ssl_ca_file: openstack_rabbit_ssl_ca_file,
-    transport_url: openstack_transport_url
+    **openstack_messaging_template_vars
   )
   notifies :run, 'execute[heat: db_sync]', :immediately
 end
@@ -109,11 +85,7 @@ execute 'heat: db_sync' do
   action :nothing
 end
 
-%w(
-  openstack-heat-api
-  openstack-heat-api-cfn
-  openstack-heat-engine
-).each do |srv|
+heat_services.each do |srv|
   service srv do
     action [:enable, :start]
     subscribes :restart, 'template[/etc/heat/heat.conf]'

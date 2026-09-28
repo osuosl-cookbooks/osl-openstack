@@ -9,6 +9,8 @@ describe 'osl-openstack::network' do
 
       include_context 'common_stubs'
 
+      it_behaves_like 'oslo messaging config', '/etc/neutron/neutron.conf'
+
       it { is_expected.to install_package(%w(conntrack-tools ebtables ipset openstack-neutron-linuxbridge)) }
       it { is_expected.to include_recipe 'osl-openstack::network_common' }
       it do
@@ -17,21 +19,7 @@ describe 'osl-openstack::network' do
           group: 'neutron',
           mode: '0640',
           sensitive: true,
-          variables: {
-            auth_endpoint: 'controller.testing.osuosl.org',
-            compute_pass: 'nova',
-            controller: false,
-            ha: nil,
-            listen_ip: '*',
-            database_connection: 'mysql+pymysql://neutron_x86:neutron@localhost:3306/neutron_x86',
-            memcached_endpoint: 'controller.testing.osuosl.org:11211',
-            region: 'RegionOne',
-            service_pass: 'neutron',
-            rabbit_quorum_queue: false,
-            rabbit_tls: false,
-            rabbit_ssl_ca_file: nil,
-            transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672/',
-          }
+          variables: neutron_conf_vars(controller: false)
         )
       end
 
@@ -50,21 +38,7 @@ describe 'osl-openstack::network' do
             group: 'neutron',
             mode: '0640',
             sensitive: true,
-            variables: {
-              auth_endpoint: 'controller.testing.osuosl.org',
-              compute_pass: 'nova',
-              controller: false,
-              ha: nil,
-              listen_ip: '*',
-              database_connection: 'mysql+pymysql://neutron_x86:neutron@localhost_region2:3306/neutron_x86',
-              memcached_endpoint: 'controller_region2.testing.osuosl.org:11211',
-              region: 'RegionTwo',
-              service_pass: 'neutron',
-              rabbit_quorum_queue: false,
-              rabbit_tls: false,
-              rabbit_ssl_ca_file: nil,
-              transport_url: 'rabbit://openstack:openstack@controller_region2.testing.osuosl.org:5672/',
-            }
+            variables: neutron_conf_vars(controller: false, region2: true)
           )
         end
       end

@@ -1,17 +1,20 @@
 require_relative '../../spec_helper'
 
 describe 'osl-openstack::ops_messaging' do
-  # EL10 is included here only — the messaging tier is the one piece
-  # that runs on AlmaLinux 10 (RabbitMQ 4.2). Other suites stay EL8/9.
+  # The Messaging SIG repo is the only platform difference, so only the
+  # default converge runs on EL9 as well as EL10 where the tier lives
+  rabbitmq_subdir = { ALMA_9 => 'rabbitmq-38', ALMA_10 => 'rabbitmq-4' }
+
   [*ALL_PLATFORMS, ALMA_10].each do |pltfrm|
     context "#{pltfrm[:platform]} #{pltfrm[:version]}" do
       cached(:chef_run) do
-        ChefSpec::SoloRunner.new(pltfrm.dup.merge(
+        ChefSpec::SoloRunner.new(pltfrm.merge(
           step_into: %w(osl_openstack_messaging)
         )).converge(described_recipe)
       end
 
       include_context 'common_stubs'
+      include_context 'rabbitmq_stubs'
 
       it do
         is_expected.to create_osl_openstack_messaging('default').with(
@@ -47,34 +50,13 @@ describe 'osl-openstack::ops_messaging' do
           )
         end
       end
-      case pltfrm
-      when ALMA_8
-        it do
-          is_expected.to create_yum_repository('centos-rabbitmq').with(
-            description: 'CentOS $releasever - RabbitMQ',
-            baseurl: 'https://ftp.osuosl.org/pub/osl/vault/$releasever-stream/messaging/$basearch/rabbitmq-38',
-            gpgkey: 'https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Messaging',
-            priority: '20'
-          )
-        end
-      when ALMA_9
-        it do
-          is_expected.to create_yum_repository('centos-rabbitmq').with(
-            description: 'CentOS $releasever - RabbitMQ',
-            baseurl: 'https://centos-stream.osuosl.org/SIGs/$releasever-stream/messaging/$basearch/rabbitmq-38',
-            gpgkey: 'https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Messaging',
-            priority: '20'
-          )
-        end
-      when ALMA_10
-        it do
-          is_expected.to create_yum_repository('centos-rabbitmq').with(
-            description: 'CentOS $releasever - RabbitMQ',
-            baseurl: 'https://centos-stream.osuosl.org/SIGs/$releasever-stream/messaging/$basearch/rabbitmq-4',
-            gpgkey: 'https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Messaging',
-            priority: '20'
-          )
-        end
+      it do
+        is_expected.to create_yum_repository('centos-rabbitmq').with(
+          description: 'CentOS $releasever - RabbitMQ',
+          baseurl: "https://centos-stream.osuosl.org/SIGs/$releasever-stream/messaging/$basearch/#{rabbitmq_subdir[pltfrm]}",
+          gpgkey: 'https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Messaging',
+          priority: '20'
+        )
       end
 
       it do
@@ -96,101 +78,70 @@ describe 'osl-openstack::ops_messaging' do
           command: 'rabbitmqctl set_user_tags openstack administrator'
         )
       end
-
-      context 'user created' do
-        cached(:chef_run) do
-          ChefSpec::SoloRunner.new(pltfrm.dup.merge(
-            step_into: %w(osl_openstack_messaging)
-          )).converge(described_recipe)
-        end
-
-        before do
-          allow_any_instance_of(OSLOpenstack::Cookbook::Helpers).to receive(:openstack_rabbitmq_user?).and_return(true)
-          allow_any_instance_of(OSLOpenstack::Cookbook::Helpers).to receive(:openstack_rabbitmq_permissions?).and_return(true)
-          allow_any_instance_of(OSLOpenstack::Cookbook::Helpers).to receive(:openstack_rabbitmq_user_tag?).and_return(true)
-        end
-
-        it { is_expected.to nothing_execute('rabbitmq: add user openstack') }
-        it { is_expected.to nothing_execute('rabbitmq: set permissions openstack') }
-        it { is_expected.to nothing_execute('rabbitmq: set user tags openstack') }
-      end
-
-      context 'shared messaging tier (vhosts + TLS + CMR)' do
-        cached(:chef_run) do
-          ChefSpec::SoloRunner.new(pltfrm.dup.merge(
-            step_into: %w(osl_openstack_messaging)
-          )).converge(described_recipe)
-        end
-
-        before do
-          stub_data_bag_item('openstack', 'x86').and_return(
-            openstack_secrets_stub.merge(
-              'messaging' => openstack_secrets_stub['messaging'].merge(
-                'tls' => true,
-                'tls_only' => true,
-                'cmr_target_group_size' => 3,
-                'vhosts' => [{ 'vhost' => 'x86', 'user' => 'x86', 'pass' => 'x86pass' }]
-              )
-            )
-          )
-          allow_any_instance_of(OSLOpenstack::Cookbook::Helpers).to receive(:openstack_rabbitmq_vhost?).and_return(false)
-          allow_any_instance_of(OSLOpenstack::Cookbook::Helpers).to receive(:openstack_rabbitmq_user?).and_return(false)
-          allow_any_instance_of(OSLOpenstack::Cookbook::Helpers).to receive(:openstack_rabbitmq_permissions?).and_return(false)
-          allow_any_instance_of(OSLOpenstack::Cookbook::Helpers).to receive(:openstack_rabbitmq_policy?).and_return(false)
-        end
-
-        it do
-          is_expected.to create_certificate_manage('wildcard-rabbitmq').with(
-            search_id: 'wildcard',
-            cert_path: '/etc/rabbitmq/ssl',
-            owner: 'rabbitmq',
-            group: 'rabbitmq'
-          )
-        end
-
-        it do
-          is_expected.to run_execute('rabbitmq: add vhost x86').with(
-            command: 'rabbitmqctl add_vhost x86'
-          )
-        end
-        it do
-          is_expected.to run_execute('rabbitmq: set permissions x86 on x86').with(
-            command: 'rabbitmqctl set_permissions -p x86 x86 ".*" ".*" ".*"'
-          )
-        end
-        it do
-          is_expected.to run_execute('rabbitmq: set policy stale-heat-queues on x86').with(
-            command: 'rabbitmqctl set_policy -p x86 stale-heat-queues ' \
-                     '\'^(heat-engine-listener|engine_worker)\\.\' \'{"expires":3600000}\' --apply-to queues'
-          )
-        end
-
-        it { is_expected.to render_file('/etc/rabbitmq/rabbitmq.conf').with_content('listeners.ssl.default = 5671') }
-        it { is_expected.to render_file('/etc/rabbitmq/rabbitmq.conf').with_content('ssl_options.certfile = /etc/rabbitmq/ssl/certs/cert.pem') }
-        it { is_expected.to render_file('/etc/rabbitmq/rabbitmq.conf').with_content(/^listeners.tcp = none$/) }
-        it { is_expected.to render_file('/etc/rabbitmq/rabbitmq.conf').with_content('target_group_size = 3') }
-      end
-
-      context 'custom ssl_search_id' do
-        cached(:chef_run) do
-          ChefSpec::SoloRunner.new(pltfrm.dup.merge(
-            step_into: %w(osl_openstack_messaging)
-          )).converge(described_recipe)
-        end
-
-        before do
-          stub_data_bag_item('openstack', 'x86').and_return(
-            openstack_secrets_stub.merge(
-              'messaging' => openstack_secrets_stub['messaging'].merge(
-                'tls' => true,
-                'ssl_search_id' => 'wildcard-bak'
-              )
-            )
-          )
-        end
-
-        it { is_expected.to create_certificate_manage('wildcard-rabbitmq').with(search_id: 'wildcard-bak') }
-      end
     end
+  end
+
+  context 'almalinux 10 shared messaging tier' do
+    cached(:chef_run) do
+      ChefSpec::SoloRunner.new(ALMA_10.merge(
+        step_into: %w(osl_openstack_messaging)
+      )).converge(described_recipe)
+    end
+
+    include_context 'common_stubs'
+    include_context 'rabbitmq_stubs'
+
+    # The openstack user already exists; the per-cloud x86 vhost and user don't
+    before do
+      stub_data_bag_item('openstack', 'x86').and_return(
+        openstack_secrets_stub(
+          'messaging' => {
+            'tls' => true,
+            'tls_only' => true,
+            'ssl_search_id' => 'wildcard-bak',
+            'cmr_target_group_size' => 5,
+            'vhosts' => [{ 'vhost' => 'x86', 'user' => 'x86', 'pass' => 'x86pass' }],
+          }
+        )
+      )
+      helpers = OSLOpenstack::Cookbook::Helpers
+      allow_any_instance_of(helpers).to receive(:openstack_rabbitmq_user?) { |_, user| user == 'openstack' }
+      allow_any_instance_of(helpers).to receive(:openstack_rabbitmq_permissions?) { |_, _user, vhost| vhost.nil? }
+      allow_any_instance_of(helpers).to receive(:openstack_rabbitmq_user_tag?).and_return(true)
+      allow_any_instance_of(helpers).to receive(:openstack_rabbitmq_vhost?).and_return(false)
+      allow_any_instance_of(helpers).to receive(:openstack_rabbitmq_policy?).and_return(false)
+    end
+
+    it { is_expected.to nothing_execute('rabbitmq: add user openstack') }
+    it { is_expected.to nothing_execute('rabbitmq: set permissions openstack') }
+    it { is_expected.to nothing_execute('rabbitmq: set user tags openstack') }
+
+    it do
+      is_expected.to create_certificate_manage('wildcard-rabbitmq').with(
+        search_id: 'wildcard-bak',
+        cert_path: '/etc/rabbitmq/ssl',
+        owner: 'rabbitmq',
+        group: 'rabbitmq'
+      )
+    end
+
+    it { is_expected.to run_execute('rabbitmq: add vhost x86').with(command: 'rabbitmqctl add_vhost x86') }
+    it { is_expected.to run_execute('rabbitmq: add user x86') }
+    it do
+      is_expected.to run_execute('rabbitmq: set permissions x86 on x86').with(
+        command: 'rabbitmqctl set_permissions -p x86 x86 ".*" ".*" ".*"'
+      )
+    end
+    it do
+      is_expected.to run_execute('rabbitmq: set policy stale-heat-queues on x86').with(
+        command: 'rabbitmqctl set_policy -p x86 stale-heat-queues ' \
+                 '\'^(heat-engine-listener|engine_worker)\\.\' \'{"expires":3600000}\' --apply-to queues'
+      )
+    end
+
+    it { is_expected.to render_file('/etc/rabbitmq/rabbitmq.conf').with_content('listeners.ssl.default = 5671') }
+    it { is_expected.to render_file('/etc/rabbitmq/rabbitmq.conf').with_content('ssl_options.certfile = /etc/rabbitmq/ssl/certs/cert.pem') }
+    it { is_expected.to render_file('/etc/rabbitmq/rabbitmq.conf').with_content(/^listeners.tcp = none$/) }
+    it { is_expected.to render_file('/etc/rabbitmq/rabbitmq.conf').with_content('target_group_size = 5') }
   end
 end

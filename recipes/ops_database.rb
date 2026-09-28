@@ -17,10 +17,9 @@
 # limitations under the License.
 #
 s = os_secrets
-suffix = s['database_server']['suffix']
 
-osl_mysql_test "keystone_#{suffix}" do
-  username "#{s['identity']['db']['user']}_#{suffix}"
+osl_mysql_test openstack_db_name('identity') do
+  username openstack_db_user('identity')
   password s['identity']['db']['pass']
   encoding 'utf8mb3'
   collation 'utf8mb3_general_ci'
@@ -41,12 +40,10 @@ service 'mariadb' do
   action :nothing
 end
 
-openstack_services.each do |service, db|
-  next if service == 'messaging'
-
+openstack_services.each_key do |service|
   begin
-    db_user = "#{s[service]['db']['user']}_#{suffix}"
-    db_name = "#{db}_#{suffix}"
+    db_user = openstack_db_user(service)
+    db_name = openstack_db_name(service)
 
     mariadb_database db_name do
       password 'osl_mysql_test'

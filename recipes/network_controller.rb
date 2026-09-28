@@ -17,37 +17,22 @@
 # limitations under the License.
 #
 
-osl_repos_openstack 'network'
-osl_openstack_client 'network'
-osl_firewall_openstack 'network'
+osl_openstack_client 'network' do
+  firewall true
+end
 
 s = os_secrets
 n = s['network']
 
-osl_openstack_user n['service']['user'] do
-  domain_name 'default'
-  role_name 'admin'
-  project_name 'service'
+osl_openstack_service_user n['service']['user'] do
   password n['service']['pass']
-  action [:create, :grant_role]
 end
 
-osl_openstack_service 'neutron' do
+osl_openstack_api 'neutron' do
   type 'network'
-end
-
-%w(
-  admin
-  internal
-  public
-).each do |int|
-  osl_openstack_endpoint "network-#{int}" do
-    endpoint_name 'network'
-    service_name 'neutron'
-    interface int
-    url "http://#{n['endpoint']}:9696"
-    region n['region']
-  end
+  endpoint_name 'network'
+  url "http://#{n['endpoint']}:9696"
+  region n['region']
 end
 
 package %w(

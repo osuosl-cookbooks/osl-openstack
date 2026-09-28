@@ -32,58 +32,26 @@ end
 if node['osl-openstack']['node_type'] == 'controller'
   package 'nagios-plugins-http'
 
-  # Hit this node's API daemons directly: on HA controllers that's the
-  # per-host private IP Apache binds to (api_listen_ip); on non-HA
-  # single-controller deploys Apache binds wildcard, so node['ipaddress']
-  # is the right target.
+  # Check this node's daemons directly, not through the VIP
   local_ip = openstack_local_api_endpoint
 
-  # keystone and novnc are the two backends that terminate TLS
-  # themselves on non-HA single-controller (Apache mod_ssl /
-  # nova-novncproxy --ssl_only); in HA mode they serve plain HTTP /
-  # plain ws on the per-host IP and haproxy on the VIP is the TLS
-  # endpoint. The local nrpe check has to match what the backend
-  # actually speaks, so drop --ssl when haproxy_tls is on.
+  # keystone and novnc terminate TLS themselves unless haproxy does it in HA
   backend_ssl_opt = openstack_tls_on_haproxy? ? '' : '--ssl '
 
-  nrpe_check 'check_keystone_api' do
-    command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "#{backend_ssl_opt}-I #{local_ip} -p 5000"
-  end
-
-  nrpe_check 'check_glance_api' do
-    command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "-I #{local_ip} -p 9292"
-  end
-
-  nrpe_check 'check_nova_api' do
-    command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "-I #{local_ip} -p 8774"
-  end
-
-  nrpe_check 'check_nova_placement_api' do
-    command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "-I #{local_ip} -p 8778"
-  end
-
-  nrpe_check 'check_novnc' do
-    command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "#{backend_ssl_opt}-I #{local_ip} -p 6080"
-  end
-
-  nrpe_check 'check_neutron_api' do
-    command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "-I #{local_ip} -p 9696"
-  end
-
-  nrpe_check 'check_cinder_api' do
-    command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "-I #{local_ip} -p 8776"
-  end
-
-  nrpe_check 'check_heat_api' do
-    command "#{node['nrpe']['plugin_dir']}/check_http"
-    parameters "-I #{local_ip} -p 8004"
+  {
+    'check_keystone_api' => [5000, true],
+    'check_glance_api' => [9292, false],
+    'check_nova_api' => [8774, false],
+    'check_nova_placement_api' => [8778, false],
+    'check_novnc' => [6080, true],
+    'check_neutron_api' => [9696, false],
+    'check_cinder_api' => [8776, false],
+    'check_heat_api' => [8004, false],
+  }.each do |check, (port, ssl)|
+    nrpe_check check do
+      command "#{node['nrpe']['plugin_dir']}/check_http"
+      parameters "#{backend_ssl_opt if ssl}-I #{local_ip} -p #{port}"
+    end
   end
 
   file '/usr/local/etc/os_cluster' do
@@ -177,10 +145,8 @@ if node['osl-openstack']['node_type'] == 'messaging'
       end
     end
 
-    # check_valkey and check_valkey_replication read requirepass out of
-    # /etc/valkey/valkey.conf (root-only), so they run through the same
-    # sudo grant pattern as the rabbitmq checks; the sentinel check
-    # needs no auth at all.
+    # These read requirepass from the root-only valkey.conf; the sentinel
+    # check needs no auth.
     %w(nagios nrpe).each do |u|
       sudo "check_valkey-#{u}" do
         user u

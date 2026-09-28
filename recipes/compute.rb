@@ -17,10 +17,10 @@
 # limitations under the License.
 #
 
-osl_repos_openstack 'compute'
-osl_openstack_client 'compute'
-osl_openstack_openrc 'compute'
-osl_firewall_openstack 'compute'
+osl_openstack_client 'compute' do
+  firewall true
+  openrc true
+end
 osl_firewall_vnc 'osl-openstack'
 osl_firewall_hpnssh 'osl-openstack'
 osl_hpnssh 'osl-openstack' do
@@ -43,11 +43,6 @@ end unless openstack_cinder_disabled?
 
 kernel_module 'tun' do
   action [:install, :load]
-end
-
-# Disable IPv6 autoconf globally (not needed on EL9+ where nmstate manages interfaces)
-cookbook_file '/etc/sysconfig/network' do
-  only_if { node['platform_version'].to_i < 9 }
 end
 
 package openstack_compute_pkgs
@@ -120,63 +115,45 @@ end
 
 case node['kernel']['machine']
 when 'ppc64le'
-  include_recipe 'yum-kernel-osuosl::install' if openstack_power10? && node['platform_version'].to_i < 9
-
-  if node['platform_version'].to_i == 9
-    if openstack_power10?
-      # KVM as an L1 under PowerVM needs the nested-v2 host code (>= 6.7),
-      # which AlmaLinux's 5.14 kernel-kvm lacks
-      osl_repos_centos_kmods 'osl-openstack' do
-        kernel '6.18'
-      end
-
-      package 'kernel' do
-        action :upgrade
-      end
-    else
-      package 'kernel-kvm'
+  if openstack_power10?
+    # KVM as an L1 under PowerVM needs the nested-v2 host code (>= 6.7),
+    # which AlmaLinux's 5.14 kernel-kvm lacks
+    osl_repos_centos_kmods 'osl-openstack' do
+      kernel '6.18'
     end
 
-    package 'patch'
-
-    # libvirt >= 9.2 rejects the <acpi/> feature nova adds on pseries; patch the
-    # RDO driver in place (re-applies after a nova package update)
-    cookbook_file "#{Chef::Config[:file_cache_path]}/nova-pseries-acpi.patch" do
-      source 'nova-pseries-acpi.patch'
+    package 'kernel' do
+      action :upgrade
     end
-
-    execute 'patch nova libvirt driver for pseries ACPI' do
-      command "patch -p1 --no-backup-if-mismatch -i #{Chef::Config[:file_cache_path]}/nova-pseries-acpi.patch"
-      cwd '/usr/lib/python3.9/site-packages'
-      not_if { openstack_nova_pseries_acpi_patched? }
-      notifies :restart, 'service[openstack-nova-compute]'
-    end
+  else
+    package 'kernel-kvm'
   end
 
-  kernel_module 'kvm_pr' do
-    action [:install, :load]
-    only_if { node['platform_version'].to_i < 9 }
-    only_if { node.read('cpu', 'hypervisor_vendor').to_s.match?(/KVM/) }
+  package 'patch'
+
+  # libvirt >= 9.2 rejects the <acpi/> feature nova adds on pseries; patch the
+  # RDO driver in place (re-applies after a nova package update)
+  cookbook_file "#{Chef::Config[:file_cache_path]}/nova-pseries-acpi.patch" do
+    source 'nova-pseries-acpi.patch'
+  end
+
+  execute 'patch nova libvirt driver for pseries ACPI' do
+    command "patch -p1 --no-backup-if-mismatch -i #{Chef::Config[:file_cache_path]}/nova-pseries-acpi.patch"
+    cwd openstack_python_sitelib
+    not_if { openstack_nova_pseries_acpi_patched? }
+    notifies :restart, 'service[openstack-nova-compute]'
   end
 
   kernel_module 'kvm_hv' do
     action [:install, :load]
     not_if { node.read('cpu', 'hypervisor_vendor').to_s.match?(/KVM/) }
-    # Built into the EL8 kernel-osuosl, and the stock EL8 kernel cannot host KVM under PowerVM
-    not_if { node.read('cpu', 'hypervisor_vendor').to_s.match?(/pHyp/) && node['platform_version'].to_i < 9 }
-    # Absent from the stock EL9 kernel still running on the first converge after leapp
+    # Absent from the stock kernel until the node reboots into kernel-kvm or the Kmods kernel
     only_if { kernel_module_available?('kvm_hv') }
   end
-
-  # SMT needs to be on POWER8 systems due to architecture limitations
-  # (unit is part of the powerpc-utils package)
-  service 'smt_off' do
-    action [:enable, :start]
-  end if openstack_power8?
 end
 
-# KSM is only available on AlmaLinux 9+ and not in VMs
-if node['platform_version'].to_i >= 9 && !openstack_qemu_guest?
+# KSM is not available in VMs
+unless openstack_qemu_guest?
   package 'ksmtuned'
 
   template '/etc/ksmtuned.conf' do

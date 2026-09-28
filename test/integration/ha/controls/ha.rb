@@ -1,11 +1,13 @@
+vip_v4 = input('vip_v4')
+vip_v6 = input('vip_v6')
+vrrp_iface = input('vrrp_iface')
+api_listen_ip = input('api_listen_ip')
+cert = '/etc/haproxy/certs/wildcard.pem'
+
 control 'keepalived' do
   describe service('keepalived') do
     it { should be_enabled }
     it { should be_running }
-  end
-
-  describe processes('keepalived') do
-    its('count') { should be > 0 }
   end
 end
 
@@ -18,15 +20,22 @@ control 'ip_nonlocal_bind' do
   end
 end
 
-control 'vip-bound' do
-  # Single-node test: this node is master and should hold the VIPs.
-  # CIDR matches the data bag (vip_v4: 192.168.60.10/24, vip_v6:
-  # fc00::10/64) - keepalived honors the supplied prefix length.
-  describe command('ip -4 addr show dev eth1') do
-    its('stdout') { should match(%r{192\.168\.60\.10/24}) }
-  end
-  describe command('ip -6 addr show dev eth1') do
-    its('stdout') { should match(%r{fc00::10/64}) }
+control 'vip' do
+  title 'The master holds the VIP with the data bag prefix; the standby does not'
+  if input('holds_vip')
+    describe command("ip -4 addr show dev #{vrrp_iface}") do
+      its('stdout') { should match(%r{#{Regexp.escape(vip_v4)}/#{input('vip_v4_prefix')}}) }
+    end
+    describe command("ip -6 addr show dev #{vrrp_iface}") do
+      its('stdout') { should match(%r{#{Regexp.escape(vip_v6)}/#{input('vip_v6_prefix')}}) }
+    end
+  else
+    describe command("ip -4 addr show dev #{vrrp_iface}") do
+      its('stdout') { should_not match(/#{Regexp.escape(vip_v4)}\b/) }
+    end
+    describe command("ip -6 addr show dev #{vrrp_iface}") do
+      its('stdout') { should_not match(/#{Regexp.escape(vip_v6)}\b/) }
+    end
   end
 end
 
@@ -37,20 +46,19 @@ control 'haproxy' do
   end
 
   describe file('/etc/haproxy/haproxy.cfg') do
-    it { should exist }
     its('content') { should match(/^listen keystone/) }
     its('content') { should match(/^listen horizon-https/) }
-    # TLS listeners (keystone, novnc, horizon-https) terminate TLS on
-    # haproxy via `ssl crt ...` on the bind. Plain-HTTP backends
-    # (glance / nova / neutron / cinder / heat) stay in tcp mode and
-    # have no ssl options.
-    its('content') { should match(%r{bind 192\.168\.60\.10:5000 ssl crt /etc/haproxy/certs/wildcard\.pem}) }
-    its('content') { should match(%r{bind \[fc00::10\]:5000 ssl crt /etc/haproxy/certs/wildcard\.pem}) }
-    its('content') { should match(/bind 192\.168\.60\.10:9292$/) } # glance, no ssl
+    %w(5000 6080 443).each do |p|
+      its('content') { should match(/bind #{Regexp.escape(vip_v4)}:#{p} ssl crt #{Regexp.escape(cert)}/) }
+    end
+    its('content') { should match(/bind \[#{Regexp.escape(vip_v6)}\]:5000 ssl crt #{Regexp.escape(cert)}/) }
+    # Plain-HTTP backends stay in tcp mode with no ssl options
+    its('content') { should match(/bind #{Regexp.escape(vip_v4)}:9292$/) }
+    its('content') { should match(/bind #{Regexp.escape(vip_v4)}:9696$/) }
     its('content') { should match(/option forwardfor/) }
-    its('content') { should match(/balance source/) }       # horizon
-    its('content') { should match(/balance roundrobin/) }   # everything else
-    # Per-source conn-rate throttle with infra ranges exempt.
+    its('content') { should match(/balance source/) }
+    its('content') { should match(/balance roundrobin/) }
+    its('content') { should match(/^\s*http-request redirect scheme https code 301/) }
     its('content') { should match(%r{acl throttle_exempt src 10\.0\.0\.0/8 127\.0\.0\.0/8 140\.211\.0\.0/16}) }
     its('content') { should match(/stick-table type ipv6 size 100k expire 10m store conn_rate\(10s\)/) }
     its('content') { should match(/tcp-request connection track-sc0 src if !throttle_exempt/) }
@@ -65,11 +73,9 @@ control 'haproxy-cert-bundle' do
     its('mode') { should cmp '0700' }
   end
 
-  describe file('/etc/haproxy/certs/wildcard.pem') do
-    it { should exist }
+  describe file(cert) do
     it { should be_owned_by 'haproxy' }
     its('mode') { should cmp '0640' }
-    # cert + chain + key all in one PEM
     its('content') { should match(/-----BEGIN CERTIFICATE-----/) }
     its('content') { should match(/-----BEGIN (?:RSA )?PRIVATE KEY-----/) }
   end
@@ -82,30 +88,28 @@ control 'haproxy-stats' do
 end
 
 control 'haproxy-vip-listeners' do
-  # Sanity-check a representative spread of the API ports HAProxy must
-  # bind on the VIP. ip_nonlocal_bind=1 lets it bind even when the VIP
-  # isn't held; in this test the local node is master so it is held.
+  title 'HAProxy binds every API port on the VIP, held or not'
   %w(5000 9292 8774 8778 9696 8776 8004 8000 6080 80 443).each do |p|
-    describe command("ss -tlnp | awk '{print $4}' | grep -E '192\\.168\\.60\\.10:#{p}$|\\[fc00::10\\]:#{p}$'") do
-      its('stdout') { should match(/192\.168\.60\.10:#{p}|\[fc00::10\]:#{p}/) }
+    describe command("ss -Hltn 'sport = :#{p}'") do
+      its('stdout') { should match(/#{Regexp.escape(vip_v4)}:#{p}/) }
     end
+  end
+end
+
+control 'keystone-via-vip' do
+  title 'keystone answers through haproxy on the VIP'
+  only_if('multi-node runs resolve the controller hostname to the VIP') { input('keystone_probe') }
+  describe http('https://controller.testing.osuosl.org:5000/v3', ssl_verify: false) do
+    its('status') { should cmp 200 }
   end
 end
 
 control 'mon-nrpe-checks-drop-ssl-on-ha' do
   title 'keystone and novnc nrpe checks omit --ssl in HA'
-  # In HA the Apache backend serves plain HTTP for keystone and
-  # nova-novncproxy serves plain ws on the per-host api_listen_ip
-  # (192.168.60.11 per the ha data bag); haproxy on the VIP is the
-  # TLS endpoint. The local check has to match what the backend
-  # actually speaks, so --ssl must NOT be passed to check_http.
-  {
-    'check_keystone_api' => 5000,
-    'check_novnc' => 6080,
-  }.each do |name, port|
+  { 'check_keystone_api' => 5000, 'check_novnc' => 6080 }.each do |name, port|
     describe file("/etc/nagios/nrpe.d/#{name}.cfg") do
       its('content') do
-        should match(%r{^command\[#{name}\]=/usr/lib64/nagios/plugins/check_http -I 192\.168\.60\.11 -p #{port}$})
+        should match(%r{^command\[#{name}\]=/usr/lib64/nagios/plugins/check_http -I #{Regexp.escape(api_listen_ip)} -p #{port}$})
       end
       its('content') { should_not match(/--ssl/) }
     end

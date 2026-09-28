@@ -1,5 +1,6 @@
 ---
 name: dashboard
+version: 0.1.0
 depends:
   - name: osuosl-baseline
     git: https://github.com/osuosl/osuosl-baseline.git

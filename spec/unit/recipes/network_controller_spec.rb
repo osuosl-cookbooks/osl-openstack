@@ -12,45 +12,24 @@ describe 'osl-openstack::network_controller' do
       include_context 'common_stubs'
       include_context 'network_stubs'
 
+      # The DNS-blocking bash only runs where the qdhcp namespace exists
+      let(:qdhcp_ns_present) { true }
       before do
-        # The iptables-in-namespace bash is guarded by an only_if on
-        # File.exist?('/run/netns/<qdhcp ns>'). The default-context
-        # cached(:chef_run) asserts the bash runs, so stub the
-        # namespace path to exist. The "namespace missing" branch is
-        # exercised in its own context below.
         allow(File).to receive(:exist?).and_call_original
         allow(File).to receive(:exist?)
           .with('/run/netns/qdhcp-8df74e06-c4aa-4eb2-b312-0e915bf8f97f')
-          .and_return(true)
+          .and_return(qdhcp_ns_present)
       end
 
-      it { is_expected.to add_osl_repos_openstack 'network' }
-      it { is_expected.to create_osl_openstack_client 'network' }
-      it { is_expected.to accept_osl_firewall_openstack 'network' }
+      it { is_expected.to create_osl_openstack_client('network').with(firewall: true, openrc: false) }
+      it { is_expected.to create_osl_openstack_service_user('neutron').with(password: 'neutron') }
       it do
-        is_expected.to create_osl_openstack_user('neutron').with(
-          domain_name: 'default',
-          role_name: 'admin',
-          project_name: 'service',
-          password: 'neutron'
+        is_expected.to create_osl_openstack_api('neutron').with(
+          type: 'network',
+          endpoint_name: 'network',
+          url: 'http://controller.testing.osuosl.org:9696',
+          region: 'RegionOne'
         )
-      end
-      it { is_expected.to grant_role_osl_openstack_user 'neutron' }
-      it { is_expected.to create_osl_openstack_service('neutron').with(type: 'network') }
-      %w(
-        admin
-        internal
-        public
-      ).each do |int|
-        it do
-          is_expected.to create_osl_openstack_endpoint("network-#{int}").with(
-            endpoint_name: 'network',
-            service_name: 'neutron',
-            interface: int,
-            url: 'http://controller.testing.osuosl.org:9696',
-            region: 'RegionOne'
-          )
-        end
       end
       it do
         is_expected.to install_package %w(
@@ -69,21 +48,7 @@ describe 'osl-openstack::network_controller' do
           group: 'neutron',
           mode: '0640',
           sensitive: true,
-          variables: {
-            auth_endpoint: 'controller.testing.osuosl.org',
-            compute_pass: 'nova',
-            controller: true,
-            ha: nil,
-            listen_ip: '*',
-            database_connection: 'mysql+pymysql://neutron_x86:neutron@localhost:3306/neutron_x86',
-            memcached_endpoint: 'controller.testing.osuosl.org:11211',
-            region: 'RegionOne',
-            service_pass: 'neutron',
-            rabbit_quorum_queue: false,
-            rabbit_tls: false,
-            rabbit_ssl_ca_file: nil,
-            transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672/',
-          }
+          variables: neutron_conf_vars(controller: true)
         )
       end
       it do
@@ -181,27 +146,9 @@ describe 'osl-openstack::network_controller' do
       end
       it { is_expected.to_not run_bash 'block external dns on private1' }
 
-      context 'when the qdhcp namespace is not present on this controller' do
-        # Simulates an HA secondary where the neutron-dhcp scheduler
-        # hasn't placed the network on this node's dhcp-agent yet, so
-        # /run/netns/qdhcp-<uuid> doesn't exist locally.
-        cached(:chef_run) do
-          ChefSpec::SoloRunner.new(pltfrm) do |node|
-            node.normal['osl-openstack']['node_type'] = 'controller'
-          end.converge(described_recipe)
-        end
-
-        before do
-          allow(File).to receive(:exist?).and_call_original
-          allow(File).to receive(:exist?)
-            .with('/run/netns/qdhcp-8df74e06-c4aa-4eb2-b312-0e915bf8f97f')
-            .and_return(false)
-        end
-
-        it { is_expected.to_not run_bash 'block external dns on public' }
-      end
-
+      # Also an HA secondary whose dhcp-agent doesn't host the network yet
       context 'fqdn controller' do
+        let(:qdhcp_ns_present) { false }
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm) do |node|
             node.normal['osl-openstack']['node_type'] = 'controller'
@@ -224,6 +171,7 @@ describe 'osl-openstack::network_controller' do
             }
           )
         end
+        it { is_expected.to_not run_bash 'block external dns on public' }
       end
 
       context 'fqdn compute' do
@@ -259,20 +207,13 @@ describe 'osl-openstack::network_controller' do
         end
 
         include_context 'region2_stubs'
-        %w(
-          admin
-          internal
-          public
-        ).each do |int|
-          it do
-            is_expected.to create_osl_openstack_endpoint("network-#{int}").with(
-              endpoint_name: 'network',
-              service_name: 'neutron',
-              interface: int,
-              url: 'http://controller_region2.testing.osuosl.org:9696',
-              region: 'RegionTwo'
-            )
-          end
+        it do
+          is_expected.to create_osl_openstack_api('neutron').with(
+            type: 'network',
+            endpoint_name: 'network',
+            url: 'http://controller_region2.testing.osuosl.org:9696',
+            region: 'RegionTwo'
+          )
         end
 
         it do
@@ -281,21 +222,7 @@ describe 'osl-openstack::network_controller' do
             group: 'neutron',
             mode: '0640',
             sensitive: true,
-            variables: {
-              auth_endpoint: 'controller.testing.osuosl.org',
-              compute_pass: 'nova',
-              controller: true,
-              ha: nil,
-              listen_ip: '*',
-              database_connection: 'mysql+pymysql://neutron_x86:neutron@localhost_region2:3306/neutron_x86',
-              memcached_endpoint: 'controller_region2.testing.osuosl.org:11211',
-              region: 'RegionTwo',
-              service_pass: 'neutron',
-              rabbit_quorum_queue: false,
-              rabbit_tls: false,
-              rabbit_ssl_ca_file: nil,
-              transport_url: 'rabbit://openstack:openstack@controller_region2.testing.osuosl.org:5672/',
-            }
+            variables: neutron_conf_vars(controller: true, region2: true)
           )
         end
 

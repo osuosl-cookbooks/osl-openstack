@@ -1,5 +1,6 @@
 ---
 name: identity
+version: 0.1.0
 depends:
   - name: osuosl-baseline
     git: https://github.com/osuosl/osuosl-baseline.git
@@ -11,4 +12,12 @@ inputs:
   - name: db_endpoint
     value: localhost
   - name: skip_ssl_baseline
+    value: false
+  - name: messaging_host
+    value: controller.testing.osuosl.org
+  - name: messaging_port
+    value: 5672
+  - name: memcached_host
+    value: controller.testing.osuosl.org
+  - name: haproxy_tls
     value: false

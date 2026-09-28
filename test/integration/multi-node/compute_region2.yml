@@ -1,5 +1,1 @@
-controller: false
-db_endpoint: db-region2.testing.osuosl.org
-controller_endpoint: controller-region2.testing.osuosl.org
-physical_interface_mappings: public:eth1.42
 local_storage: true

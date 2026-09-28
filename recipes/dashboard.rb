@@ -17,10 +17,10 @@
 # limitations under the License.
 #
 
-osl_repos_openstack 'dashboard'
-osl_openstack_client 'dashboard'
-osl_firewall_openstack 'dashboard'
-osl_openstack_openrc 'dashboard'
+osl_openstack_client 'dashboard' do
+  firewall true
+  openrc true
+end
 
 listen_ip = openstack_api_listen_ip
 node.default['osl-apache']['listen'] = %w(80 443).map { |p| "#{listen_ip}:#{p}" }
@@ -84,7 +84,7 @@ end
 
 s = os_secrets
 d = s['dashboard']
-auth_endpoint = s['identity']['endpoint']
+auth_endpoint = openstack_auth_endpoint
 
 template '/etc/openstack-dashboard/local_settings' do
   group 'apache'

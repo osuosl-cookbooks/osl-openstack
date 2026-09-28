@@ -1,13 +1,11 @@
-# Valkey + sentinel coverage for the shared coordination (tooz lock)
-# tier. Defaults cover the single-node kitchen suite; the multi-node env
-# passes cluster_size 3 via mq.yml to also assert replication and
-# sentinel quorum.
-cluster_size = input('cluster_size', value: 1)
-service_name = input('coordination_service_name', value: 'oslocks')
-valkey_pass = input('valkey_pass', value: 'oslocks')
+# Valkey + sentinel checks for the coordination tier; multi-node passes
+# cluster_size 3 via mq.yml to cover replication and sentinel quorum.
+cluster_size = input('cluster_size')
+service_name = input('coordination_service_name')
+valkey_pass = input('valkey_pass')
 # Set only by the single-node suite (the multi-node mq systems don't
 # run osl-openstack::mon).
-nrpe_checks = input('nrpe_checks', value: false)
+nrpe_checks = input('nrpe_checks')
 
 control 'coordination_tier' do
   %w(valkey valkey-sentinel).each do |svc|
@@ -69,13 +67,14 @@ control 'coordination_tier' do
   # NRPE checks from osl-openstack::mon, run exactly as NRPE would (as
   # the nrpe user, through its sudo grant where the check needs one).
   if nrpe_checks
-    %w(
-      check_valkey
-      check_valkey_replication
-      check_valkey_sentinel
-    ).each do |chk|
+    describe file('/etc/nagios/nrpe.d/check_valkey_sentinel.cfg') do
+      it { should exist }
+    end
+
+    # Retired in favour of the Prometheus valkey alerts; the plugins stay a release
+    %w(check_valkey check_valkey_replication).each do |chk|
       describe file("/etc/nagios/nrpe.d/#{chk}.cfg") do
-        it { should exist }
+        it { should_not exist }
       end
     end
 

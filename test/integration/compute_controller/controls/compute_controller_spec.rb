@@ -1,11 +1,12 @@
 db_endpoint = input('db_endpoint')
 controller_endpoint = input('controller_endpoint')
 local_storage = input('local_storage')
+nova_local_storage = input('nova_local_storage')
 # messaging_host = AMQP host (mq tier on multi-node); memcached_host =
 # the memcached backend (controller1 on multi-node).
-messaging_host = input('messaging_host', value: controller_endpoint)
-messaging_port = input('messaging_port', value: 5672)
-memcached_host = input('memcached_host', value: messaging_host)
+messaging_host = input('messaging_host')
+messaging_port = input('messaging_port')
+memcached_host = input('memcached_host')
 
 control 'compute-controller' do
   %w(
@@ -46,12 +47,6 @@ control 'compute-controller' do
     its('protocols') { should include 'tcp' }
   end
 
-  describe ini('/usr/share/nova/nova-dist.conf') do
-    its('DEFAULT.dhcpbridge') { should cmp nil }
-    its('DEFAULT.dhcpbridge_flagfile') { should cmp nil }
-    its('DEFAULT.force_dhcp_release') { should cmp nil }
-  end
-
   describe ini('/etc/placement/placement.conf') do
     its('keystone_authtoken.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
     its('keystone_authtoken.memcached_servers') { should match(/#{Regexp.escape(memcached_host)}:11211/) }
@@ -65,15 +60,13 @@ control 'compute-controller' do
   describe ini('/etc/nova/nova.conf') do
     its('DEFAULT.block_device_allocate_retries') { should cmp '120' }
     its('DEFAULT.compute_monitors') { should cmp 'cpu.virt_driver' }
-    its('DEFAULT.cpu_allocation_ratio') { should_not cmp '' }
     its('DEFAULT.ram_allocation_ratio') { should cmp '1' }
     its('DEFAULT.disk_allocation_ratio') { should cmp '1.5' }
-    its('DEFAULT.force_raw_images') { should cmp 'true' }
+    its('DEFAULT.force_raw_images') { should cmp nova_local_storage ? 'false' : 'true' }
     its('DEFAULT.instance_usage_audit') { should cmp 'True' }
     its('DEFAULT.instance_usage_audit_period') { should cmp 'hour' }
     its('DEFAULT.resume_guests_state_on_host_boot') { should cmp 'True' }
     its('DEFAULT.transport_url') { should match(%r{^rabbit://openstack:openstack@#{Regexp.escape(messaging_host)}:#{messaging_port}}) }
-    its('DEFAULT.use_neutron') { should_not cmp '' }
     its('api_database.connection') { should cmp "mysql+pymysql://nova_x86:nova@#{db_endpoint}:3306/nova_api_x86" }
     its('cache.memcache_servers') { should match(/#{Regexp.escape(memcached_host)}:11211/) }
     its('database.connection') { should cmp "mysql+pymysql://nova_x86:nova@#{db_endpoint}:3306/nova_x86" }
@@ -99,7 +92,6 @@ control 'compute-controller' do
       its('libvirt.live_migration_downtime') { should cmp '1000' }
       its('libvirt.live_migration_downtime_delay') { should cmp '3' }
       its('libvirt.live_migration_downtime_steps') { should cmp '3' }
-      its('libvirt.live_migration_flag') { should be_nil }
       its('libvirt.live_migration_permit_post_copy') { should cmp 'true' }
       its('libvirt.live_migration_timeout_action') { should cmp 'force_complete' }
       its('libvirt.rbd_secret_uuid') { should cmp 'ae3f1d03-bacd-4a90-b869-1a4fabb107f2' }
@@ -118,10 +110,9 @@ control 'compute-controller' do
     its('vnc.novncproxy_base_url') { should cmp "https://#{controller_endpoint}:6080/vnc_auto.html" }
   end
 
-  # In HA mode haproxy on the VIP terminates TLS for novnc; the local
-  # novnc cert + --ssl_only flag aren't installed (nova-novncproxy
-  # runs plain ws on the per-host backend IP).
-  if input('haproxy_tls', value: false)
+  # haproxy terminates novnc TLS in HA, so nova-novncproxy runs plain ws
+  # without the local cert or --ssl_only
+  if input('haproxy_tls')
     describe file('/etc/sysconfig/openstack-nova-novncproxy') do
       its('content') { should match(/^OPTIONS=""$/) }
     end
@@ -141,20 +132,20 @@ control 'compute-controller' do
     end
   end
 
-  openstack = 'bash -c "source /root/openrc && /usr/bin/openstack'
+  openstack = ->(args) { %(bash -c "source /root/openrc && /usr/bin/openstack #{args}") }
 
-  describe command("#{openstack} compute service list -f value -c Binary -c Status -c State\"") do
+  describe command(openstack.call('compute service list -f value -c Binary -c Status -c State')) do
     %w(conductor scheduler).each do |s|
       its('stdout') { should match(/nova-#{s} enabled up/) }
     end
   end
 
-  describe command("#{openstack} catalog list -c Endpoints\"") do
+  describe command(openstack.call('catalog list -c Endpoints')) do
     its('stdout') { should match(%r{public: http://controller.testing.osuosl.org:8778}) }
     its('stdout') { should match(%r{internal: http://controller.testing.osuosl.org:8778}) }
   end
 
-  describe command("#{openstack} --os-placement-api-version 1.2 resource class list -f value\"") do
+  describe command(openstack.call('--os-placement-api-version 1.2 resource class list -f value')) do
     %w(
       DISK_GB
       IPV4_ADDRESS
@@ -176,7 +167,7 @@ control 'compute-controller' do
     end
   end
 
-  describe command("#{openstack} --os-placement-api-version 1.6 trait list -f value\"") do
+  describe command(openstack.call('--os-placement-api-version 1.6 trait list -f value')) do
     %w(
       HW_CPU_AARCH64_AES
       HW_CPU_X86_AVX2

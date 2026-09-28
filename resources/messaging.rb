@@ -12,9 +12,8 @@ property :primary_node, String
 # permissions on its own vhost. Entries: { 'vhost', 'user', 'pass' }.
 property :vhosts, Array, default: []
 
-# TLS listener (AMQPS 5671): deploy the cert (ssl_search_id picks the
-# data-bag item) and point the broker at it. tls_only drops plaintext
-# 5672 (only once every client speaks TLS).
+# AMQPS on 5671 with the ssl_search_id cert; tls_only drops plaintext 5672,
+# so set it only once every client speaks TLS.
 property :tls, [true, false], default: false
 property :ssl_search_id, String, default: 'wildcard'
 property :tls_only, [true, false], default: false
@@ -27,15 +26,12 @@ property :cmr_target_group_size, Integer
 property :plugins, Array, default: %w(rabbitmq_management rabbitmq_prometheus)
 
 action :create do
-  # rabbitmq-server comes from the Messaging SIG repo below, not the RDO
-  # repos (no EL10 build), so we don't pull osl_repos_openstack here -
-  # controllers set those up in their own recipes.
-  osl_firewall_port 'amqp' do
-    osl_only true
-  end
-
-  osl_firewall_port 'rabbitmq_mgt' do
-    osl_only true
+  # rabbitmq-server comes from the Messaging SIG repo below; RDO has no EL10
+  # build, so this resource adds no osl_repos_openstack.
+  openstack_rabbitmq_firewall_ports.each do |port|
+    osl_firewall_port port do
+      osl_only true
+    end
   end
 
   yum_repository 'centos-rabbitmq' do
@@ -47,9 +43,8 @@ action :create do
 
   package 'rabbitmq-server'
 
-  # The EL10 package ships these root-owned, so the rabbitmq user can't
-  # start (200/CHDIR, can't write its log) or enable plugins (the 4.x
-  # node rewrites /etc/rabbitmq/enabled_plugins itself). No-op on EL8/9.
+  # The EL10 package ships these root-owned, which stops rabbitmq starting
+  # or enabling plugins. No-op on EL9.
   %w(/etc/rabbitmq /var/lib/rabbitmq /var/log/rabbitmq).each do |dir|
     directory dir do
       owner 'rabbitmq'
@@ -57,16 +52,13 @@ action :create do
     end
   end
 
-  # Declare the service early so the file resources below can notify it
-  # via :immediately. With unified_mode resources execute in declaration
-  # order, so a notify to a not-yet-declared resource raises an error.
+  # Declared first: under unified_mode an :immediately notify to a resource
+  # declared later raises.
   service 'rabbitmq-server' do
     action [:enable, :start]
   end
 
-  # Synchronize the Erlang cookie across cluster members so they can
-  # authenticate to each other. The :immediately restart ensures rabbit
-  # is using the new cookie before the join_cluster step below runs.
+  # Shared Erlang cookie; restart immediately so join_cluster below uses it
   file '/var/lib/rabbitmq/.erlang.cookie' do
     content new_resource.cookie
     sensitive true
@@ -76,12 +68,8 @@ action :create do
     notifies :restart, 'service[rabbitmq-server]', :immediately
   end if new_resource.cookie
 
-  # Use long (FQDN) Erlang node names so cluster members can resolve
-  # each other via the FQDN entries that hosts_tf (or DNS) sets up.
-  # Derive the domain from the configured primary_node so the local
-  # node lands on the same FQDN suffix as the cluster - using
-  # node['fqdn'] here would pick up cloud-init's *.novalocal default
-  # which won't match the primary's resolvable name.
+  # Long node names take the primary's domain; node['fqdn'] can be
+  # cloud-init's *.novalocal, which the other members can't resolve.
   if new_resource.cookie && new_resource.primary_node
     domain = new_resource.primary_node.split('@', 2).last.split('.', 2).last
     local_nodename = "rabbit@#{node['hostname']}.#{domain}"

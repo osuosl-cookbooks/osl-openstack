@@ -27,10 +27,7 @@ volume_clear_size = 256
 backend_url = <%= @coordination_url %>
 
 <% end -%>
-[cache]
-memcache_servers = <%= @memcached_endpoint %>
-enabled = true
-backend = dogpile.cache.memcached
+<%= render 'cache.conf.erb' -%>
 
 [ceph]
 volume_driver = cinder.volume.drivers.rbd.RBDDriver
@@ -59,23 +56,10 @@ rbd_secret_uuid = <%= @rbd_secret_uuid %>
 [database]
 connection = <%= @database_connection %>
 
-[keystone_authtoken]
-auth_type = v3password
-auth_url = https://<%= @auth_endpoint %>:5000/v3
-memcached_servers = <%= @memcached_endpoint %>
-password = <%= @service_pass %>
-project_domain_name = Default
-project_name = service
-region_name = RegionOne
-service_token_roles = admin
-service_token_roles_required = True
-user_domain_name = Default
-username = cinder
-www_authenticate_uri = https://<%= @auth_endpoint %>:5000/v3
-
-[libvirt]
-rbd_user = <%= @rbd_user %>
-rbd_secret_uuid = <%= @rbd_secret_uuid %>
+<%= render 'keystone_authtoken.conf.erb', variables: {
+  auth_endpoint: @auth_endpoint, memcached_endpoint: @memcached_endpoint, service_pass: @service_pass,
+  username: 'cinder', v3password: true, region: true
+} -%>
 
 [nova]
 auth_type = v3password
@@ -90,19 +74,6 @@ username = nova
 [oslo_concurrency]
 lock_path = /var/lib/cinder/tmp
 
-[oslo_messaging_rabbit]
 <%# kolla sets True only for the wsgi cinder-api; this file is shared with
     cinder-scheduler/volume, which True breaks (LP #2035113), so False wins. -%>
-heartbeat_in_pthread = false
-<% if @rabbit_quorum_queue -%>
-rabbit_quorum_queue = true
-<% end -%>
-<% if @rabbit_tls -%>
-ssl = true
-<% if @rabbit_ssl_ca_file -%>
-ssl_ca_file = <%= @rabbit_ssl_ca_file %>
-<% end -%>
-<% end -%>
-
-[oslo_messaging_notifications]
-driver = messagingv2
+<%= render 'oslo_messaging.conf.erb' -%>

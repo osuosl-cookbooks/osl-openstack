@@ -9,34 +9,16 @@ describe 'osl-openstack::image' do
 
       include_context 'common_stubs'
 
-      it { is_expected.to add_osl_repos_openstack 'image' }
-      it { is_expected.to create_osl_openstack_client 'image' }
-      it { is_expected.to accept_osl_firewall_openstack 'image' }
+      it { is_expected.to create_osl_openstack_client('image').with(firewall: true, openrc: true) }
       it { is_expected.to include_recipe 'osl-ceph' }
+      it { is_expected.to create_osl_openstack_service_user('glance').with(password: 'glance') }
       it do
-        is_expected.to create_osl_openstack_user('glance').with(
-          domain_name: 'default',
-          role_name: 'admin',
-          project_name: 'service',
-          password: 'glance'
+        is_expected.to create_osl_openstack_api('glance').with(
+          type: 'image',
+          endpoint_name: 'image',
+          url: 'http://controller.testing.osuosl.org:9292',
+          region: 'RegionOne'
         )
-      end
-      it { is_expected.to grant_role_osl_openstack_user 'glance' }
-      it { is_expected.to create_osl_openstack_service('glance').with(type: 'image') }
-      %w(
-        admin
-        internal
-        public
-      ).each do |int|
-        it do
-          is_expected.to create_osl_openstack_endpoint("image-#{int}").with(
-            endpoint_name: 'image',
-            service_name: 'glance',
-            interface: int,
-            url: 'http://controller.testing.osuosl.org:9292',
-            region: 'RegionOne'
-          )
-        end
       end
       it { is_expected.to install_package 'openstack-glance' }
       it do
@@ -54,10 +36,7 @@ describe 'osl-openstack::image' do
             rbd_store_pool: 'images',
             rbd_store_user: 'glance',
             service_pass: 'glance',
-            rabbit_quorum_queue: false,
-            rabbit_tls: false,
-            rabbit_ssl_ca_file: nil,
-            transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672/',
+            **messaging_vars,
           }
         )
       end
@@ -86,43 +65,28 @@ describe 'osl-openstack::image' do
       it { expect(chef_run.osl_ceph_keyring('glance')).to notify('service[openstack-glance-api]').to(:restart) }
       it { is_expected.to enable_service 'openstack-glance-api' }
       it { is_expected.to start_service 'openstack-glance-api' }
-      # Renders even without quorum queues or TLS
-      it { is_expected.to render_file('/etc/glance/glance-api.conf').with_content('[oslo_messaging_rabbit]') }
-      it { is_expected.to render_file('/etc/glance/glance-api.conf').with_content(/^heartbeat_in_pthread = false$/) }
-
-      context 'with quorum queues enabled' do
-        cached(:chef_run) do
-          ChefSpec::SoloRunner.new(pltfrm).converge(described_recipe)
-        end
-
-        before do
-          stub_data_bag_item('openstack', 'x86').and_return(
-            openstack_secrets_stub.merge(
-              'messaging' => openstack_secrets_stub['messaging'].merge(quorum_queues: true)
-            )
+      it_behaves_like 'oslo messaging config', '/etc/glance/glance-api.conf'
+      it do
+        is_expected.to render_file('/etc/glance/glance-api.conf').with_content { |c|
+          expect(c[/^\[keystone_authtoken\]\n(?:[^\[].*\n)*/]).to include(
+            "auth_type = password\n", "region_name = RegionOne\n", "service_token_roles_required = true\n", "username = glance\n"
           )
-        end
-
-        it do
-          is_expected.to create_template('/etc/glance/glance-api.conf').with(
-            variables: hash_including(rabbit_quorum_queue: true)
-          )
-        end
-        it { is_expected.to render_file('/etc/glance/glance-api.conf').with_content('[oslo_messaging_rabbit]') }
-        it { is_expected.to render_file('/etc/glance/glance-api.conf').with_content('rabbit_quorum_queue = true') }
+        }
       end
 
-      context 'with TLS enabled' do
+      context 'with quorum queues and TLS enabled' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm).converge(described_recipe)
         end
 
         before do
           stub_data_bag_item('openstack', 'x86').and_return(
-            openstack_secrets_stub.merge(
-              'messaging' => openstack_secrets_stub['messaging'].merge(
-                tls: true, ssl_ca_file: '/etc/pki/tls/certs/osl-chain.pem'
-              )
+            openstack_secrets_stub(
+              'messaging' => {
+                'quorum_queues' => true,
+                'tls' => true,
+                'ssl_ca_file' => '/etc/pki/tls/certs/osl-chain.pem',
+              }
             )
           )
         end
@@ -130,6 +94,7 @@ describe 'osl-openstack::image' do
         it do
           is_expected.to create_template('/etc/glance/glance-api.conf').with(
             variables: hash_including(
+              rabbit_quorum_queue: true,
               rabbit_tls: true,
               rabbit_ssl_ca_file: '/etc/pki/tls/certs/osl-chain.pem',
               transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5671/'
@@ -137,6 +102,7 @@ describe 'osl-openstack::image' do
           )
         end
         it { is_expected.to render_file('/etc/glance/glance-api.conf').with_content('[oslo_messaging_rabbit]') }
+        it { is_expected.to render_file('/etc/glance/glance-api.conf').with_content('rabbit_quorum_queue = true') }
         it { is_expected.to render_file('/etc/glance/glance-api.conf').with_content(/^ssl = true$/) }
         it { is_expected.to render_file('/etc/glance/glance-api.conf').with_content('ssl_ca_file = /etc/pki/tls/certs/osl-chain.pem') }
       end
@@ -150,20 +116,13 @@ describe 'osl-openstack::image' do
 
         include_context 'region2_stubs'
 
-        %w(
-          admin
-          internal
-          public
-        ).each do |int|
-          it do
-            is_expected.to create_osl_openstack_endpoint("image-#{int}").with(
-              endpoint_name: 'image',
-              service_name: 'glance',
-              interface: int,
-              url: 'http://controller_region2.testing.osuosl.org:9292',
-              region: 'RegionTwo'
-            )
-          end
+        it do
+          is_expected.to create_osl_openstack_api('glance').with(
+            type: 'image',
+            endpoint_name: 'image',
+            url: 'http://controller_region2.testing.osuosl.org:9292',
+            region: 'RegionTwo'
+          )
         end
 
         it do
@@ -181,16 +140,47 @@ describe 'osl-openstack::image' do
               rbd_store_pool: nil,
               rbd_store_user: nil,
               service_pass: 'glance',
-              rabbit_quorum_queue: false,
-              rabbit_tls: false,
-              rabbit_ssl_ca_file: nil,
-              transport_url: 'rabbit://openstack:openstack@controller_region2.testing.osuosl.org:5672/',
+              **messaging_vars(CONTROLLER_REGION2),
             }
           )
         end
 
         it { is_expected.to_not create_group 'ceph-image' }
         it { is_expected.to_not create_osl_ceph_keyring 'glance' }
+      end
+
+      context 'stepping into the client, service user and api resources' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm.merge(
+            step_into: %w(osl_openstack_client osl_openstack_service_user osl_openstack_api)
+          )).converge(described_recipe)
+        end
+
+        it { is_expected.to add_osl_repos_openstack 'default' }
+        it { is_expected.to install_package %w(openstack-selinux python3-openstackclient) }
+        it { is_expected.to create_osl_openstack_openrc 'image' }
+        it { is_expected.to accept_osl_firewall_openstack 'image' }
+        it do
+          is_expected.to create_osl_openstack_user('glance').with(
+            domain_name: 'default',
+            role_name: 'admin',
+            project_name: 'service',
+            password: 'glance'
+          )
+        end
+        it { is_expected.to grant_role_osl_openstack_user 'glance' }
+        it { is_expected.to create_osl_openstack_service('glance').with(type: 'image') }
+        %w(admin internal public).each do |int|
+          it do
+            is_expected.to create_osl_openstack_endpoint("image-#{int}").with(
+              endpoint_name: 'image',
+              service_name: 'glance',
+              interface: int,
+              url: 'http://controller.testing.osuosl.org:9292',
+              region: 'RegionOne'
+            )
+          end
+        end
       end
     end
   end

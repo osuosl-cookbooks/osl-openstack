@@ -1,3 +1,0 @@
-controller: false
-db_endpoint: db.testing.osuosl.org
-physical_interface_mappings: public:eth1.42

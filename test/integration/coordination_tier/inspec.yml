@@ -1,2 +1,12 @@
 ---
 name: coordination_tier
+version: 0.1.0
+inputs:
+  - name: cluster_size
+    value: 1
+  - name: coordination_service_name
+    value: oslocks
+  - name: valkey_pass
+    value: oslocks
+  - name: nrpe_checks
+    value: false

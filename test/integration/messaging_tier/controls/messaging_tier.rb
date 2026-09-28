@@ -3,11 +3,11 @@
 # (vhost/vhost_user/cluster_size/cmr_target_group_size) to also assert
 # clustering + CMR. nrpe_checks is set only by the single-node suite
 # (the multi-node mq systems don't run osl-openstack::mon).
-vhost = input('vhost', value: 'tier-test')
-vhost_user = input('vhost_user', value: 'tier')
-cluster_size = input('cluster_size', value: 1)
-cmr_target_group_size = input('cmr_target_group_size', value: 0)
-nrpe_checks = input('nrpe_checks', value: false)
+vhost = input('vhost')
+vhost_user = input('vhost_user')
+cluster_size = input('cluster_size')
+cmr_target_group_size = input('cmr_target_group_size')
+nrpe_checks = input('nrpe_checks')
 
 control 'messaging_tier' do
   describe service('rabbitmq-server') do
@@ -81,9 +81,8 @@ control 'messaging_tier' do
     its('stdout') { should match(/stale-heat-queues\s+\^\(heat-engine-listener\|engine_worker\)/) }
   end
 
-  # Multi-node: the services must declare quorum queues in the vhost.
-  # Assert one is present, not the absence of classic (reply/fanout
-  # queues are legitimately classic).
+  # Multi-node services declare quorum queues; reply and fanout queues
+  # stay classic, so only assert one quorum queue exists.
   if cmr_target_group_size > 0
     describe command("rabbitmqctl -q list_queues -p #{vhost} type") do
       its('exit_status') { should eq 0 }
@@ -115,9 +114,8 @@ control 'messaging_tier' do
       its('exit_status') { should eq 0 }
     end
 
-    # Failure path through the full nrpe.cfg command line: diagnostics
-    # prints to stderr and exits with sysexits codes, so the shell fold
-    # must surface the message on stdout and remap to CRITICAL (2).
+    # The nrpe.cfg fold must put diagnostics' stderr on stdout and remap its
+    # sysexits code to CRITICAL (2)
     describe command('sudo -u nrpe sh -c "sudo /usr/sbin/rabbitmq-diagnostics -q check_port_listener 9999 2>&1 || exit 2"') do
       its('exit_status') { should eq 2 }
       its('stdout') { should_not be_empty }

@@ -1,2 +1,22 @@
 ---
 name: ha
+title: OpenStack HA controller
+version: 0.1.0
+inputs:
+  - name: vip_v4
+    value: 192.168.60.10
+  - name: vip_v4_prefix
+    value: 24
+  - name: vip_v6
+    value: fc00::10
+  - name: vip_v6_prefix
+    value: 64
+  - name: vrrp_iface
+    value: eth1
+  - name: api_listen_ip
+    value: 192.168.60.11
+  - name: holds_vip
+    value: true
+  - name: keystone_probe
+    value: false
+    description: Probe keystone through the VIP by hostname; multi-node only.

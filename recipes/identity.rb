@@ -16,10 +16,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-osl_repos_openstack 'identity'
-osl_openstack_client 'identity'
-osl_firewall_openstack 'identity'
-osl_openstack_openrc 'identity'
+osl_openstack_client 'identity' do
+  firewall true
+  openrc true
+end
 
 listen_ip = openstack_api_listen_ip
 node.default['osl-apache']['listen'] = %w(80 443).map { |p| "#{listen_ip}:#{p}" }
@@ -62,7 +62,7 @@ certificate_manage 'wildcard-identity' do
   notifies :reload, 'apache2_service[osuosl]'
 end
 
-endpoint = s['identity']['endpoint']
+endpoint = openstack_auth_endpoint
 admin_pass = s['users']['admin']
 fernet_keys = safe_dig(s, 'identity', 'fernet_keys')
 
@@ -97,10 +97,8 @@ template '/etc/keystone/keystone.conf' do
   sensitive true
   variables(
     endpoint: endpoint,
-    rabbit_quorum_queue: openstack_rabbit_quorum_queue?,
-    rabbit_tls: openstack_rabbit_tls?,
-    rabbit_ssl_ca_file: openstack_rabbit_ssl_ca_file,
-    transport_url: openstack_transport_url,
+    heartbeat_in_pthread: true,
+    **openstack_messaging_template_vars,
     memcached_endpoint: openstack_memcached_servers,
     database_connection: openstack_database_connection('identity')
   )

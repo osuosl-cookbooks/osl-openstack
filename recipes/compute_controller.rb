@@ -17,62 +17,39 @@
 # limitations under the License.
 #
 
-osl_repos_openstack 'compute'
-osl_openstack_client 'compute'
-osl_firewall_openstack 'compute'
+osl_openstack_client 'compute' do
+  firewall true
+end
 
 s = os_secrets
 c = s['compute']
 p = s['placement']
-auth_endpoint = s['identity']['endpoint']
+auth_endpoint = openstack_auth_endpoint
 
 include_recipe 'osl-apache'
 include_recipe 'osl-apache::mod_wsgi'
 
-osl_openstack_user p['service']['user'] do
-  domain_name 'default'
-  role_name 'admin'
-  project_name 'service'
+osl_openstack_service_user p['service']['user'] do
   password p['service']['pass']
-  action [:create, :grant_role]
 end
 
-osl_openstack_user c['service']['user'] do
-  domain_name 'default'
-  role_name 'admin'
-  project_name 'service'
+osl_openstack_service_user c['service']['user'] do
   password c['service']['pass']
-  action [:create, :grant_role]
 end
 
-osl_openstack_service 'placement' do
+osl_openstack_api 'placement' do
   type 'placement'
+  endpoint_name 'placement'
+  url "http://#{p['endpoint']}:8778"
+  region c['region']
 end
 
-osl_openstack_service 'nova' do
+# nova-api shares the placement host in every cloud
+osl_openstack_api 'nova' do
   type 'compute'
-end
-
-%w(
-  admin
-  internal
-  public
-).each do |int|
-  osl_openstack_endpoint "placement-#{int}" do
-    endpoint_name 'placement'
-    service_name 'placement'
-    interface int
-    url "http://#{p['endpoint']}:8778"
-    region c['region']
-  end
-
-  osl_openstack_endpoint "compute-#{int}" do
-    endpoint_name 'compute'
-    service_name 'nova'
-    interface int
-    url "http://#{p['endpoint']}:8774/v2.1"
-    region c['region']
-  end
+  endpoint_name 'compute'
+  url "http://#{p['endpoint']}:8774/v2.1"
+  region c['region']
 end
 
 package openstack_compute_controller_pkgs
@@ -158,25 +135,27 @@ end
 
 listen_ip = openstack_api_listen_ip
 
-apache_app 'placement' do
-  cookbook 'osl-openstack'
-  server_address listen_ip
-  template 'wsgi-placement.conf.erb'
-  notifies :reload, 'apache2_service[compute]', :immediately
-end
-
-apache_app 'nova-api' do
-  cookbook 'osl-openstack'
-  server_address listen_ip
-  template 'wsgi-nova-api.conf.erb'
-  notifies :reload, 'apache2_service[compute]', :immediately
-end
-
-apache_app 'nova-metadata' do
-  cookbook 'osl-openstack'
-  server_address listen_ip
-  template 'wsgi-nova-metadata.conf.erb'
-  notifies :reload, 'apache2_service[compute]', :immediately
+{
+  'placement' => {
+    port: 8778, group: 'placement-api', processes: 6, threads: 1, user: 'placement',
+    script: '/usr/bin/placement-api', log_name: 'placement', location_alias: '/placement-api', socket_prefix: false
+  },
+  'nova-api' => {
+    port: 8774, group: 'nova-api', processes: 6, threads: 1, user: 'nova',
+    script: '/usr/bin/nova-api-wsgi', log_name: 'nova-api'
+  },
+  'nova-metadata' => {
+    port: 8775, group: 'nova-metadata', processes: 6, threads: 1, user: 'nova',
+    script: '/usr/bin/nova-metadata-wsgi', log_name: 'nova-metadata'
+  },
+}.each do |app, params|
+  apache_app app do
+    cookbook 'osl-openstack'
+    server_address listen_ip
+    template 'wsgi-api.conf.erb'
+    template_params params
+    notifies :reload, 'apache2_service[compute]', :immediately
+  end
 end
 
 apache2_service 'compute' do
@@ -199,10 +178,8 @@ end
   end
 end
 
-# In HA mode haproxy on the VIP terminates TLS for novnc too, and
-# nova-novncproxy runs plain ws:// on the per-host backend IP - no
-# local cert needed. In single-controller mode keep using the
-# nova-novncproxy --ssl_only path with its own cert.
+# haproxy terminates novnc TLS in HA; single controllers keep --ssl_only
+# with a local cert
 unless openstack_tls_on_haproxy?
   certificate_manage 'novnc' do
     cert_path '/etc/nova/pki'
@@ -262,7 +239,7 @@ directory '/root/.nova-flavor-fixes/backups' do
   recursive true
 end
 
-# Deploy cold migration script (host-to-host, e.g. AlmaLinux 8 -> 9 on POWER9)
+# Deploy cold migration script (host-to-host, e.g. across qemu/libvirt versions)
 cookbook_file '/root/nova-cold-migrate-host.py' do
   source 'cold-migrate-host.py'
   owner 'root'

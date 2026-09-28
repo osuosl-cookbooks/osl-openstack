@@ -4,61 +4,33 @@ describe 'osl-openstack::compute_controller' do
   ALL_PLATFORMS.each do |pltfrm|
     context "#{pltfrm[:platform]} #{pltfrm[:version]}" do
       cached(:chef_run) do
-        ChefSpec::SoloRunner.new(pltfrm) do |node|
+        ChefSpec::SoloRunner.new(pltfrm.merge(step_into: %w(apache_app))) do |node|
           node.normal['osl-openstack']['node_type'] = 'controller'
         end.converge(described_recipe)
       end
 
       include_context 'common_stubs'
 
-      it { is_expected.to add_osl_repos_openstack 'compute' }
-      it { is_expected.to create_osl_openstack_client 'compute' }
-      it { is_expected.to accept_osl_firewall_openstack 'compute' }
+      it { is_expected.to create_osl_openstack_client('compute').with(firewall: true, openrc: false) }
       it { is_expected.to include_recipe 'osl-apache' }
       it { is_expected.to include_recipe 'osl-apache::mod_wsgi' }
+      it { is_expected.to create_osl_openstack_service_user('nova').with(password: 'nova') }
+      it { is_expected.to create_osl_openstack_service_user('placement').with(password: 'placement') }
       it do
-        is_expected.to create_osl_openstack_user('nova').with(
-          domain_name: 'default',
-          role_name: 'admin',
-          project_name: 'service',
-          password: 'nova'
+        is_expected.to create_osl_openstack_api('placement').with(
+          type: 'placement',
+          endpoint_name: 'placement',
+          url: 'http://controller.testing.osuosl.org:8778',
+          region: 'RegionOne'
         )
       end
       it do
-        is_expected.to create_osl_openstack_user('placement').with(
-          domain_name: 'default',
-          role_name: 'admin',
-          project_name: 'service',
-          password: 'placement'
+        is_expected.to create_osl_openstack_api('nova').with(
+          type: 'compute',
+          endpoint_name: 'compute',
+          url: 'http://controller.testing.osuosl.org:8774/v2.1',
+          region: 'RegionOne'
         )
-      end
-      it { is_expected.to grant_role_osl_openstack_user 'nova' }
-      it { is_expected.to grant_role_osl_openstack_user 'placement' }
-      it { is_expected.to create_osl_openstack_service('nova').with(type: 'compute') }
-      it { is_expected.to create_osl_openstack_service('placement').with(type: 'placement') }
-      %w(
-        admin
-        internal
-        public
-      ).each do |int|
-        it do
-          is_expected.to create_osl_openstack_endpoint("placement-#{int}").with(
-            endpoint_name: 'placement',
-            service_name: 'placement',
-            interface: int,
-            url: 'http://controller.testing.osuosl.org:8778',
-            region: 'RegionOne'
-          )
-        end
-        it do
-          is_expected.to create_osl_openstack_endpoint("compute-#{int}").with(
-            endpoint_name: 'compute',
-            service_name: 'nova',
-            interface: int,
-            url: 'http://controller.testing.osuosl.org:8774/v2.1',
-            region: 'RegionOne'
-          )
-        end
       end
       it do
         is_expected.to install_package %w(
@@ -119,47 +91,7 @@ describe 'osl-openstack::compute_controller' do
           group: 'nova',
           mode: '0640',
           sensitive: true,
-          variables: {
-            allow_resize_to_same_host: nil,
-            api_database_connection: 'mysql+pymysql://nova_x86:nova@localhost:3306/nova_api_x86',
-            auth_endpoint: 'controller.testing.osuosl.org',
-            cinder_disabled: false,
-            compute: false,
-            cpu_allocation_ratio: nil,
-            database_connection: 'mysql+pymysql://nova_x86:nova@localhost:3306/nova_x86',
-            disk_allocation_ratio: '1.5',
-            endpoint: 'controller.testing.osuosl.org',
-            enabled_filters: %w(
-              AggregateInstanceExtraSpecsFilter
-              PciPassthroughFilter
-              AvailabilityZoneFilter
-              ComputeFilter
-              ComputeCapabilitiesFilter
-              ImagePropertiesFilter
-              ServerGroupAntiAffinityFilter
-              ServerGroupAffinityFilter
-            ),
-            image_api_servers: 'http://controller.testing.osuosl.org:9292',
-            images_rbd_pool: 'vms',
-            listen_ip: '*',
-            local_storage: false,
-            memcached_endpoint: 'controller.testing.osuosl.org:11211',
-            metadata_proxy_shared_secret: '2SJh0RuO67KpZ63z',
-            neutron_pass: 'neutron',
-            pci_alias: nil,
-            pci_passthrough_whitelist: nil,
-            placement_pass: 'placement',
-            power10: false,
-            ram_allocation_ratio: nil,
-            rbd_secret_uuid: '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8',
-            rbd_user: 'cinder',
-            region: 'RegionOne',
-            service_pass: 'nova',
-            rabbit_quorum_queue: false,
-            rabbit_tls: false,
-            rabbit_ssl_ca_file: nil,
-            transport_url: 'rabbit://openstack:openstack@controller.testing.osuosl.org:5672/',
-          }
+          variables: nova_conf_vars
         )
       end
       it 'is expected to not render pci config' do
@@ -219,24 +151,33 @@ describe 'osl-openstack::compute_controller' do
       it { expect(chef_run.execute('nova: create cell1')).to subscribe_to('template[/etc/nova/nova.conf]').on(:run).immediately }
       it { expect(chef_run.execute('nova: db_sync')).to subscribe_to('template[/etc/nova/nova.conf]').on(:run).immediately }
       it { expect(chef_run.execute('nova: discover hosts')).to subscribe_to('template[/etc/nova/nova.conf]').on(:run).immediately }
-      it do
-        is_expected.to create_apache_app('placement').with(
-          cookbook: 'osl-openstack',
-          template: 'wsgi-placement.conf.erb'
-        )
+      {
+        'placement' => [8778, 'placement-api', 6, 1, 'placement', '/usr/bin/placement-api'],
+        'nova-api' => [8774, 'nova-api', 6, 1, 'nova', '/usr/bin/nova-api-wsgi'],
+        'nova-metadata' => [8775, 'nova-metadata', 6, 1, 'nova', '/usr/bin/nova-metadata-wsgi'],
+      }.each do |app, (port, group, processes, threads, user, script)|
+        it do
+          is_expected.to create_apache_app(app).with(
+            cookbook: 'osl-openstack',
+            template: 'wsgi-api.conf.erb',
+            template_params: hash_including(port: port, group: group, user: user, script: script)
+          )
+        end
+        it do
+          is_expected.to render_file("/etc/httpd/sites-available/#{app}.conf")
+            .with_content("Listen *:#{port}\n\n<VirtualHost *:#{port}>\n  WSGIProcessGroup #{group}\n")
+            .with_content("WSGIDaemonProcess #{group} processes=#{processes} threads=#{threads} user=#{user} group=#{user}")
+            .with_content("WSGIScriptAlias / #{script}\n")
+            .with_content(%r{rotatelogs /var/log/httpd/#{app}(-api)?/error/})
+        end
       end
       it do
-        is_expected.to create_apache_app('nova-api').with(
-          cookbook: 'osl-openstack',
-          template: 'wsgi-nova-api.conf.erb'
-        )
+        is_expected.to render_file('/etc/httpd/sites-available/placement.conf')
+          .with_content("  Alias /placement-api /usr/bin/placement-api\n  <Location /placement-api>\n")
       end
-      it do
-        is_expected.to create_apache_app('nova-metadata').with(
-          cookbook: 'osl-openstack',
-          template: 'wsgi-nova-metadata.conf.erb'
-        )
-      end
+      it { is_expected.to_not render_file('/etc/httpd/sites-available/placement.conf').with_content('WSGISocketPrefix') }
+      it { is_expected.to render_file('/etc/httpd/sites-available/nova-api.conf').with_content("</VirtualHost>\n\nWSGISocketPrefix /var/lock/subsys\n") }
+      it { is_expected.to_not render_file('/etc/httpd/sites-available/nova-api.conf').with_content('<Location') }
       it { expect(chef_run.apache_app('placement')).to notify('apache2_service[compute]').to(:reload).immediately }
       it { expect(chef_run.apache_app('nova-api')).to notify('apache2_service[compute]').to(:reload).immediately }
       it { expect(chef_run.apache_app('nova-metadata')).to notify('apache2_service[compute]').to(:reload).immediately }
@@ -362,21 +303,6 @@ describe 'osl-openstack::compute_controller' do
           is_expected.to render_file('/etc/nova/nova.conf').with_content('alias = { "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }')
           is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/^passthrough_whitelist =/)
         end
-
-        context 'compute node & local storage' do
-          cached(:chef_run) do
-            ChefSpec::SoloRunner.new(pltfrm) do |node|
-              node.automatic['fqdn'] = 'node1.testing.osuosl.org'
-            end.converge(described_recipe)
-          end
-
-          it 'is expected to render pci config' do
-            is_expected.to render_file('/etc/nova/nova.conf').with_content('[pci]')
-            is_expected.to render_file('/etc/nova/nova.conf').with_content('alias = { "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }')
-            is_expected.to render_file('/etc/nova/nova.conf').with_content('passthrough_whitelist = { "vendor_id": "10de", "product_id": "1db5" }')
-          end
-          it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content('images_rbd_pool = vms') }
-        end
       end
 
       context 'region2' do
@@ -394,49 +320,16 @@ describe 'osl-openstack::compute_controller' do
             group: 'nova',
             mode: '0640',
             sensitive: true,
-            variables: {
-              allow_resize_to_same_host: nil,
-              api_database_connection: 'mysql+pymysql://nova_x86:nova@localhost_region2:3306/nova_api_x86',
-              auth_endpoint: 'controller.testing.osuosl.org',
-              cinder_disabled: true,
-              compute: false,
-              cpu_allocation_ratio: nil,
-              database_connection: 'mysql+pymysql://nova_x86:nova@localhost_region2:3306/nova_x86',
-              disk_allocation_ratio: '1.5',
-              endpoint: 'controller_region2.testing.osuosl.org',
-              enabled_filters: %w(
-                AggregateInstanceExtraSpecsFilter
-                PciPassthroughFilter
-                AvailabilityZoneFilter
-                ComputeFilter
-                ComputeCapabilitiesFilter
-                ImagePropertiesFilter
-                ServerGroupAntiAffinityFilter
-                ServerGroupAffinityFilter
-              ),
-              image_api_servers: 'http://controller_region2.testing.osuosl.org:9292',
-              images_rbd_pool: nil,
-              listen_ip: '*',
-              local_storage: true,
-              memcached_endpoint: 'controller_region2.testing.osuosl.org:11211',
-              metadata_proxy_shared_secret: '2SJh0RuO67KpZ63z',
-              neutron_pass: 'neutron',
-              pci_alias: '{ "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }',
-              pci_passthrough_whitelist: '{ "vendor_id": "10de", "product_id": "1db5" }',
-              placement_pass: 'placement',
-              power10: false,
-              ram_allocation_ratio: nil,
-              rbd_secret_uuid: nil,
-              rbd_user: nil,
-              region: 'RegionTwo',
-              service_pass: 'nova',
-              rabbit_quorum_queue: false,
-              rabbit_tls: false,
-              rabbit_ssl_ca_file: nil,
-              transport_url: 'rabbit://openstack:openstack@controller_region2.testing.osuosl.org:5672/',
-            }
+            variables: nova_conf_vars(region2: true)
           )
         end
+        # node1 has a GPU whitelisted and local storage in region2
+        it 'is expected to render pci config' do
+          is_expected.to render_file('/etc/nova/nova.conf').with_content('[pci]')
+          is_expected.to render_file('/etc/nova/nova.conf').with_content('alias = { "vendor_id": "10de", "product_id": "1db5", "device_type": "type-PCI", "name": "gpu_nvidia_v100" }')
+          is_expected.to render_file('/etc/nova/nova.conf').with_content('passthrough_whitelist = { "vendor_id": "10de", "product_id": "1db5" }')
+        end
+        it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content('images_rbd_pool = vms') }
       end
     end
   end

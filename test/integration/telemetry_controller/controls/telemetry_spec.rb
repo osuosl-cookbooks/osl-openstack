@@ -1,10 +1,10 @@
 prometheus_endpoint = input('prometheus_endpoint')
-primary_controller = input('primary_controller', value: true)
+primary_controller = input('primary_controller')
 # messaging_host = AMQP host (mq tier on multi-node); memcached_host =
 # the memcached backend (controller1 on multi-node).
-messaging_host = input('messaging_host', value: 'controller.testing.osuosl.org')
-messaging_port = input('messaging_port', value: 5672)
-memcached_host = input('memcached_host', value: messaging_host)
+messaging_host = input('messaging_host')
+messaging_port = input('messaging_port')
+memcached_host = input('memcached_host')
 
 control 'telemetry-controller' do
   %w(
@@ -42,6 +42,7 @@ control 'telemetry-controller' do
     its('notification.pipelines') { should cmp 'meter' }
     its('service_credentials.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
     its('service_credentials.password') { should cmp 'ceilometer' }
+    its('service_credentials.region_name') { should cmp 'RegionOne' }
   end
 
   describe http('http://localhost:9091/metrics') do

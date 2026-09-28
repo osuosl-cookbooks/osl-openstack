@@ -17,9 +17,9 @@
 # limitations under the License.
 #
 
-osl_repos_openstack 'block-storage'
-osl_openstack_client 'block-storage'
-osl_firewall_openstack 'block-storage'
+osl_openstack_client 'block-storage' do
+  firewall true
+end
 
 s = os_secrets['block-storage']['ceph']
 include_recipe 'osl-openstack::block_storage_common'

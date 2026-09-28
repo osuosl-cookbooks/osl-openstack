@@ -1,9 +1,9 @@
 db_endpoint = input('db_endpoint')
 # messaging_host = AMQP host (mq tier on multi-node); memcached_host =
 # the memcached backend (controller1 on multi-node).
-messaging_host = input('messaging_host', value: 'controller.testing.osuosl.org')
-messaging_port = input('messaging_port', value: 5672)
-memcached_host = input('memcached_host', value: messaging_host)
+messaging_host = input('messaging_host')
+messaging_port = input('messaging_port')
+memcached_host = input('memcached_host')
 
 control 'orchestration' do
   %w(
@@ -58,9 +58,9 @@ control 'orchestration' do
     its('trustee.password') { should cmp 'heat' }
   end
 
-  openstack = 'bash -c "source /root/openrc && /usr/bin/openstack'
+  openstack = ->(args) { %(bash -c "source /root/openrc && /usr/bin/openstack #{args}") }
 
-  describe command "#{openstack} orchestration service list -c Binary -c Status -f value\"" do
+  describe command openstack.call('orchestration service list -c Binary -c Status -f value') do
     its('stdout') { should match(/^heat-engine up$/) }
   end
 end

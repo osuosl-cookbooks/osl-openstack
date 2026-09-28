@@ -49,7 +49,6 @@ suites:
   - name: messaging_tier
     # The tier runs on EL10 only (RabbitMQ 4.2 + valkey from AppStream).
     excludes:
-      - almalinux-8
       - almalinux-9
     driver_config:
       server_name: "messaging-tier-<%= ENV['USER'] %>"
@@ -92,6 +91,8 @@ suites:
       - recipe[osl-openstack::image]
       - recipe[openstack_test::image_upload]
     verifier:
+      inputs:
+        nova_api: false
       inspec_tests:
         - test/integration/identity
         - test/integration/image
@@ -110,6 +111,7 @@ suites:
     verifier:
       inputs:
         local_storage: true
+        nova_api: false
       inspec_tests:
         - test/integration/identity
         - test/integration/image
@@ -142,8 +144,6 @@ suites:
       - recipe[osl-openstack::network]
       - recipe[openstack_test::create_network]
     verifier:
-      inputs:
-        compute: true
       inspec_tests:
         - test/integration/identity
         - test/integration/network
@@ -178,6 +178,7 @@ suites:
     verifier:
       inputs:
         local_storage: true
+        nova_local_storage: true
       inspec_tests:
         - test/integration/compute_controller
         - test/integration/identity
@@ -223,6 +224,7 @@ suites:
     verifier:
       inputs:
         local_storage: true
+        nova_local_storage: true
       inspec_tests:
         - test/integration/compute
         - test/integration/compute_controller
@@ -299,6 +301,8 @@ suites:
       - recipe[osl-openstack::image]
       - recipe[openstack_test::image_upload]
     verifier:
+      inputs:
+        nova_api: false
       inspec_tests:
         - test/integration/image
         - test/integration/identity
@@ -319,6 +323,8 @@ suites:
       - recipe[osl-openstack::image]
       - recipe[openstack_test::image_upload]
     verifier:
+      inputs:
+        nova_api: false
       inspec_tests:
         - test/integration/image
         - test/integration/identity
@@ -384,8 +390,6 @@ suites:
       - recipe[openstack_test::image_upload]
       - recipe[openstack_test::create_network]
     verifier:
-      inputs:
-        compute: true
       inspec_tests:
         - test/integration/block_storage
         - test/integration/block_storage_controller
@@ -422,8 +426,6 @@ suites:
       - recipe[openstack_test::image_upload]
       - recipe[openstack_test::create_network]
     verifier:
-      inputs:
-        compute: true
       inspec_tests:
         - test/integration/block_storage
         - test/integration/block_storage_controller
@@ -439,10 +441,4 @@ suites:
         - test/integration/telemetry_controller
     attributes:
       osl-openstack:
-        endpoint_hostname: controller.testing.osuosl.org
-        db_hostname: controller.testing.osuosl.org
         upgrade: <%= ENV['OPENSTACK_UPGRADE'] || true %>
-      openstack:
-        block-storage:
-          volume:
-            create_volume_group: true

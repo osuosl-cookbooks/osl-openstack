@@ -22,12 +22,8 @@ s = os_secrets
 h = s['ha']
 k = h['keepalived']
 
-# Apache sits behind HAProxy on the VIP, so every request arrives
-# from haproxy's source IP. Tell osl-apache to honor X-Forwarded-For
-# / X-Forwarded-Proto from haproxy so REMOTE_ADDR + the WSGI/PHP
-# scheme reflect the real client instead of the load balancer.
-# Set this before any recipe pulls in osl-apache - controller.rb
-# includes ha first, so identity/dashboard/etc see this attribute.
+# Honor haproxy's X-Forwarded-* headers; set before anything includes
+# osl-apache, which is why controller.rb includes ha first.
 node.default['osl-apache']['behind_loadbalancer'] = true
 
 # Allow HAProxy on the standby controller to bind to the VIP it doesn't
@@ -38,25 +34,17 @@ node.default['osl-apache']['behind_loadbalancer'] = true
   end
 end
 
-keepalived_vrrp_instance 'openstack-ipv4' do
-  master k['primary'][node['fqdn']]
-  interface k['interface'][node['fqdn']]
-  virtual_router_id k['virtual_router_id']
-  priority k['priority'][node['fqdn']]
-  authentication auth_type: 'PASS', auth_pass: k['auth_pass']
-  virtual_ipaddress [k['vip_v4']]
-  notifies :reload, 'service[keepalived]'
+{ 'openstack-ipv4' => k['vip_v4'], 'openstack-ipv6' => k['vip_v6'] }.compact.each do |instance, vip|
+  keepalived_vrrp_instance instance do
+    master k['primary'][node['fqdn']]
+    interface k['interface'][node['fqdn']]
+    virtual_router_id k['virtual_router_id']
+    priority k['priority'][node['fqdn']]
+    authentication auth_type: 'PASS', auth_pass: k['auth_pass']
+    virtual_ipaddress [vip]
+    notifies :reload, 'service[keepalived]'
+  end
 end
-
-keepalived_vrrp_instance 'openstack-ipv6' do
-  master k['primary'][node['fqdn']]
-  interface k['interface'][node['fqdn']]
-  virtual_router_id k['virtual_router_id']
-  priority k['priority'][node['fqdn']]
-  authentication auth_type: 'PASS', auth_pass: k['auth_pass']
-  virtual_ipaddress [k['vip_v6']]
-  notifies :reload, 'service[keepalived]'
-end if k['vip_v6']
 
 keepalived_vrrp_sync_group 'openstack' do
   group %w(openstack-ipv4 openstack-ipv6)
@@ -67,28 +55,12 @@ service 'keepalived' do
   action [:enable, :start]
 end
 
-# HAProxy: front the OpenStack APIs on the VIP, balancing across both
-# controllers. Apache on each controller binds to its per-host listen
-# IP (see openstack_api_listen_ip), so HAProxy can bind the same ports
-# on the VIP without conflict.
-#
-# On EL9 the haproxy package preset is `disabled`, so the install
-# itself doesn't start the daemon — the delayed service[haproxy]
-# :start (queued by haproxy_service[haproxy] in osl-haproxy::install)
-# is the first thing to run it, and by then the haproxy.cfg template
-# declared by haproxy_config_global below has rendered. If you ever
-# run this on a platform where the package auto-starts haproxy with
-# its demo `bind *:5000` config, stop the daemon out of band before
-# applying this recipe so it doesn't squat on a wildcard socket.
+# HAProxy fronts the APIs on the VIP while Apache binds per-host IPs; the EL9
+# package preset leaves haproxy stopped until our config has rendered.
 include_recipe 'osl-haproxy::install'
 
-# TLS termination moves from Apache / nova-novncproxy to haproxy on
-# the VIP. certificate_manage with `combined_file true` writes the
-# single cert+chain+key PEM that haproxy's `ssl crt` directive wants;
-# `create_subfolders false` keeps the file at /etc/haproxy/certs/
-# instead of the default /etc/haproxy/certs/certs/ layout.
-# `:reload` is graceful - in-flight connections finish on the old
-# cert, new connections get the new cert.
+# haproxy terminates TLS on the VIP and wants one combined cert+chain+key
+# PEM directly under /etc/haproxy/certs; :reload keeps in-flight sessions.
 directory '/etc/haproxy/certs' do
   owner 'haproxy'
   group 'haproxy'
@@ -105,10 +77,7 @@ certificate_manage 'wildcard-haproxy' do
   group 'haproxy'
   combined_file true
   create_subfolders false
-  # Notify the wrapper resource, not service[haproxy] - the inner
-  # service is declared by the haproxy cookbook inside
-  # with_run_context :root and isn't visible to notify-by-name from
-  # this recipe.
+  # service[haproxy] lives in the root run context, so notify the wrapper
   notifies :reload, 'haproxy_service[haproxy]'
 end
 
@@ -117,9 +86,7 @@ haproxy_config_global 'global' do
   group 'haproxy'
   maxconn 4096
   log '/dev/log local0 info'
-  # Disable old TLS versions and weak options on haproxy's TLS
-  # listeners. Matches the policy Apache had via
-  # `SSLProtocol -all +TLSv1.2`.
+  # Same TLS floor Apache had with `SSLProtocol -all +TLSv1.2`
   tuning(
     'ssl.default-dh-param' => 2048
   )
@@ -141,10 +108,8 @@ haproxy_config_defaults 'defaults' do
   haproxy_retries 3
 end
 
-# keepalived wants the VIP in CIDR form (`192.0.2.10/24`,
-# `2001:db8::10/64`) so it adds the route with the right netmask;
-# haproxy `bind` rejects CIDR and wants the bare address. Allow the
-# data bag to carry either form and strip the suffix for haproxy.
+# keepalived takes the VIP in CIDR form but haproxy bind rejects it, so
+# strip any prefix length here.
 vip4 = k['vip_v4'].to_s.split('/', 2).first
 vip6 = k['vip_v6'].to_s.split('/', 2).first if k['vip_v6']
 listen_ips = h['api_listen_ip']
@@ -164,31 +129,8 @@ if stats['stats_user'] && stats['stats_pass']
   end
 end
 
-# OpenStack APIs fronted by HAProxy.
-#
-# `tls: true` services (keystone, novnc, horizon-https) terminate TLS
-# *at haproxy* on the VIP - mode http, `ssl crt ...` on the bind, and
-# `option forwardfor` so the backend sees the real client IP via
-# X-Forwarded-For. The backend (Apache vhost or nova-novncproxy)
-# serves plain HTTP / ws on its per-host listen IP.
-#
-# Plain-HTTP services keep mode tcp - the backend native daemons
-# (glance / nova / neutron / cinder / heat / placement) don't speak
-# proxy-protocol and don't terminate TLS today either; haproxy just
-# shuffles bytes. When those endpoints move to HTTPS they flip to
-# the same `tls: true` path.
-#
-# Horizon uses `balance source` for session affinity.
-#
-# HAProxy needs one bind directive per address family, so we declare
-# the resource twice per service: first call sets all properties,
-# second call adds only the IPv6 bind.
-# Per-source connection rate limit on every VIP listener: an external
-# scanner hammering the APIs (2026-08-14, ~200k conntrack entries on
-# arm-controller1) gets rejected at the edge instead of per-IP firewall
-# whack-a-mole. Infra ranges are exempt from tracking; tune both via
-# ha.haproxy.throttle {conn_rate, exempt} in the data bag. The rate is
-# per source IP over 10s, so 50 still leaves CLI/API users a wide berth.
+# Per-source rate limit on every VIP listener after the 2026-08-14 scanner;
+# tune ha.haproxy.throttle {conn_rate, exempt} in the data bag.
 throttle = stats['throttle'] || {}
 throttle_rate = throttle['conn_rate'] || 50
 throttle_exempt = throttle['exempt'] || %w(10.0.0.0/8 127.0.0.0/8 140.211.0.0/16)
@@ -201,6 +143,8 @@ throttle_opts = {
   ],
 }
 
+# tls services terminate at haproxy in mode http; the rest stay mode tcp.
+# The second haproxy_listen per service only adds the IPv6 bind.
 openstack_ha_services.each do |svc|
   port = svc[:port]
   servers = controllers.map { |fqdn| "#{fqdn} #{listen_ips[fqdn]}:#{port} check" }
@@ -210,21 +154,15 @@ openstack_ha_services.each do |svc|
     bind "#{vip4}:#{port}#{cert_opt}"
     acl ["throttle_exempt src #{throttle_exempt.join(' ')}"]
     if svc[:redirect_to_https]
-      # Plain-HTTP listener whose only job is to 301 to https. Apache
-      # used to do this in its wsgi-horizon :80 vhost; that rewrite is
-      # gated off in HA mode (Apache backends serve plain HTTP behind
-      # haproxy and would loop on %{HTTPS}=off), so haproxy owns it.
-      # No backend servers - every request terminates here.
+      # Redirect-only listener; Apache's :80 rewrite would loop behind
+      # haproxy, so the 301 lives here with no backend servers.
       mode 'http'
       http_request ['redirect scheme https code 301']
       extra_options(throttle_opts)
     else
       mode svc[:tls] ? 'http' : 'tcp'
       option ['forwardfor'] if svc[:tls]
-      # Tell the backend the request was originally HTTPS so Django /
-      # oslo middleware build correct redirect URLs and set the
-      # secure-cookie flag. `ssl_fc` is true on the TLS-terminated
-      # frontend connection.
+      # Lets Django and oslo build https redirects and secure cookies
       http_request [
         'set-header X-Forwarded-Proto https if { ssl_fc }',
         'set-header X-Forwarded-Proto http if !{ ssl_fc }',
@@ -239,17 +177,8 @@ openstack_ha_services.each do |svc|
   end if vip6
 end
 
-# mod_remoteip: rewrite Apache REMOTE_ADDR from haproxy's
-# X-Forwarded-For so logs / WSGI apps see the real client IP. Trust
-# every HA controller's api_listen_ip - haproxy connects from there
-# when balancing to a backend on the same or sibling controller. The
-# default trusted_proxy list in osl-apache is preserved.
-#
-# Only the attribute is set here; the recipe itself is included from
-# identity.rb (after node['osl-apache']['listen'] is overridden), so
-# osl-apache::default captures the per-host listen value rather than
-# the package default and Apache doesn't bind both *:80 and
-# api_listen_ip:80.
+# Trust every controller's listen IP for mod_remoteip; identity.rb includes
+# the recipe after overriding the listen address.
 node.default['osl-apache']['mod_remoteip']['trusted_proxy'] =
   (node['osl-apache']['mod_remoteip']['trusted_proxy'] || []) +
   listen_ips.values +
@@ -259,29 +188,8 @@ haproxy_service 'haproxy' do
   action [:enable, :start]
 end
 
-# Bring haproxy up during THIS converge instead of at end-of-run.
-# osl-haproxy::install and the haproxy_service above only queue a
-# *delayed* service[haproxy] :start (and the haproxy.cfg template
-# renders delayed too). But later recipes - identity, image, network,
-# etc. - make keystone/glance/neutron API calls through the VIP while
-# they converge (osl_openstack_role / _endpoint / _user ...). On a
-# fresh bootstrap haproxy isn't listening yet, so the first run dies
-# at osl_openstack_role with `Connection refused` on the VIP and the
-# cluster needs several converges before the delayed start sticks.
-#
-# Render the (fully-accumulated) haproxy.cfg and start the service now.
-# ip_nonlocal_bind (set above) lets haproxy bind the VIP before
-# keepalived assigns it; keystone's backend isn't up until identity
-# runs, so the listener just reports no server available until then -
-# the os_conn retry loop rides that out. The template's own
-# delayed_action :create and the delayed :start remain (idempotent).
-#
-# `not_if` keeps this idempotent: the eager bring-up only fires the
-# first time, when haproxy isn't running yet. Once it's up, this is a
-# no-op on every later converge (config changes still propagate via
-# the haproxy cookbook's delayed template render + :reload). Without
-# the guard the ruby_block would report "updated" every run and fail
-# the second-converge idempotency check.
+# Start haproxy mid-run on first bootstrap: later recipes call keystone
+# through the VIP, and the cookbook's own start is delayed to end of run.
 service 'haproxy_eager_start' do
   service_name 'haproxy'
   supports status: true
@@ -299,19 +207,8 @@ ruby_block 'render haproxy.cfg + start haproxy before api calls' do
   not_if { haproxy_running? }
 end
 
-# The haproxy.cfg template subscribed by osl-haproxy::install fires a
-# :reload at end of run, but it's registered early (when the first
-# haproxy_listen runs) so it fires BEFORE the native API daemons
-# (glance-api, neutron-server, heat-api, heat-cfn, nova-novncproxy)
-# restart and rebind from 0.0.0.0:port to the per-host listen IP.
-# Without this, haproxy tries to bind the VIP port while the daemon
-# still holds the wildcard, and fails to start. Subscribing a delayed
-# restart of haproxy to those daemons ensures haproxy comes up AFTER
-# they've released their wildcard sockets.
-#
-# We use service_name + a unique resource name (instead of just
-# 'haproxy') so we don't collide with the inner service[haproxy] the
-# haproxy cookbook declares from haproxy_service[haproxy].
+# Restart haproxy after the native API daemons move off their wildcard
+# sockets, or the VIP bind fails; unique name avoids service[haproxy].
 service 'haproxy_post_daemons_restart' do
   service_name 'haproxy'
   action :nothing

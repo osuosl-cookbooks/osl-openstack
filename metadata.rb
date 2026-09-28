@@ -25,8 +25,6 @@ depends 'osl-prometheus'
 depends 'osl-repos', '>= 5.13.0'
 depends 'osl-resources'
 depends 'osl-valkey'
-depends 'yum-kernel-osuosl'
 depends 'yum-osuosl'
 
-supports 'almalinux', '~> 8.0'
 supports 'almalinux', '~> 9.0'

@@ -17,36 +17,26 @@
 # limitations under the License.
 #
 
-osl_repos_openstack 'telemetry-controller'
-osl_openstack_client 'telemetry-controller'
-osl_firewall_openstack 'telemetry-controller'
+osl_openstack_client 'telemetry-controller' do
+  firewall true
+end
 
 s = os_secrets
 t = s['telemetry']
 
-osl_openstack_user t['service']['user'] do
-  domain_name 'default'
-  role_name 'admin'
-  project_name 'service'
+osl_openstack_service_user t['service']['user'] do
   password t['service']['pass']
-  action [:create, :grant_role]
 end
 
-package %w(
-  openstack-ceilometer-central
-  openstack-ceilometer-notification
-)
+ceilometer_services = %w(openstack-ceilometer-central openstack-ceilometer-notification)
+
+package ceilometer_services
 
 include_recipe 'osl-openstack::telemetry_common'
 
-%w(
-  openstack-ceilometer-central
-  openstack-ceilometer-notification
-).each do |srv|
+ceilometer_services.each do |srv|
   service srv do
     action [:enable, :start]
-    subscribes :restart, 'template[/etc/ceilometer/ceilometer.conf]'
-    subscribes :restart, 'template[/etc/ceilometer/pipeline.yaml]'
-    subscribes :restart, 'cookbook_file[/etc/ceilometer/polling.yaml]'
+    openstack_ceilometer_config_resources.each { |r| subscribes :restart, r }
   end
 end

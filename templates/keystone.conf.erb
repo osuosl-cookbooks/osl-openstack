@@ -12,22 +12,9 @@ backend = oslo_cache.memcache_pool
 enabled = true
 memcache_servers = <%= @memcached_endpoint %>
 
-[oslo_messaging_rabbit]
 <%# keystone only ever runs under mod_wsgi, where the eventlet hub stalls
     between requests and the heartbeat needs a real thread; kolla does the same. -%>
-heartbeat_in_pthread = true
-<% if @rabbit_quorum_queue -%>
-rabbit_quorum_queue = true
-<% end -%>
-<% if @rabbit_tls -%>
-ssl = true
-<% if @rabbit_ssl_ca_file -%>
-ssl_ca_file = <%= @rabbit_ssl_ca_file %>
-<% end -%>
-<% end -%>
-
-[oslo_messaging_notifications]
-driver = messagingv2
+<%= render 'oslo_messaging.conf.erb' -%>
 
 [database]
 connection = <%= @database_connection %>

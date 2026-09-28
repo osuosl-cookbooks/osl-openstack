@@ -2,9 +2,9 @@ require 'shellwords'
 
 require_controls 'osuosl-baseline' do
   control 'ssl-baseline'
-end unless input('skip_ssl_baseline', value: false)
+end unless input('skip_ssl_baseline')
 
-haproxy_tls = input('haproxy_tls', value: false)
+haproxy_tls = input('haproxy_tls')
 
 control 'openstack-dashboard' do
   describe package 'openstack-dashboard' do
@@ -35,9 +35,8 @@ control 'openstack-dashboard' do
     its('body') { should match /^Total Accesses: \d+$/ }
   end
 
-  # Localhost HTTPS probes only work when Apache terminates TLS itself
-  # (single-controller mode). In HA mode haproxy is the only thing
-  # serving TLS, and it binds the VIP rather than 127.0.0.1.
+  # Only Apache on a single controller serves TLS on 127.0.0.1; in HA
+  # haproxy serves it on the VIP
   unless haproxy_tls
     describe http(
       'https://127.0.0.1:443',
@@ -87,11 +86,8 @@ control 'openstack-dashboard' do
     its('ServerName') { should include 'controller.testing.osuosl.org' }
   end
 
-  # End-to-end horizon login - relies on Apache locally serving TLS
-  # on 127.0.0.1:443 via the --resolve trick. In HA mode haproxy
-  # serves TLS on the VIP, not localhost; the haproxy-tls-termination
-  # control in ha_master covers the equivalent functional check
-  # there.
+  # Horizon login through local TLS via --resolve; in HA the ha profile's
+  # keystone-via-vip control probes through haproxy instead
   unless haproxy_tls
     resolve = '--resolve controller.testing.osuosl.org:443:127.0.0.1'
     jar = '/tmp/horizon-login-cookies.txt'
