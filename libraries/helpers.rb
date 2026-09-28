@@ -138,10 +138,6 @@ module OSLOpenstack
         }
       end
 
-      def openstack_python_bin
-        '/usr/bin/python3'
-      end
-
       # The osuosl-openstack-* venvs are built with the platform python3
       def openstack_python_version
         '3.9'

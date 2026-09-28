@@ -29,7 +29,7 @@ node.default['osl-apache']['listen'] = %w(80 443).map { |p| "#{listen_ip}:#{p}" 
 node.default['osl-apache']['default_site_first'] = false
 
 include_recipe 'osl-apache'
-include_recipe 'osl-apache::mod_wsgi'
+include_recipe 'osl-apache::mod_proxy_uwsgi'
 include_recipe 'osl-apache::mod_ssl'
 
 # Nagios apache monitoring. check_http runs locally over NRPE (configured by
@@ -51,7 +51,7 @@ node.override['nagios']['_http_address6'] = nil if openstack_tls_on_haproxy?
 
 include_recipe 'osl-nrpe::check_http'
 
-package 'openstack-dashboard'
+package 'osuosl-openstack-horizon'
 
 certificate_manage 'wildcard-dashboard' do
   search_id 'wildcard'
@@ -85,9 +85,19 @@ end
 s = os_secrets
 d = s['dashboard']
 auth_endpoint = openstack_auth_endpoint
+static_root = '/var/www/horizon/static'
 
-template '/etc/openstack-dashboard/local_settings' do
+# /var/lib/horizon is 0750 horizon, so Apache could not serve the assets from there
+directory static_root do
+  owner 'horizon'
   group 'apache'
+  mode '0755'
+  recursive true
+end
+
+template '/etc/horizon/local_settings.py' do
+  source 'local_settings.erb'
+  group 'horizon'
   mode '0640'
   sensitive true
   variables(
@@ -95,13 +105,38 @@ template '/etc/openstack-dashboard/local_settings' do
     memcache_servers: openstack_memcached_endpoints,
     regions: d['regions'],
     secret_key: d['secret_key'],
-    # Django needs to trust haproxy's X-Forwarded-Proto when haproxy
-    # terminates TLS - otherwise it builds http:// redirect URLs and
-    # drops the secure-cookie flag.
+    static_root: static_root,
+    # Trust haproxy's X-Forwarded-Proto so Django builds https URLs and secure cookies
     haproxy_tls: openstack_tls_on_haproxy?
   )
   notifies :run, 'execute[horizon: compress]'
-  notifies :reload, 'apache2_service[osuosl]'
+  notifies :restart, 'service[horizon-uwsgi]'
+end
+
+# Django imports openstack_dashboard.local.local_settings from the venv
+link "#{openstack_python_sitelib('horizon')}/openstack_dashboard/local/local_settings.py" do
+  to '/etc/horizon/local_settings.py'
+end
+
+template '/etc/horizon/horizon-uwsgi.ini' do
+  source 'uwsgi.ini.erb'
+  group 'horizon'
+  mode '0640'
+  variables(
+    chdir: openstack_python_sitelib('horizon'),
+    wsgi_file: "#{openstack_python_sitelib('horizon')}/openstack_dashboard/wsgi.py",
+    pythonpath: openstack_python_sitelib('horizon'),
+    socket: '/run/horizon/uwsgi.sock',
+    user: 'horizon',
+    processes: 4,
+    threads: 1
+  )
+  notifies :restart, 'service[horizon-uwsgi]'
+end
+
+# uWSGI unit shipped by osuosl-openstack-horizon
+service 'horizon-uwsgi' do
+  action [:enable, :start]
 end
 
 apache_app 'horizon' do
@@ -110,18 +145,18 @@ apache_app 'horizon' do
   server_aliases d['aliases'] if d['aliases']
   server_address listen_ip
   template 'wsgi-horizon.conf.erb'
-  # In HA mode haproxy on the VIP terminates TLS and forwards plain
-  # HTTP to this vhost; the wsgi-horizon.conf.erb template drops its
-  # SSLEngine block when this flag is set.
-  template_params(haproxy_tls: openstack_tls_on_haproxy?)
+  # haproxy terminates TLS at the VIP in HA, so the vhost drops its SSL block
+  template_params(haproxy_tls: openstack_tls_on_haproxy?, static_root: static_root)
   notifies :run, 'execute[horizon: compress]'
   notifies :reload, 'apache2_service[osuosl]'
 end
 
 execute 'horizon: compress' do
   command <<~EOC
-    #{openstack_python_bin} /usr/share/openstack-dashboard/manage.py collectstatic --noinput --clear -v0
-    #{openstack_python_bin} /usr/share/openstack-dashboard/manage.py compress --force -v0
+    #{openstack_venv('horizon')}/bin/django-admin collectstatic --settings=openstack_dashboard.settings --noinput --clear -v0
+    #{openstack_venv('horizon')}/bin/django-admin compress --settings=openstack_dashboard.settings --force -v0
   EOC
+  user 'horizon'
+  group 'horizon'
   action :nothing
 end

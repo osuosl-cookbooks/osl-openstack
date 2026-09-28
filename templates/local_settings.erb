@@ -86,7 +86,10 @@ SWIFT_FILE_TRANSFER_CHUNK_SIZE = 512 * 1024
 INSTANCE_LOG_LENGTH = 35
 DROPDOWN_MAX_ITEMS = 200
 TIME_ZONE = "UTC"
-POLICY_FILES_PATH = '/etc/openstack-dashboard'
+# Filled by collectstatic and compress; Apache serves it as /static
+STATIC_ROOT = '<%= @static_root %>'
+STATIC_URL = '/static/'
+COMPRESS_OFFLINE = True
 LOGGING = {
   'version': 1,
   'disable_existing_loggers': False,
