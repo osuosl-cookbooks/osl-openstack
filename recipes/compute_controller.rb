@@ -27,7 +27,7 @@ p = s['placement']
 auth_endpoint = openstack_auth_endpoint
 
 include_recipe 'osl-apache'
-include_recipe 'osl-apache::mod_wsgi'
+include_recipe 'osl-apache::mod_proxy_uwsgi'
 
 osl_openstack_service_user p['service']['user'] do
   password p['service']['pass']
@@ -78,7 +78,6 @@ template '/etc/placement/placement.conf' do
     service_pass: p['service']['pass']
   )
   notifies :run, 'execute[placement: db_sync]', :immediately
-  notifies :reload, 'apache2_service[compute]'
 end
 
 include_recipe 'osl-openstack::compute_common'
@@ -135,34 +134,55 @@ end
 
 listen_ip = openstack_api_listen_ip
 
+# The uWSGI units ship in the RPMs; Apache proxies each vhost to its socket
 {
   'placement' => {
-    port: 8778, group: 'placement-api', processes: 6, threads: 1, user: 'placement',
-    script: '/usr/bin/placement-api', log_name: 'placement', location_alias: '/placement-api', socket_prefix: false
+    port: 8778, processes: 6, threads: 1, user: 'placement', venv: 'placement', script: 'placement-api',
+    service: 'placement-uwsgi', ini: '/etc/placement/placement-uwsgi.ini', socket: '/run/placement/uwsgi.sock',
+    log_name: 'placement', location_alias: '/placement-api', configs: %w(template[/etc/placement/placement.conf])
   },
   'nova-api' => {
-    port: 8774, group: 'nova-api', processes: 6, threads: 1, user: 'nova',
-    script: '/usr/bin/nova-api-wsgi', log_name: 'nova-api'
+    port: 8774, processes: 6, threads: 1, user: 'nova', venv: 'nova-controller', script: 'nova-api-wsgi',
+    service: 'openstack-nova-api', ini: '/etc/nova/nova-api-uwsgi.ini', socket: '/run/nova/api-uwsgi.sock',
+    log_name: 'nova-api', configs: openstack_nova_config_resources
   },
   'nova-metadata' => {
-    port: 8775, group: 'nova-metadata', processes: 6, threads: 1, user: 'nova',
-    script: '/usr/bin/nova-metadata-wsgi', log_name: 'nova-metadata'
+    port: 8775, processes: 6, threads: 1, user: 'nova', venv: 'nova-controller', script: 'nova-metadata-wsgi',
+    service: 'openstack-nova-metadata', ini: '/etc/nova/nova-metadata-uwsgi.ini', socket: '/run/nova/metadata-uwsgi.sock',
+    log_name: 'nova-metadata', configs: openstack_nova_config_resources
   },
-}.each do |app, params|
+}.each do |app, a|
+  template a[:ini] do
+    source 'uwsgi.ini.erb'
+    group a[:user]
+    mode '0640'
+    variables(
+      chdir: openstack_venv(a[:venv]),
+      wsgi_file: "#{openstack_venv(a[:venv])}/bin/#{a[:script]}",
+      socket: a[:socket],
+      user: a[:user],
+      processes: a[:processes],
+      threads: a[:threads]
+    )
+    notifies :restart, "service[#{a[:service]}]"
+  end
+
+  service a[:service] do
+    action [:enable, :start]
+    a[:configs].each { |r| subscribes :restart, r }
+  end
+
   apache_app app do
     cookbook 'osl-openstack'
     server_address listen_ip
     template 'wsgi-api.conf.erb'
-    template_params params
+    template_params a.slice(:port, :socket, :log_name, :location_alias)
     notifies :reload, 'apache2_service[compute]', :immediately
   end
 end
 
 apache2_service 'compute' do
   action :nothing
-  subscribes :restart, 'delete_lines[remove dhcpbridge]'
-  subscribes :restart, 'delete_lines[remove force_dhcp_release]'
-  subscribes :reload, 'template[/etc/nova/nova.conf]'
 end
 
 %w(
@@ -172,9 +192,7 @@ end
 ).each do |srv|
   service srv do
     action [:enable, :start]
-    subscribes :restart, 'delete_lines[remove dhcpbridge]'
-    subscribes :restart, 'delete_lines[remove force_dhcp_release]'
-    subscribes :restart, 'template[/etc/nova/nova.conf]'
+    openstack_nova_config_resources.each { |r| subscribes :restart, r }
   end
 end
 

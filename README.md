@@ -26,6 +26,20 @@ The compute recipe picks the KVM-capable kernel from the CPU:
 first converge on a new host installs the KVM kernel and the module loads
 after the reboot.
 
+## WSGI services
+
+The API services run as uWSGI systemd units shipped by their RPMs. The cookbook
+renders each unit's ini from `templates/uwsgi.ini.erb`. Apache keeps the vhost
+on the service port and proxies it to the unit's socket through
+`mod_proxy_uwsgi`. A config change restarts the uWSGI unit, not Apache.
+
+| Service       | Port | uWSGI unit                | ini                                  | Socket                          |
+|---------------|------|---------------------------|--------------------------------------|---------------------------------|
+| placement     | 8778 | `placement-uwsgi`         | `/etc/placement/placement-uwsgi.ini` | `/run/placement/uwsgi.sock`     |
+| nova-api      | 8774 | `openstack-nova-api`      | `/etc/nova/nova-api-uwsgi.ini`       | `/run/nova/api-uwsgi.sock`      |
+| nova-metadata | 8775 | `openstack-nova-metadata` | `/etc/nova/nova-metadata-uwsgi.ini`  | `/run/nova/metadata-uwsgi.sock` |
+| cinder-api    | 8776 | `openstack-cinder-api`    | `/etc/cinder/cinder-api-uwsgi.ini`   | `/run/cinder/api-uwsgi.sock`    |
+
 ## Resources
 
 Every service recipe starts with `osl_openstack_client` and registers itself in

@@ -1,0 +1,27 @@
+# Managed by Chef. Do not edit.
+[uwsgi]
+master = true
+enable-threads = true
+processes = <%= @processes %>
+threads = <%= @threads %>
+
+chdir = <%= @chdir %>
+wsgi-file = <%= @wsgi_file %>
+<% if @pythonpath -%>
+pythonpath = <%= @pythonpath %>
+<% end -%>
+
+socket = <%= @socket %>
+chmod-socket = 660
+chown-socket = <%= @user %>:apache
+
+uid = <%= @user %>
+gid = <%= @user %>
+
+buffer-size = 65535
+add-header = Connection: close
+die-on-term = true
+# uwsgi 2.0.x can hang in its SIGQUIT cleanup; kill the workers and exit instead
+hook-master-start = unix_signal:3 kill_them_all
+exit-on-reload = false
+no-orphans = true

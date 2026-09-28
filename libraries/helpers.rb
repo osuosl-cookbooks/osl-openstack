@@ -75,6 +75,15 @@ module OSLOpenstack
         )
       end
 
+      # Config changes every nova controller daemon restarts on
+      def openstack_nova_config_resources
+        [
+          'delete_lines[remove dhcpbridge]',
+          'delete_lines[remove force_dhcp_release]',
+          'template[/etc/nova/nova.conf]',
+        ]
+      end
+
       # Messaging SIG selects version by subdir: EL9 uses rabbitmq-38
       # (3.9.x), EL10 only ships rabbitmq-4 (4.x).
       def openstack_rabbitmq_repo
