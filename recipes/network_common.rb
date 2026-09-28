@@ -35,6 +35,7 @@ template '/etc/neutron/neutron.conf' do
     database_connection: openstack_database_connection('network'),
     listen_ip: openstack_api_listen_ip,
     memcached_endpoint: openstack_memcached_servers,
+    neutron_venv: openstack_venv(controller ? 'neutron-controller' : 'neutron-agent'),
     region: n['region'],
     service_pass: n['service']['pass'],
     **openstack_messaging_template_vars
@@ -67,6 +68,7 @@ template '/etc/neutron/plugins/ml2/linuxbridge_agent.ini' do
   mode '0640'
   variables(
     local_ip: openstack_vxlan_ip(controller),
+    neutron_venv: openstack_venv('neutron-agent'),
     physical_interface_mappings: openstack_physical_interface_mappings(controller)
   )
   notifies :restart, 'service[neutron-linuxbridge-agent]'
