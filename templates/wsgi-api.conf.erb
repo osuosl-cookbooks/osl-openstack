@@ -1,34 +1,21 @@
 <% p = @template_params -%>
+<% backend = "unix:#{p[:socket]}|uwsgi://localhost/" -%>
 Listen <%= @server_address %>:<%= p[:port] %>
 
 <VirtualHost <%= @server_address %>:<%= p[:port] %>>
-  WSGIProcessGroup <%= p[:group] %>
-  WSGIApplicationGroup %{GLOBAL}
-  WSGIPassAuthorization On
-  WSGIDaemonProcess <%= p[:group] %> processes=<%= p[:processes] %> threads=<%= p[:threads] %> user=<%= p[:user] %> group=<%= p[:user] %>
-  WSGIScriptAlias / <%= p[:script] %>
-
   ErrorLogFormat "%{cu}t %M"
 
   ErrorLog "|/usr/sbin/rotatelogs <%= @log_dir %>/<%= p[:log_name] %>/error/%Y%m%d.log 86400"
   CustomLog "|/usr/sbin/rotatelogs <%= @log_dir %>/<%= p[:log_name] %>/access/%Y%m%d.log 86400" combined-osuosl
 
-  <Directory /usr/bin>
+  <Proxy "*">
     Require all granted
-  </Directory>
+  </Proxy>
+
 <% if p[:location_alias] -%>
-
-  Alias <%= p[:location_alias] %> <%= p[:script] %>
-  <Location <%= p[:location_alias] %>>
-    SetHandler wsgi-script
-    Options +ExecCGI
-    WSGIProcessGroup <%= p[:group] %>
-    WSGIApplicationGroup %{GLOBAL}
-    WSGIPassAuthorization On
-  </Location>
+  ProxyPass <%= p[:location_alias] %> "<%= backend %>" retry=0
+  ProxyPassReverse <%= p[:location_alias] %> "<%= backend %>"
 <% end -%>
+  ProxyPass / "<%= backend %>" retry=0
+  ProxyPassReverse / "<%= backend %>"
 </VirtualHost>
-<% if p.fetch(:socket_prefix, true) -%>
-
-WSGISocketPrefix /var/lock/subsys
-<% end -%>

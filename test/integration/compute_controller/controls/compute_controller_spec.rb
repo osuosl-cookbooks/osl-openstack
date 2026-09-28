@@ -9,10 +9,14 @@ messaging_port = input('messaging_port')
 memcached_host = input('memcached_host')
 
 control 'compute-controller' do
+  # nova-api, nova-metadata and placement run under uWSGI behind httpd
   %w(
+    openstack-nova-api
     openstack-nova-conductor
+    openstack-nova-metadata
     openstack-nova-novncproxy
     openstack-nova-scheduler
+    placement-uwsgi
   ).each do |s|
     describe service(s) do
       it { should be_enabled }
@@ -20,15 +24,21 @@ control 'compute-controller' do
     end
   end
 
-  # These are on httpd now via wsgi
-  %w(
-    openstack-nova-api
-    openstack-nova-metadata-api
-  ).each do |s|
-    describe service(s) do
-      it { should_not be_enabled }
-      it { should_not be_running }
+  {
+    '/run/nova/api-uwsgi.sock' => 'nova',
+    '/run/nova/metadata-uwsgi.sock' => 'nova',
+    '/run/placement/uwsgi.sock' => 'placement',
+  }.each do |sock, user|
+    describe file(sock) do
+      it { should be_socket }
+      its('owner') { should eq user }
+      its('group') { should eq 'apache' }
     end
+  end
+
+  describe http('http://localhost:8778/placement-api/', headers: { 'Accept' => 'application/json' }) do
+    its('status') { should eq 200 }
+    its('body') { should match(/"versions"/) }
   end
 
   %w(
