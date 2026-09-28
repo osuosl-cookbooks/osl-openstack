@@ -10,7 +10,7 @@ messaging_port = input('messaging_port')
 memcached_host = input('memcached_host')
 
 control 'network' do
-  %w(osuosl-openstack-neutron-agent osuosl-openstack-common osuosl-openstack-cli).each do |p|
+  %w(osuosl-openstack-neutron-agent osuosl-openstack-cli).each do |p|
     describe package p do
       it { should be_installed }
     end

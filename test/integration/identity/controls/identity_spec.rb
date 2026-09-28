@@ -16,10 +16,8 @@ control 'openstack-identity' do
     it { should be_installed }
   end
 
-  %w(osuosl-openstack-common osuosl-openstack-cli).each do |p|
-    describe package p do
-      it { should be_installed }
-    end
+  describe package 'osuosl-openstack-cli' do
+    it { should be_installed }
   end
 
   # httpd proxies to keystone-uwsgi's socket

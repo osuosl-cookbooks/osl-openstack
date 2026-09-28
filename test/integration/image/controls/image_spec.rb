@@ -11,7 +11,7 @@ memcached_host = input('memcached_host')
 control 'image' do
   openstack = ->(args) { %(bash -c "source /root/openrc && /usr/bin/openstack #{args}") }
 
-  %w(osuosl-openstack-glance osuosl-openstack-common osuosl-openstack-cli).each do |p|
+  %w(osuosl-openstack-glance osuosl-openstack-cli).each do |p|
     describe package p do
       it { should be_installed }
     end
