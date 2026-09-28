@@ -10,8 +10,10 @@ enable_vxlan = true
 l2_population = true
 local_ip = <%= @local_ip %>
 
-[agent]
+[AGENT]
 polling_interval = 2
+# Runs from the neutron-agent venv on controllers too, so override neutron.conf
+root_helper = sudo <%= @neutron_venv %>/bin/neutron-rootwrap /etc/neutron/rootwrap.conf
 
 [securitygroup]
 enable_security_group = True
@@ -19,3 +21,4 @@ firewall_driver = neutron.agent.linux.iptables_firewall.IptablesFirewallDriver
 
 [linux_bridge]
 physical_interface_mappings = <%= @physical_interface_mappings.join(',') %>
+<%= render 'neutron_privsep.conf.erb', variables: { venv: @neutron_venv } -%>

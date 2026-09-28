@@ -54,7 +54,9 @@ control 'network' do
   end
 
   describe ini('/etc/neutron/plugins/ml2/linuxbridge_agent.ini') do
-    its('agent.polling_interval') { should cmp '2' }
+    its('AGENT.polling_interval') { should cmp '2' }
+    its('AGENT.root_helper') { should cmp 'sudo /opt/openstack/neutron-agent/bin/neutron-rootwrap /etc/neutron/rootwrap.conf' }
+    its('privsep.helper_command') { should cmp 'sudo /opt/openstack/neutron-agent/bin/privsep-helper' }
     its('linux_bridge.physical_interface_mappings') { should cmp physical_interface_mappings }
     its('securitygroup.enable_security_group') { should cmp 'true' }
     its('securitygroup.firewall_driver') { should cmp 'neutron.agent.linux.iptables_firewall.IptablesFirewallDriver' }
@@ -74,7 +76,11 @@ control 'network' do
     its('protocols') { should include 'tcp' }
   end if controller
 
+  neutron_venv = controller ? '/opt/openstack/neutron-controller' : '/opt/openstack/neutron-agent'
+
   describe ini('/etc/neutron/neutron.conf') do
+    its('AGENT.root_helper') { should cmp "sudo #{neutron_venv}/bin/neutron-rootwrap /etc/neutron/rootwrap.conf" }
+    its('privsep_namespace.helper_command') { should cmp "sudo #{neutron_venv}/bin/privsep-helper" }
     if controller
       its('database.connection') { should cmp "mysql+pymysql://neutron_x86:neutron@#{db_endpoint}:3306/neutron_x86" }
       its('DEFAULT.allow_overlapping_ips') { should cmp 'true' }

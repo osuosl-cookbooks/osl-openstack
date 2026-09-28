@@ -54,7 +54,10 @@ execute 'neutron: db_sync' do
   user 'neutron'
   group 'neutron'
   action :nothing
+  # db-manage reads both, and ml2_conf.ini lands after neutron.conf on a new node
+  only_if { ::File.exist?('/etc/neutron/plugins/ml2/ml2_conf.ini') }
   subscribes :run, 'template[/etc/neutron/neutron.conf]', :immediately
+  subscribes :run, 'cookbook_file[/etc/neutron/plugins/ml2/ml2_conf.ini]', :immediately
 end
 
 template '/etc/neutron/metadata_agent.ini' do

@@ -1,0 +1,6 @@
+<%# Each neutron PrivContext reads its own section, and privsep-helper is only in the venv -%>
+<% %w(privsep privsep_conntrack privsep_dhcp_release privsep_link privsep_namespace).each do |section| -%>
+
+[<%= section %>]
+helper_command = sudo <%= @venv %>/bin/privsep-helper
+<% end -%>

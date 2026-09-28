@@ -47,3 +47,7 @@ lock_path = /var/lib/neutron/tmp
 <%# heartbeat_in_pthread defaults to True on yoga: the heartbeat stalls for the
     length of an RPC call, so rabbit drops the connection (LP #2035113). -%>
 <%= render 'oslo_messaging.conf.erb' -%>
+
+[AGENT]
+root_helper = sudo <%= @neutron_venv %>/bin/neutron-rootwrap /etc/neutron/rootwrap.conf
+<%= render 'neutron_privsep.conf.erb', variables: { venv: @neutron_venv } -%>

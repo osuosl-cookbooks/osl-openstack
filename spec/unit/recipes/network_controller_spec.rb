@@ -67,6 +67,7 @@ describe 'osl-openstack::network_controller' do
           mode: '0640',
           variables: {
             local_ip: '127.0.0.1',
+            neutron_venv: '/opt/openstack/neutron-agent',
             physical_interface_mappings: %w(public:eth1),
           }
         )
@@ -92,6 +93,28 @@ describe 'osl-openstack::network_controller' do
       it do
         expect(chef_run.execute('neutron: db_sync')).to \
           subscribe_to('template[/etc/neutron/neutron.conf]').on(:run).immediately
+      end
+      it do
+        expect(chef_run.execute('neutron: db_sync')).to \
+          subscribe_to('cookbook_file[/etc/neutron/plugins/ml2/ml2_conf.ini]').on(:run).immediately
+      end
+      it do
+        is_expected.to render_file('/etc/neutron/neutron.conf')
+          .with_content("[AGENT]\nroot_helper = sudo /opt/openstack/neutron-controller/bin/neutron-rootwrap /etc/neutron/rootwrap.conf\n")
+      end
+      %w(privsep privsep_conntrack privsep_dhcp_release privsep_link privsep_namespace).each do |section|
+        it do
+          is_expected.to render_file('/etc/neutron/neutron.conf')
+            .with_content("[#{section}]\nhelper_command = sudo /opt/openstack/neutron-controller/bin/privsep-helper\n")
+        end
+        it do
+          is_expected.to render_file('/etc/neutron/plugins/ml2/linuxbridge_agent.ini')
+            .with_content("[#{section}]\nhelper_command = sudo /opt/openstack/neutron-agent/bin/privsep-helper\n")
+        end
+      end
+      it do
+        is_expected.to render_file('/etc/neutron/plugins/ml2/linuxbridge_agent.ini')
+          .with_content(%r{^\[AGENT\]\npolling_interval = 2\n.*\nroot_helper = sudo /opt/openstack/neutron-agent/bin/neutron-rootwrap })
       end
       it do
         is_expected.to create_template('/etc/neutron/metadata_agent.ini').with(
@@ -158,6 +181,7 @@ describe 'osl-openstack::network_controller' do
             mode: '0640',
             variables: {
               local_ip: '192.168.1.100',
+              neutron_venv: '/opt/openstack/neutron-agent',
               physical_interface_mappings: %w(public:p1p2),
             }
           )
@@ -184,6 +208,7 @@ describe 'osl-openstack::network_controller' do
             mode: '0640',
             variables: {
               local_ip: '192.168.1.101',
+              neutron_venv: '/opt/openstack/neutron-agent',
               physical_interface_mappings: %w(public:eno1),
             }
           )
