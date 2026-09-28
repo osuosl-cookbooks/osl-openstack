@@ -35,6 +35,7 @@ on the service port and proxies it to the unit's socket through
 
 | Service       | Port | uWSGI unit                | ini                                  | Socket                          |
 |---------------|------|---------------------------|--------------------------------------|---------------------------------|
+| keystone      | 5000 | `keystone-uwsgi`          | `/etc/keystone/keystone-uwsgi.ini`   | `/run/keystone/uwsgi.sock`      |
 | placement     | 8778 | `placement-uwsgi`         | `/etc/placement/placement-uwsgi.ini` | `/run/placement/uwsgi.sock`     |
 | nova-api      | 8774 | `openstack-nova-api`      | `/etc/nova/nova-api-uwsgi.ini`       | `/run/nova/api-uwsgi.sock`      |
 | nova-metadata | 8775 | `openstack-nova-metadata` | `/etc/nova/nova-metadata-uwsgi.ini`  | `/run/nova/metadata-uwsgi.sock` |
