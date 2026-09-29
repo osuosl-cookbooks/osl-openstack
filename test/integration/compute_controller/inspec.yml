@@ -11,6 +11,9 @@ inputs:
   - name: nova_local_storage
     value: false
     description: Whether this node's nova uses local storage (compute.local_storage in the bag).
+  - name: cinder_missing
+    value: false
+    description: nova.conf has [cinder] but the run deploys no cinder, so nova-status warns.
   - name: haproxy_tls
     value: false
     description: >

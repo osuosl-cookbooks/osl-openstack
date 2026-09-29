@@ -2,6 +2,7 @@ db_endpoint = input('db_endpoint')
 controller_endpoint = input('controller_endpoint')
 local_storage = input('local_storage')
 nova_local_storage = input('nova_local_storage')
+cinder_missing = input('cinder_missing')
 # messaging_host = AMQP host (mq tier on multi-node); memcached_host =
 # the memcached backend (controller1 on multi-node).
 messaging_host = input('messaging_host')
@@ -196,7 +197,12 @@ control 'compute-controller' do
 
   describe command('bash -c "source /root/openrc && /bin/nova-status upgrade check"') do
     its('stdout') { should match(/Check: Cells v2.*\n.*Result: Success/) }
-    its('stdout') { should match(/Check: Cinder API.*\n.*Result: Success/) }
+    if cinder_missing
+      # nova-status probes cinder because of [cinder] and finds no volumev3 endpoint
+      its('stdout') { should match(/Check: Cinder API.*\n.*Result: Warning.*\n.*Details: Unable to determine Cinder API version/) }
+    else
+      its('stdout') { should match(/Check: Cinder API.*\n.*Result: Success/) }
+    end
     its('stdout') { should match(/Check: hw_machine_type unset.*\n.*Result: Success/) }
     its('stdout') { should match(/Check: Older than N-1 computes.*\n.*Result: Success/) }
     its('stdout') { should match(/Check: Placement API.*\n.*Result: Success/) }
