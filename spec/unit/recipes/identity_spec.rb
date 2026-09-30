@@ -128,9 +128,14 @@ describe 'osl-openstack::identity' do
             user: 'keystone',
             processes: 5,
             threads: 1,
+            env: { 'XDG_CACHE_HOME' => '/var/cache/httpd/osuosl-keystone' },
           }
         )
       end
+      it do
+        is_expected.to create_directory('/var/cache/httpd/osuosl-keystone').with(owner: 'keystone', group: 'keystone', mode: '0750')
+      end
+      it { is_expected.to render_file('/etc/keystone/keystone-uwsgi.ini').with_content("env = XDG_CACHE_HOME=/var/cache/httpd/osuosl-keystone\n") }
       it { expect(chef_run.template('/etc/keystone/keystone-uwsgi.ini')).to notify('service[keystone-uwsgi]').to(:restart) }
       it { is_expected.to enable_service 'keystone-uwsgi' }
       it { is_expected.to start_service 'keystone-uwsgi' }

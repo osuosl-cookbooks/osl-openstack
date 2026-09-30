@@ -170,10 +170,16 @@ describe 'osl-openstack::compute_controller' do
               user: user,
               processes: 6,
               threads: 1,
-              env: pthread ? { 'OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD' => 'true' } : nil,
+              env: { 'XDG_CACHE_HOME' => "/var/cache/httpd/osuosl-#{app}" }.merge(
+                pthread ? { 'OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD' => 'true' } : {}
+              ),
             }
           )
         end
+        it do
+          is_expected.to create_directory("/var/cache/httpd/osuosl-#{app}").with(owner: user, group: user, mode: '0750')
+        end
+        it { is_expected.to render_file(ini).with_content("env = XDG_CACHE_HOME=/var/cache/httpd/osuosl-#{app}\n") }
         # Only nova's eventlet-patched WSGI apps need the pthread heartbeat
         if pthread
           it { is_expected.to render_file(ini).with_content("env = OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD=true\n") }

@@ -50,6 +50,12 @@ execute 'cinder: db_sync' do
   subscribes :run, 'template[/etc/cinder/cinder.conf]', :immediately
 end
 
+directory openstack_uwsgi_cache_dir('cinder-api') do
+  owner 'cinder'
+  group 'cinder'
+  mode '0750'
+end
+
 template '/etc/cinder/cinder-api-uwsgi.ini' do
   source 'uwsgi.ini.erb'
   group 'cinder'
@@ -60,7 +66,8 @@ template '/etc/cinder/cinder-api-uwsgi.ini' do
     socket: '/run/cinder/api-uwsgi.sock',
     user: 'cinder',
     processes: 2,
-    threads: 10
+    threads: 10,
+    env: openstack_uwsgi_env('cinder-api')
   )
   notifies :restart, 'service[openstack-cinder-api]'
 end

@@ -110,9 +110,14 @@ describe 'osl-openstack::dashboard' do
             user: 'horizon',
             processes: 4,
             threads: 1,
+            env: { 'XDG_CACHE_HOME' => '/var/cache/httpd/osuosl-horizon' },
           }
         )
       end
+      it do
+        is_expected.to create_directory('/var/cache/httpd/osuosl-horizon').with(owner: 'horizon', group: 'horizon', mode: '0750')
+      end
+      it { is_expected.to render_file('/etc/horizon/horizon-uwsgi.ini').with_content("env = XDG_CACHE_HOME=/var/cache/httpd/osuosl-horizon\n") }
       it do
         is_expected.to render_file('/etc/horizon/horizon-uwsgi.ini')
           .with_content("pythonpath = /opt/openstack/horizon/lib/python3.9/site-packages\n")

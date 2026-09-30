@@ -11,6 +11,14 @@ memcached_host = input('memcached_host')
 api_listen_ip = input('api_listen_ip')
 
 control 'compute-controller' do
+  # uWSGI (httpd_t) keeps stevedore's cache in httpd's cache dir
+  { 'placement' => 'placement', 'nova-api' => 'nova', 'nova-metadata' => 'nova' }.each do |app, user|
+    describe directory("/var/cache/httpd/osuosl-#{app}") do
+      its('owner') { should eq user }
+      its('selinux_label') { should match /:httpd_cache_t:/ }
+    end
+  end
+
   # nova-api, nova-metadata and placement run under uWSGI behind httpd
   %w(
     openstack-nova-api

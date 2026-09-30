@@ -156,6 +156,12 @@ nova_wsgi_env = { 'OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD' => 'true' }
     log_name: 'nova-metadata', configs: openstack_nova_config_resources, env: nova_wsgi_env
   },
 }.each do |app, a|
+  directory openstack_uwsgi_cache_dir(app) do
+    owner a[:user]
+    group a[:user]
+    mode '0750'
+  end
+
   template a[:ini] do
     source 'uwsgi.ini.erb'
     group a[:user]
@@ -167,7 +173,7 @@ nova_wsgi_env = { 'OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD' => 'true' }
       user: a[:user],
       processes: a[:processes],
       threads: a[:threads],
-      env: a[:env]
+      env: openstack_uwsgi_env(app, a[:env] || {})
     )
     notifies :restart, "service[#{a[:service]}]"
   end

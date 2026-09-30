@@ -4,6 +4,13 @@ control 'selinux' do
     its('stdout') { should cmp "Enforcing\n" }
   end
 
+  # osuosl-openstack-selinux turns on upstream's tunables for privsep-helper and dnsmasq
+  %w(os_neutron_dac_override os_dnsmasq_dac_override).each do |b|
+    describe command("getsebool #{b}") do
+      its('stdout') { should match /--> on$/ }
+    end
+  end
+
   # ausearch prints nothing to stdout and exits 1 when there are no denials
   describe command('ausearch -m AVC,USER_AVC -ts boot') do
     its('stdout') { should eq '' }

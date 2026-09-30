@@ -118,6 +118,12 @@ link "#{openstack_python_sitelib('horizon')}/openstack_dashboard/local/local_set
   to '/etc/horizon/local_settings.py'
 end
 
+directory openstack_uwsgi_cache_dir('horizon') do
+  owner 'horizon'
+  group 'horizon'
+  mode '0750'
+end
+
 template '/etc/horizon/horizon-uwsgi.ini' do
   source 'uwsgi.ini.erb'
   group 'horizon'
@@ -129,7 +135,8 @@ template '/etc/horizon/horizon-uwsgi.ini' do
     socket: '/run/horizon/uwsgi.sock',
     user: 'horizon',
     processes: 4,
-    threads: 1
+    threads: 1,
+    env: openstack_uwsgi_env('horizon')
   )
   notifies :restart, 'service[horizon-uwsgi]'
 end
