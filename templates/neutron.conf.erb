@@ -50,4 +50,5 @@ lock_path = /var/lib/neutron/tmp
 
 [AGENT]
 root_helper = sudo <%= @neutron_venv %>/bin/neutron-rootwrap /etc/neutron/rootwrap.conf
+root_helper_daemon = sudo <%= @neutron_venv %>/bin/neutron-rootwrap-daemon /etc/neutron/rootwrap.conf
 <%= render 'neutron_privsep.conf.erb', variables: { venv: @neutron_venv } -%>

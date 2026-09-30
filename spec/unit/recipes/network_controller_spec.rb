@@ -101,6 +101,7 @@ describe 'osl-openstack::network_controller' do
       it do
         is_expected.to render_file('/etc/neutron/neutron.conf')
           .with_content("[AGENT]\nroot_helper = sudo /opt/openstack/neutron-controller/bin/neutron-rootwrap /etc/neutron/rootwrap.conf\n")
+          .with_content("root_helper_daemon = sudo /opt/openstack/neutron-controller/bin/neutron-rootwrap-daemon /etc/neutron/rootwrap.conf\n")
       end
       %w(privsep privsep_conntrack privsep_dhcp_release privsep_link privsep_namespace).each do |section|
         it do
@@ -115,6 +116,7 @@ describe 'osl-openstack::network_controller' do
       it do
         is_expected.to render_file('/etc/neutron/plugins/ml2/linuxbridge_agent.ini')
           .with_content(%r{^\[AGENT\]\npolling_interval = 2\n.*\nroot_helper = sudo /opt/openstack/neutron-agent/bin/neutron-rootwrap })
+          .with_content("root_helper_daemon = sudo /opt/openstack/neutron-agent/bin/neutron-rootwrap-daemon /etc/neutron/rootwrap.conf\n")
       end
       it do
         is_expected.to create_template('/etc/neutron/metadata_agent.ini').with(
