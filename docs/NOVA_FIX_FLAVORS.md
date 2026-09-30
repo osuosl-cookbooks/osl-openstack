@@ -32,12 +32,13 @@ The script is deployed to controller nodes via the `compute_controller` recipe:
 
 ## Usage
 
-The script can be run directly (it has a shebang) or with `python3`:
+The script can be run directly (its shebang is the nova-controller venv's python)
+or with that python explicitly:
 
 ```bash
 ./nova-fix-flavors.py [options]
 # or
-python3 /root/nova-fix-flavors.py [options]
+/opt/openstack/nova-controller/bin/python /root/nova-fix-flavors.py [options]
 ```
 
 ### Command Line Options
@@ -67,7 +68,7 @@ Shows what would be changed without making any modifications:
 [2026-01-06 14:32:11] [INFO] Found 156 request specs
 [2026-01-06 14:32:12] [INFO] === Sync Complete ===
 [2026-01-06 14:32:12] [INFO] Summary: Updated=8, Skipped=148, Errors=0
-[2026-01-06 14:32:12] [INFO] >>> To apply changes, run: python3 fix-flavors.py --run
+[2026-01-06 14:32:12] [INFO] >>> To apply changes, run: /root/nova-fix-flavors.py --run
 ```
 
 ### 2. Verbose Mode (Shows Details)
@@ -262,7 +263,7 @@ Summary: Updated=0, Skipped=148, Errors=0
 If you ran in dry-run mode, you'll see:
 
 ```
->>> To apply changes, run: python3 fix-flavors.py --run
+>>> To apply changes, run: /root/nova-fix-flavors.py --run
 ```
 
 Always use `--run` flag to actually update the database.
