@@ -11,6 +11,21 @@ action :create do
     source :osuosl
   end
 
+  # A node still on RDO stops here until /root/migrate-venv.sh swaps the packages
+  rdo = openstack_rdo_installed?
+
+  cookbook_file '/root/migrate-venv.sh' do
+    cookbook 'osl-openstack'
+    source 'migrate-venv.sh'
+    mode '0750'
+    action rdo ? :create : :delete
+  end
+
+  ruby_block 'rdo migration pending' do
+    block { raise 'RDO OpenStack packages are installed: run /root/migrate-venv.sh, then cinc-client' }
+    only_if { rdo }
+  end
+
   package openstack_client_pkg
 
   osl_openstack_openrc new_resource.name if new_resource.openrc
