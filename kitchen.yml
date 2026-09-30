@@ -197,13 +197,17 @@ suites:
       - role[openstack_ops_identity]
       - recipe[osl-openstack::network_controller]
       - recipe[osl-openstack::network]
+      - recipe[osl-openstack::image]
       - recipe[osl-openstack::compute_controller]
       - recipe[osl-openstack::compute]
+      - recipe[openstack_test::image_upload]
       - recipe[openstack_test::create_network]
+      - recipe[openstack_test::boot_instance]
     verifier:
       inputs:
         cinder_missing: true
       inspec_tests:
+        - test/integration/boot_instance
         - test/integration/compute
         - test/integration/compute_controller
         - test/integration/identity
@@ -393,9 +397,11 @@ suites:
       - recipe[osl-openstack::compute]
       - recipe[openstack_test::image_upload]
       - recipe[openstack_test::create_network]
+      - recipe[openstack_test::boot_instance]
     verifier:
       inspec_tests:
         - test/integration/block_storage
+        - test/integration/boot_instance
         - test/integration/block_storage_controller
         - test/integration/compute
         - test/integration/compute_controller
