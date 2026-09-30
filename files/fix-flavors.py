@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/opt/openstack/nova-controller/bin/python
 import json
 import pymysql
 import configparser
@@ -354,7 +354,7 @@ def sync_specs(dry_run=True, verbose=False, verify_only=False, backup=True):
 
             if updated_count > 0:
                 if dry_run or verify_only:
-                    log_msg("INFO", f">>> To apply changes, run: python3 fix-flavors.py --run")
+                    log_msg("INFO", f">>> To apply changes, run: /root/nova-fix-flavors.py --run")
                 if backup_file:
                     log_msg("INFO", f">>> Backup available at: {backup_file}")
 

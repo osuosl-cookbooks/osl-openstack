@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/opt/openstack/nova-controller/bin/python
 """Draft a maintenance notice for everyone affected by taking compute hosts down.
 
 Finds the instances on one or more hypervisors, works out who should hear about

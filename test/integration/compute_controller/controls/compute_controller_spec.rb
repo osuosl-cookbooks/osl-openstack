@@ -231,8 +231,19 @@ control 'compute-controller' do
     its('mode') { should cmp '0700' }
     its('owner') { should eq 'root' }
     its('group') { should eq 'root' }
-    its('content') { should match %r{^#!/usr/bin/env python3} }
+    its('content') { should match %r{^#!/opt/openstack/nova-controller/bin/python} }
     its('content') { should match /sync_specs/ }
+  end
+
+  # The helpers run on the nova-controller venv, not host python3's RDO libraries
+  %w(fix-flavors cold-migrate-host resize-debris-check maintenance-notice).each do |script|
+    describe command("/root/nova-#{script}.py --help") do
+      its('exit_status') { should eq 0 }
+    end
+  end
+
+  describe command('bash -c "source /root/openrc && /root/nova-resize-debris-check.py"') do
+    its('exit_status') { should eq 0 }
   end
 
   describe directory '/root/.nova-flavor-fixes/backups' do
