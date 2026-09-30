@@ -73,6 +73,7 @@ control 'compute-controller' do
     its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
     its('keystone_authtoken.www_authenticate_uri') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
     its('placement_database.connection') { should cmp "mysql+pymysql://placement_x86:placement@#{db_endpoint}:3306/placement_x86" }
+    its('placement_database.connection_recycle_time') { should cmp 300 }
   end
 
   describe ini('/etc/nova/nova.conf') do
@@ -86,8 +87,10 @@ control 'compute-controller' do
     its('DEFAULT.resume_guests_state_on_host_boot') { should cmp 'True' }
     its('DEFAULT.transport_url') { should match(%r{^rabbit://openstack:openstack@#{Regexp.escape(messaging_host)}:#{messaging_port}}) }
     its('api_database.connection') { should cmp "mysql+pymysql://nova_x86:nova@#{db_endpoint}:3306/nova_api_x86" }
+    its('api_database.connection_recycle_time') { should cmp 300 }
     its('cache.memcache_servers') { should match(/#{Regexp.escape(memcached_host)}:11211/) }
     its('database.connection') { should cmp "mysql+pymysql://nova_x86:nova@#{db_endpoint}:3306/nova_x86" }
+    its('database.connection_recycle_time') { should cmp 300 }
     its('filter_scheduler.enabled_filters') { should cmp 'AggregateInstanceExtraSpecsFilter,PciPassthroughFilter,AvailabilityZoneFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter' }
     its('glance.api_servers') { should cmp "http://#{controller_endpoint}:9292" }
     its('keystone_authtoken.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }

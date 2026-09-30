@@ -11,6 +11,19 @@ describe 'osl-openstack::compute_controller' do
 
       include_context 'common_stubs'
 
+      it do
+        is_expected.to render_file('/etc/nova/nova.conf')
+          .with_content(/^\[database\]\nconnection = .*\n#.*\nconnection_recycle_time = 300$/)
+      end
+      it do
+        is_expected.to render_file('/etc/nova/nova.conf')
+          .with_content(/^\[api_database\]\nconnection = .*\n#.*\nconnection_recycle_time = 300$/)
+      end
+      it do
+        is_expected.to render_file('/etc/placement/placement.conf')
+          .with_content(/^\[placement_database\]\nconnection = .*\n#.*\nconnection_recycle_time = 300$/)
+      end
+
       it { is_expected.to create_osl_openstack_client('compute').with(firewall: true, openrc: false) }
       it { is_expected.to include_recipe 'osl-apache' }
       it { is_expected.to include_recipe 'osl-apache::mod_proxy_uwsgi' }

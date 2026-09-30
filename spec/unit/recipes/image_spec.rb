@@ -9,6 +9,11 @@ describe 'osl-openstack::image' do
 
       include_context 'common_stubs'
 
+      it do
+        is_expected.to render_file('/etc/glance/glance-api.conf')
+          .with_content(/^\[database\]\nconnection = .*\n#.*\nconnection_recycle_time = 300$/)
+      end
+
       it { is_expected.to create_osl_openstack_client('image').with(firewall: true, openrc: true) }
       it { is_expected.to include_recipe 'osl-ceph' }
       it { is_expected.to create_osl_openstack_service_user('glance').with(password: 'glance') }

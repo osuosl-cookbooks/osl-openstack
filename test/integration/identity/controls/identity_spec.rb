@@ -138,6 +138,7 @@ control 'openstack-identity' do
     its('DEFAULT.transport_url') { should match(%r{^rabbit://openstack:openstack@#{Regexp.escape(messaging_host)}:#{messaging_port}}) }
     its('cache.memcache_servers') { should match(/#{Regexp.escape(memcached_host)}:11211/) }
     its('database.connection') { should cmp "mysql+pymysql://keystone_x86:keystone@#{db_endpoint}:3306/keystone_x86" }
+    its('database.connection_recycle_time') { should cmp 300 }
   end
 
   %w(

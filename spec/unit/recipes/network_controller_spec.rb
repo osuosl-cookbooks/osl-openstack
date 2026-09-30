@@ -10,6 +10,11 @@ describe 'osl-openstack::network_controller' do
       end
 
       include_context 'common_stubs'
+
+      it do
+        is_expected.to render_file('/etc/neutron/neutron.conf')
+          .with_content(/^\[database\]\nconnection = .*\n#.*\nconnection_recycle_time = 300$/)
+      end
       include_context 'network_stubs'
 
       # The DNS-blocking bash only runs where the qdhcp namespace exists

@@ -38,6 +38,8 @@ auth_strategy = keystone
 
 [api_database]
 connection = <%= @api_database_connection %>
+# Recycle pooled connections before osl-mysql's wait_timeout (600s) closes them
+connection_recycle_time = 300
 
 <%= render 'cache.conf.erb' -%>
 <% unless @cinder_disabled -%>
@@ -55,6 +57,8 @@ username = nova
 
 [database]
 connection = <%= @database_connection %>
+# Recycle pooled connections before osl-mysql's wait_timeout (600s) closes them
+connection_recycle_time = 300
 
 [filter_scheduler]
 enabled_filters = <%= @enabled_filters.join(',') %>
