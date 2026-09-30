@@ -72,11 +72,15 @@ suites:
       - almalinux-10
     driver_config:
       server_name: "identity-<%= ENV['USER'] %>"
+    attributes:
+      osl-selinux:
+        enforcing: true
     run_list:
       - role[openstack_tk]
       - role[openstack_ops_identity]
     verifier:
       inspec_tests:
+        - test/integration/selinux
         - test/integration/identity
         - test/integration/ops_messaging
   - name: image
@@ -84,6 +88,9 @@ suites:
       - almalinux-10
     driver_config:
       server_name: "image-<%= ENV['USER'] %>"
+    attributes:
+      osl-selinux:
+        enforcing: true
     run_list:
       - role[openstack_tk]
       - recipe[openstack_test::ceph]
@@ -94,6 +101,7 @@ suites:
       inputs:
         nova_api: false
       inspec_tests:
+        - test/integration/selinux
         - test/integration/identity
         - test/integration/image
         - test/integration/ops_messaging
@@ -136,6 +144,9 @@ suites:
       - almalinux-10
     driver_config:
       server_name: "network-<%= ENV['USER'] %>"
+    attributes:
+      osl-selinux:
+        enforcing: true
     run_list:
       - recipe[openstack_test]
       - role[openstack_tk]
@@ -145,6 +156,7 @@ suites:
       - recipe[openstack_test::create_network]
     verifier:
       inspec_tests:
+        - test/integration/selinux
         - test/integration/identity
         - test/integration/network
         - test/integration/ops_messaging
@@ -153,6 +165,9 @@ suites:
       - almalinux-10
     driver_config:
       server_name: "compute-controller-<%= ENV['USER'] %>"
+    attributes:
+      osl-selinux:
+        enforcing: true
     run_list:
       - recipe[openstack_test]
       - role[openstack_tk]
@@ -163,6 +178,7 @@ suites:
       inputs:
         cinder_missing: true
       inspec_tests:
+        - test/integration/selinux
         - test/integration/compute_controller
         - test/integration/identity
         - test/integration/ops_messaging
@@ -190,6 +206,9 @@ suites:
       - almalinux-10
     driver_config:
       server_name: "compute-<%= ENV['USER'] %>"
+    attributes:
+      osl-selinux:
+        enforcing: true
     run_list:
       - recipe[openstack_test]
       - role[openstack_tk]
@@ -207,6 +226,7 @@ suites:
       inputs:
         cinder_missing: true
       inspec_tests:
+        - test/integration/selinux
         - test/integration/boot_instance
         - test/integration/compute
         - test/integration/compute_controller
@@ -245,6 +265,9 @@ suites:
       - almalinux-10
     driver_config:
       server_name: "dashboard-<%= ENV['USER'] %>"
+    attributes:
+      osl-selinux:
+        enforcing: true
     run_list:
       - recipe[openstack_test]
       - role[openstack_tk]
@@ -252,6 +275,7 @@ suites:
       - recipe[osl-openstack::dashboard]
     verifier:
       inspec_tests:
+        - test/integration/selinux
         - test/integration/dashboard
         - test/integration/identity
         - test/integration/ops_messaging
@@ -260,6 +284,9 @@ suites:
       - almalinux-10
     driver_config:
       server_name: "block-storage-controller-<%= ENV['USER'] %>"
+    attributes:
+      osl-selinux:
+        enforcing: true
     run_list:
       - recipe[openstack_test]
       - role[openstack_tk]
@@ -268,6 +295,7 @@ suites:
       - recipe[osl-openstack::block_storage_controller]
     verifier:
       inspec_tests:
+        - test/integration/selinux
         - test/integration/identity
         - test/integration/ops_messaging
         - test/integration/block_storage_controller
