@@ -8,6 +8,7 @@ cinder_missing = input('cinder_missing')
 messaging_host = input('messaging_host')
 messaging_port = input('messaging_port')
 memcached_host = input('memcached_host')
+api_listen_ip = input('api_listen_ip')
 
 control 'compute-controller' do
   # nova-api, nova-metadata and placement run under uWSGI behind httpd
@@ -44,7 +45,7 @@ control 'compute-controller' do
     end
   end
 
-  describe http('http://localhost:8778/placement-api/', headers: { 'Accept' => 'application/json' }) do
+  describe http("http://#{api_listen_ip}:8778/placement-api/", headers: { 'Accept' => 'application/json' }) do
     its('status') { should eq 200 }
     its('body') { should match(/"versions"/) }
   end
