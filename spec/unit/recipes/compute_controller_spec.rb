@@ -88,6 +88,7 @@ describe 'osl-openstack::compute_controller' do
         is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/^passthrough_whitelist =/)
       end
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content('images_rbd_pool = vms') }
+      it { is_expected.to render_file('/etc/nova/nova.conf').with_content("state_path = /var/lib/nova\n") }
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content('ram_allocation_ratio = 1') }
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content('server_listen = 0.0.0.0') }
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content('server_proxyclient_address = 10.0.0.2') }
