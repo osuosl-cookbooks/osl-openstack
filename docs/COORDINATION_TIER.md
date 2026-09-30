@@ -217,10 +217,10 @@ cloud's `cinder.conf`:
 backend_url = redis://:<pass>@mq1:26379?sentinel=oslocks&sentinel_fallback=mq2:26379&sentinel_fallback=mq3:26379&db=<N>
 ```
 
-The converge installs `python3-redis` (yoga RDO repos, noarch, all
-arches) and restarts cinder-scheduler and cinder-volume plus reloads
-httpd (cinder-api runs under mod_wsgi; its log is
-/var/log/httpd/cinder-api) via the existing cinder.conf subscriptions.
+The redis client ships in the cinder venv (osuosl-openstack-cinder), so
+the converge only restarts cinder-scheduler, cinder-volume and the
+cinder-api uWSGI unit (openstack-cinder-api; its log is in journald) via
+the existing cinder.conf subscriptions.
 cinder-backup is not chef-managed; restart it by hand where it runs.
 
 Rollout x86 first (it has the known-broken attach to verify against),

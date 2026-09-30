@@ -25,9 +25,6 @@ include_recipe 'osl-ceph'
 
 package 'osuosl-openstack-cinder'
 
-# redis client for the tooz redis:// coordination driver.
-package 'python3-redis'
-
 db_connection = openstack_database_connection('block-storage')
 
 template '/etc/cinder/cinder.conf' do
