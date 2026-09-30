@@ -7,6 +7,14 @@ end unless input('skip_ssl_baseline')
 haproxy_tls = input('haproxy_tls')
 
 control 'openstack-dashboard' do
+  # uWSGI (httpd_t) keeps stevedore's cache in httpd's cache dir
+  { 'horizon' => 'horizon' }.each do |app, user|
+    describe directory("/var/cache/httpd/osuosl-#{app}") do
+      its('owner') { should eq user }
+      its('selinux_label') { should match /:httpd_cache_t:/ }
+    end
+  end
+
   describe package 'osuosl-openstack-horizon' do
     it { should be_installed }
   end

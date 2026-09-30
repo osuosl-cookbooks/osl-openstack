@@ -138,6 +138,12 @@ execute 'keystone: bootstrap' do
   creates '/etc/keystone/bootstrapped'
 end
 
+directory openstack_uwsgi_cache_dir('keystone') do
+  owner 'keystone'
+  group 'keystone'
+  mode '0750'
+end
+
 template '/etc/keystone/keystone-uwsgi.ini' do
   source 'uwsgi.ini.erb'
   group 'keystone'
@@ -148,7 +154,8 @@ template '/etc/keystone/keystone-uwsgi.ini' do
     socket: '/run/keystone/uwsgi.sock',
     user: 'keystone',
     processes: 5,
-    threads: 1
+    threads: 1,
+    env: openstack_uwsgi_env('keystone')
   )
   notifies :restart, 'service[keystone-uwsgi]'
 end

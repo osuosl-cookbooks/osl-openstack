@@ -10,6 +10,14 @@ messaging_port = input('messaging_port')
 memcached_host = input('memcached_host')
 
 control 'openstack-identity' do
+  # uWSGI (httpd_t) keeps stevedore's cache in httpd's cache dir
+  { 'keystone' => 'keystone' }.each do |app, user|
+    describe directory("/var/cache/httpd/osuosl-#{app}") do
+      its('owner') { should eq user }
+      its('selinux_label') { should match /:httpd_cache_t:/ }
+    end
+  end
+
   openstack = ->(args) { %(bash -c "source /root/openrc && /usr/bin/openstack #{args}") }
 
   describe package 'osuosl-openstack-keystone' do

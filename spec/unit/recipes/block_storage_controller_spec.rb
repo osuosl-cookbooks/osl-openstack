@@ -86,9 +86,14 @@ describe 'osl-openstack::block_storage_controller' do
             user: 'cinder',
             processes: 2,
             threads: 10,
+            env: { 'XDG_CACHE_HOME' => '/var/cache/httpd/osuosl-cinder-api' },
           }
         )
       end
+      it do
+        is_expected.to create_directory('/var/cache/httpd/osuosl-cinder-api').with(owner: 'cinder', group: 'cinder', mode: '0750')
+      end
+      it { is_expected.to render_file('/etc/cinder/cinder-api-uwsgi.ini').with_content("env = XDG_CACHE_HOME=/var/cache/httpd/osuosl-cinder-api\n") }
       it do
         is_expected.to render_file('/etc/cinder/cinder-api-uwsgi.ini')
           .with_content("processes = 2\nthreads = 10\n")

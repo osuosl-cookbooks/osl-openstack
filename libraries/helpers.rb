@@ -151,6 +151,15 @@ module OSLOpenstack
         "#{openstack_venv(service)}/lib/python#{openstack_python_version}/site-packages"
       end
 
+      # uWSGI apps run in httpd_t, so stevedore caches under httpd's cache dir, not ~/.cache
+      def openstack_uwsgi_cache_dir(app)
+        "/var/cache/httpd/osuosl-#{app}"
+      end
+
+      def openstack_uwsgi_env(app, extra = {})
+        { 'XDG_CACHE_HOME' => openstack_uwsgi_cache_dir(app) }.merge(extra)
+      end
+
       def openstack_client_pkg
         %w(osuosl-openstack-cli)
       end
