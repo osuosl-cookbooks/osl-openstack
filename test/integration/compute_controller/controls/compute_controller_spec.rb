@@ -37,6 +37,13 @@ control 'compute-controller' do
     end
   end
 
+  # nova's WSGI apps are eventlet-patched; their RabbitMQ heartbeat must run in a pthread
+  %w(/etc/nova/nova-api-uwsgi.ini /etc/nova/nova-metadata-uwsgi.ini).each do |ini|
+    describe file(ini) do
+      its('content') { should match /^env = OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD=true$/ }
+    end
+  end
+
   describe http('http://localhost:8778/placement-api/', headers: { 'Accept' => 'application/json' }) do
     its('status') { should eq 200 }
     its('body') { should match(/"versions"/) }

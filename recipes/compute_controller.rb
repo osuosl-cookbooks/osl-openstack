@@ -134,6 +134,10 @@ end
 
 listen_ip = openstack_api_listen_ip
 
+# nova's WSGI apps are eventlet-patched, so an idle worker never runs a green heartbeat;
+# the environment overrides nova.conf's false, which the eventlet services need
+nova_wsgi_env = { 'OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD' => 'true' }
+
 # The uWSGI units ship in the RPMs; Apache proxies each vhost to its socket
 {
   'placement' => {
@@ -144,12 +148,12 @@ listen_ip = openstack_api_listen_ip
   'nova-api' => {
     port: 8774, processes: 6, threads: 1, user: 'nova', venv: 'nova-controller', script: 'nova-api-wsgi',
     service: 'openstack-nova-api', ini: '/etc/nova/nova-api-uwsgi.ini', socket: '/run/nova/api-uwsgi.sock',
-    log_name: 'nova-api', configs: openstack_nova_config_resources
+    log_name: 'nova-api', configs: openstack_nova_config_resources, env: nova_wsgi_env
   },
   'nova-metadata' => {
     port: 8775, processes: 6, threads: 1, user: 'nova', venv: 'nova-controller', script: 'nova-metadata-wsgi',
     service: 'openstack-nova-metadata', ini: '/etc/nova/nova-metadata-uwsgi.ini', socket: '/run/nova/metadata-uwsgi.sock',
-    log_name: 'nova-metadata', configs: openstack_nova_config_resources
+    log_name: 'nova-metadata', configs: openstack_nova_config_resources, env: nova_wsgi_env
   },
 }.each do |app, a|
   template a[:ini] do
@@ -162,7 +166,8 @@ listen_ip = openstack_api_listen_ip
       socket: a[:socket],
       user: a[:user],
       processes: a[:processes],
-      threads: a[:threads]
+      threads: a[:threads],
+      env: a[:env]
     )
     notifies :restart, "service[#{a[:service]}]"
   end
