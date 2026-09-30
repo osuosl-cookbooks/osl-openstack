@@ -376,6 +376,24 @@ describe OSLOpenstack::Cookbook::Helpers do
     end
   end
 
+  describe '#openstack_rdo_installed?' do
+    def rpm_query(stdout)
+      allow(helper).to receive(:shell_out)
+        .with('rpm', '-q', '--qf', '%{NAME}\n', *helper.openstack_rdo_packages)
+        .and_return(double(stdout: stdout))
+    end
+
+    it 'is false when rpm reports every RDO package missing' do
+      rpm_query(helper.openstack_rdo_packages.map { |p| "package #{p} is not installed\n" }.join)
+      expect(helper.openstack_rdo_installed?).to be false
+    end
+
+    it 'is true when any RDO package is installed' do
+      rpm_query("package openstack-cinder is not installed\nopenstack-nova-common\n")
+      expect(helper.openstack_rdo_installed?).to be true
+    end
+  end
+
   describe '#openstack_python_sitelib' do
     it 'points into the service venv' do
       expect(helper.openstack_python_sitelib('nova-compute')).to eq('/opt/openstack/nova-compute/lib/python3.9/site-packages')

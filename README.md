@@ -46,6 +46,53 @@ Horizon reads `/etc/horizon/local_settings.py` through a symlink in its venv. Ap
 serves `/static` from `/var/www/horizon/static`, which `collectstatic` and
 `compress` fill whenever the settings or the vhost change.
 
+## Migrating a node from RDO
+
+A node that still has RDO's OpenStack packages installed stops at
+`osl_openstack_client`. By then the run has written the venv repo and dropped
+`/root/migrate-venv.sh`. To migrate the node:
+
+1. Run `cinc-client`. It fails at `ruby_block[rdo migration pending]`.
+2. Run `/root/migrate-venv.sh`, which:
+   - removes `/etc/cron.d/chef-client`;
+   - saves `rpm -qa`, the user-installed package names, the service `/etc`
+     dirs, and the enabled and active units under `/root/pre-venv-*`;
+   - stops the OpenStack units and httpd, then archives the RDO logs in
+     `/var/log/<svc>` to `/root/pre-venv-logs-*.tgz` (dnf deletes
+     `keystone.log` with `openstack-keystone`);
+   - swaps each RDO package for its `osuosl-openstack-*` replacement in one
+     interactive `dnf --allowerasing shell` transaction, which also removes
+     `python3-mod_wsgi`. If dnf is aborted, it starts the stopped units again;
+   - removes the mod_wsgi module files Chef had enabled for httpd, and
+     disables the vhosts still using it until `cinc-client` re-renders them
+     for uWSGI;
+   - removes, in a second interactive transaction, the RDO libraries that no
+     installed package outside RDO still needs (listed in
+     `/root/pre-venv-cleanup-*.txt`) and what they pulled in. RDO's
+     network-scripts and Open vSwitch packages are marked user-installed and
+     kept. Declining it leaves a working node.
+3. Review both transactions and note the dnf history ids the script prints.
+4. Run `cinc-client`. It renders the configs, starts the units, restores the
+   cron file and deletes the script.
+5. Compare the units with `/root/pre-venv-units-*.txt`. RDO's packages disable
+   their units on removal, and only `cinc-client` enables them again.
+
+Each run logs to `/root/migrate-venv-<timestamp>.log`, and its step markers
+also go to journald (`journalctl -t migrate-venv`). The `.rpmsave` files the
+swap leaves in `/etc` are listed in the log; `cinc-client` renders every one
+of them again.
+
+To roll back, run `dnf history undo` on the cleanup id, then on the swap id,
+then `dnf mark install` the names in `/root/pre-venv-userinstalled-*.txt`
+that are installed again (the script prints all three). The undo reinstalls
+RDO's packages as dependencies, which `dnf autoremove` would remove. Then
+move the node to an environment that pins the RDO release of this cookbook,
+and run `cinc-client`.
+
+After the swap, services log to journald, not `/var/log/<svc>/*.log`.
+`osuosl-openstack-selinux` replaces `openstack-selinux` and labels
+`/opt/openstack`, so each daemon runs in the same SELinux domain as under RDO.
+
 ## Resources
 
 Every service recipe starts with `osl_openstack_client` and registers itself in
@@ -56,7 +103,9 @@ re-running them against an existing cloud makes no API writes.
 
 ### osl_openstack_client
 
-Adds the OSL OpenStack repository and installs `osuosl-openstack-cli`.
+Adds the OSL OpenStack repository and installs `osuosl-openstack-cli`. On a
+node still running RDO, it stops the run first (see
+[Migrating a node from RDO](#migrating-a-node-from-rdo)).
 
 | Property   | Default | Description                                               |
 |------------|---------|-----------------------------------------------------------|

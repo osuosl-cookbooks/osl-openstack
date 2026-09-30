@@ -3,6 +3,10 @@ CEPH_FSID = '8102bb29-f48b-4f6e-81d7-4c59d80ec6b8'.freeze
 shared_context 'common_stubs' do
   before do
     stub_data_bag_item('openstack', 'x86').and_return(openstack_secrets_stub)
+    # On the provider itself: a first converge reloads the library over any_instance stubs
+    stubs_for_provider('osl_openstack_client') do |provider|
+      allow(provider).to receive(:openstack_rdo_installed?).and_return(false)
+    end
     allow(File).to receive(:read).and_call_original
     allow(File).to receive(:read).with('/etc/ceph/ceph.conf').and_return("fsid = #{CEPH_FSID}")
   end
@@ -11,6 +15,10 @@ end
 shared_context 'region2_stubs' do
   before do
     stub_data_bag_item('openstack', 'x86').and_return(region2_secrets)
+    # On the provider itself: a first converge reloads the library over any_instance stubs
+    stubs_for_provider('osl_openstack_client') do |provider|
+      allow(provider).to receive(:openstack_rdo_installed?).and_return(false)
+    end
     allow(File).to receive(:read).and_call_original
     allow(File).to receive(:read).with('/etc/ceph/ceph.conf').and_return(nil)
   end
@@ -19,6 +27,10 @@ end
 shared_context 'dashboard_noregion_stubs' do
   before do
     stub_data_bag_item('openstack', 'x86').and_return(dashboard_noregion_secrets)
+    # On the provider itself: a first converge reloads the library over any_instance stubs
+    stubs_for_provider('osl_openstack_client') do |provider|
+      allow(provider).to receive(:openstack_rdo_installed?).and_return(false)
+    end
     allow(File).to receive(:read).and_call_original
     allow(File).to receive(:read).with('/etc/ceph/ceph.conf').and_return(nil)
   end

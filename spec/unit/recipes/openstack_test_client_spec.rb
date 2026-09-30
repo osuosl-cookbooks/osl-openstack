@@ -15,6 +15,27 @@ describe 'openstack_test::client' do
       it { is_expected.to install_package %w(osuosl-openstack-cli) }
       it { is_expected.to_not create_osl_openstack_openrc 'test' }
       it { is_expected.to_not accept_osl_firewall_openstack 'test' }
+      it { is_expected.to delete_cookbook_file '/root/migrate-venv.sh' }
+      it { is_expected.to_not run_ruby_block 'rdo migration pending' }
+
+      context 'on a node still running RDO' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm.merge(step_into: %w(osl_openstack_client))).converge(described_recipe)
+        end
+
+        before do
+          stubs_for_provider('osl_openstack_client[test]') do |provider|
+            allow(provider).to receive(:openstack_rdo_installed?).and_return(true)
+          end
+        end
+
+        it do
+          is_expected.to create_cookbook_file('/root/migrate-venv.sh').with(
+            cookbook: 'osl-openstack', source: 'migrate-venv.sh', mode: '0750'
+          )
+        end
+        it { is_expected.to run_ruby_block 'rdo migration pending' }
+      end
     end
   end
 end

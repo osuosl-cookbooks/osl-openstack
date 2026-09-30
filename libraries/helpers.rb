@@ -155,6 +155,27 @@ module OSLOpenstack
         %w(osuosl-openstack-cli)
       end
 
+      # Any of these installed means the node still runs RDO and needs /root/migrate-venv.sh
+      def openstack_rdo_packages
+        %w(
+          openstack-ceilometer-common
+          openstack-cinder
+          openstack-dashboard
+          openstack-glance
+          openstack-heat-common
+          openstack-keystone
+          openstack-neutron-common
+          openstack-nova-common
+          openstack-placement-common
+          python3-openstackclient
+        )
+      end
+
+      def openstack_rdo_installed?
+        installed = shell_out('rpm', '-q', '--qf', '%{NAME}\n', *openstack_rdo_packages).stdout.lines.map(&:strip)
+        !(installed & openstack_rdo_packages).empty?
+      end
+
       def openstack_compute_controller_pkgs
         %w(
           osuosl-openstack-nova-controller
