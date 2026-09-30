@@ -141,10 +141,10 @@ describe 'osl-openstack::compute_controller' do
       it { expect(chef_run.execute('nova: db_sync')).to subscribe_to('template[/etc/nova/nova.conf]').on(:run).immediately }
       it { expect(chef_run.execute('nova: discover hosts')).to subscribe_to('template[/etc/nova/nova.conf]').on(:run).immediately }
       {
-        'placement' => [8778, 'placement', 'placement', 'placement-uwsgi', '/etc/placement/placement-uwsgi.ini', '/run/placement/uwsgi.sock', 'placement-api'],
-        'nova-api' => [8774, 'nova', 'nova-controller', 'openstack-nova-api', '/etc/nova/nova-api-uwsgi.ini', '/run/nova/api-uwsgi.sock', 'nova-api-wsgi'],
-        'nova-metadata' => [8775, 'nova', 'nova-controller', 'openstack-nova-metadata', '/etc/nova/nova-metadata-uwsgi.ini', '/run/nova/metadata-uwsgi.sock', 'nova-metadata-wsgi'],
-      }.each do |app, (port, user, venv, srv, ini, sock, script)|
+        'placement' => [8778, 'placement', 'placement', 'placement-uwsgi', '/etc/placement/placement-uwsgi.ini', '/run/placement/uwsgi.sock', 'placement-api', nil],
+        'nova-api' => [8774, 'nova', 'nova-controller', 'openstack-nova-api', '/etc/nova/nova-api-uwsgi.ini', '/run/nova/api-uwsgi.sock', 'nova-api-wsgi', true],
+        'nova-metadata' => [8775, 'nova', 'nova-controller', 'openstack-nova-metadata', '/etc/nova/nova-metadata-uwsgi.ini', '/run/nova/metadata-uwsgi.sock', 'nova-metadata-wsgi', true],
+      }.each do |app, (port, user, venv, srv, ini, sock, script, pthread)|
         it do
           is_expected.to create_template(ini).with(
             source: 'uwsgi.ini.erb',
@@ -157,8 +157,15 @@ describe 'osl-openstack::compute_controller' do
               user: user,
               processes: 6,
               threads: 1,
+              env: pthread ? { 'OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD' => 'true' } : nil,
             }
           )
+        end
+        # Only nova's eventlet-patched WSGI apps need the pthread heartbeat
+        if pthread
+          it { is_expected.to render_file(ini).with_content("env = OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD=true\n") }
+        else
+          it { is_expected.to_not render_file(ini).with_content('HEARTBEAT_IN_PTHREAD') }
         end
         it do
           is_expected.to render_file(ini)

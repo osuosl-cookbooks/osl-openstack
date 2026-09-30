@@ -10,6 +10,9 @@ wsgi-file = <%= @wsgi_file %>
 <% if @pythonpath -%>
 pythonpath = <%= @pythonpath %>
 <% end -%>
+<% (@env || {}).each do |key, value| -%>
+env = <%= key %>=<%= value %>
+<% end -%>
 
 socket = <%= @socket %>
 chmod-socket = 660
