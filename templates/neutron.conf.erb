@@ -39,6 +39,8 @@ username = nova
 
 [database]
 connection = <%= @database_connection %>
+# Recycle pooled connections before osl-mysql's wait_timeout (600s) closes them
+connection_recycle_time = 300
 <% end -%>
 
 [oslo_concurrency]

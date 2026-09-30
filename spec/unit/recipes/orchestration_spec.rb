@@ -9,6 +9,11 @@ describe 'osl-openstack::orchestration' do
 
       include_context 'common_stubs'
 
+      it do
+        is_expected.to render_file('/etc/heat/heat.conf')
+          .with_content(/^\[database\]\nconnection = .*\n#.*\nconnection_recycle_time = 300$/)
+      end
+
       it_behaves_like 'oslo messaging config', '/etc/heat/heat.conf'
       it do
         is_expected.to render_file('/etc/heat/heat.conf').with_content { |c|

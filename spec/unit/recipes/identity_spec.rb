@@ -11,6 +11,11 @@ describe 'osl-openstack::identity' do
 
       include_context 'common_stubs'
 
+      it do
+        is_expected.to render_file('/etc/keystone/keystone.conf')
+          .with_content(/^\[database\]\nconnection = .*\n#.*\nconnection_recycle_time = 300$/)
+      end
+
       it { is_expected.to create_osl_openstack_client('identity').with(firewall: true, openrc: true) }
 
       describe 'osl_openstack_client' do
