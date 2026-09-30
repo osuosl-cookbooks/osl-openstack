@@ -186,6 +186,29 @@ control 'network' do
     its('stderr') { should eq '' }
   end if controller && primary_controller
 
+  # Each DHCP namespace needs a dnsmasq that, as the dnsmasq user, can re-read its
+  # host file. Checked at run time: the test network only exists once verify starts
+  dnsmasq_check = <<~'EOS'
+    for i in $(seq 30); do
+      nets=$(ip netns list | grep -oE "^qdhcp-[0-9a-f-]+" | sed "s/^qdhcp-//")
+      if [ -n "$nets" ] || [ "$1" != true ]; then break; fi
+      sleep 2
+    done
+    if [ -z "$nets" ] && [ "$1" = true ]; then echo "no qdhcp namespace"; exit 1; fi
+    rc=0
+    for net in $nets; do
+      for i in $(seq 30); do pgrep -f "dnsmasq .*$net" >/dev/null && break; sleep 2; done
+      pgrep -f "dnsmasq .*$net" >/dev/null || { echo "no dnsmasq for $net"; rc=1; continue; }
+      runuser -u dnsmasq -- test -r "/var/lib/neutron/dhcp/$net/host" || { echo "dnsmasq cannot read $net/host"; rc=1; }
+    done
+    exit $rc
+  EOS
+
+  describe command("bash -c '#{dnsmasq_check}' _ #{primary_controller}") do
+    its('exit_status') { should eq 0 }
+    its('stdout') { should eq '' }
+  end if controller
+
   describe command('bash -c "source /root/openrc && openstack network show public -c admin_state_up -c provider:network_type -c provider:physical_network -c router:external -c is_default -c shared -c status -f shell"') do
     its('stdout') { should match(/admin_state_up="True"/) }
     its('stdout') { should match(/is_default="True"/) }
