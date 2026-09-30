@@ -26,3 +26,6 @@ inputs:
     value: 5672
   - name: memcached_host
     value: controller.testing.osuosl.org
+  - name: api_listen_ip
+    value: localhost
+    description: Address Apache binds the API vhosts to; HA controllers use their own IP.
