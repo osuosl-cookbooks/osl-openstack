@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/opt/openstack/nova-controller/bin/python
 """Read-only sweep for leftover state from failed or unfinished nova resizes
 and migrations (the c24a44da incident taxonomy):
 
@@ -198,7 +198,7 @@ class NovaDB:
         if not self.params:
             return 'unavailable (no [database] connection in nova.conf)'
         if pymysql is None:
-            return 'unavailable (python3 pymysql module missing)'
+            return 'unavailable (pymysql module missing)'
         p = self.params
         return f"{p['database']} on {p['host']}:{p['port']} as {p['user']}"
 

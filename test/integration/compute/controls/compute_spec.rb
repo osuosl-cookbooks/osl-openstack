@@ -39,9 +39,10 @@ control 'compute' do
   os_pkgs = %w(
     device-mapper
     device-mapper-multipath
+    guestfs-tools
     libguestfs-rescue
     libvirt
-    openstack-nova-compute
+    osuosl-openstack-nova-compute
     python3-libguestfs
     qemu-kvm
     qemu-kvm-device-display-virtio-gpu
@@ -278,5 +279,15 @@ X0BwCgHRB7FvPAMu0hrDmEIJ87edGd1ziRYXpA9Lke/4VQk249pwzA==
         }
       EOF
     end
+  end
+end
+
+control 'compute-privsep' do
+  # Rootwrap must accept privsep-helper and find it in the venv; it then fails for want of a socket
+  describe command('runuser -u nova -- sudo -n /usr/bin/nova-rootwrap /etc/nova/rootwrap.conf privsep-helper ' \
+                   '--config-file /etc/nova/nova.conf --privsep_context nova.privsep.sys_admin_pctxt ' \
+                   '--privsep_sock_path /tmp/inspec-privsep') do
+    its('stderr') { should_not match(/Unauthorized command|Executable not found|password is required/) }
+    its('stdout') { should_not match(/Unauthorized command|Executable not found/) }
   end
 end

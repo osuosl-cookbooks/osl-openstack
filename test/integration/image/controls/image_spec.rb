@@ -11,6 +11,12 @@ memcached_host = input('memcached_host')
 control 'image' do
   openstack = ->(args) { %(bash -c "source /root/openrc && /usr/bin/openstack #{args}") }
 
+  %w(osuosl-openstack-glance osuosl-openstack-cli).each do |p|
+    describe package p do
+      it { should be_installed }
+    end
+  end
+
   describe service 'openstack-glance-api' do
     it { should be_enabled }
     it { should be_running }
@@ -19,6 +25,17 @@ control 'image' do
   describe port 9292 do
     it { should be_listening }
     its('protocols') { should include 'tcp' }
+  end
+
+  # The RPM creates /etc/glance and seeds the paste config from the venv
+  describe directory '/etc/glance' do
+    its('owner') { should eq 'root' }
+    its('group') { should eq 'glance' }
+    its('mode') { should cmp '0750' }
+  end
+
+  describe file '/etc/glance/glance-api-paste.ini' do
+    it { should exist }
   end
 
   %w(

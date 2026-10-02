@@ -12,12 +12,14 @@ backend = oslo_cache.memcache_pool
 enabled = true
 memcache_servers = <%= @memcached_endpoint %>
 
-<%# keystone only ever runs under mod_wsgi, where the eventlet hub stalls
-    between requests and the heartbeat needs a real thread; kolla does the same. -%>
+<%# keystone runs under uWSGI with no eventlet hub to wake between requests,
+    so the heartbeat needs a real thread; kolla does the same. -%>
 <%= render 'oslo_messaging.conf.erb' -%>
 
 [database]
 connection = <%= @database_connection %>
+# Recycle pooled connections before osl-mysql's wait_timeout (600s) closes them
+connection_recycle_time = 300
 
 [token]
 provider = fernet

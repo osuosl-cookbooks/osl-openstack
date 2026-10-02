@@ -9,6 +9,11 @@ describe 'osl-openstack::orchestration' do
 
       include_context 'common_stubs'
 
+      it do
+        is_expected.to render_file('/etc/heat/heat.conf')
+          .with_content(/^\[database\]\nconnection = .*\n#.*\nconnection_recycle_time = 300$/)
+      end
+
       it_behaves_like 'oslo messaging config', '/etc/heat/heat.conf'
       it do
         is_expected.to render_file('/etc/heat/heat.conf').with_content { |c|
@@ -48,15 +53,7 @@ describe 'osl-openstack::orchestration' do
           region: 'RegionOne'
         )
       end
-      it do
-        is_expected.to install_package(
-          %w(
-            openstack-heat-api
-            openstack-heat-api-cfn
-            openstack-heat-engine
-          )
-        )
-      end
+      it { is_expected.to install_package 'osuosl-openstack-heat' }
       it do
         is_expected.to create_template('/etc/heat/heat.conf').with(
           owner: 'root',

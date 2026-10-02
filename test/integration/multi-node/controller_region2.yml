@@ -8,3 +8,7 @@ memcached_host: controller-region2.testing.osuosl.org
 haproxy_tls: false
 primary_controller: true
 messaging_port: 5672
+# Region 2 renders [cinder] in nova.conf but deploys no cinder
+cinder_missing: true
+# Not HA, so Apache listens on every address
+api_listen_ip: localhost

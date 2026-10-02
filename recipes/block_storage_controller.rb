@@ -25,7 +25,7 @@ s = os_secrets
 b = s['block-storage']
 
 include_recipe 'osl-apache'
-include_recipe 'osl-apache::mod_wsgi'
+include_recipe 'osl-apache::mod_proxy_uwsgi'
 
 osl_openstack_service_user b['service']['user'] do
   password b['service']['pass']
@@ -50,20 +50,44 @@ execute 'cinder: db_sync' do
   subscribes :run, 'template[/etc/cinder/cinder.conf]', :immediately
 end
 
+directory openstack_uwsgi_cache_dir('cinder-api') do
+  owner 'cinder'
+  group 'cinder'
+  mode '0750'
+end
+
+template '/etc/cinder/cinder-api-uwsgi.ini' do
+  source 'uwsgi.ini.erb'
+  group 'cinder'
+  mode '0640'
+  variables(
+    chdir: openstack_venv('cinder'),
+    wsgi_file: "#{openstack_venv('cinder')}/bin/cinder-wsgi",
+    socket: '/run/cinder/api-uwsgi.sock',
+    user: 'cinder',
+    processes: 2,
+    threads: 10,
+    env: openstack_uwsgi_env('cinder-api')
+  )
+  notifies :restart, 'service[openstack-cinder-api]'
+end
+
+# uWSGI unit shipped by osuosl-openstack-cinder
+service 'openstack-cinder-api' do
+  action [:enable, :start]
+  subscribes :restart, 'template[/etc/cinder/cinder.conf]'
+end
+
 apache_app 'cinder-api' do
   cookbook 'osl-openstack'
   server_address openstack_api_listen_ip
   template 'wsgi-api.conf.erb'
-  template_params(
-    port: 8776, group: 'cinder-wsgi', processes: 2, threads: 10, user: 'cinder',
-    script: '/usr/bin/cinder-wsgi', log_name: 'cinder-api'
-  )
+  template_params(port: 8776, socket: '/run/cinder/api-uwsgi.sock', log_name: 'cinder-api')
   notifies :reload, 'apache2_service[block_storage]', :immediately
 end
 
 apache2_service 'block_storage' do
   action :nothing
-  subscribes :reload, 'template[/etc/cinder/cinder.conf]'
 end
 
 service 'openstack-cinder-scheduler' do

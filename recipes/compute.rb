@@ -129,21 +129,6 @@ when 'ppc64le'
     package 'kernel-kvm'
   end
 
-  package 'patch'
-
-  # libvirt >= 9.2 rejects the <acpi/> feature nova adds on pseries; patch the
-  # RDO driver in place (re-applies after a nova package update)
-  cookbook_file "#{Chef::Config[:file_cache_path]}/nova-pseries-acpi.patch" do
-    source 'nova-pseries-acpi.patch'
-  end
-
-  execute 'patch nova libvirt driver for pseries ACPI' do
-    command "patch -p1 --no-backup-if-mismatch -i #{Chef::Config[:file_cache_path]}/nova-pseries-acpi.patch"
-    cwd openstack_python_sitelib
-    not_if { openstack_nova_pseries_acpi_patched? }
-    notifies :restart, 'service[openstack-nova-compute]'
-  end
-
   kernel_module 'kvm_hv' do
     action [:install, :load]
     not_if { node.read('cpu', 'hypervisor_vendor').to_s.match?(/KVM/) }
@@ -208,7 +193,7 @@ osl_sysfs_param '/sys/module/nf_conntrack/parameters/hashsize' do
 end
 
 unless openstack_cinder_disabled?
-  package 'openstack-cinder'
+  package 'osuosl-openstack-cinder'
 
   osl_ceph_keyring b['ceph']['rbd_store_user'] do
     key b['ceph']['block_token']

@@ -23,10 +23,7 @@ auth_endpoint = openstack_auth_endpoint
 
 include_recipe 'osl-ceph'
 
-package 'openstack-cinder'
-
-# redis client for the tooz redis:// coordination driver.
-package 'python3-redis'
+package 'osuosl-openstack-cinder'
 
 db_connection = openstack_database_connection('block-storage')
 

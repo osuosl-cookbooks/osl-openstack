@@ -9,6 +9,11 @@ describe 'osl-openstack::image' do
 
       include_context 'common_stubs'
 
+      it do
+        is_expected.to render_file('/etc/glance/glance-api.conf')
+          .with_content(/^\[database\]\nconnection = .*\n#.*\nconnection_recycle_time = 300$/)
+      end
+
       it { is_expected.to create_osl_openstack_client('image').with(firewall: true, openrc: true) }
       it { is_expected.to include_recipe 'osl-ceph' }
       it { is_expected.to create_osl_openstack_service_user('glance').with(password: 'glance') }
@@ -20,7 +25,7 @@ describe 'osl-openstack::image' do
           region: 'RegionOne'
         )
       end
-      it { is_expected.to install_package 'openstack-glance' }
+      it { is_expected.to install_package 'osuosl-openstack-glance' }
       it do
         is_expected.to create_template('/etc/glance/glance-api.conf').with(
           owner: 'root',
@@ -156,8 +161,8 @@ describe 'osl-openstack::image' do
           )).converge(described_recipe)
         end
 
-        it { is_expected.to add_osl_repos_openstack 'default' }
-        it { is_expected.to install_package %w(openstack-selinux python3-openstackclient) }
+        it { is_expected.to add_osl_repos_openstack('default').with(source: :osuosl) }
+        it { is_expected.to install_package %w(osuosl-openstack-cli) }
         it { is_expected.to create_osl_openstack_openrc 'image' }
         it { is_expected.to accept_osl_firewall_openstack 'image' }
         it do

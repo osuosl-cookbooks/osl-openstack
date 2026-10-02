@@ -11,7 +11,7 @@ describe 'osl-openstack::telemetry_compute' do
 
       it { is_expected.to create_osl_openstack_client('telemetry').with(firewall: true, openrc: false) }
       it { is_expected.to include_recipe 'osl-openstack::telemetry_common' }
-      it { is_expected.to install_package 'openstack-ceilometer-compute' }
+      it { is_expected.to install_package 'osuosl-openstack-ceilometer' }
       it { is_expected.to enable_service 'openstack-ceilometer-compute' }
       it { is_expected.to start_service 'openstack-ceilometer-compute' }
       it do

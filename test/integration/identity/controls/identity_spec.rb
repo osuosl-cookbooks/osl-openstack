@@ -10,15 +10,65 @@ messaging_port = input('messaging_port')
 memcached_host = input('memcached_host')
 
 control 'openstack-identity' do
+  # uWSGI (httpd_t) keeps stevedore's cache in httpd's cache dir
+  { 'keystone' => 'keystone' }.each do |app, user|
+    describe directory("/var/cache/httpd/osuosl-#{app}") do
+      its('owner') { should eq user }
+      its('selinux_label') { should match /:httpd_cache_t:/ }
+    end
+  end
+
   openstack = ->(args) { %(bash -c "source /root/openrc && /usr/bin/openstack #{args}") }
 
-  describe package 'openstack-keystone' do
+  describe package 'osuosl-openstack-keystone' do
     it { should be_installed }
   end
 
-  describe service('httpd') do
-    it { should be_enabled }
-    it { should be_running }
+  describe package 'osuosl-openstack-cli' do
+    it { should be_installed }
+  end
+
+  # httpd proxies to keystone-uwsgi's socket
+  %w(httpd keystone-uwsgi).each do |s|
+    describe service(s) do
+      it { should be_enabled }
+      it { should be_running }
+    end
+  end
+
+  describe user('keystone') do
+    its('group') { should eq 'keystone' }
+    its('groups') { should include 'apache' }
+  end
+
+  describe directory '/etc/keystone' do
+    its('owner') { should eq 'root' }
+    its('group') { should eq 'keystone' }
+    its('mode') { should cmp '0750' }
+  end
+
+  describe file '/etc/keystone/keystone-uwsgi.ini' do
+    its('owner') { should eq 'root' }
+    its('group') { should eq 'keystone' }
+    its('mode') { should cmp '0640' }
+  end
+
+  describe ini '/etc/keystone/keystone-uwsgi.ini' do
+    its('uwsgi.socket') { should cmp '/run/keystone/uwsgi.sock' }
+    its('uwsgi.uid') { should cmp 'keystone' }
+    its('uwsgi.wsgi-file') { should cmp '/opt/openstack/keystone/bin/keystone-wsgi-public' }
+  end
+
+  describe file '/run/keystone/uwsgi.sock' do
+    it { should be_socket }
+    its('owner') { should eq 'keystone' }
+    its('group') { should eq 'apache' }
+  end
+
+  describe json(
+    content: http('https://controller.testing.osuosl.org:5000/identity/v3', ssl_verify: false).body
+  ) do
+    its(%w(version status)) { should cmp 'stable' }
   end
 
   describe service('memcached') do
@@ -96,6 +146,7 @@ control 'openstack-identity' do
     its('DEFAULT.transport_url') { should match(%r{^rabbit://openstack:openstack@#{Regexp.escape(messaging_host)}:#{messaging_port}}) }
     its('cache.memcache_servers') { should match(/#{Regexp.escape(memcached_host)}:11211/) }
     its('database.connection') { should cmp "mysql+pymysql://keystone_x86:keystone@#{db_endpoint}:3306/keystone_x86" }
+    its('database.connection_recycle_time') { should cmp 300 }
   end
 
   %w(

@@ -6,15 +6,15 @@ messaging_port = input('messaging_port')
 memcached_host = input('memcached_host')
 
 control 'orchestration' do
+  describe package 'osuosl-openstack-heat' do
+    it { should be_installed }
+  end
+
   %w(
     openstack-heat-api-cfn
     openstack-heat-api
     openstack-heat-engine
   ).each do |s|
-    describe package s do
-      it { should be_installed }
-    end
-
     describe service s do
       it { should be_enabled }
       it { should be_running }

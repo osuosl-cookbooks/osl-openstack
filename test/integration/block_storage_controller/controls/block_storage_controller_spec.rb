@@ -7,13 +7,30 @@ memcached_host = input('memcached_host')
 coordination_url = input('coordination_url')
 
 control 'block-storage-controller' do
-  describe package 'openstack-cinder' do
+  # uWSGI (httpd_t) keeps stevedore's cache in httpd's cache dir
+  { 'cinder-api' => 'cinder' }.each do |app, user|
+    describe directory("/var/cache/httpd/osuosl-#{app}") do
+      its('owner') { should eq user }
+      its('selinux_label') { should match /:httpd_cache_t:/ }
+    end
+  end
+
+  describe package 'osuosl-openstack-cinder' do
     it { should be_installed }
   end
 
-  describe service 'openstack-cinder-scheduler' do
-    it { should be_enabled }
-    it { should be_running }
+  # openstack-cinder-api is the uWSGI unit httpd proxies to
+  %w(openstack-cinder-api openstack-cinder-scheduler).each do |s|
+    describe service s do
+      it { should be_enabled }
+      it { should be_running }
+    end
+  end
+
+  describe file '/run/cinder/api-uwsgi.sock' do
+    it { should be_socket }
+    its('owner') { should eq 'cinder' }
+    its('group') { should eq 'apache' }
   end
 
   describe port 8776 do

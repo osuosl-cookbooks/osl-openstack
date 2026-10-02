@@ -67,6 +67,7 @@ def neutron_conf_vars(controller:, region2: false)
     listen_ip: '*',
     database_connection: "mysql+pymysql://neutron_x86:neutron@#{db}:3306/neutron_x86",
     memcached_endpoint: "#{host}:11211",
+    neutron_venv: controller ? '/opt/openstack/neutron-controller' : '/opt/openstack/neutron-agent',
     region: region2 ? 'RegionTwo' : 'RegionOne',
     service_pass: 'neutron',
     **messaging_vars(host),

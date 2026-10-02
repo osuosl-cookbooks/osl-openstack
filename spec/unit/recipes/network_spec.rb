@@ -11,7 +11,7 @@ describe 'osl-openstack::network' do
 
       it_behaves_like 'oslo messaging config', '/etc/neutron/neutron.conf'
 
-      it { is_expected.to install_package(%w(conntrack-tools ebtables ipset openstack-neutron-linuxbridge)) }
+      it { is_expected.to install_package(%w(conntrack-tools ebtables ipset osuosl-openstack-neutron-agent)) }
       it { is_expected.to include_recipe 'osl-openstack::network_common' }
       it do
         is_expected.to create_template('/etc/neutron/neutron.conf').with(
@@ -21,6 +21,12 @@ describe 'osl-openstack::network' do
           sensitive: true,
           variables: neutron_conf_vars(controller: false)
         )
+      end
+      it do
+        is_expected.to render_file('/etc/neutron/neutron.conf')
+          .with_content('root_helper = sudo /opt/openstack/neutron-agent/bin/neutron-rootwrap /etc/neutron/rootwrap.conf')
+          .with_content('root_helper_daemon = sudo /opt/openstack/neutron-agent/bin/neutron-rootwrap-daemon /etc/neutron/rootwrap.conf')
+          .with_content("[privsep]\nhelper_command = sudo /opt/openstack/neutron-agent/bin/privsep-helper\n")
       end
 
       context 'region2' do
