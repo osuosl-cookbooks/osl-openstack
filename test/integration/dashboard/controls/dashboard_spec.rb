@@ -7,8 +7,41 @@ end unless input('skip_ssl_baseline')
 haproxy_tls = input('haproxy_tls')
 
 control 'openstack-dashboard' do
-  describe package 'openstack-dashboard' do
+  # uWSGI (httpd_t) keeps stevedore's cache in httpd's cache dir
+  { 'horizon' => 'horizon' }.each do |app, user|
+    describe directory("/var/cache/httpd/osuosl-#{app}") do
+      its('owner') { should eq user }
+      its('selinux_label') { should match /:httpd_cache_t:/ }
+    end
+  end
+
+  describe package 'osuosl-openstack-horizon' do
     it { should be_installed }
+  end
+
+  # httpd serves /static and proxies the rest to horizon-uwsgi's socket
+  describe service 'horizon-uwsgi' do
+    it { should be_enabled }
+    it { should be_running }
+  end
+
+  describe file '/run/horizon/uwsgi.sock' do
+    it { should be_socket }
+    its('owner') { should eq 'horizon' }
+    its('group') { should eq 'apache' }
+  end
+
+  describe file '/opt/openstack/horizon/lib/python3.9/site-packages/openstack_dashboard/local/local_settings.py' do
+    its('link_path') { should eq '/etc/horizon/local_settings.py' }
+  end
+
+  # horizon sets COMPRESS_OUTPUT_DIR = 'dashboard' instead of django-compressor's CACHE
+  describe file '/var/www/horizon/static/dashboard/manifest.json' do
+    it { should exist }
+  end
+
+  describe command 'find /var/www/horizon/static/dashboard/css -name "output.*.css" -print -quit' do
+    its('stdout') { should_not be_empty }
   end
 
   %w(80 443).each do |p|
@@ -74,7 +107,7 @@ control 'openstack-dashboard' do
     its('stdout') { should_not match /collectstatic/ }
   end
 
-  describe file '/etc/openstack-dashboard/local_settings' do
+  describe file '/etc/horizon/local_settings.py' do
     its('content') { should match(/^SECRET_KEY = '-#45g2\*o=8mhe\(10if%\*65@g#z0r#r7m__w6kwq8s9@n%12a11'$/) }
     its('content') { should match(%r{^OPENSTACK_KEYSTONE_URL = "https://controller\.testing\.osuosl\.org:5000/"$}) }
     its('content') { should match(/'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',/) }

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/opt/openstack/nova-controller/bin/python
 """Cold-migrate nova instances from one compute host to a specific destination.
 
 Cold migration shuts the guest down, rebuilds its domain XML on the

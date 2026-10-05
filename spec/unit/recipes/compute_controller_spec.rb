@@ -11,9 +11,22 @@ describe 'osl-openstack::compute_controller' do
 
       include_context 'common_stubs'
 
+      it do
+        is_expected.to render_file('/etc/nova/nova.conf')
+          .with_content(/^\[database\]\nconnection = .*\n#.*\nconnection_recycle_time = 300$/)
+      end
+      it do
+        is_expected.to render_file('/etc/nova/nova.conf')
+          .with_content(/^\[api_database\]\nconnection = .*\n#.*\nconnection_recycle_time = 300$/)
+      end
+      it do
+        is_expected.to render_file('/etc/placement/placement.conf')
+          .with_content(/^\[placement_database\]\nconnection = .*\n#.*\nconnection_recycle_time = 300$/)
+      end
+
       it { is_expected.to create_osl_openstack_client('compute').with(firewall: true, openrc: false) }
       it { is_expected.to include_recipe 'osl-apache' }
-      it { is_expected.to include_recipe 'osl-apache::mod_wsgi' }
+      it { is_expected.to include_recipe 'osl-apache::mod_proxy_uwsgi' }
       it { is_expected.to create_osl_openstack_service_user('nova').with(password: 'nova') }
       it { is_expected.to create_osl_openstack_service_user('placement').with(password: 'placement') }
       it do
@@ -32,16 +45,7 @@ describe 'osl-openstack::compute_controller' do
           region: 'RegionOne'
         )
       end
-      it do
-        is_expected.to install_package %w(
-          openstack-nova-api
-          openstack-nova-conductor
-          openstack-nova-novncproxy
-          openstack-nova-scheduler
-          openstack-placement-api
-          python3-osc-placement
-        )
-      end
+      it { is_expected.to install_package %w(osuosl-openstack-nova-controller osuosl-openstack-placement) }
       it { is_expected.to delete_file('/etc/httpd/conf.d/00-placement-api.conf') }
       it do
         expect(chef_run.file('/etc/httpd/conf.d/00-placement-api.conf')).to notify('apache2_service[compute]').to(:reload)
@@ -67,9 +71,6 @@ describe 'osl-openstack::compute_controller' do
       end
       it do
         expect(chef_run.template('/etc/placement/placement.conf')).to notify('execute[placement: db_sync]').to(:run).immediately
-      end
-      it do
-        expect(chef_run.template('/etc/placement/placement.conf')).to notify('apache2_service[compute]').to(:reload)
       end
       it do
         is_expected.to edit_delete_lines('remove dhcpbridge').with(
@@ -100,6 +101,7 @@ describe 'osl-openstack::compute_controller' do
         is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/^passthrough_whitelist =/)
       end
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content('images_rbd_pool = vms') }
+      it { is_expected.to render_file('/etc/nova/nova.conf').with_content("state_path = /var/lib/nova\n") }
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content('ram_allocation_ratio = 1') }
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content('server_listen = 0.0.0.0') }
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content('server_proxyclient_address = 10.0.0.2') }
@@ -152,35 +154,76 @@ describe 'osl-openstack::compute_controller' do
       it { expect(chef_run.execute('nova: db_sync')).to subscribe_to('template[/etc/nova/nova.conf]').on(:run).immediately }
       it { expect(chef_run.execute('nova: discover hosts')).to subscribe_to('template[/etc/nova/nova.conf]').on(:run).immediately }
       {
-        'placement' => [8778, 'placement-api', 6, 1, 'placement', '/usr/bin/placement-api'],
-        'nova-api' => [8774, 'nova-api', 6, 1, 'nova', '/usr/bin/nova-api-wsgi'],
-        'nova-metadata' => [8775, 'nova-metadata', 6, 1, 'nova', '/usr/bin/nova-metadata-wsgi'],
-      }.each do |app, (port, group, processes, threads, user, script)|
+        'placement' => [8778, 'placement', 'placement', 'placement-uwsgi', '/etc/placement/placement-uwsgi.ini', '/run/placement/uwsgi.sock', 'placement-api', nil],
+        'nova-api' => [8774, 'nova', 'nova-controller', 'openstack-nova-api', '/etc/nova/nova-api-uwsgi.ini', '/run/nova/api-uwsgi.sock', 'nova-api-wsgi', true],
+        'nova-metadata' => [8775, 'nova', 'nova-controller', 'openstack-nova-metadata', '/etc/nova/nova-metadata-uwsgi.ini', '/run/nova/metadata-uwsgi.sock', 'nova-metadata-wsgi', true],
+      }.each do |app, (port, user, venv, srv, ini, sock, script, pthread)|
+        it do
+          is_expected.to create_template(ini).with(
+            source: 'uwsgi.ini.erb',
+            group: user,
+            mode: '0640',
+            variables: {
+              chdir: "/opt/openstack/#{venv}",
+              wsgi_file: "/opt/openstack/#{venv}/bin/#{script}",
+              socket: sock,
+              user: user,
+              processes: 6,
+              threads: 1,
+              env: { 'XDG_CACHE_HOME' => "/var/cache/httpd/osuosl-#{app}" }.merge(
+                pthread ? { 'OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD' => 'true' } : {}
+              ),
+            }
+          )
+        end
+        it do
+          is_expected.to create_directory("/var/cache/httpd/osuosl-#{app}").with(owner: user, group: user, mode: '0750')
+        end
+        it { is_expected.to render_file(ini).with_content("env = XDG_CACHE_HOME=/var/cache/httpd/osuosl-#{app}\n") }
+        # Only nova's eventlet-patched WSGI apps need the pthread heartbeat
+        if pthread
+          it { is_expected.to render_file(ini).with_content("env = OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD=true\n") }
+        else
+          it { is_expected.to_not render_file(ini).with_content('HEARTBEAT_IN_PTHREAD') }
+        end
+        it do
+          is_expected.to render_file(ini)
+            .with_content("wsgi-file = /opt/openstack/#{venv}/bin/#{script}\n")
+            .with_content("socket = #{sock}\nchmod-socket = 660\nchown-socket = #{user}:apache\n")
+            .with_content("processes = 6\nthreads = 1\n")
+            .with_content('hook-master-start = unix_signal:3 kill_them_all')
+        end
+        it { expect(chef_run.template(ini)).to notify("service[#{srv}]").to(:restart) }
+        it { is_expected.to enable_service srv }
+        it { is_expected.to start_service srv }
         it do
           is_expected.to create_apache_app(app).with(
             cookbook: 'osl-openstack',
             template: 'wsgi-api.conf.erb',
-            template_params: hash_including(port: port, group: group, user: user, script: script)
+            template_params: hash_including(port: port, socket: sock)
           )
         end
         it do
           is_expected.to render_file("/etc/httpd/sites-available/#{app}.conf")
-            .with_content("Listen *:#{port}\n\n<VirtualHost *:#{port}>\n  WSGIProcessGroup #{group}\n")
-            .with_content("WSGIDaemonProcess #{group} processes=#{processes} threads=#{threads} user=#{user} group=#{user}")
-            .with_content("WSGIScriptAlias / #{script}\n")
+            .with_content("Listen *:#{port}\n\n<VirtualHost *:#{port}>\n")
+            .with_content(%(  ProxyPass / "unix:#{sock}|uwsgi://localhost/" retry=0\n))
+            .with_content("<Proxy \"*\">\n    Require all granted\n  </Proxy>")
             .with_content(%r{rotatelogs /var/log/httpd/#{app}(-api)?/error/})
         end
+        it { is_expected.to_not render_file("/etc/httpd/sites-available/#{app}.conf").with_content('WSGI') }
+        it { expect(chef_run.apache_app(app)).to notify('apache2_service[compute]').to(:reload).immediately }
+      end
+      it { expect(chef_run.service('placement-uwsgi')).to subscribe_to('template[/etc/placement/placement.conf]').on(:restart) }
+      %w(openstack-nova-api openstack-nova-metadata).each do |srv|
+        it { expect(chef_run.service(srv)).to subscribe_to('delete_lines[remove dhcpbridge]').on(:restart) }
+        it { expect(chef_run.service(srv)).to subscribe_to('delete_lines[remove force_dhcp_release]').on(:restart) }
+        it { expect(chef_run.service(srv)).to subscribe_to('template[/etc/nova/nova.conf]').on(:restart) }
       end
       it do
         is_expected.to render_file('/etc/httpd/sites-available/placement.conf')
-          .with_content("  Alias /placement-api /usr/bin/placement-api\n  <Location /placement-api>\n")
+          .with_content(%(  ProxyPass /placement-api "unix:/run/placement/uwsgi.sock|uwsgi://localhost/" retry=0\n))
       end
-      it { is_expected.to_not render_file('/etc/httpd/sites-available/placement.conf').with_content('WSGISocketPrefix') }
-      it { is_expected.to render_file('/etc/httpd/sites-available/nova-api.conf').with_content("</VirtualHost>\n\nWSGISocketPrefix /var/lock/subsys\n") }
-      it { is_expected.to_not render_file('/etc/httpd/sites-available/nova-api.conf').with_content('<Location') }
-      it { expect(chef_run.apache_app('placement')).to notify('apache2_service[compute]').to(:reload).immediately }
-      it { expect(chef_run.apache_app('nova-api')).to notify('apache2_service[compute]').to(:reload).immediately }
-      it { expect(chef_run.apache_app('nova-metadata')).to notify('apache2_service[compute]').to(:reload).immediately }
+      it { is_expected.to_not render_file('/etc/httpd/sites-available/nova-api.conf').with_content('/placement-api') }
       %w(
         openstack-nova-conductor
         openstack-nova-novncproxy
@@ -223,7 +266,7 @@ describe 'osl-openstack::compute_controller' do
           minute: 20,
           hour: 5,
           user: 'nova',
-          command: "nova-manage db archive_deleted_rows --max_rows 1000 --before `date --date='today - 90 days' +\\%F` --until-complete --all-cells >>/var/log/nova/nova-rowsflush.log 2>&1"
+          command: "nova-manage db archive_deleted_rows --max_rows 1000 --before `date --date='today - 90 days' +\\%F` --until-complete --all-cells 2>&1 | systemd-cat -t nova-rowsflush"
         )
       end
       it do
@@ -231,7 +274,7 @@ describe 'osl-openstack::compute_controller' do
           minute: 20,
           hour: 6,
           user: 'nova',
-          command: "nova-manage db purge --before `date --date='today - 14 days' +\\%D` --all-cells >>/var/log/nova/nova-rowspurge.log 2>&1"
+          command: "nova-manage db purge --before `date --date='today - 14 days' +\\%D` --all-cells 2>&1 | systemd-cat -t nova-rowspurge"
         )
       end
 

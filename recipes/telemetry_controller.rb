@@ -30,8 +30,6 @@ end
 
 ceilometer_services = %w(openstack-ceilometer-central openstack-ceilometer-notification)
 
-package ceilometer_services
-
 include_recipe 'osl-openstack::telemetry_common'
 
 ceilometer_services.each do |srv|

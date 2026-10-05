@@ -26,6 +26,8 @@ auth_url = https://<%= @auth_endpoint %>:5000
 
 [database]
 connection = <%= @database_connection %>
+# Recycle pooled connections before osl-mysql's wait_timeout (600s) closes them
+connection_recycle_time = 300
 
 <%= render 'keystone_authtoken.conf.erb', variables: {
   auth_endpoint: @auth_endpoint, memcached_endpoint: @memcached_endpoint, service_pass: @service_pass,

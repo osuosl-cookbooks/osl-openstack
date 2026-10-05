@@ -42,7 +42,7 @@ osl_memcached 'memcached' do
 end
 
 include_recipe 'osl-apache'
-include_recipe 'osl-apache::mod_wsgi'
+include_recipe 'osl-apache::mod_proxy_uwsgi'
 include_recipe 'osl-apache::mod_ssl'
 # Apache sits behind haproxy in HA mode; mod_remoteip rewrites
 # REMOTE_ADDR from haproxy's X-Forwarded-For. ha.rb populates the
@@ -50,7 +50,7 @@ include_recipe 'osl-apache::mod_ssl'
 # osl-apache has captured the per-host `listen` value).
 include_recipe 'osl-apache::mod_remoteip' if openstack_tls_on_haproxy?
 
-package 'openstack-keystone'
+package 'osuosl-openstack-keystone'
 
 s = os_secrets
 
@@ -67,11 +67,8 @@ admin_pass = s['users']['admin']
 fernet_keys = safe_dig(s, 'identity', 'fernet_keys')
 
 if fernet_keys
-  # On a fresh node the openstack-keystone package creates /etc/keystone
-  # but not /etc/keystone/fernet-keys; that dir is normally created by
-  # `keystone-manage fernet_setup` (below), which runs after these file
-  # resources. Pre-create it so the data-bag keys can be written on the
-  # very first chef run.
+  # fernet_setup below creates this dir, but the data bag keys are written
+  # first on a new node
   directory '/etc/keystone/fernet-keys' do
     owner 'keystone'
     group 'keystone'
@@ -85,7 +82,7 @@ if fernet_keys
       group 'keystone'
       mode '600'
       sensitive true
-      notifies :reload, 'apache2_service[osuosl]'
+      notifies :restart, 'service[keystone-uwsgi]'
     end
   end
 end
@@ -103,7 +100,7 @@ template '/etc/keystone/keystone.conf' do
     database_connection: openstack_database_connection('identity')
   )
   notifies :run, 'execute[keystone: db_sync]', :immediately
-  notifies :reload, 'apache2_service[osuosl]'
+  notifies :restart, 'service[keystone-uwsgi]'
 end
 
 execute 'keystone: db_sync' do
@@ -141,15 +138,40 @@ execute 'keystone: bootstrap' do
   creates '/etc/keystone/bootstrapped'
 end
 
+directory openstack_uwsgi_cache_dir('keystone') do
+  owner 'keystone'
+  group 'keystone'
+  mode '0750'
+end
+
+template '/etc/keystone/keystone-uwsgi.ini' do
+  source 'uwsgi.ini.erb'
+  group 'keystone'
+  mode '0640'
+  variables(
+    chdir: openstack_venv('keystone'),
+    wsgi_file: "#{openstack_venv('keystone')}/bin/keystone-wsgi-public",
+    socket: '/run/keystone/uwsgi.sock',
+    user: 'keystone',
+    processes: 5,
+    threads: 1,
+    env: openstack_uwsgi_env('keystone')
+  )
+  notifies :restart, 'service[keystone-uwsgi]'
+end
+
+# uWSGI unit shipped by osuosl-openstack-keystone
+service 'keystone-uwsgi' do
+  action [:enable, :start]
+end
+
 apache_app 'keystone' do
   server_name endpoint
   server_aliases s['identity']['aliases'] if s['identity']['aliases']
   server_address listen_ip
   cookbook 'osl-openstack'
   template 'wsgi-keystone.conf.erb'
-  # In HA mode haproxy on the VIP terminates TLS and forwards plain
-  # HTTP to this vhost; the wsgi-keystone.conf.erb template drops its
-  # SSLEngine block when this flag is set.
+  # haproxy terminates TLS at the VIP in HA, so the vhost drops its SSL block
   template_params(haproxy_tls: openstack_tls_on_haproxy?)
   notifies :reload, 'apache2_service[osuosl]', :immediately
 end

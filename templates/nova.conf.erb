@@ -29,6 +29,8 @@ ram_allocation_ratio = <%= @ram_allocation_ratio %>
 ram_allocation_ratio = 1
 <% end -%>
 resume_guests_state_on_host_boot = True
+# Defaults to the venv's site-packages; RDO's nova-dist.conf set this
+state_path = /var/lib/nova
 transport_url = <%= @transport_url %>
 
 [api]
@@ -36,6 +38,8 @@ auth_strategy = keystone
 
 [api_database]
 connection = <%= @api_database_connection %>
+# Recycle pooled connections before osl-mysql's wait_timeout (600s) closes them
+connection_recycle_time = 300
 
 <%= render 'cache.conf.erb' -%>
 <% unless @cinder_disabled -%>
@@ -53,6 +57,8 @@ username = nova
 
 [database]
 connection = <%= @database_connection %>
+# Recycle pooled connections before osl-mysql's wait_timeout (600s) closes them
+connection_recycle_time = 300
 
 [filter_scheduler]
 enabled_filters = <%= @enabled_filters.join(',') %>

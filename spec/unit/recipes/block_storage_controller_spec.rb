@@ -9,9 +9,14 @@ describe 'osl-openstack::block_storage_controller' do
 
       include_context 'common_stubs'
 
+      it do
+        is_expected.to render_file('/etc/cinder/cinder.conf')
+          .with_content(/^\[database\]\nconnection = .*\n#.*\nconnection_recycle_time = 300$/)
+      end
+
       it { is_expected.to create_osl_openstack_client('block-storage-controller').with(firewall: true, openrc: false) }
       it { is_expected.to include_recipe 'osl-apache' }
-      it { is_expected.to include_recipe 'osl-apache::mod_wsgi' }
+      it { is_expected.to include_recipe 'osl-apache::mod_proxy_uwsgi' }
       it { is_expected.to create_osl_openstack_service_user('cinder').with(password: 'cinder') }
       it do
         is_expected.to create_osl_openstack_api('cinderv2').with(
@@ -30,8 +35,8 @@ describe 'osl-openstack::block_storage_controller' do
         )
       end
       it { is_expected.to include_recipe 'osl-openstack::block_storage_common' }
-      it { is_expected.to install_package 'openstack-cinder' }
-      it { is_expected.to install_package 'python3-redis' }
+      it { is_expected.to install_package 'osuosl-openstack-cinder' }
+      it { is_expected.to_not install_package 'python3-redis' }
       it do
         is_expected.to create_template('/etc/cinder/cinder.conf').with(
           owner: 'root',
@@ -70,29 +75,57 @@ describe 'osl-openstack::block_storage_controller' do
           subscribe_to('template[/etc/cinder/cinder.conf]').on(:run).immediately
       end
       it do
+        is_expected.to create_template('/etc/cinder/cinder-api-uwsgi.ini').with(
+          source: 'uwsgi.ini.erb',
+          group: 'cinder',
+          mode: '0640',
+          variables: {
+            chdir: '/opt/openstack/cinder',
+            wsgi_file: '/opt/openstack/cinder/bin/cinder-wsgi',
+            socket: '/run/cinder/api-uwsgi.sock',
+            user: 'cinder',
+            processes: 2,
+            threads: 10,
+            env: { 'XDG_CACHE_HOME' => '/var/cache/httpd/osuosl-cinder-api' },
+          }
+        )
+      end
+      it do
+        is_expected.to create_directory('/var/cache/httpd/osuosl-cinder-api').with(owner: 'cinder', group: 'cinder', mode: '0750')
+      end
+      it { is_expected.to render_file('/etc/cinder/cinder-api-uwsgi.ini').with_content("env = XDG_CACHE_HOME=/var/cache/httpd/osuosl-cinder-api\n") }
+      it do
+        is_expected.to render_file('/etc/cinder/cinder-api-uwsgi.ini')
+          .with_content("processes = 2\nthreads = 10\n")
+          .with_content("socket = /run/cinder/api-uwsgi.sock\nchmod-socket = 660\nchown-socket = cinder:apache\n")
+      end
+      it { is_expected.to_not render_file('/etc/cinder/cinder-api-uwsgi.ini').with_content('pythonpath') }
+      it do
+        expect(chef_run.template('/etc/cinder/cinder-api-uwsgi.ini')).to notify('service[openstack-cinder-api]').to(:restart)
+      end
+      it { is_expected.to enable_service 'openstack-cinder-api' }
+      it { is_expected.to start_service 'openstack-cinder-api' }
+      it do
+        expect(chef_run.service('openstack-cinder-api')).to subscribe_to('template[/etc/cinder/cinder.conf]').on(:restart)
+      end
+      it do
         is_expected.to create_apache_app('cinder-api').with(
           cookbook: 'osl-openstack',
           template: 'wsgi-api.conf.erb',
-          template_params: hash_including(port: 8776, group: 'cinder-wsgi', user: 'cinder')
+          template_params: { port: 8776, socket: '/run/cinder/api-uwsgi.sock', log_name: 'cinder-api' }
         )
       end
       it do
         is_expected.to render_file('/etc/httpd/sites-available/cinder-api.conf')
-          .with_content("Listen *:8776\n\n<VirtualHost *:8776>\n  WSGIProcessGroup cinder-wsgi\n")
-          .with_content('WSGIDaemonProcess cinder-wsgi processes=2 threads=10 user=cinder group=cinder')
-          .with_content('WSGIScriptAlias / /usr/bin/cinder-wsgi')
+          .with_content("Listen *:8776\n\n<VirtualHost *:8776>\n")
+          .with_content(%(  ProxyPass / "unix:/run/cinder/api-uwsgi.sock|uwsgi://localhost/" retry=0\n))
           .with_content('rotatelogs /var/log/httpd/cinder-api/access/')
-          .with_content("</VirtualHost>\n\nWSGISocketPrefix /var/lock/subsys\n")
       end
       it do
         expect(chef_run.apache_app('cinder-api')).to notify('apache2_service[block_storage]').to(:reload).immediately
       end
       it { is_expected.to nothing_apache2_service('block_storage') }
       it { is_expected.to_not render_file('/etc/cinder/cinder.conf').with_content(/^\[libvirt\]$/) }
-      it do
-        expect(chef_run.apache2_service('block_storage')).to \
-          subscribe_to('template[/etc/cinder/cinder.conf]').on(:reload)
-      end
       it { is_expected.to enable_service 'openstack-cinder-scheduler' }
       it { is_expected.to start_service 'openstack-cinder-scheduler' }
       it do

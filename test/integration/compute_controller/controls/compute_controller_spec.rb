@@ -2,17 +2,31 @@ db_endpoint = input('db_endpoint')
 controller_endpoint = input('controller_endpoint')
 local_storage = input('local_storage')
 nova_local_storage = input('nova_local_storage')
+cinder_missing = input('cinder_missing')
 # messaging_host = AMQP host (mq tier on multi-node); memcached_host =
 # the memcached backend (controller1 on multi-node).
 messaging_host = input('messaging_host')
 messaging_port = input('messaging_port')
 memcached_host = input('memcached_host')
+api_listen_ip = input('api_listen_ip')
 
 control 'compute-controller' do
+  # uWSGI (httpd_t) keeps stevedore's cache in httpd's cache dir
+  { 'placement' => 'placement', 'nova-api' => 'nova', 'nova-metadata' => 'nova' }.each do |app, user|
+    describe directory("/var/cache/httpd/osuosl-#{app}") do
+      its('owner') { should eq user }
+      its('selinux_label') { should match /:httpd_cache_t:/ }
+    end
+  end
+
+  # nova-api, nova-metadata and placement run under uWSGI behind httpd
   %w(
+    openstack-nova-api
     openstack-nova-conductor
+    openstack-nova-metadata
     openstack-nova-novncproxy
     openstack-nova-scheduler
+    placement-uwsgi
   ).each do |s|
     describe service(s) do
       it { should be_enabled }
@@ -20,15 +34,28 @@ control 'compute-controller' do
     end
   end
 
-  # These are on httpd now via wsgi
-  %w(
-    openstack-nova-api
-    openstack-nova-metadata-api
-  ).each do |s|
-    describe service(s) do
-      it { should_not be_enabled }
-      it { should_not be_running }
+  {
+    '/run/nova/api-uwsgi.sock' => 'nova',
+    '/run/nova/metadata-uwsgi.sock' => 'nova',
+    '/run/placement/uwsgi.sock' => 'placement',
+  }.each do |sock, user|
+    describe file(sock) do
+      it { should be_socket }
+      its('owner') { should eq user }
+      its('group') { should eq 'apache' }
     end
+  end
+
+  # nova's WSGI apps are eventlet-patched; their RabbitMQ heartbeat must run in a pthread
+  %w(/etc/nova/nova-api-uwsgi.ini /etc/nova/nova-metadata-uwsgi.ini).each do |ini|
+    describe file(ini) do
+      its('content') { should match /^env = OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD=true$/ }
+    end
+  end
+
+  describe http("http://#{api_listen_ip}:8778/placement-api/", headers: { 'Accept' => 'application/json' }) do
+    its('status') { should eq 200 }
+    its('body') { should match(/"versions"/) }
   end
 
   %w(
@@ -55,6 +82,7 @@ control 'compute-controller' do
     its('keystone_authtoken.service_token_roles_required') { should cmp 'True' }
     its('keystone_authtoken.www_authenticate_uri') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
     its('placement_database.connection') { should cmp "mysql+pymysql://placement_x86:placement@#{db_endpoint}:3306/placement_x86" }
+    its('placement_database.connection_recycle_time') { should cmp 300 }
   end
 
   describe ini('/etc/nova/nova.conf') do
@@ -68,8 +96,10 @@ control 'compute-controller' do
     its('DEFAULT.resume_guests_state_on_host_boot') { should cmp 'True' }
     its('DEFAULT.transport_url') { should match(%r{^rabbit://openstack:openstack@#{Regexp.escape(messaging_host)}:#{messaging_port}}) }
     its('api_database.connection') { should cmp "mysql+pymysql://nova_x86:nova@#{db_endpoint}:3306/nova_api_x86" }
+    its('api_database.connection_recycle_time') { should cmp 300 }
     its('cache.memcache_servers') { should match(/#{Regexp.escape(memcached_host)}:11211/) }
     its('database.connection') { should cmp "mysql+pymysql://nova_x86:nova@#{db_endpoint}:3306/nova_x86" }
+    its('database.connection_recycle_time') { should cmp 300 }
     its('filter_scheduler.enabled_filters') { should cmp 'AggregateInstanceExtraSpecsFilter,PciPassthroughFilter,AvailabilityZoneFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter' }
     its('glance.api_servers') { should cmp "http://#{controller_endpoint}:9292" }
     its('keystone_authtoken.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
@@ -186,7 +216,12 @@ control 'compute-controller' do
 
   describe command('bash -c "source /root/openrc && /bin/nova-status upgrade check"') do
     its('stdout') { should match(/Check: Cells v2.*\n.*Result: Success/) }
-    its('stdout') { should match(/Check: Cinder API.*\n.*Result: Success/) }
+    if cinder_missing
+      # nova-status probes cinder because of [cinder] and finds no volumev3 endpoint
+      its('stdout') { should match(/Check: Cinder API.*\n.*Result: Warning.*\n.*Details: Unable to determine Cinder API version/) }
+    else
+      its('stdout') { should match(/Check: Cinder API.*\n.*Result: Success/) }
+    end
     its('stdout') { should match(/Check: hw_machine_type unset.*\n.*Result: Success/) }
     its('stdout') { should match(/Check: Older than N-1 computes.*\n.*Result: Success/) }
     its('stdout') { should match(/Check: Placement API.*\n.*Result: Success/) }
@@ -200,12 +235,12 @@ control 'compute-controller' do
 
   describe file '/etc/cron.d/nova-rowsflush' do
     its('content') do
-      should match %r{20 5 \* \* \* nova nova-manage db archive_deleted_rows --max_rows 1000 --before `date --date='today - 90 days' \+\\\%F` --until-complete --all-cells >>/var/log/nova/nova-rowsflush.log 2>&1}
+      should match /20 5 \* \* \* nova nova-manage db archive_deleted_rows --max_rows 1000 --before `date --date='today - 90 days' \+\\\%F` --until-complete --all-cells 2>&1 \| systemd-cat -t nova-rowsflush/
     end
   end
   describe file '/etc/cron.d/nova-rowspurge' do
     its('content') do
-      should match %r{20 6 \* \* \* nova nova-manage db purge --before `date --date='today - 14 days' \+\\\%D` --all-cells >>/var/log/nova/nova-rowspurge.log 2>&1}
+      should match /20 6 \* \* \* nova nova-manage db purge --before `date --date='today - 14 days' \+\\\%D` --all-cells 2>&1 \| systemd-cat -t nova-rowspurge/
     end
   end
 
@@ -215,8 +250,19 @@ control 'compute-controller' do
     its('mode') { should cmp '0700' }
     its('owner') { should eq 'root' }
     its('group') { should eq 'root' }
-    its('content') { should match %r{^#!/usr/bin/env python3} }
+    its('content') { should match %r{^#!/opt/openstack/nova-controller/bin/python} }
     its('content') { should match /sync_specs/ }
+  end
+
+  # The helpers run on the nova-controller venv, not host python3's RDO libraries
+  %w(fix-flavors cold-migrate-host resize-debris-check maintenance-notice).each do |script|
+    describe command("/root/nova-#{script}.py --help") do
+      its('exit_status') { should eq 0 }
+    end
+  end
+
+  describe command('bash -c "source /root/openrc && /root/nova-resize-debris-check.py"') do
+    its('exit_status') { should eq 0 }
   end
 
   describe directory '/root/.nova-flavor-fixes/backups' do

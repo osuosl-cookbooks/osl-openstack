@@ -75,6 +75,15 @@ module OSLOpenstack
         )
       end
 
+      # Config changes every nova controller daemon restarts on
+      def openstack_nova_config_resources
+        [
+          'delete_lines[remove dhcpbridge]',
+          'delete_lines[remove force_dhcp_release]',
+          'template[/etc/nova/nova.conf]',
+        ]
+      end
+
       # Messaging SIG selects version by subdir: EL9 uses rabbitmq-38
       # (3.9.x), EL10 only ships rabbitmq-4 (4.x).
       def openstack_rabbitmq_repo
@@ -129,26 +138,57 @@ module OSLOpenstack
         }
       end
 
-      def openstack_python_bin
-        '/usr/bin/python3'
+      # The osuosl-openstack-* venvs are built with the platform python3
+      def openstack_python_version
+        '3.9'
       end
 
-      def openstack_python_sitelib
-        '/usr/lib/python3.9/site-packages'
+      def openstack_venv(service)
+        "/opt/openstack/#{service}"
+      end
+
+      def openstack_python_sitelib(service)
+        "#{openstack_venv(service)}/lib/python#{openstack_python_version}/site-packages"
+      end
+
+      # uWSGI apps run in httpd_t, so stevedore caches under httpd's cache dir, not ~/.cache
+      def openstack_uwsgi_cache_dir(app)
+        "/var/cache/httpd/osuosl-#{app}"
+      end
+
+      def openstack_uwsgi_env(app, extra = {})
+        { 'XDG_CACHE_HOME' => openstack_uwsgi_cache_dir(app) }.merge(extra)
       end
 
       def openstack_client_pkg
-        %w(openstack-selinux python3-openstackclient)
+        %w(osuosl-openstack-cli)
+      end
+
+      # Any of these installed means the node still runs RDO and needs /root/migrate-venv.sh
+      def openstack_rdo_packages
+        %w(
+          openstack-ceilometer-common
+          openstack-cinder
+          openstack-dashboard
+          openstack-glance
+          openstack-heat-common
+          openstack-keystone
+          openstack-neutron-common
+          openstack-nova-common
+          openstack-placement-common
+          python3-openstackclient
+        )
+      end
+
+      def openstack_rdo_installed?
+        installed = shell_out('rpm', '-q', '--qf', '%{NAME}\n', *openstack_rdo_packages).stdout.lines.map(&:strip)
+        !(installed & openstack_rdo_packages).empty?
       end
 
       def openstack_compute_controller_pkgs
         %w(
-          openstack-nova-api
-          openstack-nova-conductor
-          openstack-nova-novncproxy
-          openstack-nova-scheduler
-          openstack-placement-api
-          python3-osc-placement
+          osuosl-openstack-nova-controller
+          osuosl-openstack-placement
         )
       end
 
@@ -156,9 +196,10 @@ module OSLOpenstack
         pkgs = %w(
           device-mapper
           device-mapper-multipath
+          guestfs-tools
           libguestfs-rescue
           libvirt
-          openstack-nova-compute
+          osuosl-openstack-nova-compute
           python3-libguestfs
           qemu-kvm
           qemu-kvm-device-display-virtio-gpu
@@ -397,14 +438,6 @@ module OSLOpenstack
         else
           node['virtualization']['role'] == 'guest'
         end
-      end
-
-      # Marker comment our nova-pseries-acpi.patch leaves in the libvirt driver;
-      # guarded because the specs load this library before ChefSpec does
-      NOVA_PSERIES_ACPI_MARKER = '# OSL-PATCH nova-pseries-acpi:'.freeze unless defined?(NOVA_PSERIES_ACPI_MARKER)
-
-      def openstack_nova_pseries_acpi_patched?(driver = "#{openstack_python_sitelib}/nova/virt/libvirt/driver.py")
-        ::File.exist?(driver) && ::File.read(driver).include?(NOVA_PSERIES_ACPI_MARKER)
       end
 
       # Guest traffic is bridged through the host conntrack table, so 40+

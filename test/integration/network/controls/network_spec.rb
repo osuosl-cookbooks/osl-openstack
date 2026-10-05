@@ -10,6 +10,31 @@ messaging_port = input('messaging_port')
 memcached_host = input('memcached_host')
 
 control 'network' do
+  %w(osuosl-openstack-neutron-agent osuosl-openstack-cli).each do |p|
+    describe package p do
+      it { should be_installed }
+    end
+  end
+
+  describe package 'osuosl-openstack-neutron-controller' do
+    it { should be_installed }
+  end if controller
+
+  # The RPMs create these and seed the paste and rootwrap configs from the venv
+  %w(/etc/neutron /etc/neutron/plugins/ml2).each do |d|
+    describe directory d do
+      its('owner') { should eq 'root' }
+      its('group') { should eq 'neutron' }
+      its('mode') { should cmp '0750' }
+    end
+  end
+
+  %w(api-paste.ini rootwrap.conf).each do |f|
+    describe file "/etc/neutron/#{f}" do
+      it { should exist }
+    end
+  end
+
   %w(
     neutron-dhcp-agent
     neutron-l3-agent
@@ -29,7 +54,9 @@ control 'network' do
   end
 
   describe ini('/etc/neutron/plugins/ml2/linuxbridge_agent.ini') do
-    its('agent.polling_interval') { should cmp '2' }
+    its('AGENT.polling_interval') { should cmp '2' }
+    its('AGENT.root_helper') { should cmp 'sudo /opt/openstack/neutron-agent/bin/neutron-rootwrap /etc/neutron/rootwrap.conf' }
+    its('privsep.helper_command') { should cmp 'sudo /opt/openstack/neutron-agent/bin/privsep-helper' }
     its('linux_bridge.physical_interface_mappings') { should cmp physical_interface_mappings }
     its('securitygroup.enable_security_group') { should cmp 'true' }
     its('securitygroup.firewall_driver') { should cmp 'neutron.agent.linux.iptables_firewall.IptablesFirewallDriver' }
@@ -49,7 +76,11 @@ control 'network' do
     its('protocols') { should include 'tcp' }
   end if controller
 
+  neutron_venv = controller ? '/opt/openstack/neutron-controller' : '/opt/openstack/neutron-agent'
+
   describe ini('/etc/neutron/neutron.conf') do
+    its('AGENT.root_helper') { should cmp "sudo #{neutron_venv}/bin/neutron-rootwrap /etc/neutron/rootwrap.conf" }
+    its('privsep_namespace.helper_command') { should cmp "sudo #{neutron_venv}/bin/privsep-helper" }
     if controller
       its('database.connection') { should cmp "mysql+pymysql://neutron_x86:neutron@#{db_endpoint}:3306/neutron_x86" }
       its('DEFAULT.allow_overlapping_ips') { should cmp 'true' }
@@ -104,7 +135,8 @@ control 'network' do
     its('ml2_type_vxlan.vni_ranges') { should cmp '1:1000' }
   end if controller
 
-  describe command('bash -c "source /root/openrc && neutron ext-list -c alias -f value"') do
+  # osuosl-openstack-cli ships no deprecated neutron CLI
+  describe command('bash -c "source /root/openrc && /usr/bin/openstack extension list --network -c Alias -f value"') do
     %w(
       address-scope
       agent
@@ -153,6 +185,29 @@ control 'network' do
     its('exit_status') { should eq 0 }
     its('stderr') { should eq '' }
   end if controller && primary_controller
+
+  # Each DHCP namespace needs a dnsmasq that, as the dnsmasq user, can re-read its
+  # host file. Checked at run time: the test network only exists once verify starts
+  dnsmasq_check = <<~'EOS'
+    for i in $(seq 30); do
+      nets=$(ip netns list | grep -oE "^qdhcp-[0-9a-f-]+" | sed "s/^qdhcp-//")
+      if [ -n "$nets" ] || [ "$1" != true ]; then break; fi
+      sleep 2
+    done
+    if [ -z "$nets" ] && [ "$1" = true ]; then echo "no qdhcp namespace"; exit 1; fi
+    rc=0
+    for net in $nets; do
+      for i in $(seq 30); do pgrep -f "dnsmasq .*$net" >/dev/null && break; sleep 2; done
+      pgrep -f "dnsmasq .*$net" >/dev/null || { echo "no dnsmasq for $net"; rc=1; continue; }
+      runuser -u dnsmasq -- test -r "/var/lib/neutron/dhcp/$net/host" || { echo "dnsmasq cannot read $net/host"; rc=1; }
+    done
+    exit $rc
+  EOS
+
+  describe command("bash -c '#{dnsmasq_check}' _ #{primary_controller}") do
+    its('exit_status') { should eq 0 }
+    its('stdout') { should eq '' }
+  end if controller
 
   describe command('bash -c "source /root/openrc && openstack network show public -c admin_state_up -c provider:network_type -c provider:physical_network -c router:external -c is_default -c shared -c status -f shell"') do
     its('stdout') { should match(/admin_state_up="True"/) }

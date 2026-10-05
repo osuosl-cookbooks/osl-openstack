@@ -14,7 +14,7 @@ describe 'osl-openstack::dashboard' do
       it { is_expected.to create_osl_openstack_client('dashboard').with(firewall: true, openrc: true) }
       %w(
         osl-apache
-        osl-apache::mod_wsgi
+        osl-apache::mod_proxy_uwsgi
         osl-apache::mod_ssl
         osl-nrpe::check_http
       ).each do |r|
@@ -27,7 +27,7 @@ describe 'osl-openstack::dashboard' do
       end
       # memcached setup lives in ::identity (runs first via controller.rb).
       it { is_expected.to_not include_recipe 'osl-memcached' }
-      it { is_expected.to install_package 'openstack-dashboard' }
+      it { is_expected.to install_package 'osuosl-openstack-horizon' }
       it do
         is_expected.to create_certificate_manage('wildcard-dashboard').with(
           search_id: 'wildcard',
@@ -57,8 +57,14 @@ describe 'osl-openstack::dashboard' do
       it { is_expected.to nothing_execute 'systemctl daemon-reload' }
       it { is_expected.to nothing_directory('purge distro conf.d').with(path: '/etc/httpd/conf.d', recursive: true) }
       it do
-        is_expected.to create_template('/etc/openstack-dashboard/local_settings').with(
-          group: 'apache',
+        is_expected.to create_directory('/var/www/horizon/static').with(
+          owner: 'horizon', group: 'apache', mode: '0755', recursive: true
+        )
+      end
+      it do
+        is_expected.to create_template('/etc/horizon/local_settings.py').with(
+          source: 'local_settings.erb',
+          group: 'horizon',
           mode: '0640',
           sensitive: true,
           variables: {
@@ -69,20 +75,58 @@ describe 'osl-openstack::dashboard' do
               'RegionTwo' => 'https://controller.testing.osuosl.org:5000/v3',
             },
             secret_key: '-#45g2*o=8mhe(10if%*65@g#z0r#r7m__w6kwq8s9@n%12a11',
+            static_root: '/var/www/horizon/static',
             haproxy_tls: false,
           }
         )
       end
       it do
-        expect(chef_run.template('/etc/openstack-dashboard/local_settings')).to \
+        expect(chef_run.template('/etc/horizon/local_settings.py')).to \
           notify('execute[horizon: compress]').to(:run)
       end
       it do
-        expect(chef_run.template('/etc/openstack-dashboard/local_settings')).to \
-          notify('apache2_service[osuosl]').to(:reload)
+        expect(chef_run.template('/etc/horizon/local_settings.py')).to \
+          notify('service[horizon-uwsgi]').to(:restart)
       end
       it do
-        is_expected.to render_file('/etc/openstack-dashboard/local_settings').with_content(
+        is_expected.to render_file('/etc/horizon/local_settings.py')
+          .with_content("STATIC_ROOT = '/var/www/horizon/static'\nSTATIC_URL = '/static/'\nCOMPRESS_OFFLINE = True\n")
+      end
+      it { is_expected.to_not render_file('/etc/horizon/local_settings.py').with_content('POLICY_FILES_PATH') }
+      it do
+        is_expected.to create_link('/opt/openstack/horizon/lib/python3.9/site-packages/openstack_dashboard/local/local_settings.py')
+          .with(to: '/etc/horizon/local_settings.py')
+      end
+      it do
+        is_expected.to create_template('/etc/horizon/horizon-uwsgi.ini').with(
+          source: 'uwsgi.ini.erb',
+          group: 'horizon',
+          mode: '0640',
+          variables: {
+            chdir: '/opt/openstack/horizon/lib/python3.9/site-packages',
+            wsgi_file: '/opt/openstack/horizon/lib/python3.9/site-packages/openstack_dashboard/wsgi.py',
+            pythonpath: '/opt/openstack/horizon/lib/python3.9/site-packages',
+            socket: '/run/horizon/uwsgi.sock',
+            user: 'horizon',
+            processes: 4,
+            threads: 1,
+            env: { 'XDG_CACHE_HOME' => '/var/cache/httpd/osuosl-horizon' },
+          }
+        )
+      end
+      it do
+        is_expected.to create_directory('/var/cache/httpd/osuosl-horizon').with(owner: 'horizon', group: 'horizon', mode: '0750')
+      end
+      it { is_expected.to render_file('/etc/horizon/horizon-uwsgi.ini').with_content("env = XDG_CACHE_HOME=/var/cache/httpd/osuosl-horizon\n") }
+      it do
+        is_expected.to render_file('/etc/horizon/horizon-uwsgi.ini')
+          .with_content("pythonpath = /opt/openstack/horizon/lib/python3.9/site-packages\n")
+      end
+      it { expect(chef_run.template('/etc/horizon/horizon-uwsgi.ini')).to notify('service[horizon-uwsgi]').to(:restart) }
+      it { is_expected.to enable_service 'horizon-uwsgi' }
+      it { is_expected.to start_service 'horizon-uwsgi' }
+      it do
+        is_expected.to render_file('/etc/horizon/local_settings.py').with_content(
         <<~EOF
           DEFAULT_SERVICE_REGIONS = [
             ('https://controller.testing.osuosl.org:5000/v3', 'RegionOne'),
@@ -96,9 +140,17 @@ describe 'osl-openstack::dashboard' do
           cookbook: 'osl-openstack',
           server_name: 'controller.testing.osuosl.org',
           server_aliases: %w(controller1.testing.osuosl.org),
-          template: 'wsgi-horizon.conf.erb'
+          template: 'wsgi-horizon.conf.erb',
+          template_params: { haproxy_tls: false, static_root: '/var/www/horizon/static' }
         )
       end
+      it do
+        is_expected.to render_file('/etc/httpd/sites-available/horizon.conf')
+          .with_content("  Alias /static /var/www/horizon/static\n  <Directory /var/www/horizon/static>\n")
+          .with_content(%(  ProxyPass /static !\n  ProxyPass / "unix:/run/horizon/uwsgi.sock|uwsgi://localhost/" retry=0\n))
+          .with_content('SSLEngine on')
+      end
+      it { is_expected.to_not render_file('/etc/httpd/sites-available/horizon.conf').with_content('WSGI') }
       it do
         is_expected.to render_file('/etc/httpd/sites-available/horizon.conf').with_content(
           'RewriteCond "%{HTTP_HOST}" "!^controller\.testing\.osuosl\.org" [NC]'
@@ -121,10 +173,12 @@ describe 'osl-openstack::dashboard' do
       it { expect(chef_run.apache_app('horizon')).to notify('apache2_service[osuosl]').to(:reload) }
       it do
         is_expected.to nothing_execute('horizon: compress').with(
-          command: <<~EOC
-            /usr/bin/python3 /usr/share/openstack-dashboard/manage.py collectstatic --noinput --clear -v0
-            /usr/bin/python3 /usr/share/openstack-dashboard/manage.py compress --force -v0
+          command: <<~EOC,
+            /opt/openstack/horizon/bin/django-admin collectstatic --settings=openstack_dashboard.settings --noinput --clear -v0
+            /opt/openstack/horizon/bin/django-admin compress --settings=openstack_dashboard.settings --force -v0
           EOC
+          user: 'horizon',
+          group: 'horizon'
         )
       end
 
@@ -135,8 +189,8 @@ describe 'osl-openstack::dashboard' do
 
         include_context 'dashboard_noregion_stubs'
         it do
-          is_expected.to create_template('/etc/openstack-dashboard/local_settings').with(
-            group: 'apache',
+          is_expected.to create_template('/etc/horizon/local_settings.py').with(
+            group: 'horizon',
             mode: '0640',
             sensitive: true,
             variables: {
@@ -144,12 +198,13 @@ describe 'osl-openstack::dashboard' do
               memcache_servers: ['controller.testing.osuosl.org:11211'],
               regions: nil,
               secret_key: '-#45g2*o=8mhe(10if%*65@g#z0r#r7m__w6kwq8s9@n%12a11',
+              static_root: '/var/www/horizon/static',
               haproxy_tls: false,
             }
           )
         end
         it do
-          is_expected.to_not render_file('/etc/openstack-dashboard/local_settings').with_content('DEFAULT_SERVICE_REGIONS')
+          is_expected.to_not render_file('/etc/horizon/local_settings.py').with_content('DEFAULT_SERVICE_REGIONS')
         end
       end
 

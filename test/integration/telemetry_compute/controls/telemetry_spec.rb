@@ -1,5 +1,5 @@
 control 'telemetry-compute' do
-  describe package 'openstack-ceilometer-compute' do
+  describe package 'osuosl-openstack-ceilometer' do
     it { should be_installed }
   end
 

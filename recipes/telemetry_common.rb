@@ -21,7 +21,7 @@ s = os_secrets
 t = s['telemetry']
 auth_endpoint = openstack_auth_endpoint
 
-package 'openstack-ceilometer-common'
+package 'osuosl-openstack-ceilometer'
 
 template '/etc/ceilometer/ceilometer.conf' do
   owner 'root'

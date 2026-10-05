@@ -11,6 +11,9 @@ inputs:
   - name: nova_local_storage
     value: false
     description: Whether this node's nova uses local storage (compute.local_storage in the bag).
+  - name: cinder_missing
+    value: false
+    description: nova.conf has [cinder] but the run deploys no cinder, so nova-status warns.
   - name: haproxy_tls
     value: false
     description: >
@@ -23,3 +26,6 @@ inputs:
     value: 5672
   - name: memcached_host
     value: controller.testing.osuosl.org
+  - name: api_listen_ip
+    value: localhost
+    description: Address Apache binds the API vhosts to; HA controllers use their own IP.
