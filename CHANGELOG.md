@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+20.0.0 (2026-10-05)
+-------------------
+- Replace RDO with the osuosl-openstack venv RPMs and serve the APIs with uWSGI
+
 19.0.0 (2026-09-28)
 -------------------
 - Drop AlmaLinux 8 and POWER8 support and deduplicate the cookbook
