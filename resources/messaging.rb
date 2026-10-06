@@ -134,6 +134,13 @@ action :create do
     notifies :restart, 'service[rabbitmq-server]'
   end
 
+  # rabbitmq_t may only bind amqp_port_t, and EL policy leaves 15692 unreserved
+  selinux_port '15692 tcp' do
+    port '15692'
+    protocol 'tcp'
+    secontext 'amqp_port_t'
+  end if new_resource.plugins.include?('rabbitmq_prometheus')
+
   # Hot-enables on the running broker; no restart needed.
   new_resource.plugins.each do |plugin|
     execute "rabbitmq: enable plugin #{plugin}" do

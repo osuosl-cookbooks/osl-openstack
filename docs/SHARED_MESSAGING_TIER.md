@@ -246,8 +246,9 @@ the vhosts only exist there via Khepri.
 ### 6. Monitoring — before the first cutover
 
 Chef handles the node side: the management + prometheus plugins are
-enabled by default (`messaging.plugins` overrides), the mon recipe
-(via `node_type: messaging`) installs the NRPE checks from
+enabled by default (`messaging.plugins` overrides), with the prometheus
+port 15692 labelled `amqp_port_t` so SELinux lets `rabbitmq_t` bind it,
+the mon recipe (via `node_type: messaging`) installs the NRPE checks from
 [Security & monitoring](#security--monitoring), and the Prometheus
 server scrapes the tier via the `rabbitmq` job in
 `osl-prometheus::server`. Remaining manual work: the Nagios server
