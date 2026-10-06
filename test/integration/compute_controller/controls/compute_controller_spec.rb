@@ -134,6 +134,7 @@ control 'compute-controller' do
     its('oslo_messaging_notifications.driver') { should cmp 'messagingv2' }
     its('placement.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
     its('placement.password') { should cmp 'placement' }
+    its('privsep_osbrick.helper_command') { should cmp 'sudo nova-rootwrap /etc/nova/rootwrap.conf privsep-helper --config-file /etc/nova/nova.conf' }
     its('serial_console.base_url') { should cmp "ws://#{controller_endpoint}:6083" }
     its('service_user.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
     its('service_user.password') { should cmp 'nova' }

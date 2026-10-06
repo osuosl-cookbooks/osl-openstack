@@ -142,6 +142,10 @@ region_name = <%= @region %>
 user_domain_name = Default
 username = placement
 
+[privsep_osbrick]
+# nova-compute's own rootwrap command; nova-manage otherwise runs privsep-helper, which only the venv has
+helper_command = sudo nova-rootwrap /etc/nova/rootwrap.conf privsep-helper --config-file /etc/nova/nova.conf
+
 [scheduler]
 discover_hosts_in_cells_interval = 300
 
