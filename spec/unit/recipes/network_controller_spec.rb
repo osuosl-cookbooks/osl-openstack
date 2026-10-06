@@ -128,6 +128,7 @@ describe 'osl-openstack::network_controller' do
           .with_content(%r{^\[AGENT\]\npolling_interval = 2\n.*\nroot_helper = sudo /opt/openstack/neutron-agent/bin/neutron-rootwrap })
           .with_content("root_helper_daemon = sudo /opt/openstack/neutron-agent/bin/neutron-rootwrap-daemon /etc/neutron/rootwrap.conf\n")
       end
+      it { is_expected.to_not render_file('/etc/neutron/plugins/ml2/linuxbridge_agent.ini').with_content(/^\[vlans\]$/) }
       it do
         is_expected.to create_template('/etc/neutron/metadata_agent.ini').with(
           owner: 'root',

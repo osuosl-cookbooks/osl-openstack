@@ -5,8 +5,6 @@
 <% if @listen_ip && @listen_ip != '*' -%>
 bind_host = <%= @listen_ip %>
 <% end -%>
-enable_v1_api = false
-enable_v2_api = true
 <% unless @local_storage -%>
 enabled_backends = rbd:rbd
 show_image_direct_url = true
@@ -19,10 +17,8 @@ transport_url = <%= @transport_url %>
 [glance_store]
 <% unless @local_storage -%>
 default_backend = rbd
-default_store = rbd
 <% else -%>
 default_backend = file
-default_store = file
 <% end -%>
 
 <% unless @local_storage -%>

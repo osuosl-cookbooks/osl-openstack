@@ -33,9 +33,6 @@ resume_guests_state_on_host_boot = True
 state_path = /var/lib/nova
 transport_url = <%= @transport_url %>
 
-[api]
-auth_strategy = keystone
-
 [api_database]
 connection = <%= @api_database_connection %>
 # Recycle pooled connections before osl-mysql's wait_timeout (600s) closes them

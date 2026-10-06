@@ -60,8 +60,7 @@ control 'network' do
     its('linux_bridge.physical_interface_mappings') { should cmp physical_interface_mappings }
     its('securitygroup.enable_security_group') { should cmp 'true' }
     its('securitygroup.firewall_driver') { should cmp 'neutron.agent.linux.iptables_firewall.IptablesFirewallDriver' }
-    its('vlans.network_vlan_ranges') { should cmp '' }
-    its('vlans.tenant_network_type') { should cmp 'gre,vxlan' }
+    its('vlans') { should be_nil }
     its('vxlan.enable_vxlan') { should cmp 'true' }
     its('vxlan.l2_population') { should cmp 'true' }
     its('vxlan.local_ip') { should cmp '127.0.0.1' }
