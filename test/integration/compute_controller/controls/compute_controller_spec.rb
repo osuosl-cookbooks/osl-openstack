@@ -137,6 +137,7 @@ control 'compute-controller' do
     its('serial_console.base_url') { should cmp "ws://#{controller_endpoint}:6083" }
     its('service_user.auth_url') { should cmp 'https://controller.testing.osuosl.org:5000/v3' }
     its('service_user.password') { should cmp 'nova' }
+    its('upgrade_levels.compute') { should cmp 'auto' }
     its('vnc.novncproxy_base_url') { should cmp "https://#{controller_endpoint}:6080/vnc_auto.html" }
   end
 

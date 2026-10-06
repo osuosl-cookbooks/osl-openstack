@@ -83,7 +83,8 @@ control 'network' do
     its('privsep_namespace.helper_command') { should cmp "sudo #{neutron_venv}/bin/privsep-helper" }
     if controller
       its('database.connection') { should cmp "mysql+pymysql://neutron_x86:neutron@#{db_endpoint}:3306/neutron_x86" }
-      its('DEFAULT.allow_overlapping_ips') { should cmp 'true' }
+      its('DEFAULT.allow_overlapping_ips') { should be_nil }
+      its('experimental.linuxbridge') { should cmp 'true' }
       its('DEFAULT.control_exchange') { should cmp 'neutron' }
       its('DEFAULT.core_plugin') { should cmp 'ml2' }
       its('DEFAULT.router_distributed') { should cmp 'false' }

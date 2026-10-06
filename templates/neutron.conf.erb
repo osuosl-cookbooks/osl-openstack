@@ -3,7 +3,6 @@
 
 [DEFAULT]
 <% if @controller -%>
-allow_overlapping_ips = True
 <% if @listen_ip && @listen_ip != '*' -%>
 bind_host = <%= @listen_ip %>
 <% end -%>
@@ -41,6 +40,10 @@ username = nova
 connection = <%= @database_connection %>
 # Recycle pooled connections before osl-mysql's wait_timeout (600s) closes them
 connection_recycle_time = 300
+
+[experimental]
+# Zed's ML2 linuxbridge driver exits unless enabled; yoga ignores this section
+linuxbridge = true
 <% end -%>
 
 [oslo_concurrency]

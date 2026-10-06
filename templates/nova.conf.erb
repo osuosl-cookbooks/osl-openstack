@@ -161,6 +161,10 @@ send_service_user_token = true
 user_domain_name = Default
 username = nova
 
+[upgrade_levels]
+# Cap compute RPC at the oldest nova-compute's version while an upgrade is mixed
+compute = auto
+
 [vnc]
 enabled = true
 novncproxy_base_url = https://<%= @endpoint %>:6080/vnc_auto.html

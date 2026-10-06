@@ -96,6 +96,7 @@ describe 'osl-openstack::compute' do
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/^auth_type = password$/) }
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/^\[cinder\]$/) }
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/^username = nova$/) }
+      it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/^\[upgrade_levels\]\n#.*\ncompute = auto$/) }
       it { is_expected.to modify_user('nova').with(shell: '/bin/sh') }
 
       it do
