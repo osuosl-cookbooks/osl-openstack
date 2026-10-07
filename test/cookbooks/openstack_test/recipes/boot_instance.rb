@@ -12,7 +12,7 @@ file '/root/boot_instance.sh' do
     if ! openstack server show boot-test >/dev/null 2>&1 ; then
       openstack server create --image alpine --flavor default --network public --wait boot-test
     fi
-    if openstack catalog show volumev3 >/dev/null 2>&1 ; then
+    if openstack catalog list -f value -c Type | grep -qx volumev3 ; then
       openstack volume show boot-test >/dev/null 2>&1 || openstack volume create --size 1 boot-test
       until [ "$(openstack volume show boot-test -c status -f value)" = available ] ; do sleep 2 ; done
       openstack server add volume boot-test boot-test
