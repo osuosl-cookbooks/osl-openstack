@@ -53,7 +53,7 @@ describe 'osl-openstack::orchestration' do
           region: 'RegionOne'
         )
       end
-      it { is_expected.to install_package 'osuosl-openstack-heat' }
+      it { is_expected.to upgrade_package 'osuosl-openstack-heat' }
       it do
         is_expected.to create_template('/etc/heat/heat.conf').with(
           owner: 'root',

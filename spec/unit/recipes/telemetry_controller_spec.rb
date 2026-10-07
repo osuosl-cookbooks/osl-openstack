@@ -14,7 +14,7 @@ describe 'osl-openstack::telemetry_controller' do
       it { is_expected.to create_osl_openstack_client('telemetry-controller').with(firewall: true, openrc: false) }
       it { is_expected.to create_osl_openstack_service_user('ceilometer').with(password: 'ceilometer') }
       it { is_expected.to include_recipe 'osl-openstack::telemetry_common' }
-      it { is_expected.to install_package 'osuosl-openstack-ceilometer' }
+      it { is_expected.to upgrade_package 'osuosl-openstack-ceilometer' }
       it do
         is_expected.to create_template('/etc/ceilometer/ceilometer.conf').with(
           owner: 'root',

@@ -35,7 +35,7 @@ describe 'osl-openstack::block_storage_controller' do
         )
       end
       it { is_expected.to include_recipe 'osl-openstack::block_storage_common' }
-      it { is_expected.to install_package 'osuosl-openstack-cinder' }
+      it { is_expected.to upgrade_package 'osuosl-openstack-cinder' }
       it { is_expected.to_not install_package 'python3-redis' }
       it do
         is_expected.to create_template('/etc/cinder/cinder.conf').with(

@@ -38,9 +38,11 @@ end
 package %w(
   conntrack-tools
   ebtables
-  osuosl-openstack-neutron-agent
-  osuosl-openstack-neutron-controller
 )
+
+package 'osuosl-openstack-neutron-controller' do
+  action :upgrade
+end
 
 include_recipe 'osl-openstack::network_common'
 

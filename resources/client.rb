@@ -26,7 +26,14 @@ action :create do
     only_if { rdo }
   end
 
-  package openstack_client_pkg
+  # Chef upgrades the venv RPMs and restarts after its db syncs, not dnf-automatic
+  dnf_automatic_policy 'osl-openstack' do
+    exclude %w(osuosl-openstack-*)
+  end
+
+  package openstack_client_pkg do
+    action :upgrade
+  end
 
   osl_openstack_openrc new_resource.name if new_resource.openrc
   osl_firewall_openstack new_resource.name if new_resource.firewall

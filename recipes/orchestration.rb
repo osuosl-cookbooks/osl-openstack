@@ -56,7 +56,9 @@ end
 
 heat_services = %w(openstack-heat-api openstack-heat-api-cfn openstack-heat-engine)
 
-package 'osuosl-openstack-heat'
+package 'osuosl-openstack-heat' do
+  action :upgrade
+end
 
 template '/etc/heat/heat.conf' do
   owner 'root'

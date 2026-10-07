@@ -39,7 +39,9 @@ osl_openstack_api 'glance' do
   region i['region']
 end
 
-package 'osuosl-openstack-glance'
+package 'osuosl-openstack-glance' do
+  action :upgrade
+end
 
 template '/etc/glance/glance-api.conf' do
   owner 'root'

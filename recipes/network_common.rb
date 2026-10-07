@@ -22,6 +22,11 @@ n = s['network']
 auth_endpoint = openstack_auth_endpoint
 controller = node['osl-openstack']['node_type'] == 'controller'
 
+# Controllers run the linuxbridge agent too, so both network recipes share it here
+package 'osuosl-openstack-neutron-agent' do
+  action :upgrade
+end
+
 template '/etc/neutron/neutron.conf' do
   owner 'root'
   group 'neutron'

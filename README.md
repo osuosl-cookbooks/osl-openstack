@@ -103,8 +103,9 @@ re-running them against an existing cloud makes no API writes.
 
 ### osl_openstack_client
 
-Adds the OSL OpenStack repository and installs `osuosl-openstack-cli`. On a
-node still running RDO, it stops the run first (see
+Adds the OSL OpenStack repository, upgrades `osuosl-openstack-cli` and
+`osuosl-openstack-selinux`, and excludes `osuosl-openstack-*` from
+dnf-automatic. On a node still running RDO, it stops the run first (see
 [Migrating a node from RDO](#migrating-a-node-from-rdo)).
 
 | Property   | Default | Description                                               |

@@ -23,7 +23,10 @@ auth_endpoint = openstack_auth_endpoint
 
 include_recipe 'osl-ceph'
 
-package 'osuosl-openstack-cinder'
+# compute.rb declares it too; one resource keeps the restart subscriptions on it
+find_resource(:package, 'osuosl-openstack-cinder') do
+  action :upgrade
+end
 
 db_connection = openstack_database_connection('block-storage')
 

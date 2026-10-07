@@ -27,7 +27,7 @@ describe 'osl-openstack::dashboard' do
       end
       # memcached setup lives in ::identity (runs first via controller.rb).
       it { is_expected.to_not include_recipe 'osl-memcached' }
-      it { is_expected.to install_package 'osuosl-openstack-horizon' }
+      it { is_expected.to upgrade_package 'osuosl-openstack-horizon' }
       it do
         is_expected.to create_certificate_manage('wildcard-dashboard').with(
           search_id: 'wildcard',

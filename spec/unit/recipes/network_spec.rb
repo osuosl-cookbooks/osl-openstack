@@ -11,7 +11,8 @@ describe 'osl-openstack::network' do
 
       it_behaves_like 'oslo messaging config', '/etc/neutron/neutron.conf'
 
-      it { is_expected.to install_package(%w(conntrack-tools ebtables ipset osuosl-openstack-neutron-agent)) }
+      it { is_expected.to install_package(%w(conntrack-tools ebtables ipset)) }
+      it { is_expected.to upgrade_package 'osuosl-openstack-neutron-agent' }
       it { is_expected.to include_recipe 'osl-openstack::network_common' }
       it do
         is_expected.to create_template('/etc/neutron/neutron.conf').with(

@@ -161,7 +161,7 @@ module OSLOpenstack
       end
 
       def openstack_client_pkg
-        %w(osuosl-openstack-cli)
+        %w(osuosl-openstack-cli osuosl-openstack-selinux)
       end
 
       # Any of these installed means the node still runs RDO and needs /root/migrate-venv.sh
@@ -199,7 +199,6 @@ module OSLOpenstack
           guestfs-tools
           libguestfs-rescue
           libvirt
-          osuosl-openstack-nova-compute
           python3-libguestfs
           qemu-kvm
           qemu-kvm-device-display-virtio-gpu

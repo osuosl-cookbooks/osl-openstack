@@ -51,7 +51,9 @@ node.override['nagios']['_http_address6'] = nil if openstack_tls_on_haproxy?
 
 include_recipe 'osl-nrpe::check_http'
 
-package 'osuosl-openstack-horizon'
+package 'osuosl-openstack-horizon' do
+  action :upgrade
+end
 
 certificate_manage 'wildcard-dashboard' do
   search_id 'wildcard'

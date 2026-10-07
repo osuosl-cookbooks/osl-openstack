@@ -52,7 +52,11 @@ osl_openstack_api 'nova' do
   region c['region']
 end
 
-package openstack_compute_controller_pkgs
+openstack_compute_controller_pkgs.each do |pkg|
+  package pkg do
+    action :upgrade
+  end
+end
 
 file '/etc/httpd/conf.d/00-placement-api.conf' do
   action :delete

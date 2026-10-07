@@ -45,7 +45,9 @@ describe 'osl-openstack::compute_controller' do
           region: 'RegionOne'
         )
       end
-      it { is_expected.to install_package %w(osuosl-openstack-nova-controller osuosl-openstack-placement) }
+      %w(osuosl-openstack-nova-controller osuosl-openstack-placement).each do |pkg|
+        it { is_expected.to upgrade_package pkg }
+      end
       it { is_expected.to delete_file('/etc/httpd/conf.d/00-placement-api.conf') }
       it do
         expect(chef_run.file('/etc/httpd/conf.d/00-placement-api.conf')).to notify('apache2_service[compute]').to(:reload)
