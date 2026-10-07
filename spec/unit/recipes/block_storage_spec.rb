@@ -9,6 +9,8 @@ describe 'osl-openstack::block_storage' do
 
       include_context 'common_stubs'
 
+      it_behaves_like 'restarts on package upgrade', 'osuosl-openstack-cinder', ['openstack-cinder-volume']
+
       it_behaves_like 'oslo messaging config', '/etc/cinder/cinder.conf'
 
       it { is_expected.to create_osl_openstack_client('block-storage').with(firewall: true, openrc: false) }

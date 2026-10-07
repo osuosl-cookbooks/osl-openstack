@@ -9,6 +9,8 @@ describe 'osl-openstack::network' do
 
       include_context 'common_stubs'
 
+      it_behaves_like 'restarts on package upgrade', 'osuosl-openstack-neutron-agent', ['neutron-linuxbridge-agent']
+
       it_behaves_like 'oslo messaging config', '/etc/neutron/neutron.conf'
 
       it { is_expected.to install_package(%w(conntrack-tools ebtables ipset)) }

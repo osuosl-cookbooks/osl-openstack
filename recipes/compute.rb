@@ -111,6 +111,7 @@ end
 service 'openstack-nova-compute' do
   action [:enable, :start]
   subscribes :restart, 'template[/etc/nova/nova.conf]'
+  subscribes :restart, 'package[osuosl-openstack-nova-compute]'
 end
 
 service 'libvirt-guests' do

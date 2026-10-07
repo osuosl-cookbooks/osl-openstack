@@ -11,6 +11,8 @@ describe 'osl-openstack::identity' do
 
       include_context 'common_stubs'
 
+      it_behaves_like 'restarts on package upgrade', 'osuosl-openstack-keystone', ['keystone-uwsgi']
+
       it_behaves_like 'db sync on upgrade', 'keystone', ['keystone: db_sync']
 
       it do

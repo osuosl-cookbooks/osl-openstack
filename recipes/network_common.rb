@@ -81,5 +81,6 @@ end
 
 service 'neutron-linuxbridge-agent' do
   subscribes :restart, 'template[/etc/neutron/neutron.conf]'
+  subscribes :restart, 'package[osuosl-openstack-neutron-agent]'
   action [:enable, :start]
 end

@@ -106,6 +106,7 @@ end
   service srv do
     subscribes :restart, 'template[/etc/neutron/neutron.conf]'
     subscribes :restart, 'cookbook_file[/etc/neutron/plugins/ml2/ml2_conf.ini]'
+    subscribes :restart, 'package[osuosl-openstack-neutron-controller]'
     action [:enable, :start]
   end
 end

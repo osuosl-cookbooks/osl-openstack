@@ -8,6 +8,8 @@ describe 'osl-openstack::compute' do
       end
 
       include_context 'common_stubs'
+
+      it_behaves_like 'restarts on package upgrade', 'osuosl-openstack-nova-compute', ['openstack-nova-compute']
       include_context 'compute_stubs'
 
       it { is_expected.to create_osl_openstack_client('compute').with(firewall: true, openrc: true) }

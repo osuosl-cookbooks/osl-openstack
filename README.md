@@ -13,6 +13,28 @@ Cookbook for deploying OpenStack at the OSUOSL
 The shared messaging tier (`ops_messaging`, `ops_coordination`) also runs on
 AlmaLinux 10.
 
+## Package updates
+
+Chef, not dnf-automatic, upgrades the `osuosl-openstack-*` RPMs:
+
+- `osl_openstack_client` declares a `dnf_automatic_policy 'osl-openstack'`
+  that excludes `osuosl-openstack-*` from base's dnf-automatic baseline, so
+  the 10:10 timer leaves them alone.
+- Each venv RPM is a `package` resource with `action :upgrade`, so a
+  release published to the node's `openstack/<release>/` repo is installed
+  on the next converge.
+- On one controller per cloud, the db syncs run when a package's version
+  differs from the one recorded in `/var/lib/osl-openstack/db-sync/<service>`,
+  and the version is recorded after a successful sync. That controller is
+  the `ha.keepalived.primary` one in the cloud's data bag item, or any
+  controller the `ha` block doesn't list.
+- Each service restarts at the end of the run that upgraded its package,
+  after that run's syncs. Nothing orders controllers or computes against
+  each other yet.
+
+A config template change still triggers its service's db sync, on that same
+controller.
+
 ## ppc64le compute kernels
 
 The compute recipe picks the KVM-capable kernel from the CPU:

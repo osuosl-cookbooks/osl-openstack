@@ -192,6 +192,7 @@ nova_wsgi_env = { 'OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD' => 'true' }
   service a[:service] do
     action [:enable, :start]
     a[:configs].each { |r| subscribes :restart, r }
+    subscribes :restart, "package[osuosl-openstack-#{a[:venv]}]"
   end
 
   apache_app app do
@@ -215,6 +216,7 @@ end
   service srv do
     action [:enable, :start]
     openstack_nova_config_resources.each { |r| subscribes :restart, r }
+    subscribes :restart, 'package[osuosl-openstack-nova-controller]'
   end
 end
 

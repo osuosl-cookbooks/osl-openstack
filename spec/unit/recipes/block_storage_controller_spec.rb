@@ -9,6 +9,8 @@ describe 'osl-openstack::block_storage_controller' do
 
       include_context 'common_stubs'
 
+      it_behaves_like 'restarts on package upgrade', 'osuosl-openstack-cinder', %w(openstack-cinder-api openstack-cinder-scheduler)
+
       it_behaves_like 'db sync on upgrade', 'cinder', ['cinder: db_sync']
 
       it do

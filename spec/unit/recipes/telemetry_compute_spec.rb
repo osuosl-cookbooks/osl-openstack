@@ -9,6 +9,8 @@ describe 'osl-openstack::telemetry_compute' do
 
       include_context 'common_stubs'
 
+      it_behaves_like 'restarts on package upgrade', 'osuosl-openstack-ceilometer', ['openstack-ceilometer-compute']
+
       it { is_expected.to create_osl_openstack_client('telemetry').with(firewall: true, openrc: false) }
       it { is_expected.to include_recipe 'osl-openstack::telemetry_common' }
       it { is_expected.to upgrade_package 'osuosl-openstack-ceilometer' }

@@ -168,6 +168,7 @@ end
 # uWSGI unit shipped by osuosl-openstack-keystone
 service 'keystone-uwsgi' do
   action [:enable, :start]
+  subscribes :restart, 'package[osuosl-openstack-keystone]'
 end
 
 apache_app 'keystone' do

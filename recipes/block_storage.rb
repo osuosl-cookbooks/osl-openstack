@@ -46,4 +46,5 @@ end
 service 'openstack-cinder-volume' do
   action [:enable, :start]
   subscribes :restart, 'template[/etc/cinder/cinder.conf]'
+  subscribes :restart, 'package[osuosl-openstack-cinder]'
 end

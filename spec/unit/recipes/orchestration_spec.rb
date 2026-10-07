@@ -9,6 +9,8 @@ describe 'osl-openstack::orchestration' do
 
       include_context 'common_stubs'
 
+      it_behaves_like 'restarts on package upgrade', 'osuosl-openstack-heat', %w(openstack-heat-api openstack-heat-api-cfn openstack-heat-engine)
+
       it_behaves_like 'db sync on upgrade', 'heat', ['heat: db_sync']
 
       it do

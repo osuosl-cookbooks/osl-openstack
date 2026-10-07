@@ -36,5 +36,6 @@ ceilometer_services.each do |srv|
   service srv do
     action [:enable, :start]
     openstack_ceilometer_config_resources.each { |r| subscribes :restart, r }
+    subscribes :restart, 'package[osuosl-openstack-ceilometer]'
   end
 end

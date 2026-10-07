@@ -79,6 +79,7 @@ end
 service 'openstack-cinder-api' do
   action [:enable, :start]
   subscribes :restart, 'template[/etc/cinder/cinder.conf]'
+  subscribes :restart, 'package[osuosl-openstack-cinder]'
 end
 
 apache_app 'cinder-api' do
@@ -96,4 +97,5 @@ end
 service 'openstack-cinder-scheduler' do
   action [:enable, :start]
   subscribes :restart, 'template[/etc/cinder/cinder.conf]'
+  subscribes :restart, 'package[osuosl-openstack-cinder]'
 end

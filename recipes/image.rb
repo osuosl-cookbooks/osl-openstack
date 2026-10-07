@@ -89,4 +89,5 @@ end unless openstack_local_storage_image
 
 service 'openstack-glance-api' do
   action [:enable, :start]
+  subscribes :restart, 'package[osuosl-openstack-glance]'
 end

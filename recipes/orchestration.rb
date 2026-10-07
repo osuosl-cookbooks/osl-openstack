@@ -94,5 +94,6 @@ heat_services.each do |srv|
   service srv do
     action [:enable, :start]
     subscribes :restart, 'template[/etc/heat/heat.conf]'
+    subscribes :restart, 'package[osuosl-openstack-heat]'
   end
 end

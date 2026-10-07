@@ -9,6 +9,8 @@ describe 'osl-openstack::telemetry_controller' do
 
       include_context 'common_stubs'
 
+      it_behaves_like 'restarts on package upgrade', 'osuosl-openstack-ceilometer', %w(openstack-ceilometer-central openstack-ceilometer-notification)
+
       it_behaves_like 'oslo messaging config', '/etc/ceilometer/ceilometer.conf'
 
       it { is_expected.to create_osl_openstack_client('telemetry-controller').with(firewall: true, openrc: false) }

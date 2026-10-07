@@ -15,3 +15,10 @@ shared_examples 'db sync on upgrade' do |svc, syncs|
   it { is_expected.to nothing_file("/var/lib/osl-openstack/db-sync/#{svc}") }
   it { expect(chef_run.file("/var/lib/osl-openstack/db-sync/#{svc}")).to subscribe_to("execute[#{syncs.last}]").on(:create).immediately }
 end
+
+# Chef upgrades the venv RPM, so its services restart when the package changes
+shared_examples 'restarts on package upgrade' do |pkg, services|
+  services.each do |srv|
+    it { expect(chef_run.service(srv)).to subscribe_to("package[#{pkg}]").on(:restart).delayed }
+  end
+end

@@ -11,6 +11,8 @@ describe 'osl-openstack::network_controller' do
 
       include_context 'common_stubs'
 
+      it_behaves_like 'restarts on package upgrade', 'osuosl-openstack-neutron-controller', %w(neutron-dhcp-agent neutron-l3-agent neutron-metadata-agent neutron-metering-agent neutron-server)
+
       it_behaves_like 'db sync on upgrade', 'neutron', ['neutron: db_sync']
 
       it do
