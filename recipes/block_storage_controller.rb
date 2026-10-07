@@ -46,9 +46,12 @@ execute 'cinder: db_sync' do
   command 'cinder-manage db sync'
   user 'cinder'
   group 'cinder'
+  only_if { openstack_db_node? }
   action :nothing
   subscribes :run, 'template[/etc/cinder/cinder.conf]', :immediately
 end
+
+openstack_db_sync_on_upgrade('cinder', 'osuosl-openstack-cinder', ['cinder: db_sync'])
 
 directory openstack_uwsgi_cache_dir('cinder-api') do
   owner 'cinder'

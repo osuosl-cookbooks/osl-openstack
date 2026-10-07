@@ -185,6 +185,43 @@ module OSLOpenstack
         !(installed & openstack_rdo_packages).empty?
       end
 
+      # Only one controller per cloud syncs databases: keepalived's primary, or any
+      # controller the ha block doesn't list (single-controller clouds, kitchen)
+      def openstack_db_node?
+        primary = safe_dig(os_secrets, 'ha', 'keepalived', 'primary')
+        return true unless primary.is_a?(Hash) && primary.key?(node['fqdn'])
+        primary[node['fqdn']] == true
+      end
+
+      def openstack_db_sync_marker(svc)
+        "/var/lib/osl-openstack/db-sync/#{svc}"
+      end
+
+      def openstack_package_evr(pkg)
+        shell_out!('rpm', '-q', '--qf', '%{EPOCH}:%{VERSION}-%{RELEASE}', pkg).stdout.strip
+      end
+
+      def openstack_db_sync_needed?(svc, pkg)
+        marker = openstack_db_sync_marker(svc)
+        !::File.exist?(marker) || ::File.read(marker).strip != openstack_package_evr(pkg)
+      end
+
+      # Runs the syncs when the package's version moved, then records it; template
+      # triggers on the syncs still fire on their own
+      def openstack_db_sync_on_upgrade(svc, pkg, syncs)
+        notify_group "#{svc}: package version changed" do
+          syncs.each { |s| notifies :run, "execute[#{s}]", :immediately }
+          action :run
+          only_if { openstack_db_node? && openstack_db_sync_needed?(svc, pkg) }
+        end
+
+        file openstack_db_sync_marker(svc) do
+          content lazy { openstack_package_evr(pkg) }
+          action :nothing
+          subscribes :create, "execute[#{syncs.last}]", :immediately
+        end
+      end
+
       def openstack_compute_controller_pkgs
         %w(
           osuosl-openstack-nova-controller

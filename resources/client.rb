@@ -26,6 +26,11 @@ action :create do
     only_if { rdo }
   end
 
+  # The db sync markers; templates can trigger a sync before a recipe's own resources
+  directory '/var/lib/osl-openstack/db-sync' do
+    recursive true
+  end
+
   # Chef upgrades the venv RPMs and restarts after its db syncs, not dnf-automatic
   dnf_automatic_policy 'osl-openstack' do
     exclude %w(osuosl-openstack-*)

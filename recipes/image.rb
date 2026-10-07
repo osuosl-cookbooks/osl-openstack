@@ -67,8 +67,11 @@ execute 'glance: db_sync' do
   command 'glance-manage db_sync'
   user 'glance'
   group 'glance'
+  only_if { openstack_db_node? }
   action :nothing
 end
+
+openstack_db_sync_on_upgrade('glance', 'osuosl-openstack-glance', ['glance: db_sync'])
 
 group 'ceph-image' do
   group_name 'ceph'

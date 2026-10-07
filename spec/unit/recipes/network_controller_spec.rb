@@ -11,6 +11,8 @@ describe 'osl-openstack::network_controller' do
 
       include_context 'common_stubs'
 
+      it_behaves_like 'db sync on upgrade', 'neutron', ['neutron: db_sync']
+
       it do
         is_expected.to render_file('/etc/neutron/neutron.conf')
           .with_content(/^\[database\]\nconnection = .*\n#.*\nconnection_recycle_time = 300$/)

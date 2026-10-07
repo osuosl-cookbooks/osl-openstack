@@ -90,13 +90,17 @@ execute 'placement: db_sync' do
   command 'placement-manage db sync'
   user 'placement'
   group 'placement'
+  only_if { openstack_db_node? }
   action :nothing
 end
+
+openstack_db_sync_on_upgrade('placement', 'osuosl-openstack-placement', ['placement: db_sync'])
 
 execute 'nova: api_db_sync' do
   command 'nova-manage api_db sync'
   user 'nova'
   group 'nova'
+  only_if { openstack_db_node? }
   action :nothing
   subscribes :run, 'template[/etc/nova/nova.conf]', :immediately
 end
@@ -124,6 +128,7 @@ execute 'nova: db_sync' do
   command 'nova-manage db sync'
   user 'nova'
   group 'nova'
+  only_if { openstack_db_node? }
   action :nothing
   subscribes :run, 'template[/etc/nova/nova.conf]', :immediately
 end
@@ -135,6 +140,8 @@ execute 'nova: discover hosts' do
   action :nothing
   subscribes :run, 'template[/etc/nova/nova.conf]', :immediately
 end
+
+openstack_db_sync_on_upgrade('nova', 'osuosl-openstack-nova-controller', ['nova: api_db_sync', 'nova: db_sync'])
 
 listen_ip = openstack_api_listen_ip
 

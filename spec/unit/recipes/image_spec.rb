@@ -9,6 +9,8 @@ describe 'osl-openstack::image' do
 
       include_context 'common_stubs'
 
+      it_behaves_like 'db sync on upgrade', 'glance', ['glance: db_sync']
+
       it do
         is_expected.to render_file('/etc/glance/glance-api.conf')
           .with_content(/^\[database\]\nconnection = .*\n#.*\nconnection_recycle_time = 300$/)

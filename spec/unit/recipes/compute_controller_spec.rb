@@ -11,6 +11,9 @@ describe 'osl-openstack::compute_controller' do
 
       include_context 'common_stubs'
 
+      it_behaves_like 'db sync on upgrade', 'placement', ['placement: db_sync']
+      it_behaves_like 'db sync on upgrade', 'nova', ['nova: api_db_sync', 'nova: db_sync']
+
       it do
         is_expected.to render_file('/etc/nova/nova.conf')
           .with_content(/^\[database\]\nconnection = .*\n#.*\nconnection_recycle_time = 300$/)

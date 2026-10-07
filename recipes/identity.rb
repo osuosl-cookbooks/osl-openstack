@@ -109,8 +109,11 @@ execute 'keystone: db_sync' do
   command 'keystone-manage db_sync'
   user 'keystone'
   group 'keystone'
+  only_if { openstack_db_node? }
   action :nothing
 end
+
+openstack_db_sync_on_upgrade('keystone', 'osuosl-openstack-keystone', ['keystone: db_sync'])
 
 execute 'keystone: fernet_setup' do
   command 'keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone'

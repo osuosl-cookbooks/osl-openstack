@@ -84,8 +84,11 @@ execute 'heat: db_sync' do
   command 'heat-manage db_sync'
   user 'heat'
   group 'heat'
+  only_if { openstack_db_node? }
   action :nothing
 end
+
+openstack_db_sync_on_upgrade('heat', 'osuosl-openstack-heat', ['heat: db_sync'])
 
 heat_services.each do |srv|
   service srv do

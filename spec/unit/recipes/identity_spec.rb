@@ -11,6 +11,8 @@ describe 'osl-openstack::identity' do
 
       include_context 'common_stubs'
 
+      it_behaves_like 'db sync on upgrade', 'keystone', ['keystone: db_sync']
+
       it do
         is_expected.to render_file('/etc/keystone/keystone.conf')
           .with_content(/^\[database\]\nconnection = .*\n#.*\nconnection_recycle_time = 300$/)
@@ -21,6 +23,7 @@ describe 'osl-openstack::identity' do
       describe 'osl_openstack_client' do
         it { is_expected.to add_osl_repos_openstack('default').with(source: :osuosl) }
         it { is_expected.to upgrade_package %w(osuosl-openstack-cli osuosl-openstack-selinux) }
+        it { is_expected.to create_directory('/var/lib/osl-openstack/db-sync').with(recursive: true) }
         it { is_expected.to add_dnf_automatic_policy('osl-openstack').with(exclude: %w(osuosl-openstack-*)) }
         it { is_expected.to create_osl_openstack_openrc 'identity' }
         it { is_expected.to accept_osl_firewall_openstack 'identity' }
@@ -173,6 +176,32 @@ describe 'osl-openstack::identity' do
           port: 11211,
           osl_only: true
         )
+      end
+
+      context 'when the keystone package has not moved since the last sync' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm).converge(described_recipe)
+        end
+
+        before do
+          allow_any_instance_of(Chef::Resource::NotifyGroup).to receive(:openstack_db_sync_needed?).and_return(false)
+        end
+
+        it { is_expected.to_not run_notify_group('keystone: package version changed') }
+      end
+
+      context 'on a controller the ha block marks as not primary' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm).converge(described_recipe)
+        end
+
+        before do
+          stub_data_bag_item('openstack', 'x86').and_return(
+            openstack_secrets_stub('ha' => { 'keepalived' => { 'primary' => { 'fauxhai.local' => false } } })
+          )
+        end
+
+        it { is_expected.to_not run_notify_group('keystone: package version changed') }
       end
 
       context 'with fernet keys in the data bag' do

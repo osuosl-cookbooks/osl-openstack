@@ -394,6 +394,61 @@ describe OSLOpenstack::Cookbook::Helpers do
     end
   end
 
+  describe '#openstack_db_node?' do
+    def with_ha(primary)
+      secrets = primary.nil? ? {} : { 'ha' => { 'keepalived' => { 'primary' => primary } } }
+      allow(helper).to receive(:os_secrets).and_return(secrets)
+      allow(helper).to receive(:node).and_return('fqdn' => 'controller1.example.org')
+    end
+
+    it 'is true without an ha block' do
+      with_ha(nil)
+      expect(helper.openstack_db_node?).to be true
+    end
+
+    it 'is true on the keepalived primary' do
+      with_ha('controller1.example.org' => true, 'controller2.example.org' => false)
+      expect(helper.openstack_db_node?).to be true
+    end
+
+    it 'is false on a controller the bag marks as not primary' do
+      with_ha('controller1.example.org' => false, 'controller2.example.org' => true)
+      expect(helper.openstack_db_node?).to be false
+    end
+
+    it 'is true for a controller the ha block does not list' do
+      with_ha('other.example.org' => true)
+      expect(helper.openstack_db_node?).to be true
+    end
+  end
+
+  describe '#openstack_db_sync_needed?' do
+    let(:marker) { '/var/lib/osl-openstack/db-sync/nova' }
+
+    before do
+      allow(helper).to receive(:shell_out!)
+        .with('rpm', '-q', '--qf', '%{EPOCH}:%{VERSION}-%{RELEASE}', 'osuosl-openstack-nova-controller')
+        .and_return(double(stdout: '(none):25.3.0-2.el9'))
+    end
+
+    it 'is true when no marker exists' do
+      allow(File).to receive(:exist?).with(marker).and_return(false)
+      expect(helper.openstack_db_sync_needed?('nova', 'osuosl-openstack-nova-controller')).to be true
+    end
+
+    it 'is false when the marker holds the installed version' do
+      allow(File).to receive(:exist?).with(marker).and_return(true)
+      allow(File).to receive(:read).with(marker).and_return("(none):25.3.0-2.el9\n")
+      expect(helper.openstack_db_sync_needed?('nova', 'osuosl-openstack-nova-controller')).to be false
+    end
+
+    it 'is true when the installed version moved past the marker' do
+      allow(File).to receive(:exist?).with(marker).and_return(true)
+      allow(File).to receive(:read).with(marker).and_return('(none):25.3.0-1.el9')
+      expect(helper.openstack_db_sync_needed?('nova', 'osuosl-openstack-nova-controller')).to be true
+    end
+  end
+
   describe '#openstack_python_sitelib' do
     it 'points into the service venv' do
       expect(helper.openstack_python_sitelib('nova-compute')).to eq('/opt/openstack/nova-compute/lib/python3.9/site-packages')

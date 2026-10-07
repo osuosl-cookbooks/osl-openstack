@@ -9,6 +9,8 @@ describe 'osl-openstack::orchestration' do
 
       include_context 'common_stubs'
 
+      it_behaves_like 'db sync on upgrade', 'heat', ['heat: db_sync']
+
       it do
         is_expected.to render_file('/etc/heat/heat.conf')
           .with_content(/^\[database\]\nconnection = .*\n#.*\nconnection_recycle_time = 300$/)

@@ -9,6 +9,8 @@ describe 'osl-openstack::block_storage_controller' do
 
       include_context 'common_stubs'
 
+      it_behaves_like 'db sync on upgrade', 'cinder', ['cinder: db_sync']
+
       it do
         is_expected.to render_file('/etc/cinder/cinder.conf')
           .with_content(/^\[database\]\nconnection = .*\n#.*\nconnection_recycle_time = 300$/)
