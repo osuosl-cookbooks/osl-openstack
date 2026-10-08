@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+20.0.1 (2026-10-08)
+-------------------
+- Stage zed's config on yoga and fix the tooling the pre-flight exposed
+
 20.0.0 (2026-10-05)
 -------------------
 - Replace RDO with the osuosl-openstack venv RPMs and serve the APIs with uWSGI
