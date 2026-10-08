@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+20.1.0 (2026-10-08)
+-------------------
+- Let Chef own OpenStack package updates
+
 20.0.1 (2026-10-08)
 -------------------
 - Stage zed's config on yoga and fix the tooling the pre-flight exposed
