@@ -116,3 +116,18 @@ control 'image' do
     end
   end
 end
+
+# The keepalived primary records each package version it synced; other controllers sync nothing
+control 'image-db-sync' do
+  primary = input('primary_controller', value: true)
+  { 'glance' => 'osuosl-openstack-glance' }.each do |svc, pkg|
+    evr = command("rpm -q --qf '%{EPOCH}:%{VERSION}-%{RELEASE}' #{pkg}").stdout
+    describe file("/var/lib/osl-openstack/db-sync/#{svc}") do
+      if primary
+        its('content') { should cmp evr }
+      else
+        it { should_not exist }
+      end
+    end
+  end
+end

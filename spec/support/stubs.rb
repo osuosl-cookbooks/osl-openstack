@@ -7,6 +7,8 @@ shared_context 'common_stubs' do
     stubs_for_provider('osl_openstack_client') do |provider|
       allow(provider).to receive(:openstack_rdo_installed?).and_return(false)
     end
+    # The version guard shells out to rpm; specs assume the package moved
+    allow_any_instance_of(Chef::Resource::NotifyGroup).to receive(:openstack_db_sync_needed?).and_return(true)
     allow(File).to receive(:read).and_call_original
     allow(File).to receive(:read).with('/etc/ceph/ceph.conf').and_return("fsid = #{CEPH_FSID}")
   end
@@ -19,6 +21,8 @@ shared_context 'region2_stubs' do
     stubs_for_provider('osl_openstack_client') do |provider|
       allow(provider).to receive(:openstack_rdo_installed?).and_return(false)
     end
+    # The version guard shells out to rpm; specs assume the package moved
+    allow_any_instance_of(Chef::Resource::NotifyGroup).to receive(:openstack_db_sync_needed?).and_return(true)
     allow(File).to receive(:read).and_call_original
     allow(File).to receive(:read).with('/etc/ceph/ceph.conf').and_return(nil)
   end
@@ -31,6 +35,8 @@ shared_context 'dashboard_noregion_stubs' do
     stubs_for_provider('osl_openstack_client') do |provider|
       allow(provider).to receive(:openstack_rdo_installed?).and_return(false)
     end
+    # The version guard shells out to rpm; specs assume the package moved
+    allow_any_instance_of(Chef::Resource::NotifyGroup).to receive(:openstack_db_sync_needed?).and_return(true)
     allow(File).to receive(:read).and_call_original
     allow(File).to receive(:read).with('/etc/ceph/ceph.conf').and_return(nil)
   end

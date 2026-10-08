@@ -226,3 +226,18 @@ control 'network' do
     its('stdout') { should match(/gateway_ip="10.10.1.1"/) }
   end if controller
 end
+
+# The keepalived primary records each package version it synced; other controllers sync nothing
+control 'network-db-sync' do
+  primary = input('primary_controller', value: true)
+  { 'neutron' => 'osuosl-openstack-neutron-controller' }.each do |svc, pkg|
+    evr = command("rpm -q --qf '%{EPOCH}:%{VERSION}-%{RELEASE}' #{pkg}").stdout
+    describe file("/var/lib/osl-openstack/db-sync/#{svc}") do
+      if primary
+        its('content') { should cmp evr }
+      else
+        it { should_not exist }
+      end
+    end
+  end
+end if controller

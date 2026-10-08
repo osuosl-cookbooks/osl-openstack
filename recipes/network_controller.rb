@@ -38,9 +38,11 @@ end
 package %w(
   conntrack-tools
   ebtables
-  osuosl-openstack-neutron-agent
-  osuosl-openstack-neutron-controller
 )
+
+package 'osuosl-openstack-neutron-controller' do
+  action :upgrade
+end
 
 include_recipe 'osl-openstack::network_common'
 
@@ -54,11 +56,14 @@ execute 'neutron: db_sync' do
   user 'neutron'
   group 'neutron'
   action :nothing
+  only_if { openstack_db_node? }
   # db-manage reads both, and ml2_conf.ini lands after neutron.conf on a new node
   only_if { ::File.exist?('/etc/neutron/plugins/ml2/ml2_conf.ini') }
   subscribes :run, 'template[/etc/neutron/neutron.conf]', :immediately
   subscribes :run, 'cookbook_file[/etc/neutron/plugins/ml2/ml2_conf.ini]', :immediately
 end
+
+openstack_db_sync_on_upgrade('neutron', 'osuosl-openstack-neutron-controller', ['neutron: db_sync'])
 
 template '/etc/neutron/metadata_agent.ini' do
   owner 'root'
@@ -101,6 +106,7 @@ end
   service srv do
     subscribes :restart, 'template[/etc/neutron/neutron.conf]'
     subscribes :restart, 'cookbook_file[/etc/neutron/plugins/ml2/ml2_conf.ini]'
+    subscribes :restart, 'package[osuosl-openstack-neutron-controller]'
     action [:enable, :start]
   end
 end

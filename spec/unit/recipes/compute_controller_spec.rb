@@ -11,6 +11,12 @@ describe 'osl-openstack::compute_controller' do
 
       include_context 'common_stubs'
 
+      it_behaves_like 'restarts on package upgrade', 'osuosl-openstack-placement', ['placement-uwsgi']
+      it_behaves_like 'restarts on package upgrade', 'osuosl-openstack-nova-controller', %w(openstack-nova-api openstack-nova-metadata openstack-nova-conductor openstack-nova-novncproxy openstack-nova-scheduler)
+
+      it_behaves_like 'db sync on upgrade', 'placement', ['placement: db_sync']
+      it_behaves_like 'db sync on upgrade', 'nova', ['nova: api_db_sync', 'nova: db_sync']
+
       it do
         is_expected.to render_file('/etc/nova/nova.conf')
           .with_content(/^\[database\]\nconnection = .*\n#.*\nconnection_recycle_time = 300$/)
@@ -45,7 +51,9 @@ describe 'osl-openstack::compute_controller' do
           region: 'RegionOne'
         )
       end
-      it { is_expected.to install_package %w(osuosl-openstack-nova-controller osuosl-openstack-placement) }
+      %w(osuosl-openstack-nova-controller osuosl-openstack-placement).each do |pkg|
+        it { is_expected.to upgrade_package pkg }
+      end
       it { is_expected.to delete_file('/etc/httpd/conf.d/00-placement-api.conf') }
       it do
         expect(chef_run.file('/etc/httpd/conf.d/00-placement-api.conf')).to notify('apache2_service[compute]').to(:reload)

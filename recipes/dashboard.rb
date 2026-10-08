@@ -51,7 +51,11 @@ node.override['nagios']['_http_address6'] = nil if openstack_tls_on_haproxy?
 
 include_recipe 'osl-nrpe::check_http'
 
-package 'osuosl-openstack-horizon'
+package 'osuosl-openstack-horizon' do
+  action :upgrade
+  # Registered before horizon-uwsgi's subscription, so the new static is in place first
+  notifies :run, 'execute[horizon: compress]'
+end
 
 certificate_manage 'wildcard-dashboard' do
   search_id 'wildcard'
@@ -144,6 +148,7 @@ end
 # uWSGI unit shipped by osuosl-openstack-horizon
 service 'horizon-uwsgi' do
   action [:enable, :start]
+  subscribes :restart, 'package[osuosl-openstack-horizon]'
 end
 
 apache_app 'horizon' do

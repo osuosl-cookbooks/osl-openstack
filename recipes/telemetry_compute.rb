@@ -26,4 +26,5 @@ include_recipe 'osl-openstack::telemetry_common'
 service 'openstack-ceilometer-compute' do
   action [:enable, :start]
   openstack_ceilometer_config_resources.each { |r| subscribes :restart, r }
+  subscribes :restart, 'package[osuosl-openstack-ceilometer]'
 end

@@ -50,7 +50,9 @@ include_recipe 'osl-apache::mod_ssl'
 # osl-apache has captured the per-host `listen` value).
 include_recipe 'osl-apache::mod_remoteip' if openstack_tls_on_haproxy?
 
-package 'osuosl-openstack-keystone'
+package 'osuosl-openstack-keystone' do
+  action :upgrade
+end
 
 s = os_secrets
 
@@ -107,8 +109,11 @@ execute 'keystone: db_sync' do
   command 'keystone-manage db_sync'
   user 'keystone'
   group 'keystone'
+  only_if { openstack_db_node? }
   action :nothing
 end
+
+openstack_db_sync_on_upgrade('keystone', 'osuosl-openstack-keystone', ['keystone: db_sync'])
 
 execute 'keystone: fernet_setup' do
   command 'keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone'
@@ -163,6 +168,7 @@ end
 # uWSGI unit shipped by osuosl-openstack-keystone
 service 'keystone-uwsgi' do
   action [:enable, :start]
+  subscribes :restart, 'package[osuosl-openstack-keystone]'
 end
 
 apache_app 'keystone' do

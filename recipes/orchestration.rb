@@ -56,7 +56,9 @@ end
 
 heat_services = %w(openstack-heat-api openstack-heat-api-cfn openstack-heat-engine)
 
-package 'osuosl-openstack-heat'
+package 'osuosl-openstack-heat' do
+  action :upgrade
+end
 
 template '/etc/heat/heat.conf' do
   owner 'root'
@@ -82,12 +84,16 @@ execute 'heat: db_sync' do
   command 'heat-manage db_sync'
   user 'heat'
   group 'heat'
+  only_if { openstack_db_node? }
   action :nothing
 end
+
+openstack_db_sync_on_upgrade('heat', 'osuosl-openstack-heat', ['heat: db_sync'])
 
 heat_services.each do |srv|
   service srv do
     action [:enable, :start]
     subscribes :restart, 'template[/etc/heat/heat.conf]'
+    subscribes :restart, 'package[osuosl-openstack-heat]'
   end
 end

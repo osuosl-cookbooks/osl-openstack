@@ -12,7 +12,7 @@ describe 'openstack_test::client' do
 
       it { is_expected.to create_osl_openstack_client('test').with(firewall: false, openrc: false) }
       it { is_expected.to add_osl_repos_openstack('default').with(source: :osuosl) }
-      it { is_expected.to install_package %w(osuosl-openstack-cli) }
+      it { is_expected.to upgrade_package %w(osuosl-openstack-cli osuosl-openstack-selinux) }
       it { is_expected.to_not create_osl_openstack_openrc 'test' }
       it { is_expected.to_not accept_osl_firewall_openstack 'test' }
       it { is_expected.to delete_cookbook_file '/root/migrate-venv.sh' }

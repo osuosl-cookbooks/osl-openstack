@@ -47,6 +47,10 @@ end
 
 package openstack_compute_pkgs
 
+package 'osuosl-openstack-nova-compute' do
+  action :upgrade
+end
+
 file '/etc/nova/nova-compute.conf' do
   action :delete
 end
@@ -107,6 +111,7 @@ end
 service 'openstack-nova-compute' do
   action [:enable, :start]
   subscribes :restart, 'template[/etc/nova/nova.conf]'
+  subscribes :restart, 'package[osuosl-openstack-nova-compute]'
 end
 
 service 'libvirt-guests' do
@@ -193,7 +198,9 @@ osl_sysfs_param '/sys/module/nf_conntrack/parameters/hashsize' do
 end
 
 unless openstack_cinder_disabled?
-  package 'osuosl-openstack-cinder'
+  find_resource(:package, 'osuosl-openstack-cinder') do
+    action :upgrade
+  end
 
   osl_ceph_keyring b['ceph']['rbd_store_user'] do
     key b['ceph']['block_token']

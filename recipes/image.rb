@@ -39,7 +39,9 @@ osl_openstack_api 'glance' do
   region i['region']
 end
 
-package 'osuosl-openstack-glance'
+package 'osuosl-openstack-glance' do
+  action :upgrade
+end
 
 template '/etc/glance/glance-api.conf' do
   owner 'root'
@@ -65,8 +67,11 @@ execute 'glance: db_sync' do
   command 'glance-manage db_sync'
   user 'glance'
   group 'glance'
+  only_if { openstack_db_node? }
   action :nothing
 end
+
+openstack_db_sync_on_upgrade('glance', 'osuosl-openstack-glance', ['glance: db_sync'])
 
 group 'ceph-image' do
   group_name 'ceph'
@@ -84,4 +89,5 @@ end unless openstack_local_storage_image
 
 service 'openstack-glance-api' do
   action [:enable, :start]
+  subscribes :restart, 'package[osuosl-openstack-glance]'
 end

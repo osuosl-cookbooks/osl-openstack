@@ -10,6 +10,7 @@ version          '20.0.1'
 
 depends 'base'
 depends 'certificate'
+depends 'dnf-automatic', '>= 3.0.0'
 depends 'line'
 depends 'logrotate'
 depends 'memcached'

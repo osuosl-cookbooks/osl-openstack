@@ -9,6 +9,10 @@ describe 'osl-openstack::orchestration' do
 
       include_context 'common_stubs'
 
+      it_behaves_like 'restarts on package upgrade', 'osuosl-openstack-heat', %w(openstack-heat-api openstack-heat-api-cfn openstack-heat-engine)
+
+      it_behaves_like 'db sync on upgrade', 'heat', ['heat: db_sync']
+
       it do
         is_expected.to render_file('/etc/heat/heat.conf')
           .with_content(/^\[database\]\nconnection = .*\n#.*\nconnection_recycle_time = 300$/)
@@ -53,7 +57,7 @@ describe 'osl-openstack::orchestration' do
           region: 'RegionOne'
         )
       end
-      it { is_expected.to install_package 'osuosl-openstack-heat' }
+      it { is_expected.to upgrade_package 'osuosl-openstack-heat' }
       it do
         is_expected.to create_template('/etc/heat/heat.conf').with(
           owner: 'root',

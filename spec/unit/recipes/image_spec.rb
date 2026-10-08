@@ -9,6 +9,10 @@ describe 'osl-openstack::image' do
 
       include_context 'common_stubs'
 
+      it_behaves_like 'restarts on package upgrade', 'osuosl-openstack-glance', ['openstack-glance-api']
+
+      it_behaves_like 'db sync on upgrade', 'glance', ['glance: db_sync']
+
       it do
         is_expected.to render_file('/etc/glance/glance-api.conf')
           .with_content(/^\[database\]\nconnection = .*\n#.*\nconnection_recycle_time = 300$/)
@@ -25,7 +29,7 @@ describe 'osl-openstack::image' do
           region: 'RegionOne'
         )
       end
-      it { is_expected.to install_package 'osuosl-openstack-glance' }
+      it { is_expected.to upgrade_package 'osuosl-openstack-glance' }
       it do
         is_expected.to create_template('/etc/glance/glance-api.conf').with(
           owner: 'root',
@@ -164,7 +168,7 @@ describe 'osl-openstack::image' do
         end
 
         it { is_expected.to add_osl_repos_openstack('default').with(source: :osuosl) }
-        it { is_expected.to install_package %w(osuosl-openstack-cli) }
+        it { is_expected.to upgrade_package %w(osuosl-openstack-cli osuosl-openstack-selinux) }
         it { is_expected.to create_osl_openstack_openrc 'image' }
         it { is_expected.to accept_osl_firewall_openstack 'image' }
         it do

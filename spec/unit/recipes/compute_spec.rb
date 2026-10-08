@@ -8,6 +8,8 @@ describe 'osl-openstack::compute' do
       end
 
       include_context 'common_stubs'
+
+      it_behaves_like 'restarts on package upgrade', 'osuosl-openstack-nova-compute', ['openstack-nova-compute']
       include_context 'compute_stubs'
 
       it { is_expected.to create_osl_openstack_client('compute').with(firewall: true, openrc: true) }
@@ -50,7 +52,6 @@ describe 'osl-openstack::compute' do
           guestfs-tools
           libguestfs-rescue
           libvirt
-          osuosl-openstack-nova-compute
           python3-libguestfs
           qemu-kvm
           qemu-kvm-device-display-virtio-gpu
@@ -61,6 +62,7 @@ describe 'osl-openstack::compute' do
           virt-win-reg
         )
       end
+      it { is_expected.to upgrade_package 'osuosl-openstack-nova-compute' }
       it { is_expected.to delete_file '/etc/nova/nova-compute.conf' }
       it { is_expected.to enable_service 'libvirtd-tcp.socket' }
       it { is_expected.to start_service 'libvirtd-tcp.socket' }
@@ -164,7 +166,7 @@ describe 'osl-openstack::compute' do
       it { is_expected.to install_kernel_module('kvm_intel').with(options: %w(nested=1)) }
       it { is_expected.to include_recipe 'osl-openstack::network' }
       it { is_expected.to include_recipe 'osl-openstack::telemetry_compute' }
-      it { is_expected.to install_package 'osuosl-openstack-cinder' }
+      it { is_expected.to upgrade_package 'osuosl-openstack-cinder' }
       it { is_expected.to create_osl_ceph_keyring('cinder').with(key: 'AQAjbr1aWv+aNBAAoGfqrwX9iSdNmtuvUkwGhA==') }
       it do
         is_expected.to create_osl_ceph_keyring('cinder-backup').with(key: 'AQAxbr1ac4ToKhAAeO6+h90GcsukzHicUNvfLg==')
@@ -281,7 +283,6 @@ describe 'osl-openstack::compute' do
             guestfs-tools
             libguestfs-rescue
             libvirt
-            osuosl-openstack-nova-compute
             python3-libguestfs
             qemu-kvm
             qemu-kvm-device-display-virtio-gpu
@@ -329,7 +330,6 @@ describe 'osl-openstack::compute' do
             guestfs-tools
             libguestfs-rescue
             libvirt
-            osuosl-openstack-nova-compute
             python3-libguestfs
             qemu-kvm
             qemu-kvm-device-display-virtio-gpu
@@ -389,7 +389,7 @@ describe 'osl-openstack::compute' do
 
         it { is_expected.to_not include_recipe 'osl-ceph' }
         it { is_expected.to_not create_osl_ceph_config 'default' }
-        it { is_expected.to_not install_package 'osuosl-openstack-cinder' }
+        it { is_expected.to_not upgrade_package 'osuosl-openstack-cinder' }
         it { is_expected.to_not create_osl_ceph_keyring 'cinder' }
         it { is_expected.to_not create_osl_ceph_keyring 'cinder-backup' }
         it { is_expected.to_not create_directory '/var/run/ceph/guests' }

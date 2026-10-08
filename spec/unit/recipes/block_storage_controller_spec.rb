@@ -9,6 +9,10 @@ describe 'osl-openstack::block_storage_controller' do
 
       include_context 'common_stubs'
 
+      it_behaves_like 'restarts on package upgrade', 'osuosl-openstack-cinder', %w(openstack-cinder-api openstack-cinder-scheduler)
+
+      it_behaves_like 'db sync on upgrade', 'cinder', ['cinder: db_sync']
+
       it do
         is_expected.to render_file('/etc/cinder/cinder.conf')
           .with_content(/^\[database\]\nconnection = .*\n#.*\nconnection_recycle_time = 300$/)
@@ -35,7 +39,7 @@ describe 'osl-openstack::block_storage_controller' do
         )
       end
       it { is_expected.to include_recipe 'osl-openstack::block_storage_common' }
-      it { is_expected.to install_package 'osuosl-openstack-cinder' }
+      it { is_expected.to upgrade_package 'osuosl-openstack-cinder' }
       it { is_expected.to_not install_package 'python3-redis' }
       it do
         is_expected.to create_template('/etc/cinder/cinder.conf').with(

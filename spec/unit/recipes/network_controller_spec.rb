@@ -11,6 +11,10 @@ describe 'osl-openstack::network_controller' do
 
       include_context 'common_stubs'
 
+      it_behaves_like 'restarts on package upgrade', 'osuosl-openstack-neutron-controller', %w(neutron-dhcp-agent neutron-l3-agent neutron-metadata-agent neutron-metering-agent neutron-server)
+
+      it_behaves_like 'db sync on upgrade', 'neutron', ['neutron: db_sync']
+
       it do
         is_expected.to render_file('/etc/neutron/neutron.conf')
           .with_content(/^\[database\]\nconnection = .*\n#.*\nconnection_recycle_time = 300$/)
@@ -41,7 +45,9 @@ describe 'osl-openstack::network_controller' do
           region: 'RegionOne'
         )
       end
-      it { is_expected.to install_package %w(conntrack-tools ebtables osuosl-openstack-neutron-agent osuosl-openstack-neutron-controller) }
+      it { is_expected.to install_package %w(conntrack-tools ebtables) }
+      it { is_expected.to upgrade_package 'osuosl-openstack-neutron-controller' }
+      it { is_expected.to upgrade_package 'osuosl-openstack-neutron-agent' }
       it { is_expected.to include_recipe 'osl-openstack::network_common' }
       it do
         is_expected.to create_template('/etc/neutron/neutron.conf').with(

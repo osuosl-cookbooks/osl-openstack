@@ -274,3 +274,18 @@ control 'compute-controller' do
     its('group') { should eq 'root' }
   end
 end
+
+# The keepalived primary records each package version it synced; other controllers sync nothing
+control 'compute-controller-db-sync' do
+  primary = input('primary_controller', value: true)
+  { 'placement' => 'osuosl-openstack-placement', 'nova' => 'osuosl-openstack-nova-controller' }.each do |svc, pkg|
+    evr = command("rpm -q --qf '%{EPOCH}:%{VERSION}-%{RELEASE}' #{pkg}").stdout
+    describe file("/var/lib/osl-openstack/db-sync/#{svc}") do
+      if primary
+        its('content') { should cmp evr }
+      else
+        it { should_not exist }
+      end
+    end
+  end
+end
