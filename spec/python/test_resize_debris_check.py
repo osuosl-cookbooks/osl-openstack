@@ -453,11 +453,12 @@ class FixedSectionsTest(Base):
         # workloads, so --fix must still only advise on them
         ctx = self.ctx_with('--fix')
         self.conn.block_storage.get.side_effect = (
-            lambda url, params=None: response(
-                {'volumes': [vol('v1', updated_at=ago(hours=9))]}
+            lambda url, params=None, microversion=None: response(
+                {'attachments': []} if url.startswith('/attachments')
+                else {'volumes': [vol('v1', updated_at=ago(hours=9))]}
                 if params['status'] == 'attaching' else {'volumes': []}))
         ctx.verify_resize = [server('parked', 'vm', ago(days=30))]
-        self.db.query.return_value = [
+        self.db.query.side_effect = lambda sql, params=(): [] if 'block_device_mapping' in sql else [
             (1, 'u-err', 'migration', 'error', 'a', 'b', 'error', '2026-09-15')]
         rdc.check_stuck_volumes(ctx, self.rep)
         rdc.check_parked_verify_resize(ctx, self.rep)
@@ -511,7 +512,8 @@ class DuplicateAttachmentTest(Base):
         self.assertNotIn('volume attachment delete', t)
         self.assertIn("f1900f5b  reserved  instance=82292e08  nova's BDM points here", t)
         self.assertIn('90d32868  attached  instance=82292e08  carries the live connection', t)
-        self.assertIn('nova-manage volume_attachment refresh 82292e08 52c460c1', t)
+        self.assertIn('nova-manage volume_attachment get_connector --json 2>/dev/null > /root/conn.json', t)
+        self.assertIn('nova-manage volume_attachment refresh 82292e08 52c460c1 /root/conn.json', t)
 
     def test_all_reserved_on_an_available_volume_is_still_resolvable(self):
         # nothing is attached, so the extras are safe to name
@@ -617,8 +619,10 @@ class MigrationContextTest(Base):
 
 
 class StuckVolumesTest(Base):
-    def volumes_by_state(self, mapping):
-        def get(url, params=None):
+    def volumes_by_state(self, mapping, attachments=()):
+        def get(url, params=None, microversion=None):
+            if url.startswith('/attachments'):
+                return response({'attachments': list(attachments)})
             return response({'volumes': mapping.get(params['status'], [])})
         self.conn.block_storage.get.side_effect = get
 
@@ -634,14 +638,15 @@ class StuckVolumesTest(Base):
                           vol('old-attached', updated_at=ago(hours=70),
                               attachments=[{'server_id': 's'}])],
             'deleting': [vol('del', status='deleting', updated_at=ago(days=3))],
-        })
+        }, attachments=[{'id': 'att1', 'volume_id': 'old-attached', 'status': 'attached',
+                         'instance': 's'}])
         rdc.check_stuck_volumes(self.ctx, self.rep)
         self.assertEqual(self.rep.findings, 3)
         t = self.text()
         self.assertNotIn('fresh', t)
-        self.assertIn("FINDING: volume old-empty (swap) stuck in 'attaching' for 5h, attachments: empty", t)
+        self.assertIn("FINDING: volume old-empty (swap) stuck in 'attaching' for 5h, attachments: none", t)
         self.assertIn('fix> openstack volume set --state available old-empty', t)
-        self.assertIn("stuck in 'attaching' for 70h, attachments: present", t)
+        self.assertIn("stuck in 'attaching' for 70h, attachments: att1 (attached)", t)
         self.assertIn('fix> openstack volume set --state in-use old-attached   # attachments exist', t)
         self.assertIn('fix> openstack volume set --state error del && openstack volume delete del', t)
         self.assertIn('then reconcile with: openstack server volume list <owner-instance>', t)
@@ -660,6 +665,82 @@ class StuckVolumesTest(Base):
         self.volumes_by_state({'attaching': [vol('v', updated_at=ago(hours=5))]})
         rdc.check_stuck_volumes(self.ctx, self.rep)
         self.assertEqual(self.rep.findings, 0)
+
+    def test_nova_on_an_uncompleted_attachment_gets_a_refresh_not_a_reset(self):
+        # volume 97b0ce55: reserved, its only attachment reserved, nova's BDM on
+        # it and a running guest on the disk. A state reset would free a live disk.
+        self.volumes_by_state(
+            {'reserved': [vol('97b0ce55', 'el8-mock', status='reserved', updated_at=ago(hours=456))]},
+            attachments=[{'id': 'a5d88095', 'volume_id': '97b0ce55', 'status': 'reserved',
+                          'instance': 'e0d828e5'}])
+        self.db.query.return_value = [('97b0ce55', 'a5d88095')]
+        rdc.check_stuck_volumes(self.ctx, self.rep)
+        t = self.text()
+        self.assertEqual(self.rep.findings, 1)
+        self.assertIn("stuck in 'reserved' for 456h, attachments: a5d88095 (reserved)", t)
+        self.assertIn("nova's BDM uses attachment a5d88095, which cinder lists as reserved; "
+                      'do NOT reset the volume state', t)
+        self.assertIn('nova-manage volume_attachment get_connector --json', t)
+        self.assertIn('nova-manage volume_attachment refresh e0d828e5 97b0ce55 /root/conn.json', t)
+        self.assertNotIn('--state available', t)
+        self.assertNotIn('volume attachment delete', t)
+
+    def test_nova_on_an_attachment_cinder_lost_gets_a_refresh(self):
+        self.volumes_by_state(
+            {'reserved': [vol('v1', status='reserved', updated_at=ago(hours=3))]})
+        self.db.query.return_value = [('v1', 'gone1')]
+        rdc.check_stuck_volumes(self.ctx, self.rep)
+        t = self.text()
+        self.assertIn('attachments: none', t)
+        self.assertIn("nova's BDM uses attachment gone1, which cinder does not list", t)
+        self.assertIn('nova-manage volume_attachment refresh <owner-instance> v1', t)
+        self.assertNotIn('--state available', t)
+
+    def test_leftover_records_without_a_bdm_need_the_instance_checked(self):
+        self.volumes_by_state(
+            {'reserved': [vol('v2', status='reserved', updated_at=ago(hours=3))]},
+            attachments=[{'id': 'r1', 'volume_id': 'v2', 'status': 'reserved', 'instance': 'i1'},
+                         {'id': 'r2', 'volume_id': 'v2', 'status': 'attaching', 'instance': 'i1'}])
+        rdc.check_stuck_volumes(self.ctx, self.rep)
+        t = self.text()
+        self.assertIn('attachments: r1 (reserved), r2 (attaching)', t)
+        self.assertIn('confirm each owning instance is gone, then delete its leftover attachment', t)
+        self.assertIn('volume attachment delete r1   # instance=i1', t)
+        self.assertIn('volume attachment delete r2   # instance=i1', t)
+        self.assertNotIn('--state available', t)
+
+    def test_attachment_api_failure_falls_back_to_the_volume_view(self):
+        def get(url, params=None, microversion=None):
+            if url.startswith('/attachments'):
+                raise EXC.SDKException('404 attachments')
+            return response({'volumes': [vol('v3', updated_at=ago(hours=3))]
+                             if params['status'] == 'attaching' else []})
+        self.conn.block_storage.get.side_effect = get
+        rdc.check_stuck_volumes(self.ctx, self.rep)
+        t = self.text()
+        self.assertIn('note: could not list attachments, judging by the volume alone', t)
+        self.assertIn("stuck in 'attaching' for 3h, attachments: empty", t)
+        self.assertIn('fix> openstack volume set --state available v3', t)
+
+    def test_sections_3_and_8_list_attachments_once(self):
+        self.volumes_by_state(
+            {'reserved': [vol('v4', status='reserved', updated_at=ago(hours=3))]},
+            attachments=[{'id': 'r1', 'volume_id': 'v4', 'status': 'reserved', 'instance': 'i1'}])
+        rdc.check_stuck_volumes(self.ctx, self.rep)
+        rdc.check_duplicate_attachments(self.ctx, self.rep)
+        urls = [c.args[0] for c in self.conn.block_storage.get.call_args_list]
+        self.assertEqual(urls.count('/attachments/detail'), 1)
+
+    def test_fix_mode_leaves_stuck_volumes_alone(self):
+        self.volumes_by_state(
+            {'reserved': [vol('97b0ce55', status='reserved', updated_at=ago(hours=456))]},
+            attachments=[{'id': 'a5d88095', 'volume_id': '97b0ce55', 'status': 'reserved',
+                          'instance': 'e0d828e5'}])
+        self.db.query.return_value = [('97b0ce55', 'a5d88095')]
+        rdc.check_stuck_volumes(self.ctx_with('--fix'), self.rep)
+        self.assertEqual((self.rep.fixes, self.rep.fix_failures), (0, 0))
+        self.run.assert_not_called()
+        self.db.execute.assert_not_called()
 
     def test_cinder_unavailable_skips_section_only(self):
         self.conn.block_storage.get.side_effect = EXC.SDKException(

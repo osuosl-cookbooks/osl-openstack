@@ -134,6 +134,7 @@ suites:
       - role[openstack_tk]
       - role[openstack_ops_identity]
       - recipe[osl-openstack::network_controller]
+      - recipe[openstack_test::create_network]
     verifier:
       inspec_tests:
         - test/integration/identity

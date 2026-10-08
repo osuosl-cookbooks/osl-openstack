@@ -15,6 +15,11 @@ describe 'osl-openstack::network_controller' do
         is_expected.to render_file('/etc/neutron/neutron.conf')
           .with_content(/^\[database\]\nconnection = .*\n#.*\nconnection_recycle_time = 300$/)
       end
+      it do
+        is_expected.to render_file('/etc/neutron/neutron.conf')
+          .with_content(/^\[experimental\]\n#.*\nlinuxbridge = true$/)
+      end
+      it { is_expected.to_not render_file('/etc/neutron/neutron.conf').with_content(/allow_overlapping_ips/) }
       include_context 'network_stubs'
 
       # The DNS-blocking bash only runs where the qdhcp namespace exists
@@ -123,6 +128,7 @@ describe 'osl-openstack::network_controller' do
           .with_content(%r{^\[AGENT\]\npolling_interval = 2\n.*\nroot_helper = sudo /opt/openstack/neutron-agent/bin/neutron-rootwrap })
           .with_content("root_helper_daemon = sudo /opt/openstack/neutron-agent/bin/neutron-rootwrap-daemon /etc/neutron/rootwrap.conf\n")
       end
+      it { is_expected.to_not render_file('/etc/neutron/plugins/ml2/linuxbridge_agent.ini').with_content(/^\[vlans\]$/) }
       it do
         is_expected.to create_template('/etc/neutron/metadata_agent.ini').with(
           owner: 'root',

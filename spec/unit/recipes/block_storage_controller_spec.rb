@@ -126,6 +126,7 @@ describe 'osl-openstack::block_storage_controller' do
       end
       it { is_expected.to nothing_apache2_service('block_storage') }
       it { is_expected.to_not render_file('/etc/cinder/cinder.conf').with_content(/^\[libvirt\]$/) }
+      it { is_expected.to_not render_file('/etc/cinder/cinder.conf').with_content(/^\[cache\]$|enable_v3_api/) }
       it { is_expected.to enable_service 'openstack-cinder-scheduler' }
       it { is_expected.to start_service 'openstack-cinder-scheduler' }
       it do

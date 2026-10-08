@@ -51,6 +51,13 @@ describe 'osl-openstack::ops_messaging' do
         end
       end
       it do
+        is_expected.to manage_selinux_port('15692 tcp').with(
+          port: '15692',
+          protocol: 'tcp',
+          secontext: 'amqp_port_t'
+        )
+      end
+      it do
         is_expected.to create_yum_repository('centos-rabbitmq').with(
           description: 'CentOS $releasever - RabbitMQ',
           baseurl: "https://centos-stream.osuosl.org/SIGs/$releasever-stream/messaging/$basearch/#{rabbitmq_subdir[pltfrm]}",
@@ -79,6 +86,27 @@ describe 'osl-openstack::ops_messaging' do
         )
       end
     end
+  end
+
+  context 'without the prometheus plugin' do
+    cached(:chef_run) do
+      ChefSpec::SoloRunner.new(ALMA_9.merge(
+        step_into: %w(osl_openstack_messaging)
+      )).converge(described_recipe)
+    end
+
+    include_context 'common_stubs'
+    include_context 'rabbitmq_stubs'
+
+    before do
+      stub_data_bag_item('openstack', 'x86').and_return(
+        openstack_secrets_stub('messaging' => { 'plugins' => %w(rabbitmq_management) })
+      )
+    end
+
+    it { is_expected.to run_execute('rabbitmq: enable plugin rabbitmq_management') }
+    it { is_expected.to_not run_execute('rabbitmq: enable plugin rabbitmq_prometheus') }
+    it { is_expected.to_not manage_selinux_port('15692 tcp') }
   end
 
   context 'almalinux 10 shared messaging tier' do

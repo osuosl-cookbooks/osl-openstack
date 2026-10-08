@@ -312,6 +312,37 @@ def nova_attachment_ids(db):
     return {volume_id: attachment_id for volume_id, attachment_id in rows}
 
 
+def attachments_by_volume(ctx):
+    """volume_id -> cinder attachment records, listed once per run."""
+    if ctx.attachments is None:
+        by_volume = {}
+        for attachment in list_attachments(ctx.conn):
+            by_volume.setdefault(attachment.get('volume_id'), []).append(attachment)
+        ctx.attachments = by_volume
+    return ctx.attachments
+
+
+def live_attachment_ids(ctx, rep):
+    """nova_attachment_ids, read once; {} with a note when the BDMs can't be read."""
+    if ctx.live_attachments is None:
+        ctx.live_attachments = {}
+        if not ctx.db.available:
+            rep.note('note: no DB access, so which attachment nova uses is unknown')
+        else:
+            try:
+                ctx.live_attachments = nova_attachment_ids(ctx.db)
+            except DB_ERRORS as e:
+                rep.note(f'note: could not read nova BDMs, cannot tell which is live: {e}')
+    return ctx.live_attachments
+
+
+def suggest_refresh(rep, instance, volume_id):
+    rep.suggest('nova-manage volume_attachment get_connector --json 2>/dev/null '
+                '> /root/conn.json   # on the compute host')
+    rep.suggest(f'nova-manage volume_attachment refresh {instance} {volume_id} /root/conn.json'
+                '   # on a controller, file copied over, instance stopped')
+
+
 # ------------------------------------------------------------------ checks
 
 def check_resizing(ctx, rep):
@@ -391,8 +422,50 @@ def check_migration_context(ctx, rep):
             rep.suggest(printable)
 
 
+def stuck_volume_records(ctx, rep):
+    """Attachment records by volume, or None when cinder won't list them."""
+    try:
+        return attachments_by_volume(ctx)
+    except (os_exc.SDKException, ks_exc.ClientException) as e:
+        rep.note(f'note: could not list attachments, judging by the volume alone: {e}')
+        return None
+
+
+def suggest_stuck_volume_fix(ctx, rep, vol, rows):
+    vid = vol.get('id')
+    if rows is None:  # no attachment records: the old, volume-only advice
+        if vol.get('attachments'):
+            rep.suggest(f'openstack volume set --state in-use {vid}   '
+                        '# attachments exist; verify guest first')
+        else:
+            rep.suggest(f'openstack volume set --state available {vid}')
+        return
+    keep = live_attachment_ids(ctx, rep).get(vid)
+    keep_row = next((a for a in rows if a.get('id') == keep), None)
+    if keep and (keep_row is None or keep_row.get('status') != 'attached'):
+        # nova still drives this disk through a record cinder never completed;
+        # a state reset would hand a running guest's volume back as available
+        seen = f"lists as {keep_row.get('status')}" if keep_row else 'does not list'
+        rep.suggest(f"nova's BDM uses attachment {keep}, which cinder {seen}; "
+                    'do NOT reset the volume state. Repair it instead:')
+        owner = keep_row.get('instance') if keep_row else '<owner-instance>'
+        suggest_refresh(rep, owner, vid)
+    elif any(a.get('status') == 'attached' for a in rows):
+        rep.suggest(f'openstack volume set --state in-use {vid}   '
+                    '# attachments exist; verify guest first')
+    elif rows:
+        rep.suggest('confirm each owning instance is gone, then delete its leftover attachment:')
+        for attachment in rows:
+            rep.suggest(f'openstack --os-volume-api-version {ATTACHMENT_MICROVERSION} '
+                        f"volume attachment delete {attachment.get('id')}   "
+                        f"# instance={attachment.get('instance')}")
+    else:
+        rep.suggest(f'openstack volume set --state available {vid}')
+
+
 def check_stuck_volumes(ctx, rep):
     rep.section(f'3. Cinder volumes stuck in transient states > {ctx.args.stale_hours}h')
+    records = False  # listed only once a volume is actually stuck
     for state in STUCK_VOLUME_STATES:
         try:
             volumes = list_volumes(ctx.conn, state)
@@ -410,18 +483,20 @@ def check_stuck_volumes(ctx, rep):
             age_h = int((ctx.now - updated).total_seconds() // 3600)
             if age_h < ctx.args.stale_hours:
                 continue
-            attach = 'present' if vol.get('attachments') else 'empty'
+            if records is False:
+                records = stuck_volume_records(ctx, rep)
+            rows = None if records is None else records.get(vid, [])
+            if rows is None:
+                attach = 'present' if vol.get('attachments') else 'empty'
+            else:
+                attach = ', '.join(f"{a.get('id')} ({a.get('status')})" for a in rows) or 'none'
             rep.finding(f"volume {vid} ({vname}) stuck in '{vstatus}' for {age_h}h, "
                         f'attachments: {attach}')
             if vstatus in ('deleting', 'error_deleting'):
                 rep.suggest(f'openstack volume set --state error {vid} && '
                             f'openstack volume delete {vid}   # was mid-delete; retry it')
             else:
-                if attach == 'empty':
-                    rep.suggest(f'openstack volume set --state available {vid}')
-                else:
-                    rep.suggest(f'openstack volume set --state in-use {vid}   '
-                                '# attachments exist; verify guest first')
+                suggest_stuck_volume_fix(ctx, rep, vol, rows)
                 rep.suggest('then reconcile with: openstack server volume list <owner-instance>')
 
 
@@ -504,25 +579,15 @@ def check_duplicate_attachments(ctx, rep):
     # section 3 cannot see; cinder then refuses the next cold migration with
     # "duplicate connectors detected"
     try:
-        attachments = list_attachments(ctx.conn)
+        by_volume = attachments_by_volume(ctx)
     except (os_exc.SDKException, ks_exc.ClientException) as e:
         rep.note(f'skipped: could not list attachments: {e}')
         return
-    by_volume = {}
-    for attachment in attachments:
-        by_volume.setdefault(attachment.get('volume_id'), []).append(attachment)
     suspects = sorted(v for v, rows in by_volume.items() if v and len(rows) > 1)
     if not suspects:
         return
 
-    live = {}
-    if ctx.db.available:
-        try:
-            live = nova_attachment_ids(ctx.db)
-        except DB_ERRORS as e:
-            rep.note(f'note: could not read nova BDMs, cannot tell which is live: {e}')
-    else:
-        rep.note('note: no DB access, so which attachment nova uses is unknown')
+    live = live_attachment_ids(ctx, rep)
 
     for volume_id in suspects:
         rows = by_volume[volume_id]
@@ -568,9 +633,7 @@ def check_duplicate_attachments(ctx, rep):
         elif disagree:
             rep.suggest('nova and cinder disagree, so deleting either one risks detaching a '
                         'live disk. Repair it instead, with the instance stopped:')
-            rep.suggest('nova-manage volume_attachment get_connector   # on the compute host')
-            rep.suggest(f"nova-manage volume_attachment refresh {keep_row.get('instance')} "
-                        f'{volume_id} <connector.json>')
+            suggest_refresh(rep, keep_row.get('instance'), volume_id)
         else:
             for attachment in rows:
                 if attachment.get('id') != keep:
@@ -621,6 +684,8 @@ class Context:
         self.now = datetime.datetime.now(datetime.timezone.utc)
         self.verify_resize = []
         self.resizing = set()
+        self.attachments = None
+        self.live_attachments = None
 
 
 def main(argv=None):

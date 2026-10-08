@@ -3,7 +3,6 @@
 
 [DEFAULT]
 <% if @controller -%>
-allow_overlapping_ips = True
 <% if @listen_ip && @listen_ip != '*' -%>
 bind_host = <%= @listen_ip %>
 <% end -%>
@@ -14,7 +13,6 @@ service_plugins = neutron.services.l3_router.l3_router_plugin.L3RouterPlugin,met
 <% if @ha -%>
 l3_ha = True
 max_l3_agents_per_router = 2
-min_l3_agents_per_router = 2
 dhcp_agents_per_network = 2
 <% end -%>
 <% end -%>
@@ -41,6 +39,10 @@ username = nova
 connection = <%= @database_connection %>
 # Recycle pooled connections before osl-mysql's wait_timeout (600s) closes them
 connection_recycle_time = 300
+
+[experimental]
+# Zed's ML2 linuxbridge driver exits unless enabled; yoga ignores this section
+linuxbridge = true
 <% end -%>
 
 [oslo_concurrency]

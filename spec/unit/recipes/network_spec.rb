@@ -28,6 +28,7 @@ describe 'osl-openstack::network' do
           .with_content('root_helper_daemon = sudo /opt/openstack/neutron-agent/bin/neutron-rootwrap-daemon /etc/neutron/rootwrap.conf')
           .with_content("[privsep]\nhelper_command = sudo /opt/openstack/neutron-agent/bin/privsep-helper\n")
       end
+      it { is_expected.to_not render_file('/etc/neutron/neutron.conf').with_content(/^\[experimental\]$/) }
 
       context 'region2' do
         cached(:chef_run) do

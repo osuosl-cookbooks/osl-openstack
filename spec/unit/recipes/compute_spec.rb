@@ -96,6 +96,13 @@ describe 'osl-openstack::compute' do
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/^auth_type = password$/) }
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/^\[cinder\]$/) }
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/^username = nova$/) }
+      it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/^\[upgrade_levels\]\n#.*\ncompute = auto$/) }
+      it { is_expected.to_not render_file('/etc/nova/nova.conf').with_content(/^\[api\]$|auth_strategy/) }
+      it do
+        is_expected.to render_file('/etc/nova/nova.conf').with_content(
+          %r{^\[privsep_osbrick\]\n#.*\nhelper_command = sudo nova-rootwrap /etc/nova/rootwrap.conf privsep-helper --config-file /etc/nova/nova.conf$}
+        )
+      end
       it { is_expected.to modify_user('nova').with(shell: '/bin/sh') }
 
       it do

@@ -15,7 +15,6 @@ cluster = <%= @cluster %>
 <% end -%>
 control_exchange = cinder
 enabled_backends = ceph,ceph_ssd
-enable_v3_api = true
 glance_api_servers = <%= @image_api_servers %>
 restore_discard_excess_bytes = true
 state_path = /var/lib/cinder
@@ -27,8 +26,6 @@ volume_clear_size = 256
 backend_url = <%= @coordination_url %>
 
 <% end -%>
-<%= render 'cache.conf.erb' -%>
-
 [ceph]
 volume_driver = cinder.volume.drivers.rbd.RBDDriver
 volume_backend_name = ceph

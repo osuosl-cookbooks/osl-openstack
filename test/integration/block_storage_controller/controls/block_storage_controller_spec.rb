@@ -47,11 +47,11 @@ control 'block-storage-controller' do
     its('DEFAULT.backup_ceph_user') { should cmp 'cinder-backup' }
     its('DEFAULT.backup_driver') { should cmp 'cinder.backup.drivers.ceph' }
     its('DEFAULT.enabled_backends') { should cmp 'ceph,ceph_ssd' }
-    its('DEFAULT.enable_v3_api') { should cmp 'true' }
+    its('DEFAULT.enable_v3_api') { should be_nil }
     its('DEFAULT.glance_api_servers') { should cmp 'http://controller.testing.osuosl.org:9292' }
     its('DEFAULT.restore_discard_excess_bytes') { should cmp 'true' }
     its('DEFAULT.volume_clear_size') { should cmp '256' }
-    its('cache.memcache_servers') { should match(/#{Regexp.escape(memcached_host)}:11211/) }
+    its('cache') { should be_nil }
     its('ceph.rados_connect_timeout') { should cmp '-1' }
     its('ceph.rbd_ceph_conf') { should cmp '/etc/ceph/ceph.conf' }
     its('ceph.rbd_flatten_volume_from_snapshot') { should cmp 'false' }

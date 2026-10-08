@@ -71,6 +71,8 @@ describe 'osl-openstack::image' do
       it { is_expected.to enable_service 'openstack-glance-api' }
       it { is_expected.to start_service 'openstack-glance-api' }
       it_behaves_like 'oslo messaging config', '/etc/glance/glance-api.conf'
+      it { is_expected.to render_file('/etc/glance/glance-api.conf').with_content(/^default_backend = rbd$/) }
+      it { is_expected.to_not render_file('/etc/glance/glance-api.conf').with_content(/enable_v[12]_api|default_store/) }
       it do
         is_expected.to render_file('/etc/glance/glance-api.conf').with_content { |c|
           expect(c[/^\[keystone_authtoken\]\n(?:[^\[].*\n)*/]).to include(

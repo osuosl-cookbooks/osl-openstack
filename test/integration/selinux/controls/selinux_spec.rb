@@ -11,8 +11,9 @@ control 'selinux' do
     end
   end
 
-  # ausearch prints nothing to stdout and exits 1 when there are no denials
-  describe command('ausearch -m AVC,USER_AVC -ts boot') do
+  # Only denials that blocked something; permissive domains like ceph_t log too.
+  # --input-logs, because without a tty ausearch reads the verifier's stdin and hangs
+  describe command("ausearch --input-logs -m AVC,USER_AVC -ts boot | grep 'permissive=0'") do
     its('stdout') { should eq '' }
   end
 

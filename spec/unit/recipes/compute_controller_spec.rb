@@ -105,6 +105,12 @@ describe 'osl-openstack::compute_controller' do
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content('ram_allocation_ratio = 1') }
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content('server_listen = 0.0.0.0') }
       it { is_expected.to render_file('/etc/nova/nova.conf').with_content('server_proxyclient_address = 10.0.0.2') }
+      it { is_expected.to render_file('/etc/nova/nova.conf').with_content(/^\[upgrade_levels\]\n#.*\ncompute = auto$/) }
+      it do
+        is_expected.to render_file('/etc/nova/nova.conf').with_content(
+          %r{^\[privsep_osbrick\]\n#.*\nhelper_command = sudo nova-rootwrap /etc/nova/rootwrap.conf privsep-helper --config-file /etc/nova/nova.conf$}
+        )
+      end
       it do
         is_expected.to nothing_execute('placement: db_sync').with(
           command: 'placement-manage db sync',

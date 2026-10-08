@@ -290,4 +290,10 @@ control 'compute-privsep' do
     its('stderr') { should_not match(/Unauthorized command|Executable not found|password is required/) }
     its('stdout') { should_not match(/Unauthorized command|Executable not found/) }
   end
+
+  # nova-manage starts os-brick's privsep from [privsep_osbrick], not via nova-compute's rootwrap init
+  describe command('nova-manage volume_attachment get_connector --json 2>/dev/null') do
+    its('exit_status') { should eq 0 }
+    its('stdout') { should match(/"platform": .*"host": /) }
+  end
 end

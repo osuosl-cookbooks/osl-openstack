@@ -60,8 +60,7 @@ control 'network' do
     its('linux_bridge.physical_interface_mappings') { should cmp physical_interface_mappings }
     its('securitygroup.enable_security_group') { should cmp 'true' }
     its('securitygroup.firewall_driver') { should cmp 'neutron.agent.linux.iptables_firewall.IptablesFirewallDriver' }
-    its('vlans.network_vlan_ranges') { should cmp '' }
-    its('vlans.tenant_network_type') { should cmp 'gre,vxlan' }
+    its('vlans') { should be_nil }
     its('vxlan.enable_vxlan') { should cmp 'true' }
     its('vxlan.l2_population') { should cmp 'true' }
     its('vxlan.local_ip') { should cmp '127.0.0.1' }
@@ -83,7 +82,8 @@ control 'network' do
     its('privsep_namespace.helper_command') { should cmp "sudo #{neutron_venv}/bin/privsep-helper" }
     if controller
       its('database.connection') { should cmp "mysql+pymysql://neutron_x86:neutron@#{db_endpoint}:3306/neutron_x86" }
-      its('DEFAULT.allow_overlapping_ips') { should cmp 'true' }
+      its('DEFAULT.allow_overlapping_ips') { should be_nil }
+      its('experimental.linuxbridge') { should cmp 'true' }
       its('DEFAULT.control_exchange') { should cmp 'neutron' }
       its('DEFAULT.core_plugin') { should cmp 'ml2' }
       its('DEFAULT.router_distributed') { should cmp 'false' }
