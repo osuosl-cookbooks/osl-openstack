@@ -186,3 +186,28 @@ control 'identity-db-sync' do
     end
   end
 end
+
+# The node runs, and targets, the suite's release (yoga unless the bag names zed)
+release = input('openstack_release', value: 'yoga')
+
+control 'identity-release-state' do
+  describe json('/etc/osl-openstack/release.json') do
+    its('installed') { should eq release }
+    its('target') { should eq release }
+    its('staged') { should eq true }
+  end
+
+  describe command('/usr/local/sbin/openstack-node-upgrade status') do
+    its('exit_status') { should eq 0 }
+    its('stdout') { should match /"markers": \[\s*"#{release}"\s*\]/ }
+  end
+
+  # Every venv RPM carries the marker, not just some
+  describe command("rpm -qa 'osuosl-openstack-*' | grep -vc selinux") do
+    its('stdout.to_i') { should eq command("rpm -q --whatprovides 'osuosl-openstack-release(#{release})' | wc -l").stdout.to_i }
+  end
+
+  describe yum.repo('OSL-openstack-zed') do
+    it { should_not exist }
+  end
+end
