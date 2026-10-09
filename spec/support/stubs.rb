@@ -6,6 +6,9 @@ shared_context 'common_stubs' do
     # On the provider itself: a first converge reloads the library over any_instance stubs
     stubs_for_provider('osl_openstack_client') do |provider|
       allow(provider).to receive(:openstack_rdo_installed?).and_return(false)
+      allow(provider).to receive(:openstack_release_markers).and_return(%w(yoga))
+      allow(provider).to receive(:openstack_release_published?).and_return(true)
+      allow(provider).to receive(:openstack_mysqldump?).and_return(false)
     end
     # The version guard shells out to rpm; specs assume the package moved
     allow_any_instance_of(Chef::Resource::NotifyGroup).to receive(:openstack_db_sync_needed?).and_return(true)
@@ -20,6 +23,9 @@ shared_context 'region2_stubs' do
     # On the provider itself: a first converge reloads the library over any_instance stubs
     stubs_for_provider('osl_openstack_client') do |provider|
       allow(provider).to receive(:openstack_rdo_installed?).and_return(false)
+      allow(provider).to receive(:openstack_release_markers).and_return(%w(yoga))
+      allow(provider).to receive(:openstack_release_published?).and_return(true)
+      allow(provider).to receive(:openstack_mysqldump?).and_return(false)
     end
     # The version guard shells out to rpm; specs assume the package moved
     allow_any_instance_of(Chef::Resource::NotifyGroup).to receive(:openstack_db_sync_needed?).and_return(true)
@@ -34,6 +40,9 @@ shared_context 'dashboard_noregion_stubs' do
     # On the provider itself: a first converge reloads the library over any_instance stubs
     stubs_for_provider('osl_openstack_client') do |provider|
       allow(provider).to receive(:openstack_rdo_installed?).and_return(false)
+      allow(provider).to receive(:openstack_release_markers).and_return(%w(yoga))
+      allow(provider).to receive(:openstack_release_published?).and_return(true)
+      allow(provider).to receive(:openstack_mysqldump?).and_return(false)
     end
     # The version guard shells out to rpm; specs assume the package moved
     allow_any_instance_of(Chef::Resource::NotifyGroup).to receive(:openstack_db_sync_needed?).and_return(true)

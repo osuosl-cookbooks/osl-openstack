@@ -422,6 +422,154 @@ describe OSLOpenstack::Cookbook::Helpers do
     end
   end
 
+  describe 'release helpers' do
+    let(:run_state) { {} }
+
+    before do
+      allow(helper).to receive(:node).and_return(
+        'platform_version' => '9.6', 'kernel' => { 'machine' => 'x86_64' }
+      )
+      allow(helper.node).to receive(:run_state).and_return(run_state)
+    end
+
+    def stub_rpm(provides: '', names: '')
+      allow(helper).to receive(:shell_out)
+        .with('rpm', '-qa', '--qf', '[%{PROVIDENAME}\n]', 'osuosl-openstack-*')
+        .and_return(double(stdout: provides))
+      allow(helper).to receive(:shell_out)
+        .with('rpm', '-qa', '--qf', '%{NAME}\n', 'osuosl-openstack-*')
+        .and_return(double(stdout: names))
+    end
+
+    describe '#openstack_release_installed' do
+      it 'reads the release marker' do
+        stub_rpm(provides: "osuosl-openstack-keystone\nosuosl-openstack-release(yoga)\nosuosl-openstack-release(yoga)\n")
+        expect(helper.openstack_release_installed).to eq 'yoga'
+      end
+
+      it 'treats venv RPMs without a marker as yoga' do
+        stub_rpm(names: "osuosl-openstack-selinux\nosuosl-openstack-cli\n")
+        expect(helper.openstack_release_installed).to eq 'yoga'
+      end
+
+      it 'is nil on a node with only the SELinux policy' do
+        stub_rpm(names: "osuosl-openstack-selinux\n")
+        expect(helper.openstack_release_installed).to be_nil
+      end
+
+      it 'raises on mixed markers' do
+        stub_rpm(provides: "osuosl-openstack-release(yoga)\nosuosl-openstack-release(zed)\n")
+        expect { helper.openstack_release_installed }.to raise_error(RuntimeError, /Mixed OpenStack release markers installed: yoga, zed/)
+      end
+
+      it 'asks rpm once per run' do
+        stub_rpm(provides: "osuosl-openstack-release(yoga)\n")
+        2.times { helper.openstack_release_installed }
+        expect(helper).to have_received(:shell_out).with('rpm', '-qa', '--qf', '[%{PROVIDENAME}\n]', 'osuosl-openstack-*').once
+      end
+
+      # A new node installs zed in its first recipe; later recipes in that run must not read yoga
+      it 'keeps a new node new for the whole run' do
+        stub_rpm
+        expect(helper.openstack_release_installed).to be_nil
+        stub_rpm(provides: "osuosl-openstack-release(zed)\n", names: "osuosl-openstack-keystone\n")
+        expect(helper.openstack_release_installed).to be_nil
+      end
+    end
+
+    describe '#openstack_release_cloud' do
+      let(:query) { 'osl-openstack_databag_item:x86 AND osl-openstack_node_type:controller AND chef_environment:production' }
+
+      before do
+        allow(helper.node).to receive(:[]).and_call_original
+        allow(helper.node).to receive(:[]).with('osl-openstack').and_return('databag_item' => 'x86')
+        allow(helper.node).to receive(:chef_environment).and_return('production')
+      end
+
+      def controller(installed)
+        { 'osl-openstack' => installed ? { 'release' => { 'installed' => installed } } : {} }
+      end
+
+      it 'is the oldest release the controllers run' do
+        allow(helper).to receive(:search).with(:node, query).and_return([controller('zed'), controller('yoga')])
+        expect(helper.openstack_release_cloud).to eq 'yoga'
+      end
+
+      it 'ignores controllers that have not reported a release' do
+        allow(helper).to receive(:search).with(:node, query).and_return([controller(nil), controller('zed')])
+        expect(helper.openstack_release_cloud).to eq 'zed'
+      end
+
+      it 'is nil in a new cloud, and searches once per run' do
+        allow(helper).to receive(:search).with(:node, query).and_return([])
+        2.times { expect(helper.openstack_release_cloud).to be_nil }
+        expect(helper).to have_received(:search).once
+      end
+    end
+
+    describe '#openstack_release_target' do
+      it 'defaults to yoga' do
+        allow(helper).to receive(:os_secrets).and_return({})
+        expect(helper.openstack_release_target).to eq 'yoga'
+      end
+
+      it 'reads the bag' do
+        allow(helper).to receive(:os_secrets).and_return('release' => 'zed')
+        expect(helper.openstack_release_target).to eq 'zed'
+      end
+
+      it 'raises on an unknown release' do
+        allow(helper).to receive(:os_secrets).and_return('release' => 'xena')
+        expect { helper.openstack_release_target }.to raise_error(RuntimeError, /Unknown OpenStack release 'xena'/)
+      end
+    end
+
+    describe '#openstack_release_action' do
+      it 'does nothing on a new node or on the target' do
+        expect(helper.openstack_release_action(nil, 'zed')).to eq :none
+        expect(helper.openstack_release_action('yoga', 'yoga')).to eq :none
+      end
+
+      it 'stages the next release' do
+        expect(helper.openstack_release_action('yoga', 'zed')).to eq :stage
+      end
+
+      it 'raises instead of downgrading' do
+        expect { helper.openstack_release_action('zed', 'yoga') }.to raise_error(RuntimeError, /older than the installed zed/)
+      end
+
+      it 'raises instead of skipping a release' do
+        allow(helper).to receive(:openstack_releases).and_return(%w(xena yoga zed))
+        expect { helper.openstack_release_action('xena', 'zed') }.to raise_error(RuntimeError, /more than one release past the installed xena/)
+      end
+    end
+
+    describe '#openstack_release_published?' do
+      let(:http) { double('http') }
+
+      before do
+        allow(Net::HTTP).to receive(:start)
+          .with('ftp.osuosl.org', 443, use_ssl: true, open_timeout: 10, read_timeout: 10).and_yield(http)
+      end
+
+      it 'is true when repomd.xml answers' do
+        allow(http).to receive(:head).with('/pub/osl/repos/yum/9/openstack/zed/x86_64/repodata/repomd.xml')
+                                     .and_return(Net::HTTPOK.new('1.1', '200', 'OK'))
+        expect(helper.openstack_release_published?('zed')).to be true
+      end
+
+      it 'is false on a 404' do
+        allow(http).to receive(:head).and_return(Net::HTTPNotFound.new('1.1', '404', 'Not Found'))
+        expect(helper.openstack_release_published?('zed')).to be false
+      end
+
+      it 'is false when the mirror is unreachable' do
+        allow(Net::HTTP).to receive(:start).and_raise(Errno::ECONNREFUSED)
+        expect(helper.openstack_release_published?('zed')).to be false
+      end
+    end
+  end
+
   describe '#openstack_db_sync_needed?' do
     let(:marker) { '/var/lib/osl-openstack/db-sync/nova' }
 

@@ -1,3 +1,5 @@
+require 'net/http'
+
 module OSLOpenstack
   module Cookbook
     module Helpers
@@ -204,6 +206,128 @@ module OSLOpenstack
       def openstack_db_sync_needed?(svc, pkg)
         marker = openstack_db_sync_marker(svc)
         !::File.exist?(marker) || ::File.read(marker).strip != openstack_package_evr(pkg)
+      end
+
+      # Releases in upgrade order; a node moves one step at a time
+      def openstack_releases
+        %w(yoga zed)
+      end
+
+      def openstack_release_markers
+        shell_out('rpm', '-qa', '--qf', '[%{PROVIDENAME}\n]', 'osuosl-openstack-*').stdout.lines.filter_map do |l|
+          l[/\Aosuosl-openstack-release\((\S+)\)/, 1]
+        end.uniq
+      end
+
+      def openstack_venv_installed?
+        shell_out('rpm', '-qa', '--qf', '%{NAME}\n', 'osuosl-openstack-*').stdout.lines.any? do |l|
+          l.strip != 'osuosl-openstack-selinux'
+        end
+      end
+
+      # nil on a new node; venv RPMs built before the marker existed are yoga. Decided
+      # once per run, so packages this run installs cannot flip it between recipes
+      def openstack_release_installed
+        node.run_state.fetch('osl_openstack_release_installed') do
+          markers = openstack_release_markers
+          raise "Mixed OpenStack release markers installed: #{markers.sort.join(', ')}" if markers.size > 1
+          node.run_state['osl_openstack_release_installed'] =
+            markers.first || (openstack_venv_installed? ? 'yoga' : nil)
+        end
+      end
+
+      # Oldest release this cloud's controllers report; a new node joins the cloud as it runs
+      def openstack_release_cloud
+        node.run_state.fetch('osl_openstack_release_cloud') do
+          query = "osl-openstack_databag_item:#{node['osl-openstack']['databag_item']} AND " \
+                  "osl-openstack_node_type:controller AND chef_environment:#{node.chef_environment}"
+          releases = search(:node, query).filter_map do |n|
+            n['osl-openstack'] && n['osl-openstack']['release'] && n['osl-openstack']['release']['installed']
+          end
+          node.run_state['osl_openstack_release_cloud'] =
+            releases.min_by { |r| openstack_releases.index(r) || openstack_releases.size }
+        end
+      end
+
+      def openstack_release_target
+        target = os_secrets['release'] || 'yoga'
+        raise "Unknown OpenStack release '#{target}' in the openstack data bag" unless openstack_releases.include?(target)
+        target
+      end
+
+      def openstack_release_next(installed)
+        idx = openstack_releases.index(installed)
+        idx && openstack_releases[idx + 1]
+      end
+
+      # :none or :stage; raises when Chef would have to downgrade or skip a release
+      def openstack_release_action(installed, target)
+        return :none if installed.nil? || installed == target
+        if openstack_releases.index(target) < openstack_releases.index(installed)
+          raise "The openstack data bag targets #{target}, older than the installed #{installed}: " \
+                'run openstack-node-upgrade undo first, then set release back'
+        end
+        unless target == openstack_release_next(installed)
+          raise "The openstack data bag targets #{target}, more than one release past the installed #{installed}"
+        end
+        :stage
+      end
+
+      def openstack_release_staged_marker(rel)
+        "/var/lib/osl-openstack/staged-#{rel}"
+      end
+
+      # Staging from an unpublished repo fails all of dnf, so look before enabling it
+      def openstack_release_published?(rel)
+        uri = URI("https://ftp.osuosl.org/pub/osl/repos/yum/#{node['platform_version'].to_i}/openstack/#{rel}/" \
+                  "#{node['kernel']['machine']}/repodata/repomd.xml")
+        res = Net::HTTP.start(uri.host, uri.port, use_ssl: true, open_timeout: 10, read_timeout: 10) do |http|
+          http.head(uri.path)
+        end
+        return true if res.is_a?(Net::HTTPSuccess)
+        Chef::Log.warn("OpenStack #{rel} is not published at #{uri}; not staging it")
+        false
+      rescue StandardError => e
+        Chef::Log.warn("Could not reach #{uri}: #{e.message}; not staging OpenStack #{rel}")
+        false
+      end
+
+      def openstack_mysqldump?
+        ::File.exist?('/usr/bin/mysqldump')
+      end
+
+      # Per cloud (bag item): controllers, the DB controller, hypervisors and canaries
+      def openstack_upgrade_inventory
+        env = node.chef_environment
+        nodes = search(:node, "osl-openstack_node_type:controller AND chef_environment:#{env}") +
+                search(:node, "recipes:osl-openstack\\:\\:compute AND chef_environment:#{env}")
+        nodes.uniq { |n| n['fqdn'] }.group_by { |n| n['osl-openstack']['databag_item'] }.to_h do |cloud, members|
+          controllers, rest = members.partition { |n| n['osl-openstack']['node_type'] == 'controller' }
+          computes = rest.select { |n| Array(n['recipes']).include?('osl-openstack::compute') }.sort_by { |n| n['fqdn'] }
+          hypervisors = computes.map do |n|
+            {
+              'fqdn' => n['fqdn'],
+              'arch' => n['kernel']['machine'],
+              'cpu' => n['cpu'] && n['cpu']['model_name'],
+              'canary' => n['osl-openstack']['upgrade_canary'] == true,
+            }
+          end
+          db = controllers.find { |n| n['osl-openstack']['db_node'] == true }
+          [cloud, {
+            'cloud' => cloud,
+            'controllers' => controllers.map { |n| n['fqdn'] }.sort,
+            'db_node' => db && db['fqdn'],
+            'hypervisors' => hypervisors,
+            'canaries' => openstack_upgrade_canaries(hypervisors),
+          }]
+        end
+      end
+
+      # Hypervisors marked upgrade_canary, else the first of each CPU model
+      def openstack_upgrade_canaries(hypervisors)
+        marked = hypervisors.select { |h| h['canary'] }.map { |h| h['fqdn'] }
+        return marked unless marked.empty?
+        hypervisors.group_by { |h| h['cpu'] }.values.map { |hs| hs.first['fqdn'] }.sort
       end
 
       # Runs the syncs when the package's version moved, then records it; template

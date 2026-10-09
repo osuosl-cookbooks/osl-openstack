@@ -55,6 +55,13 @@ verifier:
         - test/integration/compute
         - test/integration/telemetry_compute
       sudo: true
+    - name: jumphost
+      backend: ssh
+      hosts_output: jumphost
+      user: almalinux
+      profile_locations:
+        - test/integration/upgrade_runner
+      sudo: true
     - name: mq1
       backend: ssh
       hosts_output: mq1
