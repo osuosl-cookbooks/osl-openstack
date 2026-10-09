@@ -69,6 +69,13 @@ action :create do
   # backup dumps the service databases from the DB controller; MariaDB's client also ships it
   package 'mysql' if controller && !openstack_mysqldump?
 
+  # This node's part of a release upgrade window; see docs/RELEASE_UPGRADES.md
+  cookbook_file '/usr/local/sbin/openstack-node-upgrade' do
+    cookbook 'osl-openstack'
+    source 'openstack-node-upgrade.py'
+    mode '0755'
+  end
+
   # A node still on RDO stops here until /root/migrate-venv.sh swaps the packages
   rdo = openstack_rdo_installed?
 

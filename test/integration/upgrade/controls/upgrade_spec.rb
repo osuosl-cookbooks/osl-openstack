@@ -36,3 +36,10 @@ control 'upgrade-staging' do
     it { should be_running }
   end
 end
+
+control 'upgrade-node-script' do
+  describe command('/usr/local/sbin/openstack-node-upgrade status') do
+    its('exit_status') { should eq 0 }
+    its('stdout') { should match /"target": "zed"/ }
+  end
+end

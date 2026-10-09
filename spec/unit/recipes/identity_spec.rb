@@ -31,6 +31,11 @@ describe 'osl-openstack::identity' do
         it { is_expected.to create_directory('/var/lib/osl-openstack/db-sync') }
         it { is_expected.to_not install_package('mysql') }
         it do
+          is_expected.to create_cookbook_file('/usr/local/sbin/openstack-node-upgrade').with(
+            source: 'openstack-node-upgrade.py', mode: '0755'
+          )
+        end
+        it do
           is_expected.to create_file('/etc/osl-openstack/release.json').with(
             content: "#{JSON.pretty_generate('installed' => 'yoga', 'target' => 'yoga', 'staged' => true, 'node_type' => 'compute')}\n"
           )
