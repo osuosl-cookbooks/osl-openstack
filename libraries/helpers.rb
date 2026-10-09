@@ -296,6 +296,40 @@ module OSLOpenstack
         ::File.exist?('/usr/bin/mysqldump')
       end
 
+      # Per cloud (bag item): controllers, the DB controller, hypervisors and canaries
+      def openstack_upgrade_inventory
+        env = node.chef_environment
+        nodes = search(:node, "osl-openstack_node_type:controller AND chef_environment:#{env}") +
+                search(:node, "recipes:osl-openstack\\:\\:compute AND chef_environment:#{env}")
+        nodes.uniq { |n| n['fqdn'] }.group_by { |n| n['osl-openstack']['databag_item'] }.to_h do |cloud, members|
+          controllers, rest = members.partition { |n| n['osl-openstack']['node_type'] == 'controller' }
+          computes = rest.select { |n| Array(n['recipes']).include?('osl-openstack::compute') }.sort_by { |n| n['fqdn'] }
+          hypervisors = computes.map do |n|
+            {
+              'fqdn' => n['fqdn'],
+              'arch' => n['kernel']['machine'],
+              'cpu' => n['cpu'] && n['cpu']['model_name'],
+              'canary' => n['osl-openstack']['upgrade_canary'] == true,
+            }
+          end
+          db = controllers.find { |n| n['osl-openstack']['db_node'] == true }
+          [cloud, {
+            'cloud' => cloud,
+            'controllers' => controllers.map { |n| n['fqdn'] }.sort,
+            'db_node' => db && db['fqdn'],
+            'hypervisors' => hypervisors,
+            'canaries' => openstack_upgrade_canaries(hypervisors),
+          }]
+        end
+      end
+
+      # Hypervisors marked upgrade_canary, else the first of each CPU model
+      def openstack_upgrade_canaries(hypervisors)
+        marked = hypervisors.select { |h| h['canary'] }.map { |h| h['fqdn'] }
+        return marked unless marked.empty?
+        hypervisors.group_by { |h| h['cpu'] }.values.map { |hs| hs.first['fqdn'] }.sort
+      end
+
       # Runs the syncs when the package's version moved, then records it; template
       # triggers on the syncs still fire on their own
       def openstack_db_sync_on_upgrade(svc, pkg, syncs)
