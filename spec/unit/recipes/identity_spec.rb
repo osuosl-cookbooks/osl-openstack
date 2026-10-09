@@ -23,9 +23,23 @@ describe 'osl-openstack::identity' do
       it { is_expected.to create_osl_openstack_client('identity').with(firewall: true, openrc: true) }
 
       describe 'osl_openstack_client' do
-        it { is_expected.to add_osl_repos_openstack('default').with(source: :osuosl) }
+        it { is_expected.to add_osl_repos_openstack('default').with(source: :osuosl, version: 'yoga') }
+        it { is_expected.to_not add_osl_repos_openstack('zed') }
+        it { is_expected.to_not run_execute('stage OpenStack zed') }
         it { is_expected.to upgrade_package %w(osuosl-openstack-cli osuosl-openstack-selinux) }
-        it { is_expected.to create_directory('/var/lib/osl-openstack/db-sync').with(recursive: true) }
+        it { is_expected.to create_directory('/var/lib/osl-openstack').with(recursive: true) }
+        it { is_expected.to create_directory('/var/lib/osl-openstack/db-sync') }
+        it { is_expected.to_not install_package('mysql') }
+        it do
+          is_expected.to create_file('/etc/osl-openstack/release.json').with(
+            content: "#{JSON.pretty_generate('installed' => 'yoga', 'target' => 'yoga', 'staged' => true, 'node_type' => 'compute')}\n"
+          )
+        end
+        it do
+          expect(chef_run.node['osl-openstack']['release'].to_h).to eq(
+            'installed' => 'yoga', 'target' => 'yoga', 'staged' => true
+          )
+        end
         it { is_expected.to add_dnf_automatic_policy('osl-openstack').with(exclude: %w(osuosl-openstack-*)) }
         it { is_expected.to create_osl_openstack_openrc 'identity' }
         it { is_expected.to accept_osl_firewall_openstack 'identity' }
@@ -178,6 +192,122 @@ describe 'osl-openstack::identity' do
           port: 11211,
           osl_only: true
         )
+      end
+
+      context 'when the bag targets the next release' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm.merge(step_into: %w(osl_openstack_client))).converge(described_recipe)
+        end
+
+        before do
+          stub_data_bag_item('openstack', 'x86').and_return(openstack_secrets_stub('release' => 'zed'))
+        end
+
+        it { is_expected.to add_osl_repos_openstack('default').with(version: 'yoga') }
+        it do
+          is_expected.to add_osl_repos_openstack('zed').with(
+            source: :osuosl, version: 'zed', repo_name: 'OSL-openstack-zed', enabled: false
+          )
+        end
+        it do
+          is_expected.to run_execute('stage OpenStack zed').with(
+            command: 'dnf -y -q --setopt=keepcache=True --enablerepo=OSL-openstack-zed --downloadonly ' \
+                     "upgrade 'osuosl-openstack-*' " \
+                     '&& touch /var/lib/osl-openstack/staged-zed',
+            creates: '/var/lib/osl-openstack/staged-zed'
+          )
+        end
+        it { expect(chef_run.node['osl-openstack']['release']['target']).to eq 'zed' }
+        it { expect(chef_run.node['osl-openstack']['release']['staged']).to be false }
+      end
+
+      context 'when the next release is not published yet' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm.merge(step_into: %w(osl_openstack_client))).converge(described_recipe)
+        end
+
+        before do
+          stub_data_bag_item('openstack', 'x86').and_return(openstack_secrets_stub('release' => 'zed'))
+          stubs_for_provider('osl_openstack_client') do |provider|
+            allow(provider).to receive(:openstack_release_published?).and_return(false)
+          end
+        end
+
+        it { is_expected.to add_osl_repos_openstack('zed').with(enabled: false) }
+        it { is_expected.to_not run_execute('stage OpenStack zed') }
+      end
+
+      {
+        'in a new cloud' => [nil, 'zed'],
+        'in a cloud still on yoga while the bag targets zed' => %w(yoga yoga),
+      }.each do |desc, (cloud, repo)|
+        context "on a new node #{desc}" do
+          cached(:chef_run) do
+            ChefSpec::SoloRunner.new(pltfrm.merge(step_into: %w(osl_openstack_client))).converge(described_recipe)
+          end
+
+          before do
+            stub_data_bag_item('openstack', 'x86').and_return(openstack_secrets_stub('release' => 'zed'))
+            stubs_for_provider('osl_openstack_client') do |provider|
+              allow(provider).to receive(:openstack_release_markers).and_return([])
+              allow(provider).to receive(:openstack_venv_installed?).and_return(false)
+              allow(provider).to receive(:openstack_release_cloud).and_return(cloud)
+            end
+          end
+
+          it { is_expected.to add_osl_repos_openstack('default').with(version: repo) }
+          it { is_expected.to_not run_execute('stage OpenStack zed') }
+          it do
+            expect(chef_run.node['osl-openstack']['release'].to_h).to eq(
+              'installed' => repo, 'target' => 'zed', 'staged' => repo == 'zed'
+            )
+          end
+        end
+      end
+
+      context 'with a staging repo left from a finished upgrade' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm.merge(step_into: %w(osl_openstack_client))).converge(described_recipe)
+        end
+
+        before do
+          allow(File).to receive(:exist?).and_call_original
+          allow(File).to receive(:exist?).with('/etc/yum.repos.d/OSL-openstack-zed.repo').and_return(true)
+        end
+
+        it { is_expected.to remove_yum_repository('OSL-openstack-zed') }
+        it { is_expected.to_not remove_yum_repository('OSL-openstack-yoga') }
+      end
+
+      context 'on a controller' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm.merge(step_into: %w(osl_openstack_client))) do |node|
+            node.override['osl-openstack']['node_type'] = 'controller'
+          end.converge(described_recipe)
+        end
+
+        it { is_expected.to install_package('mysql') }
+        it { expect(chef_run.node['osl-openstack']['db_node']).to be true }
+        it { is_expected.to render_file('/etc/osl-openstack/release.json').with_content('"db_node": true') }
+      end
+
+      {
+        'targets an older release than installed' => [%w(zed), /older than the installed zed/],
+        'has mixed release markers' => [%w(yoga zed), /Mixed OpenStack release markers/],
+      }.each do |desc, (markers, error)|
+        context "when the node #{desc}" do
+          let(:chef_run) do
+            ChefSpec::SoloRunner.new(pltfrm.merge(step_into: %w(osl_openstack_client))).converge(described_recipe)
+          end
+
+          before do
+            stubs_for_provider('osl_openstack_client') do |provider|
+              allow(provider).to receive(:openstack_release_markers).and_return(markers)
+            end
+          end
+
+          it { expect { chef_run }.to raise_error(RuntimeError, error) }
+        end
       end
 
       context 'when the keystone package has not moved since the last sync' do
