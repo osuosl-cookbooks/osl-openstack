@@ -113,6 +113,12 @@ resource "openstack_networking_port_v2" "compute" {
     network_id      = data.openstack_networking_network_v2.network.id
 }
 
+resource "openstack_networking_port_v2" "jumphost" {
+    name            = "jumphost"
+    admin_state_up  = true
+    network_id      = data.openstack_networking_network_v2.network.id
+}
+
 # Shared RabbitMQ messaging tier (mq1/mq2/mq3).
 resource "openstack_networking_port_v2" "mq1" {
     name            = "mq1"
@@ -192,6 +198,17 @@ resource "openstack_networking_port_v2" "compute_openstack" {
     fixed_ip {
         subnet_id = openstack_networking_subnet_v2.openstack_subnet.id
         ip_address = "10.1.2.4"
+    }
+}
+
+resource "openstack_networking_port_v2" "jumphost_openstack" {
+    name                  = "jumphost_openstack"
+    admin_state_up        = true
+    port_security_enabled = false
+    network_id            = openstack_networking_network_v2.openstack_network.id
+    fixed_ip {
+        subnet_id = openstack_networking_subnet_v2.openstack_subnet.id
+        ip_address = "10.1.2.8"
     }
 }
 
@@ -287,10 +304,10 @@ resource "openstack_compute_instance_v2" "controller1" {
         port = openstack_networking_port_v2.controller1_openstack.id
     }
     provisioner "remote-exec" {
-        inline = [
+        inline = concat([
             "sudo mkdir -p /etc/cinc",
             "sudo ln -sf /etc/cinc /etc/chef"
-        ]
+        ], local.upgrade_test_authorized_key)
     }
 }
 
@@ -311,10 +328,10 @@ resource "openstack_compute_instance_v2" "controller2" {
         port = openstack_networking_port_v2.controller2_openstack.id
     }
     provisioner "remote-exec" {
-        inline = [
+        inline = concat([
             "sudo mkdir -p /etc/cinc",
             "sudo ln -sf /etc/cinc /etc/chef"
-        ]
+        ], local.upgrade_test_authorized_key)
     }
 }
 
@@ -335,9 +352,56 @@ resource "openstack_compute_instance_v2" "compute" {
         port = openstack_networking_port_v2.compute_openstack.id
     }
     provisioner "remote-exec" {
-        inline = [
+        inline = concat([
             "sudo mkdir -p /etc/cinc",
             "sudo ln -sf /etc/cinc /etc/chef"
+        ], local.upgrade_test_authorized_key)
+    }
+}
+
+# Test-only root key for the upgrade runner on the jumphost; it lives in terraform state only
+resource "tls_private_key" "upgrade_test" {
+    algorithm = "ED25519"
+}
+
+locals {
+    upgrade_test_authorized_key = [
+        "sudo install -d -m 0700 /root/.ssh",
+        "echo '${trimspace(tls_private_key.upgrade_test.public_key_openssh)}' | sudo tee -a /root/.ssh/authorized_keys >/dev/null",
+        "sudo chmod 0600 /root/.ssh/authorized_keys",
+        "sudo restorecon -R /root/.ssh",
+    ]
+}
+
+# Runs osl-openstack::upgrade_runner, like the production jumphost
+resource "openstack_compute_instance_v2" "jumphost" {
+    name            = "jumphost"
+    image_name      = var.os_image
+    flavor_name     = "m2.local.2c3m10d"
+    key_pair        = var.ssh_key_name
+    security_groups = ["default"]
+    connection {
+        user = var.ssh_user_name
+        host = openstack_networking_port_v2.jumphost.all_fixed_ips.0
+    }
+    network {
+        port = openstack_networking_port_v2.jumphost.id
+    }
+    network {
+        port = openstack_networking_port_v2.jumphost_openstack.id
+    }
+    provisioner "file" {
+        content     = tls_private_key.upgrade_test.private_key_openssh
+        destination = "/tmp/id_ed25519"
+    }
+    provisioner "remote-exec" {
+        inline = [
+            "sudo mkdir -p /etc/cinc",
+            "sudo ln -sf /etc/cinc /etc/chef",
+            "sudo install -d -m 0700 /root/.ssh",
+            "sudo install -m 0600 /tmp/id_ed25519 /root/.ssh/id_ed25519 && rm -f /tmp/id_ed25519",
+            "printf 'Host *\\n  StrictHostKeyChecking accept-new\\n' | sudo tee /root/.ssh/config >/dev/null",
+            "sudo restorecon -R /root/.ssh",
         ]
     }
 }
@@ -565,6 +629,42 @@ resource "null_resource" "compute" {
     depends_on = [
         openstack_compute_instance_v2.compute,
         null_resource.controller1,
+    ]
+}
+
+# After both controllers and the compute, so its node search finds them all
+resource "null_resource" "jumphost" {
+    triggers = {
+        instance_id = openstack_compute_instance_v2.jumphost.id
+    }
+    connection {
+        type = "ssh"
+        user = var.ssh_user_name
+        host = openstack_compute_instance_v2.jumphost.network.0.fixed_ip_v4
+    }
+
+    provisioner "local-exec" {
+        command = <<-EOF
+            knife bootstrap -c test/chef-config/knife.rb \
+                ${var.ssh_user_name}@${openstack_compute_instance_v2.jumphost.network.0.fixed_ip_v4} \
+                --bootstrap-version ${var.chef_version} -y -N jumphost --sudo \
+                -r 'role[openstack_tf],recipe[openstack_test::hosts_tf],recipe[osl-openstack::upgrade_runner]'
+            EOF
+        environment = {
+            CHEF_SERVER = "${openstack_compute_instance_v2.chef_zero.network.0.fixed_ip_v4}"
+        }
+    }
+
+    provisioner "remote-exec" {
+        inline = [
+            "sudo cinc-client",
+        ]
+    }
+
+    depends_on = [
+        openstack_compute_instance_v2.jumphost,
+        null_resource.controller2,
+        null_resource.compute,
     ]
 }
 

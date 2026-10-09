@@ -34,3 +34,6 @@ output "mq2" {
 output "mq3" {
     value = "${openstack_compute_instance_v2.mq3.network.0.fixed_ip_v4}"
 }
+output "jumphost" {
+    value = "${openstack_compute_instance_v2.jumphost.network.0.fixed_ip_v4}"
+}
