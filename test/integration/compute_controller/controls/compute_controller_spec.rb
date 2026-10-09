@@ -9,6 +9,7 @@ messaging_host = input('messaging_host')
 messaging_port = input('messaging_port')
 memcached_host = input('memcached_host')
 api_listen_ip = input('api_listen_ip')
+release = input('openstack_release', value: 'yoga')
 
 control 'compute-controller' do
   # uWSGI (httpd_t) keeps stevedore's cache in httpd's cache dir
@@ -228,7 +229,8 @@ control 'compute-controller' do
     its('stdout') { should match(/Check: Older than N-1 computes.*\n.*Result: Success/) }
     its('stdout') { should match(/Check: Placement API.*\n.*Result: Success/) }
     its('stdout') { should match(/Check: Policy File JSON to YAML Migration.*\n.*Result: Success/) }
-    its('stdout') { should match(/Check: Policy Scope-based Defaults.*\n.*Result: Success/) }
+    # Zed's nova-status dropped this check (nova/cmd/status.py)
+    its('stdout') { should match(/Check: Policy Scope-based Defaults.*\n.*Result: Success/) } if release == 'yoga'
   end
 
   describe http('https://controller.testing.osuosl.org:6080', ssl_verify: false) do
