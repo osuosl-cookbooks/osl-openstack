@@ -248,32 +248,50 @@ control 'compute-controller' do
     end
   end
 
-  # Nova Flavor Sync script for ad-hoc RequestSpec fixes
-  describe file '/root/nova-fix-flavors.py' do
-    it { should be_file }
-    its('mode') { should cmp '0700' }
-    its('owner') { should eq 'root' }
-    its('group') { should eq 'root' }
-    its('content') { should match %r{^#!/opt/openstack/nova-controller/bin/python} }
-    its('content') { should match /sync_specs/ }
-  end
+  # Operator tools: fix-flavors on the system python3, the SDK tools on the cli venv
+  { 'fix-flavors' => '/usr/bin/python3', 'cold-migrate-host' => '/opt/openstack/cli/bin/python',
+    'resize-debris-check' => '/opt/openstack/cli/bin/python',
+    'maintenance-notice' => '/opt/openstack/cli/bin/python' }.each do |tool, python|
+    describe file("/usr/local/sbin/nova-#{tool}") do
+      it { should be_file }
+      its('mode') { should cmp '0750' }
+      its('owner') { should eq 'root' }
+      its('group') { should eq 'root' }
+      its('content') { should match /\A#!#{Regexp.escape(python)}\n/ }
+    end
 
-  # The helpers run on the nova-controller venv, not host python3's RDO libraries
-  %w(fix-flavors cold-migrate-host resize-debris-check maintenance-notice).each do |script|
-    describe command("/root/nova-#{script}.py --help") do
+    # --help runs after the top-level imports, so it proves them
+    describe command("/usr/local/sbin/nova-#{tool} --help") do
       its('exit_status') { should eq 0 }
+    end
+
+    describe file("/root/nova-#{tool}.py") do
+      it { should_not exist }
     end
   end
 
-  describe command('bash -c "source /root/openrc && /root/nova-resize-debris-check.py"') do
+  # The DB checks need the cli venv's pymysql; skipping them must not pass silently
+  describe command('bash -c "source /root/openrc && /usr/local/sbin/nova-resize-debris-check"') do
     its('exit_status') { should eq 0 }
+    its('stdout') { should match /nova DB: \S+ on / }
+    its('stdout') { should_not match /DB checks will be skipped/ }
   end
 
-  describe directory '/root/.nova-flavor-fixes/backups' do
+  describe file('/usr/local/share/osl-openstack/maintenance-templates') do
     it { should be_directory }
+  end
+
+  describe file('/root/nova-maintenance-templates') do
+    it { should_not exist }
+  end
+
+  describe directory '/var/lib/osl-openstack/flavor-fixes' do
     its('mode') { should cmp '0700' }
     its('owner') { should eq 'root' }
-    its('group') { should eq 'root' }
+  end
+
+  describe directory '/var/log/osl-openstack' do
+    its('mode') { should cmp '0750' }
   end
 end
 

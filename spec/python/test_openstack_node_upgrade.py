@@ -111,6 +111,7 @@ class FakeRun:
         self.rcs = rcs
         self.on_upgrade = None
         self.upgrade_changes = True
+        self.debris_rc = 0
 
     def __call__(self, cmd, check=True, capture=False, user=None, env=None):
         self.calls.append(cmd)
@@ -124,6 +125,8 @@ class FakeRun:
                 HISTORY.tid += 1
         elif 'online_data_migrations' in cmd:
             rc = next(self.rcs)
+        elif cmd[0] == nu.DEBRIS_CHECK:
+            rc = self.debris_rc
         return types.SimpleNamespace(stdout=out, returncode=rc)
 
 
@@ -393,6 +396,19 @@ class NovaDBTest(Base):
         with mock.patch.object(nu, 'pymysql', None):
             with self.assertRaisesRegex(nu.UpgradeError, 'python3-PyMySQL is not installed'):
                 nu.cmd_precheck(None)
+
+    def test_precheck_names_each_debris_result(self):
+        self.write_nova_conf()
+        self.mysql.rows['nova'] = []
+        self.patch(mock.patch.object(nu, 'openrc_env', return_value={}))
+        for rc, message in ((1, 'API or DB error'), (2, 'found debris'), (3, 'could not read the nova DB')):
+            with self.subTest(rc=rc):
+                self.run.rcs, self.run.debris_rc = iter([0, 0]), rc
+                with self.assertRaisesRegex(nu.UpgradeError, message):
+                    nu.cmd_precheck(None)
+        self.run.rcs, self.run.debris_rc = iter([0, 0]), 0
+        nu.cmd_precheck(None)
+        self.assertIn([nu.DEBRIS_CHECK, '--exit-code'], self.run.calls)
 
     def test_a_failed_connect_names_the_database(self):
         self.write_nova_conf()

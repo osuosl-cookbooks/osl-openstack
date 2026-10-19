@@ -1,4 +1,4 @@
-#!/opt/openstack/nova-controller/bin/python
+#!/usr/bin/python3
 import json
 import pymysql
 import configparser
@@ -7,17 +7,37 @@ import sys
 import os
 import datetime
 import hashlib
+import re
 from pathlib import Path
-from sqlalchemy.engine.url import make_url
+from urllib.parse import unquote
 
 # --- CONFIGURATION ---
 NOVA_CONF_PATH = '/etc/nova/nova.conf'
-BACKUP_DIR = '/root/.nova-flavor-fixes/backups'
-LOG_FILE = '/root/.nova-flavor-fixes/nova-flavor-sync.log'
+BACKUP_DIR = '/var/lib/osl-openstack/flavor-fixes'
+LOG_FILE = '/var/log/osl-openstack/nova-flavor-sync.log'
+
+# SQLAlchemy 1.4's make_url pattern (engine/url.py); the cookbook writes raw passwords,
+# which may hold / ? # that urllib.parse misreads
+DB_URL = re.compile(r'''(?P<name>[\w\+]+)://
+    (?:(?P<username>[^:/]*)(?::(?P<password>[^@]*))?@)?
+    (?:(?:\[(?P<ipv6host>[^/\?]+)\]|(?P<ipv4host>[^/:\?]+))?(?::(?P<port>[^/\?]*))?)?
+    (?:/(?P<database>[^\?]*))?(?:\?(?P<query>.*))?''', re.X)
+
+
+def parse_db_url(url):
+    """host, port, user, password and database of a SQLAlchemy URL, or None."""
+    m = DB_URL.match(url)
+    if not m or (m['port'] and not m['port'].isdigit()):
+        return None
+    return {'host': m['ipv4host'] or m['ipv6host'], 'port': int(m['port']) if m['port'] else 3306,
+            'user': unquote(m['username'] or ''), 'password': unquote(m['password'] or ''),
+            'database': m['database'] or ''}
+
 
 def setup_logging(verbose=False):
     """Setup basic logging to file and console."""
     Path(BACKUP_DIR).mkdir(parents=True, exist_ok=True)
+    Path(LOG_FILE).parent.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     def log_msg(level, msg):
@@ -33,7 +53,8 @@ def setup_logging(verbose=False):
 
 def get_db_params():
     """Reads nova.conf and parses the [api_database] connection string."""
-    config = configparser.ConfigParser()
+    # A % in a raw password would break interpolation
+    config = configparser.ConfigParser(interpolation=None, strict=False)
     if not os.path.exists(NOVA_CONF_PATH):
         print(f"Error: {NOVA_CONF_PATH} not found")
         sys.exit(1)
@@ -46,13 +67,16 @@ def get_db_params():
         print(f"Error: Could not find [api_database] connection in {NOVA_CONF_PATH}")
         sys.exit(1)
 
-    url = make_url(conn_str)
+    url = parse_db_url(conn_str)
+    if not url or not url['host']:
+        print(f"Error: Could not parse the [api_database] connection in {NOVA_CONF_PATH}")
+        sys.exit(1)
     return {
-        'host': url.host,
-        'user': url.username,
-        'password': url.password,
-        'db': url.database,
-        'port': url.port or 3306,
+        'host': url['host'],
+        'user': url['user'],
+        'password': url['password'],
+        'db': url['database'],
+        'port': url['port'],
         'charset': 'utf8mb4',
         'cursorclass': pymysql.cursors.DictCursor
     }
@@ -196,7 +220,7 @@ def restore_backup(backup_file, dry_run=True):
             log_msg("INFO", f"Summary: Restored={restored_count}, Skipped={skipped_count}, Errors={error_count}")
 
             if dry_run:
-                log_msg("INFO", f">>> To apply restore, run: ./nova-fix-flavors.py --restore {backup_file} --run")
+                log_msg("INFO", f">>> To apply restore, run: nova-fix-flavors --restore {backup_file} --run")
 
             return {'restored': restored_count, 'skipped': skipped_count, 'errors': error_count}
 
@@ -354,7 +378,7 @@ def sync_specs(dry_run=True, verbose=False, verify_only=False, backup=True):
 
             if updated_count > 0:
                 if dry_run or verify_only:
-                    log_msg("INFO", f">>> To apply changes, run: /root/nova-fix-flavors.py --run")
+                    log_msg("INFO", f">>> To apply changes, run: nova-fix-flavors --run")
                 if backup_file:
                     log_msg("INFO", f">>> Backup available at: {backup_file}")
 
@@ -384,25 +408,25 @@ if __name__ == "__main__":
         epilog="""
 Examples:
   # Dry run (default) - shows what would change
-  ./nova-fix-flavors.py
+  nova-fix-flavors
 
   # Verify only - same as dry run but without output to log
-  ./nova-fix-flavors.py --verify
+  nova-fix-flavors --verify
 
   # Live run - actually update the database
-  ./nova-fix-flavors.py --run
+  nova-fix-flavors --run
 
   # Verbose mode with detailed changes
-  ./nova-fix-flavors.py --verbose --run
+  nova-fix-flavors --verbose --run
 
   # List available backups
-  ./nova-fix-flavors.py --list-backups
+  nova-fix-flavors --list-backups
 
   # Restore from backup (dry run first)
-  ./nova-fix-flavors.py --restore /root/.nova-flavor-fixes/backups/request_specs_20260105_143210.json
+  nova-fix-flavors --restore /var/lib/osl-openstack/flavor-fixes/request_specs_20260105_143210.json
 
   # Restore from backup (actually apply)
-  ./nova-fix-flavors.py --restore /root/.nova-flavor-fixes/backups/request_specs_20260105_143210.json --run
+  nova-fix-flavors --restore /var/lib/osl-openstack/flavor-fixes/request_specs_20260105_143210.json --run
         """
     )
     parser.add_argument('--run', action='store_true',

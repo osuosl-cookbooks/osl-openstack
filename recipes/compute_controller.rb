@@ -265,52 +265,44 @@ cron_d 'nova-rowspurge' do
   ).join(' ')
 end
 
-# Deploy Nova Flavor Sync script for ad-hoc RequestSpec fixes
-cookbook_file '/root/nova-fix-flavors.py' do
-  source 'fix-flavors.py'
-  owner 'root'
-  group 'root'
-  mode '0700'
+# Operator tools: fix-flavors on the system python3, the rest on the cli venv's openstacksdk
+{
+  'nova-fix-flavors' => 'fix-flavors.py',
+  'nova-cold-migrate-host' => 'cold-migrate-host.py',
+  'nova-resize-debris-check' => 'resize-debris-check.py',
+  'nova-maintenance-notice' => 'maintenance-notice.py',
+}.each do |tool, script|
+  cookbook_file "/usr/local/sbin/#{tool}" do
+    source script
+    mode '0750'
+  end
+
+  # The tools used to live in /root; remove the old copies for one release
+  file "/root/#{tool}.py" do
+    action :delete
+  end
 end
 
-# Create backup directory for flavor sync
-directory '/root/.nova-flavor-fixes/backups' do
-  owner 'root'
-  group 'root'
-  mode '0700'
-  recursive true
-end
-
-# Deploy cold migration script (host-to-host, e.g. across qemu/libvirt versions)
-cookbook_file '/root/nova-cold-migrate-host.py' do
-  source 'cold-migrate-host.py'
-  owner 'root'
-  group 'root'
-  mode '0700'
-end
-
-# Deploy read-only audit for leftover resize/migration debris (snaps, contexts, volumes)
-cookbook_file '/root/nova-resize-debris-check.py' do
-  source 'resize-debris-check.py'
-  owner 'root'
-  group 'root'
-  mode '0700'
-end
-
-# Deploy maintenance notice generator and its email templates
-cookbook_file '/root/nova-maintenance-notice.py' do
-  source 'maintenance-notice.py'
-  owner 'root'
-  group 'root'
-  mode '0700'
-end
-
-remote_directory '/root/nova-maintenance-templates' do
+remote_directory '/usr/local/share/osl-openstack/maintenance-templates' do
   source 'maintenance-templates'
   owner 'root'
   group 'root'
-  mode '0700'
+  mode '0755'
   files_owner 'root'
   files_group 'root'
-  files_mode '0600'
+  files_mode '0644'
+end
+
+directory '/root/nova-maintenance-templates' do
+  recursive true
+  action :delete
+end
+
+# nova-fix-flavors keeps its request_specs backups here; the old /root/.nova-flavor-fixes stays
+directory '/var/lib/osl-openstack/flavor-fixes' do
+  mode '0700'
+end
+
+directory '/var/log/osl-openstack' do
+  mode '0750'
 end

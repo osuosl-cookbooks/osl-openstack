@@ -56,6 +56,13 @@ REPO_DIR = '/etc/yum.repos.d'
 ROLLBACK_REPO = 'OSL-openstack-rollback'
 MAX_MIGRATION_BATCHES = 1000
 NOVA_CONF = '/etc/nova/nova.conf'
+DEBRIS_CHECK = '/usr/local/sbin/nova-resize-debris-check'
+# Its --exit-code results; precheck never passes --fix, so 1 is always an error
+DEBRIS_RESULTS = {
+    1: 'nova-resize-debris-check failed (API or DB error), see its output',
+    2: 'nova-resize-debris-check found debris; clear it first',
+    3: 'nova-resize-debris-check could not read the nova DB (no PyMySQL or [database] connection)',
+}
 # The yoga floor zed's nova refuses to start below (nova/objects/service.py:233-240)
 MIN_COMPUTE_VERSION = 61
 
@@ -390,9 +397,9 @@ def cmd_precheck(args):
     log.info('running the yoga online data migrations to completion')
     for tool, user in MIGRATIONS[:2]:
         run_migrations(tool, user)
-    debris = run(['/root/nova-resize-debris-check.py', '--exit-code'], check=False, env=openrc_env())
-    if debris.returncode != 0:
-        problems.append(f'resize-debris-check exited {debris.returncode}; clear the debris first')
+    debris = run([DEBRIS_CHECK, '--exit-code'], check=False, env=openrc_env()).returncode
+    if debris:
+        problems.append(DEBRIS_RESULTS.get(debris, f'{DEBRIS_CHECK} exited {debris}'))
     if problems:
         raise UpgradeError('precheck failed:\n  ' + '\n  '.join(problems))
     log.info('precheck passed')

@@ -85,6 +85,12 @@ Horizon reads `/etc/horizon/local_settings.py` through a symlink in its venv. Ap
 serves `/static` from `/var/www/horizon/static`, which `collectstatic` and
 `compress` fill whenever the settings or the vhost change.
 
+## Operator tools
+
+Controllers get `nova-fix-flavors`, `nova-cold-migrate-host`,
+`nova-resize-debris-check` and `nova-maintenance-notice` in `/usr/local/sbin`;
+[docs/NOVA_FIX_FLAVORS.md](docs/NOVA_FIX_FLAVORS.md) covers the first.
+
 ## Migrating from RDO
 
 Every node has moved from RDO to the venv RPMs, so `migrate-venv.sh` and the

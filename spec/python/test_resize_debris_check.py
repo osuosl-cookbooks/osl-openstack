@@ -205,6 +205,10 @@ class NovaDBTest(Base):
         self.assertEqual(db.cli(), 'MYSQL_PWD=... mysql -h db.example -P 3307 -u nova nova_x86')
         self.assertNotIn('p@ss', db.cli())
 
+    def test_a_raw_password_keeps_its_slash_hash_and_question_mark(self):
+        conf = self.write_conf('[database]\nconnection = mysql+pymysql://nova:a/b#c?d@db:3306/nova\n')
+        self.assertEqual(rdc.NovaDB(conf).params['password'], 'a/b#c?d')
+
     def test_default_port_and_interpolation_safe(self):
         conf = self.write_conf('[database]\nconnection = mysql+pymysql://u:100%25@h/d\n')
         db = rdc.NovaDB(conf)
@@ -904,6 +908,12 @@ class MainTest(Base):
         self.assertEqual(rc, 0)
         self.assertIn('nova DB: unavailable (python3 pymysql module missing), DB checks will be skipped', out)
         self.assertEqual(out.count('skipped: no DB access'), 3)
+
+    def test_exit_code_flag_fails_when_the_db_checks_did_not_run(self):
+        self.db.available = False
+        rc, out = self.run_main('-x')
+        self.assertEqual(rc, 3)
+        self.assertIn('Exit 3: the nova DB checks did not run.', out)
 
     def test_dry_run_says_nothing_changed(self):
         rc, out = self.run_main('--dry-run')

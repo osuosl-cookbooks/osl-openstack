@@ -49,7 +49,7 @@ same goes to `/etc/osl-openstack/release.json`.
 | `stop` | any | Removes the cinc cron, kills a cron run still in its splay sleep, waits (up to an hour) for a running converge by taking `/tmp/chef-client.lock`, then stops every unit the venv RPMs ship (and httpd on controllers) |
 | `install` | any | Saves the running release's repo as the disabled `OSL-openstack-rollback`, installs the staged release and records the dnf transaction |
 | `undo` | any | `dnf history undo` of that transaction, from `OSL-openstack-rollback` |
-| `precheck` | DB controller | nova-compute service versions >= 61 in every cell, yoga online migrations done, `/root/nova-resize-debris-check.py --exit-code` clean |
+| `precheck` | DB controller | nova-compute service versions >= 61 in every cell, yoga online migrations done, `/usr/local/sbin/nova-resize-debris-check --exit-code` clean, with its nova DB checks run |
 | `backup` | DB controller | `mysqldump` of every service database to `/var/lib/osl-openstack/upgrade-backup/<release>/` |
 | `restore` | DB controller | Prints, then with `--yes` runs, the restore of those dumps |
 | `check` | any | Every `*-status upgrade check`; fails on rc >= 2 |

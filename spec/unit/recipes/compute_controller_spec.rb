@@ -292,61 +292,33 @@ describe 'osl-openstack::compute_controller' do
         )
       end
 
-      # Nova Flavor Sync script for ad-hoc RequestSpec fixes
-      it do
-        is_expected.to create_cookbook_file('/root/nova-fix-flavors.py').with(
-          source: 'fix-flavors.py',
-          owner: 'root',
-          group: 'root',
-          mode: '0700'
-        )
+      {
+        'nova-fix-flavors' => 'fix-flavors.py',
+        'nova-cold-migrate-host' => 'cold-migrate-host.py',
+        'nova-resize-debris-check' => 'resize-debris-check.py',
+        'nova-maintenance-notice' => 'maintenance-notice.py',
+      }.each do |tool, script|
+        it do
+          is_expected.to create_cookbook_file("/usr/local/sbin/#{tool}").with(
+            source: script, mode: '0750'
+          )
+        end
+        it { is_expected.to delete_file("/root/#{tool}.py") }
       end
 
       it do
-        is_expected.to create_cookbook_file('/root/nova-cold-migrate-host.py').with(
-          source: 'cold-migrate-host.py',
-          owner: 'root',
-          group: 'root',
-          mode: '0700'
-        )
-      end
-
-      it do
-        is_expected.to create_cookbook_file('/root/nova-resize-debris-check.py').with(
-          source: 'resize-debris-check.py',
-          owner: 'root',
-          group: 'root',
-          mode: '0700'
-        )
-      end
-
-      it do
-        is_expected.to create_cookbook_file('/root/nova-maintenance-notice.py').with(
-          source: 'maintenance-notice.py',
-          owner: 'root',
-          group: 'root',
-          mode: '0700'
-        )
-      end
-
-      it do
-        is_expected.to create_remote_directory('/root/nova-maintenance-templates').with(
+        is_expected.to create_remote_directory('/usr/local/share/osl-openstack/maintenance-templates').with(
           source: 'maintenance-templates',
           owner: 'root',
           group: 'root',
-          mode: '0700',
-          files_mode: '0600'
+          mode: '0755',
+          files_mode: '0644'
         )
       end
-
-      it do
-        is_expected.to create_directory('/root/.nova-flavor-fixes/backups').with(
-          owner: 'root',
-          group: 'root',
-          mode: '0700',
-          recursive: true
-        )
-      end
+      it { is_expected.to delete_directory('/root/nova-maintenance-templates').with(recursive: true) }
+      it { is_expected.to create_directory('/var/lib/osl-openstack/flavor-fixes').with(mode: '0700') }
+      it { is_expected.to create_directory('/var/log/osl-openstack').with(mode: '0750') }
+      it { is_expected.to_not create_directory('/root/.nova-flavor-fixes/backups') }
 
       context 'pci passthrough' do
         cached(:chef_run) do

@@ -1,4 +1,4 @@
-#!/opt/openstack/nova-controller/bin/python
+#!/opt/openstack/cli/bin/python
 """Draft a maintenance notice for everyone affected by taking compute hosts down.
 
 Finds the instances on one or more hypervisors, works out who should hear about
@@ -7,7 +7,7 @@ groups expanded), and renders a notice from a template. It only prints; nothing
 is ever sent.
 
 Usage:
-    maintenance-notice.py [options] --date DATE HOST [HOST ...]
+    nova-maintenance-notice [options] --date DATE HOST [HOST ...]
 
 Requires admin OpenStack credentials in the environment (OS_* or OS_CLOUD).
 """
@@ -24,7 +24,7 @@ import openstack
 from keystoneauth1 import exceptions as ks_exc
 from openstack import exceptions as os_exc
 
-DEFAULT_TEMPLATE_DIR = '/root/nova-maintenance-templates'
+DEFAULT_TEMPLATE_DIR = '/usr/local/share/osl-openstack/maintenance-templates'
 DEFAULT_TEMPLATE = 'reboot'
 DEFAULT_MEMBER_ROLES = ('member', '_member_')
 DEFAULT_IGNORED_USERS = ('admin',)
