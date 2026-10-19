@@ -128,7 +128,6 @@ end
 execute 'keystone: bootstrap' do
   command <<~EOC
     keystone-manage bootstrap \
-      --bootstrap-password #{admin_pass} \
       --bootstrap-username admin \
       --bootstrap-project-name admin \
       --bootstrap-role-name admin \
@@ -139,6 +138,8 @@ execute 'keystone: bootstrap' do
       --bootstrap-region-id RegionOne && \
     touch /etc/keystone/bootstrapped
   EOC
+  # keystone-manage reads the password from here, so it never reaches the shell
+  environment('OS_BOOTSTRAP_PASSWORD' => admin_pass)
   sensitive true
   creates '/etc/keystone/bootstrapped'
 end

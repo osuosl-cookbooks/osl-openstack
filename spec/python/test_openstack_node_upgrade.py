@@ -443,6 +443,22 @@ class DbUrlTest(Base):
         self.assertEqual(os.stat(path).st_mode & 0o777, 0o600)
 
 
+class OpenrcTest(Base):
+    def test_values_are_read_as_bash_reads_them(self):
+        openrc = Path(self.tmp.name) / 'openrc'
+        openrc.write_text('# comment\n'
+                          'export OS_USERNAME=admin\n'
+                          "export OS_PASSWORD=ti\\;er\\ \\$x\\ \\#q\\\"\n"
+                          'export OS_CACERT="/etc/ssl/certs/ca-bundle.crt"\n'
+                          'export OS_REGION_NAME=\n')
+        with mock.patch.object(nu, 'OPENRC', str(openrc)):
+            env = nu.openrc_env()
+        self.assertEqual(env['OS_USERNAME'], 'admin')
+        self.assertEqual(env['OS_PASSWORD'], 'ti;er $x #q"')
+        self.assertEqual(env['OS_CACERT'], '/etc/ssl/certs/ca-bundle.crt')
+        self.assertEqual(env['OS_REGION_NAME'], '')
+
+
 class MigrationsTest(Base):
     def test_stops_at_the_batch_cap(self):
         self.run.rcs = iter([1] * (nu.MAX_MIGRATION_BATCHES + 1) + [RuntimeError('no cap')])

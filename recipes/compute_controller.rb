@@ -106,7 +106,8 @@ execute 'nova: api_db_sync' do
 end
 
 execute 'nova: register cell0' do
-  command "nova-manage cell_v2 map_cell0 --database_connection #{openstack_database_connection('compute_cell0')}"
+  # argv, not a shell string: the URL carries the raw cell0 password
+  command ['nova-manage', 'cell_v2', 'map_cell0', '--database_connection', openstack_database_connection('compute_cell0')]
   user 'nova'
   group 'nova'
   sensitive true

@@ -251,11 +251,12 @@ unless openstack_cinder_disabled?
 
   # this will update the key if necessary
   execute 'update virsh ceph secret' do
-    command "virsh secret-set-value --secret #{fsid} --base64 #{b['ceph']['block_token']}"
+    command ['virsh', 'secret-set-value', '--secret', fsid, '--base64', b['ceph']['block_token']]
     sensitive true
     not_if { fsid.nil? }
-    not_if "virsh secret-get-value #{fsid} | grep #{b['ceph']['block_token']}"
     not_if { b['ceph']['block_token'].nil? }
+    # A Ruby guard, so the key stays out of a shell and Chef's guard log
+    not_if { openstack_virsh_secret?(fsid, b['ceph']['block_token']) }
   end
 
   file secret_file do

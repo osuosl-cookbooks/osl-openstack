@@ -150,7 +150,9 @@ action :create do
   end
 
   execute "rabbitmq: add user #{new_resource.user}" do
-    command "rabbitmqctl add_user #{new_resource.user} #{new_resource.pass}"
+    # The password goes over stdin: out of ps, and safe from shell and option parsing
+    command ['rabbitmqctl', 'add_user', new_resource.user]
+    input new_resource.pass
     sensitive true
     not_if { openstack_rabbitmq_user?(new_resource.user) }
   end
@@ -188,7 +190,8 @@ action :create do
     end
 
     execute "rabbitmq: add user #{vh_user}" do
-      command "rabbitmqctl add_user #{vh_user} #{vh_pass}"
+      command ['rabbitmqctl', 'add_user', vh_user]
+      input vh_pass
       sensitive true
       not_if { openstack_rabbitmq_user?(vh_user) }
     end

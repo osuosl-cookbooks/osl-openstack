@@ -27,6 +27,7 @@ import json
 import logging
 import os
 import re
+import shlex
 import shutil
 import signal
 import subprocess
@@ -56,6 +57,7 @@ REPO_DIR = '/etc/yum.repos.d'
 ROLLBACK_REPO = 'OSL-openstack-rollback'
 MAX_MIGRATION_BATCHES = 1000
 NOVA_CONF = '/etc/nova/nova.conf'
+OPENRC = '/root/openrc'
 DEBRIS_CHECK = '/usr/local/sbin/nova-resize-debris-check'
 # Its --exit-code results; precheck never passes --fix, so 1 is always an error
 DEBRIS_RESULTS = {
@@ -181,11 +183,13 @@ def require_db_node():
 
 def openrc_env():
     env = dict(os.environ)
-    with open('/root/openrc') as f:
+    with open(OPENRC) as f:
         for line in f:
             m = re.match(r'\s*export\s+(OS_\w+)=(.*)$', line)
             if m:
-                env[m.group(1)] = m.group(2).strip().strip('"\'')
+                # openrc shell-escapes its values; read them as bash would
+                words = shlex.split(m.group(2))
+                env[m.group(1)] = words[0] if words else ''
     return env
 
 

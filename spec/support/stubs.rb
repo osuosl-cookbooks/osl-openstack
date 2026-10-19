@@ -76,7 +76,7 @@ shared_context 'compute_stubs' do
   before do
     stub_command('virsh net-list | grep -q default').and_return(true)
     stub_command("virsh secret-list | grep #{CEPH_FSID}")
-    stub_command("virsh secret-get-value #{CEPH_FSID} | grep AQAjbr1aWv+aNBAAoGfqrwX9iSdNmtuvUkwGhA==")
+    allow_any_instance_of(OSLOpenstack::Cookbook::Helpers).to receive(:openstack_virsh_secret?).and_return(false)
     allow_any_instance_of(OSLOpenstack::Cookbook::Helpers).to receive(:openstack_keystone_reachable?).and_return(false)
     allow_any_instance_of(OSLOpenstack::Cookbook::Helpers).to receive(:kernel_module_available?).and_return(false)
   end

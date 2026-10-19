@@ -67,6 +67,8 @@ suites:
         - test/integration/messaging_tier
       inputs:
         nrpe_checks: true
+        # The fixture's tier password, with shell metacharacters on purpose
+        vhost_pass: 'ti;er $x #q"'
   - name: identity
     excludes:
       - almalinux-10

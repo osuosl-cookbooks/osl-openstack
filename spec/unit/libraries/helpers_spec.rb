@@ -183,6 +183,25 @@ describe OSLOpenstack::Cookbook::Helpers do
     end
   end
 
+  describe '#openstack_virsh_secret?' do
+    def stub_secret(stdout)
+      allow(helper).to receive(:shell_out)
+        .with('virsh', 'secret-get-value', 'uuid-1').and_return(double(stdout: stdout))
+    end
+
+    it 'is true when libvirt holds the key' do
+      stub_secret("AQAj==\n")
+      expect(helper.openstack_virsh_secret?('uuid-1', 'AQAj==')).to be true
+    end
+
+    it 'is false for another key, or none' do
+      stub_secret('AQBz==')
+      expect(helper.openstack_virsh_secret?('uuid-1', 'AQAj==')).to be false
+      stub_secret('')
+      expect(helper.openstack_virsh_secret?('uuid-1', 'AQAj==')).to be false
+    end
+  end
+
   describe '#openstack_rabbitmq_policy?' do
     def stub_list_policies(stdout)
       allow(helper).to receive(:shell_out!)

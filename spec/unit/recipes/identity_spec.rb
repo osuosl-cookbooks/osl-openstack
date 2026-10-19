@@ -55,6 +55,24 @@ describe 'osl-openstack::identity' do
         it { is_expected.to accept_osl_firewall_openstack 'identity' }
       end
 
+      context 'with shell metacharacters in the admin password' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm.merge(step_into: %w(osl_openstack_client osl_openstack_openrc))).converge(described_recipe)
+        end
+
+        before do
+          stub_data_bag_item('openstack', 'x86').and_return(openstack_secrets_stub('users' => { 'admin' => 'ad;m $x #"' }))
+        end
+
+        it do
+          is_expected.to render_file('/root/openrc').with_content(%(export OS_PASSWORD=ad\\;m\\ \\$x\\ \\#\\"\n))
+        end
+        it do
+          is_expected.to run_execute('keystone: bootstrap').with(environment: { 'OS_BOOTSTRAP_PASSWORD' => 'ad;m $x #"' })
+        end
+        it { is_expected.to_not run_execute('keystone: bootstrap').with(command: /ad;m/) }
+      end
+
       describe 'osl_openstack_openrc' do
         it do
           is_expected.to create_template('/root/openrc').with(
@@ -67,6 +85,7 @@ describe 'osl-openstack::identity' do
             }
           )
         end
+        it { is_expected.to render_file('/root/openrc').with_content("export OS_PASSWORD=admin\n") }
       end
 
       %w(
@@ -132,9 +151,9 @@ describe 'osl-openstack::identity' do
         is_expected.to run_execute('keystone: bootstrap').with(
           sensitive: true,
           creates: '/etc/keystone/bootstrapped',
+          environment: { 'OS_BOOTSTRAP_PASSWORD' => 'admin' },
           command: <<~EOC
             keystone-manage bootstrap \
-              --bootstrap-password admin \
               --bootstrap-username admin \
               --bootstrap-project-name admin \
               --bootstrap-role-name admin \
