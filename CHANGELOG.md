@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+20.2.0 (2026-10-19)
+-------------------
+- Upgrade OpenStack releases through a release switch and jumphost runner
+
 20.1.0 (2026-10-08)
 -------------------
 - Let Chef own OpenStack package updates
