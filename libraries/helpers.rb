@@ -166,27 +166,6 @@ module OSLOpenstack
         %w(osuosl-openstack-cli osuosl-openstack-selinux)
       end
 
-      # Any of these installed means the node still runs RDO and needs /root/migrate-venv.sh
-      def openstack_rdo_packages
-        %w(
-          openstack-ceilometer-common
-          openstack-cinder
-          openstack-dashboard
-          openstack-glance
-          openstack-heat-common
-          openstack-keystone
-          openstack-neutron-common
-          openstack-nova-common
-          openstack-placement-common
-          python3-openstackclient
-        )
-      end
-
-      def openstack_rdo_installed?
-        installed = shell_out('rpm', '-q', '--qf', '%{NAME}\n', *openstack_rdo_packages).stdout.lines.map(&:strip)
-        !(installed & openstack_rdo_packages).empty?
-      end
-
       # Only one controller per cloud syncs databases: keepalived's primary, or any
       # controller the ha block doesn't list (single-controller clouds, kitchen)
       def openstack_db_node?

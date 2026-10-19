@@ -81,21 +81,6 @@ action :create do
     mode '0755'
   end
 
-  # A node still on RDO stops here until /root/migrate-venv.sh swaps the packages
-  rdo = openstack_rdo_installed?
-
-  cookbook_file '/root/migrate-venv.sh' do
-    cookbook 'osl-openstack'
-    source 'migrate-venv.sh'
-    mode '0750'
-    action rdo ? :create : :delete
-  end
-
-  ruby_block 'rdo migration pending' do
-    block { raise 'RDO OpenStack packages are installed: run /root/migrate-venv.sh, then cinc-client' }
-    only_if { rdo }
-  end
-
   # The db sync markers; templates can trigger a sync before a recipe's own resources
   directory '/var/lib/osl-openstack/db-sync'
 

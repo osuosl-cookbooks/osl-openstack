@@ -5,7 +5,6 @@ shared_context 'common_stubs' do
     stub_data_bag_item('openstack', 'x86').and_return(openstack_secrets_stub)
     # On the provider itself: a first converge reloads the library over any_instance stubs
     stubs_for_provider('osl_openstack_client') do |provider|
-      allow(provider).to receive(:openstack_rdo_installed?).and_return(false)
       allow(provider).to receive(:openstack_release_markers).and_return(%w(yoga))
       allow(provider).to receive(:openstack_release_published?).and_return(true)
       allow(provider).to receive(:openstack_mysqldump?).and_return(false)
@@ -22,7 +21,6 @@ shared_context 'region2_stubs' do
     stub_data_bag_item('openstack', 'x86').and_return(region2_secrets)
     # On the provider itself: a first converge reloads the library over any_instance stubs
     stubs_for_provider('osl_openstack_client') do |provider|
-      allow(provider).to receive(:openstack_rdo_installed?).and_return(false)
       allow(provider).to receive(:openstack_release_markers).and_return(%w(yoga))
       allow(provider).to receive(:openstack_release_published?).and_return(true)
       allow(provider).to receive(:openstack_mysqldump?).and_return(false)
@@ -39,7 +37,6 @@ shared_context 'dashboard_noregion_stubs' do
     stub_data_bag_item('openstack', 'x86').and_return(dashboard_noregion_secrets)
     # On the provider itself: a first converge reloads the library over any_instance stubs
     stubs_for_provider('osl_openstack_client') do |provider|
-      allow(provider).to receive(:openstack_rdo_installed?).and_return(false)
       allow(provider).to receive(:openstack_release_markers).and_return(%w(yoga))
       allow(provider).to receive(:openstack_release_published?).and_return(true)
       allow(provider).to receive(:openstack_mysqldump?).and_return(false)
