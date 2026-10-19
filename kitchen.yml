@@ -1,6 +1,14 @@
 ---
 verifier:
   name: inspec
+  # One kitchen process caches InSpec inputs across suites; give every suite these
+  # explicitly so a suite on the profile default can't inherit another's value
+  inputs:
+    openstack_release: yoga
+    cinder_missing: false
+    local_storage: false
+    nova_local_storage: false
+    nova_api: true
 driver:
   name: openstack
   flavor_ref: 'c2.local.8c8m50d'
@@ -67,6 +75,8 @@ suites:
         - test/integration/messaging_tier
       inputs:
         nrpe_checks: true
+        # The fixture's tier password, with shell metacharacters on purpose
+        vhost_pass: 'ti;er $x #q"'
   - name: identity
     excludes:
       - almalinux-10

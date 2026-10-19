@@ -151,6 +151,19 @@ describe 'osl-openstack::compute' do
         it { is_expected.to_not start_service 'ksmtuned' }
       end
 
+      context 'when libvirt already holds the ceph key' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm).converge(described_recipe)
+        end
+
+        before do
+          allow_any_instance_of(OSLOpenstack::Cookbook::Helpers).to receive(:openstack_virsh_secret?)
+            .with(CEPH_FSID, 'AQAjbr1aWv+aNBAAoGfqrwX9iSdNmtuvUkwGhA==').and_return(true)
+        end
+
+        it { is_expected.to_not run_execute('update virsh ceph secret') }
+      end
+
       context 'AMD guest' do
         cached(:chef_run) do
           ChefSpec::SoloRunner.new(pltfrm) do |node|
@@ -203,7 +216,7 @@ describe 'osl-openstack::compute' do
       it { is_expected.to run_execute('virsh secret-define --file /var/chef/cache/secret.xml') }
       it do
         is_expected.to run_execute('update virsh ceph secret').with(
-          command: 'virsh secret-set-value --secret 8102bb29-f48b-4f6e-81d7-4c59d80ec6b8 --base64 AQAjbr1aWv+aNBAAoGfqrwX9iSdNmtuvUkwGhA==',
+          command: %w(virsh secret-set-value --secret 8102bb29-f48b-4f6e-81d7-4c59d80ec6b8 --base64 AQAjbr1aWv+aNBAAoGfqrwX9iSdNmtuvUkwGhA==),
           sensitive: true
         )
       end

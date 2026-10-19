@@ -477,11 +477,13 @@ class MainTest(Base):
     @mock.patch.object(cmh, 'migrate_one')
     def test_default_log_path(self, migrate_one):
         with mock.patch.object(cmh.logging, 'FileHandler') as fh, \
+                mock.patch.object(cmh.os, 'makedirs') as makedirs, \
                 mock.patch.object(sys, 'argv', ['x', '-n', 'src', 'dst']), \
                 contextlib.redirect_stdout(io.StringIO()):
             fh.return_value = mock.Mock(level=0)
             cmh.main()
-        self.assertRegex(fh.call_args.args[0], r'^/root/cold-migrate-src-dst-\d{8}-\d{6}\.log$')
+        self.assertRegex(fh.call_args.args[0], r'^/var/log/osl-openstack/cold-migrate-src-dst-\d{8}-\d{6}\.log$')
+        makedirs.assert_called_once_with('/var/log/osl-openstack', exist_ok=True)
 
 
 if __name__ == '__main__':

@@ -20,6 +20,11 @@
 # The jumphost side of a release upgrade window; see docs/RELEASE_UPGRADES.md
 directory '/etc/openstack-upgrade'
 
+# Phase markers, so a window resumes after a dropped ssh session
+directory '/var/lib/openstack-upgrade' do
+  mode '0700'
+end
+
 openstack_upgrade_inventory.each do |cloud, inventory|
   file "/etc/openstack-upgrade/#{cloud}.json" do
     content "#{JSON.pretty_generate(inventory)}\n"

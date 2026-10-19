@@ -1,13 +1,14 @@
 """Guard against referencing SDK exceptions that do not exist on the controllers.
 
 The other suites stub openstacksdk and keystoneauth1, so a name that exists in
-a newer SDK but not in the one RDO ships passes every test and then raises
+a newer SDK but not in the cli venv's passes every test and then raises
 AttributeError in production, from inside the except clause meant to handle the
 error. That is exactly how os_exc.ForbiddenException reached a controller.
 
-These allowlists are the real contents of those modules at the versions RDO
-Yoga ships. Adding a name here means checking it against that release first,
-not against whatever is installed on a developer's machine.
+These allowlists are names present in the cli venv's openstacksdk on both
+release lines: 0.62.0 (yoga) and 0.101.0 (zed), with keystoneauth1 4.5.0 and
+5.0.1. Adding a name means checking it in both locks first, not against
+whatever is installed on a developer's machine.
 """
 
 import ast
@@ -17,9 +18,8 @@ from pathlib import Path
 FILES = ('cold-migrate-host.py', 'resize-debris-check.py', 'maintenance-notice.py')
 SCRIPT_DIR = Path(__file__).resolve().parents[2] / 'files'
 
-# openstack/exceptions.py at openstacksdk 0.61.0, classes plus the helpers used.
-# Notably absent: ForbiddenException and NotFoundException, both of which only
-# arrived in a later release.
+# openstack/exceptions.py classes and helpers present in 0.62.0 and 0.101.0;
+# ForbiddenException is in neither.
 SDK_NAMES = {
     'SDKException', 'EndpointNotFound', 'InvalidResponse', 'InvalidRequest',
     'HttpException', 'BadRequestException', 'ConflictException',

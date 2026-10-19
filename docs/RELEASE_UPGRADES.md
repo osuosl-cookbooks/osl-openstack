@@ -49,14 +49,16 @@ same goes to `/etc/osl-openstack/release.json`.
 | `stop` | any | Removes the cinc cron, kills a cron run still in its splay sleep, waits (up to an hour) for a running converge by taking `/tmp/chef-client.lock`, then stops every unit the venv RPMs ship (and httpd on controllers) |
 | `install` | any | Saves the running release's repo as the disabled `OSL-openstack-rollback`, installs the staged release and records the dnf transaction |
 | `undo` | any | `dnf history undo` of that transaction, from `OSL-openstack-rollback` |
-| `precheck` | DB controller | nova-compute service versions >= 61 in every cell, yoga online migrations done, `/root/nova-resize-debris-check.py --exit-code` clean |
-| `backup` | DB controller | `mysqldump` of every service database to `/root/openstack-upgrade-backup/<release>/` |
+| `precheck` | DB controller | nova-compute service versions >= 61 in every cell, yoga online migrations done, `/usr/local/sbin/nova-resize-debris-check --exit-code` clean, with its nova DB checks run |
+| `backup` | DB controller | `mysqldump` of every service database to `/var/lib/osl-openstack/upgrade-backup/<release>/` |
 | `restore` | DB controller | Prints, then with `--yes` runs, the restore of those dumps |
 | `check` | any | Every `*-status upgrade check`; fails on rc >= 2 |
 | `migrate` | DB controller | nova, cinder and placement `online_data_migrations` until done |
 | `restart-nova` | controllers | conductor, scheduler, then the API apps, to lift the RPC version caps |
 
-It logs to `/var/log/openstack-node-upgrade.log`. Credentials never reach a
+It runs on the system `python3` with AlmaLinux's `python3-rpm`, `python3-dnf`
+and `python3-psutil`, plus `python3-PyMySQL` on controllers; `client.rb`
+installs them. It logs to `/var/log/openstack-node-upgrade.log`. Credentials never reach a
 command line: they go to `mysqldump` and `mysql` through 0600 option files.
 `stop` only waits out converges that take the cron's lock; don't start a
 bare `cinc-client` by hand during a window. The rollback repo stays,
@@ -71,7 +73,7 @@ controller, hypervisors, canaries) and installs
 `/usr/local/sbin/openstack-upgrade <cloud> <phase>`. It runs
 `openstack-node-upgrade` and `cinc-client` over `ssh root@<host>`, refuses a
 phase until the earlier ones are done, and keeps markers in
-`/root/openstack-upgrade/<cloud>-<release>/` so a window can resume.
+`/var/lib/openstack-upgrade/<cloud>-<release>/` so a window can resume.
 `--dry-run` prints what would run. Logs go to `/var/log/openstack-upgrade/`.
 
 Canaries are hypervisors with `node['osl-openstack']['upgrade_canary']` set,
@@ -119,7 +121,7 @@ Undo comes before reverting the bag, in that order: Chef raises on a node
 whose installed release is newer than the bag, which is the safety net.
 `rollback` takes the target from the controllers, lists any hypervisor it
 can't reach for a hand `openstack-node-upgrade undo`, and moves the window's
-phase markers to `/root/openstack-upgrade/<cloud>-<release>.rolled-back-<UTC>`,
+phase markers to `/var/lib/openstack-upgrade/<cloud>-<release>.rolled-back-<UTC>`,
 so a retry starts again at `precheck`. `rollback --converge` needs no
 agreement on the target and keeps going past a failed host.
 `openstack-upgrade --help-rollback` prints this sequence.

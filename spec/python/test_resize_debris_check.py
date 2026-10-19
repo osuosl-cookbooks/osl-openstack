@@ -205,6 +205,10 @@ class NovaDBTest(Base):
         self.assertEqual(db.cli(), 'MYSQL_PWD=... mysql -h db.example -P 3307 -u nova nova_x86')
         self.assertNotIn('p@ss', db.cli())
 
+    def test_a_raw_password_keeps_its_slash_hash_and_question_mark(self):
+        conf = self.write_conf('[database]\nconnection = mysql+pymysql://nova:a/b#c?d@db:3306/nova\n')
+        self.assertEqual(rdc.NovaDB(conf).params['password'], 'a/b#c?d')
+
     def test_default_port_and_interpolation_safe(self):
         conf = self.write_conf('[database]\nconnection = mysql+pymysql://u:100%25@h/d\n')
         db = rdc.NovaDB(conf)
@@ -501,9 +505,8 @@ class DuplicateAttachmentTest(Base):
         self.assertNotIn('volume attachment delete 90d32868', t)
 
     def test_nova_pointing_at_a_reserved_one_suggests_no_deletion(self):
-        # the real 52c460c1 case: the failed migration left nova's BDM on the
-        # new reserved attachment while the old attached one still serves the
-        # disk. Naming the attached one an orphan would detach a running volume.
+        # the real 52c460c1 case: nova's BDM on the new reserved attachment while the old
+        # attached one serves the disk; calling that one an orphan detaches a running volume.
         self.wire([self.ATTACHED, self.RESERVED], {'status': 'in-use', 'multiattach': False})
         self.db.query.return_value = [('52c460c1', 'f1900f5b')]
         rdc.check_duplicate_attachments(self.ctx, self.rep)
@@ -905,6 +908,12 @@ class MainTest(Base):
         self.assertEqual(rc, 0)
         self.assertIn('nova DB: unavailable (python3 pymysql module missing), DB checks will be skipped', out)
         self.assertEqual(out.count('skipped: no DB access'), 3)
+
+    def test_exit_code_flag_fails_when_the_db_checks_did_not_run(self):
+        self.db.available = False
+        rc, out = self.run_main('-x')
+        self.assertEqual(rc, 3)
+        self.assertIn('Exit 3: the nova DB checks did not run.', out)
 
     def test_dry_run_says_nothing_changed(self):
         rc, out = self.run_main('--dry-run')

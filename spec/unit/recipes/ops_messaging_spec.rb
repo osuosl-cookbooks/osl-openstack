@@ -68,7 +68,8 @@ describe 'osl-openstack::ops_messaging' do
 
       it do
         is_expected.to run_execute('rabbitmq: add user openstack').with(
-          command: 'rabbitmqctl add_user openstack openstack',
+          command: %w(rabbitmqctl add_user openstack),
+          input: 'openstack',
           sensitive: true
         )
       end
@@ -128,7 +129,8 @@ describe 'osl-openstack::ops_messaging' do
             'tls_only' => true,
             'ssl_search_id' => 'wildcard-bak',
             'cmr_target_group_size' => 5,
-            'vhosts' => [{ 'vhost' => 'x86', 'user' => 'x86', 'pass' => 'x86pass' }],
+            # Shell metacharacters, which must reach rabbitmqctl's stdin unchanged
+            'vhosts' => [{ 'vhost' => 'x86', 'user' => 'x86', 'pass' => 'x86;p $a #s"' }],
           }
         )
       )
@@ -154,7 +156,11 @@ describe 'osl-openstack::ops_messaging' do
     end
 
     it { is_expected.to run_execute('rabbitmq: add vhost x86').with(command: 'rabbitmqctl add_vhost x86') }
-    it { is_expected.to run_execute('rabbitmq: add user x86') }
+    it do
+      is_expected.to run_execute('rabbitmq: add user x86').with(
+        command: %w(rabbitmqctl add_user x86), input: 'x86;p $a #s"', sensitive: true
+      )
+    end
     it do
       is_expected.to run_execute('rabbitmq: set permissions x86 on x86').with(
         command: 'rabbitmqctl set_permissions -p x86 x86 ".*" ".*" ".*"'

@@ -9,7 +9,7 @@
     "tls": true,
     "tls_only": true,
     "vhosts": [
-      { "vhost": "tier-test", "user": "tier", "pass": "tier" }
+      { "vhost": "tier-test", "user": "tier", "pass": "ti;er $x #q\"" }
     ]
   }
 }

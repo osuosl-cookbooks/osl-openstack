@@ -1,4 +1,4 @@
-#!/opt/openstack/nova-controller/bin/python
+#!/opt/openstack/cli/bin/python
 """Read-only sweep for leftover state from failed or unfinished nova resizes
 and migrations (the c24a44da incident taxonomy):
 
@@ -25,6 +25,7 @@ import argparse
 import configparser
 import datetime
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -43,9 +44,8 @@ except ImportError:  # DB checks are skipped without it
 
 STUCK_VOLUME_STATES = ('attaching', 'detaching', 'reserved', 'creating', 'deleting',
                        'error_deleting', 'maintenance', 'downloading')
-# Every non-terminal migration.status nova sets: live migrations go
-# accepted -> queued -> preparing -> running, cold/resize go pre-migrating ->
-# migrating -> post-migrating -> finished -> confirming/reverting.
+# Every non-terminal migration.status: live goes accepted, queued, preparing, running;
+# cold/resize goes pre-migrating, migrating, post-migrating, finished, confirming/reverting.
 LIVE_MIGRATION_STATES = ('accepted', 'queued', 'preparing', 'running', 'pre-migrating',
                          'migrating', 'post-migrating', 'confirming', 'reverting')
 # Terminal failure statuses: 'error' for cold/resize and conductor failures,
@@ -75,7 +75,7 @@ def parse_args(argv=None):
     ap.add_argument('--error-days', type=int, default=int(env('ERROR_DAYS', 7)),
                     help='how far back to surface errored migrations (default 7)')
     ap.add_argument('-x', '--exit-code', action='store_true',
-                    help='exit 2 when there are findings (for cron/NRPE)')
+                    help='exit 2 on findings, 3 when the nova DB checks could not run (for cron/NRPE)')
     ap.add_argument('-n', '--dry-run', action='store_true',
                     help='show exactly what --fix would do, without doing it')
     ap.add_argument('--fix', action='store_true',
@@ -163,6 +163,25 @@ class Report:
         print(f'  FIX FAILED: {msg}', file=self.out)
 
 
+# SQLAlchemy 1.4's make_url pattern (engine/url.py); the cookbook writes raw passwords,
+# which may hold / ? # that urllib.parse misreads
+DB_URL = re.compile(r'''(?P<name>[\w\+]+)://
+    (?:(?P<username>[^:/]*)(?::(?P<password>[^@]*))?@)?
+    (?:(?:\[(?P<ipv6host>[^/\?]+)\]|(?P<ipv4host>[^/:\?]+))?(?::(?P<port>[^/\?]*))?)?
+    (?:/(?P<database>[^\?]*))?(?:\?(?P<query>.*))?''', re.X)
+
+
+def parse_db_url(url):
+    """host, port, user, password and database of a SQLAlchemy URL, or None."""
+    m = DB_URL.match(url)
+    if not m or (m['port'] and not m['port'].isdigit()):
+        return None
+    return {'host': m['ipv4host'] or m['ipv6host'], 'port': int(m['port']) if m['port'] else 3306,
+            'user': urllib.parse.unquote(m['username'] or ''),
+            'password': urllib.parse.unquote(m['password'] or ''),
+            'database': m['database'] or ''}
+
+
 class NovaDB:
     """Read-only access to the nova cell DB named in nova.conf.
 
@@ -182,13 +201,8 @@ class NovaDB:
         url = cfg.get('database', 'connection', fallback=None)
         if not url:
             return None
-        p = urllib.parse.urlsplit(url)  # mysql+pymysql://user:pass@host:port/db?charset=...
-        if not p.hostname:
-            return None
-        return {'host': p.hostname, 'port': p.port or 3306,
-                'user': urllib.parse.unquote(p.username or ''),
-                'password': urllib.parse.unquote(p.password or ''),
-                'database': p.path.lstrip('/').split('?')[0]}
+        p = parse_db_url(url)
+        return p if p and p['host'] else None
 
     @property
     def available(self):
@@ -387,9 +401,8 @@ def check_rbd_snaps(ctx, rep):
 
 def check_migration_context(ctx, rep):
     rep.section('2. Instances carrying a migration_context while not mid-move')
-    # vm_state 'resized' (VERIFY_RESIZE) legitimately holds one; so does any
-    # instance with a task_state set. Anything else is debris that gets new
-    # migrations killed by the resource tracker.
+    # vm_state 'resized' (VERIFY_RESIZE) or any task_state legitimately holds one;
+    # anything else is debris that gets new migrations killed by the resource tracker.
     if not ctx.db.available:
         rep.note('skipped: no DB access')
         return
@@ -545,9 +558,8 @@ def check_dead_migrations(ctx, rep):
 
 def check_errored_migrations(ctx, rep):
     rep.section(f'6. Migrations that errored in the last {ctx.args.error_days}d')
-    # An error record is terminal and harmless by itself, but a recent one is
-    # the strongest signal that debris exists for that instance, and if the
-    # instance is still in ERROR it needs recovery now.
+    # A recent error record is the strongest sign of debris for that instance;
+    # if the instance is still in ERROR it needs recovery now.
     if not ctx.db.available:
         rep.note('skipped: no DB access')
         return
@@ -575,9 +587,8 @@ def check_errored_migrations(ctx, rep):
 
 def check_duplicate_attachments(ctx, rep):
     rep.section('8. Cinder volumes carrying more than one attachment')
-    # a volume can sit healthily in 'in-use' with a leftover attachment, which
-    # section 3 cannot see; cinder then refuses the next cold migration with
-    # "duplicate connectors detected"
+    # an 'in-use' volume can hide a leftover attachment from section 3; cinder then
+    # refuses the next cold migration with "duplicate connectors detected"
     try:
         by_volume = attachments_by_volume(ctx)
     except (os_exc.SDKException, ks_exc.ClientException) as e:
@@ -602,9 +613,8 @@ def check_duplicate_attachments(ctx, rep):
         keep = live.get(volume_id)
         keep_row = next((a for a in rows if a.get('id') == keep), None)
         serving = [a for a in rows if a.get('status') == 'attached']
-        # a reserved attachment carries no connection info, so it cannot be the
-        # one serving a running disk. nova pointing at one while another is
-        # attached means the two sides disagree, and neither is safe to delete.
+        # a reserved attachment cannot serve a running disk, so nova pointing at one
+        # while another is attached means the sides disagree; neither is safe to delete.
         disagree = bool(keep_row and keep_row.get('status') != 'attached' and serving)
 
         if keep_row is None:
@@ -716,6 +726,10 @@ def main(argv=None):
         rep.note(f'{rep.fixes} fix(es) applied, {rep.fix_failures} failed.')
     if rep.fix_failures:
         return 1
+    # A gate must not pass on checks that never ran
+    if args.exit_code and not db.available:
+        rep.note('Exit 3: the nova DB checks did not run.')
+        return 3
     return 2 if args.exit_code and rep.findings else 0
 
 

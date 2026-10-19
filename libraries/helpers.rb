@@ -1,4 +1,6 @@
 require 'net/http'
+# openrc.erb shell-escapes the admin password
+require 'shellwords'
 
 module OSLOpenstack
   module Cookbook
@@ -36,6 +38,11 @@ module OSLOpenstack
       def os_secrets
         OSLOpenstack::Cookbook::Helpers.secrets_cache ||=
           data_bag_item('openstack', node['osl-openstack']['databag_item'])
+      end
+
+      # libvirt already holds this ceph key; argv, so the key never reaches a shell
+      def openstack_virsh_secret?(uuid, value)
+        shell_out('virsh', 'secret-get-value', uuid).stdout.strip == value
       end
 
       def openstack_rabbitmq_user?(user)
@@ -164,27 +171,6 @@ module OSLOpenstack
 
       def openstack_client_pkg
         %w(osuosl-openstack-cli osuosl-openstack-selinux)
-      end
-
-      # Any of these installed means the node still runs RDO and needs /root/migrate-venv.sh
-      def openstack_rdo_packages
-        %w(
-          openstack-ceilometer-common
-          openstack-cinder
-          openstack-dashboard
-          openstack-glance
-          openstack-heat-common
-          openstack-keystone
-          openstack-neutron-common
-          openstack-nova-common
-          openstack-placement-common
-          python3-openstackclient
-        )
-      end
-
-      def openstack_rdo_installed?
-        installed = shell_out('rpm', '-q', '--qf', '%{NAME}\n', *openstack_rdo_packages).stdout.lines.map(&:strip)
-        !(installed & openstack_rdo_packages).empty?
       end
 
       # Only one controller per cloud syncs databases: keepalived's primary, or any

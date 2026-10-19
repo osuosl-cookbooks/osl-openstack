@@ -1,13 +1,13 @@
-# Broker coverage for the shared messaging tier. Defaults cover the
-# single-node kitchen suite; the multi-node env passes inputs
-# (vhost/vhost_user/cluster_size/cmr_target_group_size) to also assert
-# clustering + CMR. nrpe_checks is set only by the single-node suite
-# (the multi-node mq systems don't run osl-openstack::mon).
+require 'shellwords'
+
+# Defaults cover the single-node suite; multi-node passes vhost, vhost_user, cluster_size
+# and cmr_target_group_size, and only single-node sets nrpe_checks and vhost_pass
 vhost = input('vhost')
 vhost_user = input('vhost_user')
 cluster_size = input('cluster_size')
 cmr_target_group_size = input('cmr_target_group_size')
 nrpe_checks = input('nrpe_checks')
+vhost_pass = input('vhost_pass')
 
 control 'messaging_tier' do
   describe service('rabbitmq-server') do
@@ -74,6 +74,13 @@ control 'messaging_tier' do
   end
   describe command("rabbitmqctl -q list_permissions -p #{vhost}") do
     its('stdout') { should match(/^#{Regexp.escape(vhost_user)}\s+\.\*\s+\.\*\s+\.\*/) }
+  end
+
+  # The password reached the broker intact, metacharacters and all
+  unless vhost_pass.to_s.empty?
+    describe command("rabbitmqctl authenticate_user #{Shellwords.escape(vhost_user)} #{Shellwords.escape(vhost_pass)}") do
+      its('exit_status') { should eq 0 }
+    end
   end
 
   # Leaked heat RPC queues expire after an hour of disuse.

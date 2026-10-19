@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `nova-fix-flavors.py` script synchronizes OpenStack Nova instance RequestSpecs with current Flavor Extra Specs definitions. This is critical for fixing live migration issues where VMs aren't being placed on correct host aggregates due to stale flavor specifications.
+The `nova-fix-flavors` script synchronizes OpenStack Nova instance RequestSpecs with current Flavor Extra Specs definitions. This is critical for fixing live migration issues where VMs aren't being placed on correct host aggregates due to stale flavor specifications.
 
 ## Problem Statement
 
@@ -25,20 +25,19 @@ The script is deployed to controller nodes via the `compute_controller` recipe:
 ```bash
 # Included automatically in the compute_controller recipe
 # Files deployed to:
-# /root/nova-fix-flavors.py          (executable script)
-# /root/.nova-flavor-fixes/backups/   (backup directory)
-# /root/.nova-flavor-fixes/nova-flavor-sync.log (log file)
+# /usr/local/sbin/nova-fix-flavors              (executable script)
+# /var/lib/osl-openstack/flavor-fixes/          (backup directory)
+# /var/log/osl-openstack/nova-flavor-sync.log   (log file)
+# Backups from before the move stay in /root/.nova-flavor-fixes/backups/
 ```
 
 ## Usage
 
-The script can be run directly (its shebang is the nova-controller venv's python)
-or with that python explicitly:
+The script runs on the system `python3` with AlmaLinux's `python3-PyMySQL`,
+which Chef installs on controllers, and is on root's `PATH`:
 
 ```bash
-./nova-fix-flavors.py [options]
-# or
-/opt/openstack/nova-controller/bin/python /root/nova-fix-flavors.py [options]
+nova-fix-flavors [options]
 ```
 
 ### Command Line Options
@@ -55,7 +54,7 @@ or with that python explicitly:
 ### 1. Dry Run (Default - Safe)
 
 ```bash
-./nova-fix-flavors.py
+nova-fix-flavors
 ```
 
 Shows what would be changed without making any modifications:
@@ -68,13 +67,13 @@ Shows what would be changed without making any modifications:
 [2026-01-06 14:32:11] [INFO] Found 156 request specs
 [2026-01-06 14:32:12] [INFO] === Sync Complete ===
 [2026-01-06 14:32:12] [INFO] Summary: Updated=8, Skipped=148, Errors=0
-[2026-01-06 14:32:12] [INFO] >>> To apply changes, run: /root/nova-fix-flavors.py --run
+[2026-01-06 14:32:12] [INFO] >>> To apply changes, run: nova-fix-flavors --run
 ```
 
 ### 2. Verbose Mode (Shows Details)
 
 ```bash
-./nova-fix-flavors.py --verbose
+nova-fix-flavors --verbose
 ```
 
 Displays detailed information about each mismatch:
@@ -87,7 +86,7 @@ Displays detailed information about each mismatch:
 ### 3. Verify Only Mode (No Logging)
 
 ```bash
-./nova-fix-flavors.py --verify
+nova-fix-flavors --verify
 ```
 
 Same as dry-run but minimal logging output.
@@ -95,7 +94,7 @@ Same as dry-run but minimal logging output.
 ### 4. Live Run (Actually Update Database)
 
 ```bash
-./nova-fix-flavors.py --run --verbose
+nova-fix-flavors --run --verbose
 ```
 
 **Warning:** This will modify your Nova database. Always run in dry-run mode first!
@@ -109,15 +108,15 @@ The script will:
 ### 5. Live Run Without Backup
 
 ```bash
-./nova-fix-flavors.py --run --no-backup
+nova-fix-flavors --run --no-backup
 ```
 
-Use only if space is constrained. Backup is normally saved to `/root/.nova-flavor-fixes/backups/`.
+Use only if space is constrained. Backup is normally saved to `/var/lib/osl-openstack/flavor-fixes/`.
 
 ### 6. List Available Backups
 
 ```bash
-./nova-fix-flavors.py --list-backups
+nova-fix-flavors --list-backups
 ```
 
 Shows all backup files with their record counts:
@@ -131,7 +130,7 @@ Shows all backup files with their record counts:
 ### 7. Restore from Backup (Dry Run)
 
 ```bash
-./nova-fix-flavors.py --restore /root/.nova-flavor-fixes/backups/request_specs_20260106_143210.json
+nova-fix-flavors --restore /var/lib/osl-openstack/flavor-fixes/request_specs_20260106_143210.json
 ```
 
 Shows what would be restored without making changes:
@@ -139,18 +138,18 @@ Shows what would be restored without making changes:
 ```
 [2026-01-06 14:40:00] [INFO] === Starting Restore from Backup ===
 [2026-01-06 14:40:00] [INFO] Mode: DRY RUN
-[2026-01-06 14:40:00] [INFO] Backup file: /root/.nova-flavor-fixes/backups/request_specs_20260106_143210.json
+[2026-01-06 14:40:00] [INFO] Backup file: /var/lib/osl-openstack/flavor-fixes/request_specs_20260106_143210.json
 [2026-01-06 14:40:00] [INFO] Backup timestamp: 20260106_143210
 [2026-01-06 14:40:00] [INFO] Records in backup: 156
 [2026-01-06 14:40:01] [INFO] === Restore Complete ===
 [2026-01-06 14:40:01] [INFO] Summary: Restored=156, Skipped=0, Errors=0
-[2026-01-06 14:40:01] [INFO] >>> To apply restore, run: ./nova-fix-flavors.py --restore /root/.nova-flavor-fixes/backups/request_specs_20260106_143210.json --run
+[2026-01-06 14:40:01] [INFO] >>> To apply restore, run: nova-fix-flavors --restore /var/lib/osl-openstack/flavor-fixes/request_specs_20260106_143210.json --run
 ```
 
 ### 8. Restore from Backup (Apply)
 
 ```bash
-./nova-fix-flavors.py --restore /root/.nova-flavor-fixes/backups/request_specs_20260106_143210.json --run
+nova-fix-flavors --restore /var/lib/osl-openstack/flavor-fixes/request_specs_20260106_143210.json --run
 ```
 
 Actually restores all RequestSpecs from the backup file.
@@ -164,10 +163,10 @@ Actually restores all RequestSpecs from the backup file.
 openstack flavor set --property aggregate_instance_extra_specs:storage_type=ceph m1.xlarge
 
 # 2. Check what would change
-./nova-fix-flavors.py --verbose
+nova-fix-flavors --verbose
 
 # 3. Apply the fix
-./nova-fix-flavors.py --run --verbose
+nova-fix-flavors --run --verbose
 
 # 4. Verify migration works now
 openstack server migrate --live <instance-uuid>
@@ -177,31 +176,31 @@ openstack server migrate --live <instance-uuid>
 
 ```bash
 # 1. Check RequestSpecs
-./nova-fix-flavors.py
+nova-fix-flavors
 
 # 2. If mismatches found, apply fix
-./nova-fix-flavors.py --run
+nova-fix-flavors --run
 
 # 3. Backup is created automatically:
-ls -la /root/.nova-flavor-fixes/backups/
+ls -la /var/lib/osl-openstack/flavor-fixes/
 ```
 
 ### Scenario 3: Rollback After Problematic Sync
 
 ```bash
 # 1. List available backups
-./nova-fix-flavors.py --list-backups
+nova-fix-flavors --list-backups
 
 # 2. Dry-run the restore to verify
-./nova-fix-flavors.py --restore /root/.nova-flavor-fixes/backups/request_specs_20260106_143210.json
+nova-fix-flavors --restore /var/lib/osl-openstack/flavor-fixes/request_specs_20260106_143210.json
 
 # 3. Apply the restore
-./nova-fix-flavors.py --restore /root/.nova-flavor-fixes/backups/request_specs_20260106_143210.json --run
+nova-fix-flavors --restore /var/lib/osl-openstack/flavor-fixes/request_specs_20260106_143210.json --run
 ```
 
 ## Database Backups
 
-Backups are created automatically in `/root/.nova-flavor-fixes/backups/` with format:
+Backups are created automatically in `/var/lib/osl-openstack/flavor-fixes/` with format:
 
 ```
 request_specs_20260106_143210.json
@@ -216,7 +215,7 @@ Each backup contains:
 ### Listing Backups
 
 ```bash
-./nova-fix-flavors.py --list-backups
+nova-fix-flavors --list-backups
 ```
 
 ### Restoring from Backup
@@ -225,10 +224,10 @@ The script includes built-in restore functionality:
 
 ```bash
 # Dry-run first to see what would be restored
-./nova-fix-flavors.py --restore /root/.nova-flavor-fixes/backups/request_specs_20260106_143210.json
+nova-fix-flavors --restore /var/lib/osl-openstack/flavor-fixes/request_specs_20260106_143210.json
 
 # Apply the restore
-./nova-fix-flavors.py --restore /root/.nova-flavor-fixes/backups/request_specs_20260106_143210.json --run
+nova-fix-flavors --restore /var/lib/osl-openstack/flavor-fixes/request_specs_20260106_143210.json --run
 ```
 
 The restore process:
@@ -263,19 +262,19 @@ Summary: Updated=0, Skipped=148, Errors=0
 If you ran in dry-run mode, you'll see:
 
 ```
->>> To apply changes, run: /root/nova-fix-flavors.py --run
+>>> To apply changes, run: nova-fix-flavors --run
 ```
 
 Always use `--run` flag to actually update the database.
 
 ## Log Files
 
-- Main log: `/root/.nova-flavor-fixes/nova-flavor-sync.log`
+- Main log: `/var/log/osl-openstack/nova-flavor-sync.log`
 
 View recent changes:
 
 ```bash
-tail -50 /root/.nova-flavor-fixes/nova-flavor-sync.log
+tail -50 /var/log/osl-openstack/nova-flavor-sync.log
 ```
 
 ## Safety Features

@@ -183,6 +183,25 @@ describe OSLOpenstack::Cookbook::Helpers do
     end
   end
 
+  describe '#openstack_virsh_secret?' do
+    def stub_secret(stdout)
+      allow(helper).to receive(:shell_out)
+        .with('virsh', 'secret-get-value', 'uuid-1').and_return(double(stdout: stdout))
+    end
+
+    it 'is true when libvirt holds the key' do
+      stub_secret("AQAj==\n")
+      expect(helper.openstack_virsh_secret?('uuid-1', 'AQAj==')).to be true
+    end
+
+    it 'is false for another key, or none' do
+      stub_secret('AQBz==')
+      expect(helper.openstack_virsh_secret?('uuid-1', 'AQAj==')).to be false
+      stub_secret('')
+      expect(helper.openstack_virsh_secret?('uuid-1', 'AQAj==')).to be false
+    end
+  end
+
   describe '#openstack_rabbitmq_policy?' do
     def stub_list_policies(stdout)
       allow(helper).to receive(:shell_out!)
@@ -373,24 +392,6 @@ describe OSLOpenstack::Cookbook::Helpers do
     it 'does not tag any tls listener as redirect_to_https' do
       tls_redirects = services.select { |s| s[:tls] && s[:redirect_to_https] }
       expect(tls_redirects).to be_empty
-    end
-  end
-
-  describe '#openstack_rdo_installed?' do
-    def rpm_query(stdout)
-      allow(helper).to receive(:shell_out)
-        .with('rpm', '-q', '--qf', '%{NAME}\n', *helper.openstack_rdo_packages)
-        .and_return(double(stdout: stdout))
-    end
-
-    it 'is false when rpm reports every RDO package missing' do
-      rpm_query(helper.openstack_rdo_packages.map { |p| "package #{p} is not installed\n" }.join)
-      expect(helper.openstack_rdo_installed?).to be false
-    end
-
-    it 'is true when any RDO package is installed' do
-      rpm_query("package openstack-cinder is not installed\nopenstack-nova-common\n")
-      expect(helper.openstack_rdo_installed?).to be true
     end
   end
 

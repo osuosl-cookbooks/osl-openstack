@@ -12,3 +12,5 @@ inputs:
     value: 0
   - name: nrpe_checks
     value: false
+  - name: vhost_pass
+    value: ''

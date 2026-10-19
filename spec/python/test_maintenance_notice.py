@@ -95,6 +95,11 @@ class Base(unittest.TestCase):
 
 
 class ParseArgsTest(Base):
+    def test_templates_default_to_the_installed_copy(self):
+        with mock.patch.dict(os.environ, {}, clear=True):
+            a = self.args('host1', '-d', '2026-02-05')
+        self.assertEqual(a.template_dir, '/usr/local/share/osl-openstack/maintenance-templates')
+
     def test_defaults_replace_rather_than_extend(self):
         a = self.args('host1', '-d', '2026-02-05')
         self.assertEqual(a.ignore_user, ['admin'])

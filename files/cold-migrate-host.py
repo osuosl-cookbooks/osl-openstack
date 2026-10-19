@@ -1,4 +1,4 @@
-#!/opt/openstack/nova-controller/bin/python
+#!/opt/openstack/cli/bin/python
 """Cold-migrate nova instances from one compute host to a specific destination.
 
 Cold migration shuts the guest down, rebuilds its domain XML on the
@@ -8,11 +8,11 @@ With RBD-backed instances no disk data is copied.
 
 Instances are migrated one at a time and each resize is confirmed before the
 next one starts. Run on a controller with admin OpenStack credentials
-sourced. Run nova-resize-debris-check.py first: stale nova-resize snapshots,
+sourced. Run nova-resize-debris-check first: stale nova-resize snapshots,
 migration contexts or stuck volumes make the resize path fail.
 
 Usage:
-    cold-migrate-host.py [options] SRC_HOST DST_HOST [INSTANCE_UUID ...]
+    nova-cold-migrate-host [options] SRC_HOST DST_HOST [INSTANCE_UUID ...]
 
 Give options before the hosts; argparse on Python 3.9 rejects them placed
 between the hosts and the UUIDs.
@@ -21,6 +21,7 @@ between the hosts and the UUIDs.
 import argparse
 import datetime
 import logging
+import os
 import sys
 import time
 
@@ -29,6 +30,7 @@ from keystoneauth1 import exceptions as ks_exc
 from openstack import exceptions as os_exc
 
 MIGRATABLE = ('ACTIVE', 'SHUTOFF')
+LOG_DIR = '/var/log/osl-openstack'
 # First compute API microversion that accepts a target host on a cold migration
 MIGRATE_MICROVERSION = '2.56'
 
@@ -59,7 +61,7 @@ def parse_args(argv=None):
     ap.add_argument('-p', '--pause', type=int, default=0, metavar='SEC',
                     help='pause between instances (default 0)')
     ap.add_argument('-l', '--log', metavar='FILE',
-                    help='log file (default /root/cold-migrate-SRC-DST-DATE.log)')
+                    help='log file (default /var/log/osl-openstack/cold-migrate-SRC-DST-DATE.log)')
     return ap.parse_args(argv)
 
 
@@ -156,11 +158,11 @@ def main(argv=None):
         sys.exit('source and destination host are the same')
     if not args.log:
         stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d-%H%M%S')
-        args.log = f'/root/cold-migrate-{args.src}-{args.dst}-{stamp}.log'
+        os.makedirs(LOG_DIR, exist_ok=True)
+        args.log = f'{LOG_DIR}/cold-migrate-{args.src}-{args.dst}-{stamp}.log'
     setup_logging(args.log)
 
-    # --- preflight
-    # Credential problems surface either at connect() (missing options) or on
+    # Preflight: credential problems surface at connect() (missing options) or on
     # the first API call (bad password); keystoneauth raises its own classes.
     try:
         conn = openstack.connect()

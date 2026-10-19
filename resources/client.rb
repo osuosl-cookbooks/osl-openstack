@@ -74,26 +74,19 @@ action :create do
   # backup dumps the service databases from the DB controller; MariaDB's client also ships it
   package 'mysql' if controller && !openstack_mysqldump?
 
+  # openstack-node-upgrade's modules; precheck and backup read the nova DB from a controller
+  package 'python3-psutil'
+  package %w(python3-PyMySQL python3-cryptography) if controller
+
+  directory '/var/lib/osl-openstack/upgrade-backup' do
+    mode '0700'
+  end if controller
+
   # This node's part of a release upgrade window; see docs/RELEASE_UPGRADES.md
   cookbook_file '/usr/local/sbin/openstack-node-upgrade' do
     cookbook 'osl-openstack'
     source 'openstack-node-upgrade.py'
     mode '0755'
-  end
-
-  # A node still on RDO stops here until /root/migrate-venv.sh swaps the packages
-  rdo = openstack_rdo_installed?
-
-  cookbook_file '/root/migrate-venv.sh' do
-    cookbook 'osl-openstack'
-    source 'migrate-venv.sh'
-    mode '0750'
-    action rdo ? :create : :delete
-  end
-
-  ruby_block 'rdo migration pending' do
-    block { raise 'RDO OpenStack packages are installed: run /root/migrate-venv.sh, then cinc-client' }
-    only_if { rdo }
   end
 
   # The db sync markers; templates can trigger a sync before a recipe's own resources
