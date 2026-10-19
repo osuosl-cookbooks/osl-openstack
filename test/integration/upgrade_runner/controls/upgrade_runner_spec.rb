@@ -3,7 +3,7 @@ control 'upgrade-runner' do
   describe json('/etc/openstack-upgrade/multinode.json') do
     its('controllers') { should eq %w(controller1.testing.osuosl.org controller2.testing.osuosl.org) }
     its('db_node') { should eq 'controller1.testing.osuosl.org' }
-    its(%w(hypervisors 0 fqdn)) { should eq 'compute.testing.osuosl.org' }
+    its(['hypervisors', 0, 'fqdn']) { should eq 'compute.testing.osuosl.org' }
     its('canaries') { should eq %w(compute.testing.osuosl.org) }
   end
 
