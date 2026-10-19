@@ -32,6 +32,9 @@ describe 'osl-openstack::identity' do
         it { is_expected.to create_directory('/var/lib/osl-openstack').with(recursive: true) }
         it { is_expected.to create_directory('/var/lib/osl-openstack/db-sync') }
         it { is_expected.to_not install_package('mysql') }
+        it { is_expected.to install_package('python3-psutil') }
+        it { is_expected.to_not install_package(%w(python3-PyMySQL python3-cryptography)) }
+        it { is_expected.to_not create_directory('/var/lib/osl-openstack/upgrade-backup') }
         it do
           is_expected.to create_cookbook_file('/usr/local/sbin/openstack-node-upgrade').with(
             source: 'openstack-node-upgrade.py', mode: '0755'
@@ -323,6 +326,8 @@ describe 'osl-openstack::identity' do
         end
 
         it { is_expected.to install_package('mysql') }
+        it { is_expected.to install_package(%w(python3-PyMySQL python3-cryptography)) }
+        it { is_expected.to create_directory('/var/lib/osl-openstack/upgrade-backup').with(mode: '0700') }
         it { expect(chef_run.node['osl-openstack']['db_node']).to be true }
         it { is_expected.to render_file('/etc/osl-openstack/release.json').with_content('"db_node": true') }
       end

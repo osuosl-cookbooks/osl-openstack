@@ -41,6 +41,7 @@ describe 'osl-openstack::upgrade_runner' do
       end
 
       it { is_expected.to create_directory('/etc/openstack-upgrade') }
+      it { is_expected.to create_directory('/var/lib/openstack-upgrade').with(mode: '0700') }
       it { is_expected.to create_cookbook_file('/usr/local/sbin/openstack-upgrade').with(source: 'openstack-upgrade.py', mode: '0755') }
 
       it do

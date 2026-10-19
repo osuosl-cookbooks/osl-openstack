@@ -33,21 +33,29 @@ import subprocess
 import sys
 import tempfile
 import time
-from urllib.parse import unquote, urlparse
+from urllib.parse import unquote
+
+import dnf
+import psutil
+import rpm
+
+try:
+    import pymysql
+except ImportError:  # only controllers get python3-PyMySQL
+    pymysql = None
 
 RELEASE_JSON = '/etc/osl-openstack/release.json'
 STATE_DIR = '/var/lib/osl-openstack'
-BACKUP_DIR = '/root/openstack-upgrade-backup'
+BACKUP_DIR = '/var/lib/osl-openstack/upgrade-backup'
 CRON = '/etc/cron.d/chef-client'
 # base's chef_client_cron runs cinc-client under `flock -n` on this lock
 CHEF_LOCK = '/tmp/chef-client.lock'
 CHEF_LOCK_WAIT = 3600
 CHEF_LOCK_POLL = 10
-PROC = '/proc'
 REPO_DIR = '/etc/yum.repos.d'
 ROLLBACK_REPO = 'OSL-openstack-rollback'
 MAX_MIGRATION_BATCHES = 1000
-NOVA_PY = '/opt/openstack/nova-controller/bin/python'
+NOVA_CONF = '/etc/nova/nova.conf'
 # The yoga floor zed's nova refuses to start below (nova/objects/service.py:233-240)
 MIN_COMPUTE_VERSION = 61
 
@@ -72,6 +80,13 @@ NOVA_RESTART = [
     ['openstack-nova-conductor'], ['openstack-nova-scheduler'],
     ['openstack-nova-api', 'openstack-nova-metadata'],
 ]
+
+# SQLAlchemy 1.4's make_url pattern (engine/url.py); the cookbook writes raw passwords,
+# which may hold / ? # that urllib.parse misreads
+DB_URL = re.compile(r'''(?P<name>[\w\+]+)://
+    (?:(?P<username>[^:/]*)(?::(?P<password>[^@]*))?@)?
+    (?:(?:\[(?P<ipv6host>[^/\?]+)\]|(?P<ipv4host>[^/:\?]+))?(?::(?P<port>[^/\?]*))?)?
+    (?:/(?P<database>[^\?]*))?(?:\?(?P<query>.*))?''', re.X)
 
 log = logging.getLogger('openstack-node-upgrade')
 
@@ -103,23 +118,41 @@ def release_state():
         raise UpgradeError(f'{RELEASE_JSON} is missing; run cinc-client first')
 
 
+def openstack_headers():
+    """rpm headers of every installed osuosl-openstack-* package."""
+    match = rpm.TransactionSet().dbMatch()
+    match.pattern('name', rpm.RPMMIRE_GLOB, 'osuosl-openstack-*')
+    return list(match)
+
+
 def installed_markers():
-    out = run(['rpm', '-qa', '--qf', '[%{PROVIDENAME}\n]', 'osuosl-openstack-*'], capture=True).stdout
-    return sorted(set(re.findall(r'^osuosl-openstack-release\((\S+)\)$', out, re.M)))
+    provides = (p for h in openstack_headers() for p in h[rpm.RPMTAG_PROVIDENAME])
+    return sorted({m.group(1) for m in map(re.compile(r'^osuosl-openstack-release\((\S+)\)$').match, provides) if m})
+
+
+def venv_headers():
+    return [h for h in openstack_headers()
+            if h[rpm.RPMTAG_NAME] not in ('osuosl-openstack-selinux', 'osuosl-openstack-cli')]
 
 
 def venv_packages():
-    out = run(['rpm', '-qa', '--qf', '%{NAME}\n', 'osuosl-openstack-*'], capture=True).stdout.split()
-    return [p for p in out if p not in ('osuosl-openstack-selinux', 'osuosl-openstack-cli')]
+    return [h[rpm.RPMTAG_NAME] for h in venv_headers()]
 
 
 def openstack_units():
-    pkgs = venv_packages()
-    if not pkgs:
-        return []
-    files = run(['rpm', '-ql'] + pkgs, capture=True).stdout.split()
+    files = (f for h in venv_headers() for f in h[rpm.RPMTAG_FILENAMES])
     return sorted({os.path.basename(f) for f in files
                    if f.startswith('/usr/lib/systemd/system/') and f.endswith('.service')})
+
+
+def last_transaction():
+    """The newest dnf history id, or None on a node with no history."""
+    base = dnf.Base()
+    try:
+        last = base.history.last()
+        return last.tid if last else None
+    finally:
+        base.close()
 
 
 def is_controller():
@@ -170,35 +203,21 @@ def remove_cron():
         log.info('removed %s; the next cinc-client run restores it', CRON)
 
 
-def proc_info(pid):
-    """(comm, ppid, cmdline) of a process, from /proc."""
-    with open(os.path.join(PROC, pid, 'stat')) as f:
-        stat = f.read()
-    with open(os.path.join(PROC, pid, 'cmdline'), 'rb') as f:
-        cmdline = f.read().replace(b'\0', b' ').decode(errors='replace')
-    end = stat.rindex(')')
-    return stat[stat.index('(') + 1:end], stat[end + 2:].split()[1], cmdline
-
-
 def kill_cron_sleepers():
     """Kill a cron run still in its splay sleep, before it reaches cinc-client."""
-    procs = {}
-    for pid in os.listdir(PROC):
-        if pid.isdigit():
-            try:
-                procs[pid] = proc_info(pid)
-            except (OSError, ValueError, IndexError):
-                continue
-    for pid, (comm, ppid, _) in sorted(procs.items()):
-        if comm != 'sleep' or CHEF_LOCK not in procs.get(ppid, ('', '', ''))[2]:
+    procs = {p.info['pid']: p.info for p in psutil.process_iter(['pid', 'ppid', 'name', 'cmdline'])}
+    for pid, info in sorted(procs.items()):
+        parent = procs.get(info['ppid'])
+        # cmdline is None for a process psutil may not read
+        if info['name'] != 'sleep' or not parent or CHEF_LOCK not in ' '.join(parent['cmdline'] or []):
             continue
         # The shell goes first: killing only the sleep lets it run cinc-client
-        for victim in (ppid, pid):
+        for victim in (info['ppid'], pid):
             try:
-                os.kill(int(victim), signal.SIGTERM)
+                os.kill(victim, signal.SIGTERM)
             except ProcessLookupError:
                 pass
-        log.info('killed a pending cinc cron run (shell %s, sleep %s)', ppid, pid)
+        log.info('killed a pending cinc cron run (shell %s, sleep %s)', info['ppid'], pid)
 
 
 def hold_chef_lock():
@@ -243,16 +262,18 @@ def cmd_install(args):
     if not os.path.exists(staged_marker(target)):
         raise UpgradeError(f'{target} is not staged here; run cinc-client and check the repo is published')
     save_rollback_repo(state['installed'])
+    before = last_transaction()
     run(['dnf', '-y', f'--enablerepo=OSL-openstack-{target}', 'upgrade', 'osuosl-openstack-*'])
-    out = run(['dnf', 'history', 'info', 'last'], capture=True).stdout
-    m = re.search(r'^Transaction ID\s*:\s*(\d+)', out, re.M)
-    if not m:
-        raise UpgradeError('could not read the dnf transaction id')
+    tid = last_transaction()
+    # An upgrade that changed nothing would leave someone else's transaction for undo
+    if tid is None or tid == before:
+        raise UpgradeError(f'dnf upgrade recorded no transaction; {target} was not installed')
     with open(txn_file(target), 'w') as f:
-        f.write(m.group(1) + '\n')
+        f.write(f'{tid}\n')
     # undo needs every replaced version still published, OpenStack or not
-    log.info('dnf transaction %s:\n%s', m.group(1), out)
-    log.info('installed %s in dnf transaction %s; markers now %s', target, m.group(1), installed_markers())
+    out = run(['dnf', 'history', 'info', str(tid)], capture=True).stdout
+    log.info('dnf transaction %s:\n%s', tid, out)
+    log.info('installed %s in dnf transaction %s; markers now %s', target, tid, installed_markers())
     # Staging kept its download (keepcache); the transaction is done with it
     run(['dnf', 'clean', 'packages'])
 
@@ -289,65 +310,82 @@ def cmd_undo(args):
     log.info('undid dnf transaction %s; markers now %s', txn, installed_markers())
 
 
+def parse_db_url(url):
+    """host, port, user, password and database of a SQLAlchemy URL, or None."""
+    m = DB_URL.match(url)
+    if not m or (m['port'] and not m['port'].isdigit()):
+        return None
+    return {'host': m['ipv4host'] or m['ipv6host'], 'port': int(m['port']) if m['port'] else 3306,
+            'user': unquote(m['username'] or ''), 'password': unquote(m['password'] or ''),
+            'database': m['database'] or ''}
+
+
+def cnf_quote(value):
+    # Unquoted, the option-file parser cuts a value at # and mangles \ and quotes
+    return '"' + value.replace('\\', '\\\\').replace('"', '\\"') + '"'
+
+
 def mysql_conf(url, directory):
     """Write a 0600 client option file for a SQLAlchemy URL; return (path, database)."""
-    u = urlparse(url)
+    u = parse_db_url(url)
+    if not u or not u['host']:
+        raise UpgradeError(f'cannot parse a database URL for {directory}')
     fd, path = tempfile.mkstemp(prefix='.my-', suffix='.cnf', dir=directory)
     with os.fdopen(fd, 'w') as f:
         f.write('[client]\n')
-        f.write(f'host={u.hostname}\nport={u.port or 3306}\n')
-        f.write(f'user={unquote(u.username or "")}\npassword={unquote(u.password or "")}\n')
-    return path, u.path.lstrip('/')
+        f.write(f'host={u["host"]}\nport={u["port"]}\n')
+        f.write(f'user={cnf_quote(u["user"])}\npassword={cnf_quote(u["password"])}\n')
+    return path, u['database']
+
+
+def db_query(url, sql, params=()):
+    """Rows of one query against a SQLAlchemy URL's database."""
+    if pymysql is None:
+        raise UpgradeError('python3-PyMySQL is not installed')
+    u = parse_db_url(url)
+    if not u or not u['host']:
+        raise UpgradeError('cannot parse a nova database URL')
+    try:
+        db = pymysql.connect(host=u['host'], port=u['port'], user=u['user'],
+                             password=u['password'], database=u['database'])
+    except pymysql.MySQLError as e:
+        raise UpgradeError(f'cannot connect to {u["host"]}/{u["database"]}: {e}')
+    try:
+        with db.cursor() as cur:
+            cur.execute(sql, params)
+            return cur.fetchall()
+    finally:
+        db.close()
 
 
 def nova_cell_urls():
-    """Cell database URLs from the nova API DB, read with the nova venv's pymysql."""
-    code = r'''
-import configparser, json, pymysql
-from urllib.parse import urlparse, unquote
-c = configparser.ConfigParser(interpolation=None); c.read('/etc/nova/nova.conf')
-u = urlparse(c['api_database']['connection'])
-db = pymysql.connect(host=u.hostname, port=u.port or 3306, user=unquote(u.username),
-                     password=unquote(u.password), database=u.path.lstrip('/'))
-with db.cursor() as cur:
-    cur.execute("SELECT name, database_connection FROM cell_mappings")
-    print(json.dumps({n: d for n, d in cur.fetchall()}))
-'''
-    out = run([NOVA_PY, '-c', code], capture=True).stdout
+    """Cell database URLs from the nova API DB."""
     conf = configparser.ConfigParser(interpolation=None)
-    conf.read('/etc/nova/nova.conf')
+    if not conf.read(NOVA_CONF):
+        raise UpgradeError(f'{NOVA_CONF} is missing')
+    rows = db_query(conf.get('api_database', 'connection'), 'SELECT name, database_connection FROM cell_mappings')
     # A templated cell URL ({scheme}://...) means nova fills it from [database]
-    return {name: (conf.get('database', 'connection') if '{' in url else url)
-            for name, url in json.loads(out).items()}
+    return {name: (conf.get('database', 'connection') if '{' in url else url) for name, url in rows}
+
+
+def old_computes(cells):
+    """(cell, host, version) of every live nova-compute below MIN_COMPUTE_VERSION."""
+    old = []
+    for name, url in sorted(cells.items()):
+        if not (parse_db_url(url) or {}).get('host'):
+            continue
+        rows = db_query(url, "SELECT host, version FROM services WHERE `binary`='nova-compute' "
+                             "AND deleted=0 AND forced_down=0 AND version < %s", (MIN_COMPUTE_VERSION,))
+        old += [(name, host, version) for host, version in rows]
+    return old
 
 
 def cmd_precheck(args):
     require_db_node()
-    if not os.path.exists(NOVA_PY):
-        raise UpgradeError(f'precheck needs the nova-controller venv ({NOVA_PY}), which is not installed here')
+    if not os.path.exists(NOVA_CONF):
+        raise UpgradeError(f'precheck needs {NOVA_CONF}; nova is not configured here')
     problems = []
-    code = r'''
-import json, sys, pymysql
-from urllib.parse import urlparse, unquote
-old = []
-for name, url in json.load(sys.stdin).items():
-    u = urlparse(url)
-    if not u.hostname:
-        continue
-    db = pymysql.connect(host=u.hostname, port=u.port or 3306, user=unquote(u.username),
-                         password=unquote(u.password), database=u.path.lstrip('/'))
-    with db.cursor() as cur:
-        cur.execute("SELECT host, version FROM services WHERE `binary`='nova-compute' "
-                    "AND deleted=0 AND forced_down=0 AND version < %s", (int(sys.argv[1]),))
-        old += [[name, h, v] for h, v in cur.fetchall()]
-print(json.dumps(old))
-'''
-    cells = nova_cell_urls()
-    res = subprocess.run([NOVA_PY, '-c', code, str(MIN_COMPUTE_VERSION)], input=json.dumps(cells),
-                         text=True, capture_output=True, check=False)
-    if res.returncode != 0:
-        raise UpgradeError('the compute version query failed')
-    for cell, host, version in json.loads(res.stdout):
+    for cell, host, version in old_computes(nova_cell_urls()):
         problems.append(f'nova-compute on {host} ({cell}) is at service version {version}, below {MIN_COMPUTE_VERSION}')
     log.info('running the yoga online data migrations to completion')
     for tool, user in MIGRATIONS[:2]:
@@ -375,14 +413,16 @@ def service_db_urls():
         c = configparser.ConfigParser(interpolation=None)
         if c.read(path) and c.has_option(section, option):
             url = c.get(section, option)
-            urls[urlparse(url).path.lstrip('/')] = url
-    if not os.path.exists(NOVA_PY):
-        log.info('nova is not installed here; skipping the nova cell databases')
+            u = parse_db_url(url)
+            if u:
+                urls[u['database']] = url
+    if not os.path.exists(NOVA_CONF):
+        log.info('nova is not configured here; skipping the nova cell databases')
         return urls
     for url in nova_cell_urls().values():
-        u = urlparse(url)
-        if u.hostname:
-            urls[u.path.lstrip('/')] = url
+        u = parse_db_url(url)
+        if u and u['host']:
+            urls[u['database']] = url
     return urls
 
 

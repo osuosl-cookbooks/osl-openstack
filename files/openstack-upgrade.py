@@ -33,7 +33,7 @@ import sys
 import time
 
 INVENTORY_DIR = '/etc/openstack-upgrade'
-STATE_DIR = '/root/openstack-upgrade'
+STATE_DIR = '/var/lib/openstack-upgrade'
 LOG_DIR = '/var/log/openstack-upgrade'
 PHASES = ['precheck', 'stop', 'backup', 'controller-db', 'controller', 'verify', 'computes', 'finalize']
 ROLLBACK_HELP = """Rollback, in this order:

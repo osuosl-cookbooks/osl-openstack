@@ -74,6 +74,14 @@ action :create do
   # backup dumps the service databases from the DB controller; MariaDB's client also ships it
   package 'mysql' if controller && !openstack_mysqldump?
 
+  # openstack-node-upgrade's modules; precheck and backup read the nova DB from a controller
+  package 'python3-psutil'
+  package %w(python3-PyMySQL python3-cryptography) if controller
+
+  directory '/var/lib/osl-openstack/upgrade-backup' do
+    mode '0700'
+  end if controller
+
   # This node's part of a release upgrade window; see docs/RELEASE_UPGRADES.md
   cookbook_file '/usr/local/sbin/openstack-node-upgrade' do
     cookbook 'osl-openstack'

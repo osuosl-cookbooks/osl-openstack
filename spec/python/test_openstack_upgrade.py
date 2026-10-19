@@ -81,6 +81,11 @@ class Base(unittest.TestCase):
         return (host,) + args in self.calls
 
 
+class DefaultsTest(unittest.TestCase):
+    def test_markers_live_under_var_lib(self):
+        self.assertEqual(ou.STATE_DIR, '/var/lib/openstack-upgrade')
+
+
 class PhaseOrderTest(Base):
     def test_refuses_a_phase_before_its_predecessors(self):
         with self.assertRaisesRegex(ou.RunnerError, 'backup needs precheck, stop first'):

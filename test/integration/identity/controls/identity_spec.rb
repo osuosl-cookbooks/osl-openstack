@@ -202,6 +202,15 @@ control 'identity-release-state' do
     its('stdout') { should match /"markers": \[\s*"#{release}"\s*\]/ }
   end
 
+  # The node script's AlmaLinux modules; this controller also reads the nova DB
+  describe command("python3 -I -c 'import rpm, dnf, psutil, pymysql'") do
+    its('exit_status') { should eq 0 }
+  end
+
+  describe directory('/var/lib/osl-openstack/upgrade-backup') do
+    its('mode') { should cmp '0700' }
+  end
+
   # Every venv RPM carries the marker, not just some
   describe command("rpm -qa 'osuosl-openstack-*' | grep -vc selinux") do
     its('stdout.to_i') { should eq command("rpm -q --whatprovides 'osuosl-openstack-release(#{release})' | wc -l").stdout.to_i }
