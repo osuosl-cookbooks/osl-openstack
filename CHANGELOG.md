@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+20.3.0 (2026-10-19)
+-------------------
+- Run the OpenStack operator scripts on AlmaLinux Python and out of /root
+
 20.2.0 (2026-10-19)
 -------------------
 - Upgrade OpenStack releases through a release switch and jumphost runner
