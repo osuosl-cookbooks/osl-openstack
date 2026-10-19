@@ -35,6 +35,23 @@ Chef, not dnf-automatic, upgrades the `osuosl-openstack-*` RPMs:
 A config template change still triggers its service's db sync, on that same
 controller.
 
+## Release upgrades
+
+The `release` key in a cloud's `openstack` data bag item names its target
+OpenStack release (default `yoga`). Chef stages the next release on every
+node and never moves a node across it; the move is one window per cloud,
+driven from the jumphost:
+
+- `osl_openstack_client` reads the installed release from the RPMs' markers,
+  stages the target, and raises instead of downgrading or skipping a release.
+- `/usr/local/sbin/openstack-node-upgrade` is each node's part of a window.
+- `recipe[osl-openstack::upgrade_runner]` on the jumphost installs
+  `openstack-upgrade <cloud> <phase>`, which sequences the window and its
+  rollback.
+
+[docs/RELEASE_UPGRADES.md](docs/RELEASE_UPGRADES.md) has the runbook, the
+points of no return and the rollback.
+
 ## ppc64le compute kernels
 
 The compute recipe picks the KVM-capable kernel from the CPU:
@@ -199,6 +216,7 @@ export TF_VAR_ssh_key_name="$OS_SSH_KEYPAIR"
 - Ceph node
 - Controller node (MQ, Neutron, public apis, web interface, etc)
 - Compute node (also includes Cinder volume service)
+- Jumphost running the release upgrade runner
 
 ## Testing
 
@@ -228,6 +246,8 @@ manually. To see what their IP addresses are, just run ``terraform output`` whic
 # You can run the following commands to login to each node
 $ ssh almalinux@$(terraform output controller)
 $ ssh almalinux@$(terraform output compute)
+# The upgrade runner (docs/RELEASE_UPGRADES.md has the rehearsal)
+$ ssh almalinux@$(terraform output jumphost)
 # If you're testing multi-regions
 $ ssh almalinux@$(terraform output controller_region2)
 $ ssh almalinux@$(terraform output compute_region2)
