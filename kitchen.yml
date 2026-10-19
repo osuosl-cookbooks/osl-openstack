@@ -1,6 +1,14 @@
 ---
 verifier:
   name: inspec
+  # One kitchen process caches InSpec inputs across suites; give every suite these
+  # explicitly so a suite on the profile default can't inherit another's value
+  inputs:
+    openstack_release: yoga
+    cinder_missing: false
+    local_storage: false
+    nova_local_storage: false
+    nova_api: true
 driver:
   name: openstack
   flavor_ref: 'c2.local.8c8m50d'
