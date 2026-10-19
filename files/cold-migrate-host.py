@@ -159,8 +159,7 @@ def main(argv=None):
         args.log = f'/root/cold-migrate-{args.src}-{args.dst}-{stamp}.log'
     setup_logging(args.log)
 
-    # --- preflight
-    # Credential problems surface either at connect() (missing options) or on
+    # Preflight: credential problems surface at connect() (missing options) or on
     # the first API call (bad password); keystoneauth raises its own classes.
     try:
         conn = openstack.connect()

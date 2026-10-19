@@ -316,9 +316,8 @@ def collect_recipients(conn, servers, args, cache):
             'name': info['name'], 'email': info['email'], 'user_id': info['id'],
             'servers': [], 'projects': set(), 'owner': False})
 
-    # Instance owners. A disabled or unresolvable owner is not a recipient, but
-    # their project still counts as affected so its members are still told, and
-    # they are listed as skipped so an instance with no reachable owner shows up.
+    # A disabled or unresolvable owner is no recipient, but their project is still
+    # told, and they are listed as skipped so an unreachable instance shows up.
     unreachable = {}
     for server in servers:
         info = lookup_user(conn, server.user_id, cache)

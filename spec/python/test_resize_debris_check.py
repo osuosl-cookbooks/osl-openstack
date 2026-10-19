@@ -501,9 +501,8 @@ class DuplicateAttachmentTest(Base):
         self.assertNotIn('volume attachment delete 90d32868', t)
 
     def test_nova_pointing_at_a_reserved_one_suggests_no_deletion(self):
-        # the real 52c460c1 case: the failed migration left nova's BDM on the
-        # new reserved attachment while the old attached one still serves the
-        # disk. Naming the attached one an orphan would detach a running volume.
+        # the real 52c460c1 case: nova's BDM on the new reserved attachment while the old
+        # attached one serves the disk; calling that one an orphan detaches a running volume.
         self.wire([self.ATTACHED, self.RESERVED], {'status': 'in-use', 'multiattach': False})
         self.db.query.return_value = [('52c460c1', 'f1900f5b')]
         rdc.check_duplicate_attachments(self.ctx, self.rep)

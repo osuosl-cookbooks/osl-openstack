@@ -43,9 +43,8 @@ except ImportError:  # DB checks are skipped without it
 
 STUCK_VOLUME_STATES = ('attaching', 'detaching', 'reserved', 'creating', 'deleting',
                        'error_deleting', 'maintenance', 'downloading')
-# Every non-terminal migration.status nova sets: live migrations go
-# accepted -> queued -> preparing -> running, cold/resize go pre-migrating ->
-# migrating -> post-migrating -> finished -> confirming/reverting.
+# Every non-terminal migration.status: live goes accepted, queued, preparing, running;
+# cold/resize goes pre-migrating, migrating, post-migrating, finished, confirming/reverting.
 LIVE_MIGRATION_STATES = ('accepted', 'queued', 'preparing', 'running', 'pre-migrating',
                          'migrating', 'post-migrating', 'confirming', 'reverting')
 # Terminal failure statuses: 'error' for cold/resize and conductor failures,
@@ -387,9 +386,8 @@ def check_rbd_snaps(ctx, rep):
 
 def check_migration_context(ctx, rep):
     rep.section('2. Instances carrying a migration_context while not mid-move')
-    # vm_state 'resized' (VERIFY_RESIZE) legitimately holds one; so does any
-    # instance with a task_state set. Anything else is debris that gets new
-    # migrations killed by the resource tracker.
+    # vm_state 'resized' (VERIFY_RESIZE) or any task_state legitimately holds one;
+    # anything else is debris that gets new migrations killed by the resource tracker.
     if not ctx.db.available:
         rep.note('skipped: no DB access')
         return
@@ -545,9 +543,8 @@ def check_dead_migrations(ctx, rep):
 
 def check_errored_migrations(ctx, rep):
     rep.section(f'6. Migrations that errored in the last {ctx.args.error_days}d')
-    # An error record is terminal and harmless by itself, but a recent one is
-    # the strongest signal that debris exists for that instance, and if the
-    # instance is still in ERROR it needs recovery now.
+    # A recent error record is the strongest sign of debris for that instance;
+    # if the instance is still in ERROR it needs recovery now.
     if not ctx.db.available:
         rep.note('skipped: no DB access')
         return
@@ -575,9 +572,8 @@ def check_errored_migrations(ctx, rep):
 
 def check_duplicate_attachments(ctx, rep):
     rep.section('8. Cinder volumes carrying more than one attachment')
-    # a volume can sit healthily in 'in-use' with a leftover attachment, which
-    # section 3 cannot see; cinder then refuses the next cold migration with
-    # "duplicate connectors detected"
+    # an 'in-use' volume can hide a leftover attachment from section 3; cinder then
+    # refuses the next cold migration with "duplicate connectors detected"
     try:
         by_volume = attachments_by_volume(ctx)
     except (os_exc.SDKException, ks_exc.ClientException) as e:
@@ -602,9 +598,8 @@ def check_duplicate_attachments(ctx, rep):
         keep = live.get(volume_id)
         keep_row = next((a for a in rows if a.get('id') == keep), None)
         serving = [a for a in rows if a.get('status') == 'attached']
-        # a reserved attachment carries no connection info, so it cannot be the
-        # one serving a running disk. nova pointing at one while another is
-        # attached means the two sides disagree, and neither is safe to delete.
+        # a reserved attachment cannot serve a running disk, so nova pointing at one
+        # while another is attached means the sides disagree; neither is safe to delete.
         disagree = bool(keep_row and keep_row.get('status') != 'attached' and serving)
 
         if keep_row is None:

@@ -84,9 +84,8 @@ user 'nova' do
   action :modify
 end
 
-# Increase the file descriptor limit for nova-compute to prevent
-# "Too many open files" errors when using Ceph/RBD storage and
-# eventlet concurrency, which can exhaust the default FD limit.
+# Ceph/RBD plus eventlet concurrency exhaust nova-compute's default fd limit
+# ("Too many open files")
 osl_systemd_unit_drop_in 'ulimit' do
   content({
             'Service' => {
@@ -97,12 +96,8 @@ osl_systemd_unit_drop_in 'ulimit' do
   notifies :restart, 'service[openstack-nova-compute]'
 end
 
-# nova-compute makes a blocking keystone call at startup and exits
-# non-zero if the controller VIP isn't reachable yet; on a fresh
-# converge a cold-ARP blip is enough to crash it and abort the run
-# before systemd's auto-restart recovers it. Wait for keystone first so
-# the initial start succeeds. not_if keeps re-converges (VIP already up)
-# a skipped no-op.
+# nova-compute exits if keystone's VIP is unreachable at start, which a cold-ARP blip
+# causes on a fresh converge; wait for keystone first (not_if skips it once the VIP is up)
 ruby_block 'wait for keystone VIP before starting nova-compute' do
   block { openstack_wait_for_keystone }
   not_if { openstack_keystone_reachable? }
