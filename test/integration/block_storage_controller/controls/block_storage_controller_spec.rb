@@ -45,7 +45,7 @@ control 'block-storage-controller' do
     its('DEFAULT.backup_ceph_stripe_count') { should cmp '0' }
     its('DEFAULT.backup_ceph_stripe_unit') { should cmp '0' }
     its('DEFAULT.backup_ceph_user') { should cmp 'cinder-backup' }
-    its('DEFAULT.backup_driver') { should cmp 'cinder.backup.drivers.ceph' }
+    its('DEFAULT.backup_driver') { should cmp 'cinder.backup.drivers.ceph.CephBackupDriver' }
     its('DEFAULT.enabled_backends') { should cmp 'ceph,ceph_ssd' }
     its('DEFAULT.enable_v3_api') { should be_nil }
     its('DEFAULT.glance_api_servers') { should cmp 'http://controller.testing.osuosl.org:9292' }
@@ -95,6 +95,12 @@ control 'block-storage-controller' do
 
   describe command(openstack.call('volume service list -f value -c Binary -c Status -c State')) do
     its('stdout') { should match(/cinder-scheduler enabled up/) }
+  end
+
+  # The upgrade runner's verify stops on a Failure, which exits 2
+  describe command('runuser -u cinder -- /usr/bin/cinder-status upgrade check') do
+    its('exit_status') { should be < 2 }
+    its('stdout') { should match(/Check: Backup Driver Path.*\n.*Result: Success/) }
   end
 end
 
