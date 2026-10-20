@@ -113,7 +113,15 @@ has passed. It pauses three times:
 - after `verify`.
 
 `-y` skips the pauses, which is for rehearsals. Without a terminal, and
-without `-y` or `--dry-run`, it refuses to start. If a phase fails, it stops there:
+without `-y` or `--dry-run`, it refuses to start.
+
+Every run except `status` and `--dry-run` starts its own ssh-agent and loads
+root's key into it once, asking for the passphrase on the terminal, `-y`
+included. Keychain's 10-minute timeout on the login's agent then can't cut
+the window short; the agent ends with the run. `status` and `--dry-run` use
+the login's agent, so run `ssh-add` first if keychain has dropped the key.
+
+If a phase fails, it stops there:
 - up to `verify`, rerun `upgrade` to resume, or roll back
   (`openstack-upgrade --help-rollback`);
 - in `computes` or `finalize`, fix the host and rerun, which is fix

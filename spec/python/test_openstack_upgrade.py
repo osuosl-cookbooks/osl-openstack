@@ -47,8 +47,12 @@ class Base(unittest.TestCase):
             'hypervisors': [{'fqdn': h} for h in HYPERVISORS],
         }))
         self.state_root = root / 'state'
-        for name, value in (('INVENTORY_DIR', root / 'inv'), ('STATE_DIR', self.state_root)):
-            patcher = mock.patch.object(ou, name, str(value))
+        self.keys = root / 'ssh'
+        self.keys.mkdir()
+        for name, value in (('INVENTORY_DIR', str(root / 'inv')), ('STATE_DIR', str(self.state_root)),
+                            ('AGENT_DIR', str(root / 'run')),
+                            ('SSH_KEYS', [str(self.keys / 'id_rsa'), str(self.keys / 'id_ed25519')])):
+            patcher = mock.patch.object(ou, name, value)
             self.addCleanup(patcher.stop)
             patcher.start()
         self.status = {h: node_status() for h in CONTROLLERS + HYPERVISORS}
@@ -435,6 +439,74 @@ class TranscriptTest(unittest.TestCase):
         self.assertEqual(warn.getvalue().count('no longer written'), 1)
 
 
+class FakeAgentProc:
+    """ssh-agent -D: creates its socket unless told it exits early."""
+
+    def __init__(self, argv, exits=None, **kw):
+        self.argv, self.returncode, self.terminated = argv, exits, False
+        if exits is None:
+            Path(argv[3]).touch()
+
+    def poll(self):
+        return self.returncode
+
+    def terminate(self):
+        self.terminated, self.returncode = True, 0
+
+    def wait(self, timeout=None):
+        return self.returncode
+
+
+class AgentTest(Base):
+    def setUp(self):
+        super().setUp()
+        self.patch_env = mock.patch.dict(os.environ, {'SSH_AUTH_SOCK': '/keychain/sock', 'SSH_AGENT_PID': '1'})
+        self.patch_env.start()
+        self.addCleanup(self.patch_env.stop)
+        self.procs = []
+        self.ssh_add = mock.Mock(return_value=mock.Mock(returncode=0))
+
+    def start(self, exits=None):
+        def popen(argv, **kw):
+            self.procs.append(FakeAgentProc(argv, exits))
+            return self.procs[-1]
+        agent = ou.Agent()
+        with mock.patch.object(ou.subprocess, 'Popen', popen), mock.patch.object(ou.subprocess, 'run', self.ssh_add), \
+                mock.patch.object(ou.time, 'sleep'), mock.patch.object(ou.sys.stdin, 'isatty', return_value=True):
+            agent.start()
+        return agent
+
+    def test_loads_the_keys_into_its_own_agent(self):
+        (self.keys / 'id_ed25519').touch()
+        agent = self.start()
+        sock = os.path.join(ou.AGENT_DIR, f'agent-{os.getpid()}', 'sock')
+        self.assertEqual(self.procs[0].argv, ['ssh-agent', '-D', '-a', sock])
+        self.assertEqual(os.environ['SSH_AUTH_SOCK'], sock)
+        self.assertNotIn('SSH_AGENT_PID', os.environ)
+        self.assertEqual(self.ssh_add.call_args[0][0], ['ssh-add', str(self.keys / 'id_ed25519')])
+        agent.stop()
+        self.assertTrue(self.procs[0].terminated)
+        self.assertFalse(os.path.exists(agent.dir))
+
+    def test_an_agent_that_exits_early_fails(self):
+        (self.keys / 'id_rsa').touch()
+        with self.assertRaisesRegex(ou.RunnerError, 'ssh-agent exited 2 before it started'):
+            self.start(exits=2)
+
+    def test_a_key_that_will_not_load_fails(self):
+        (self.keys / 'id_rsa').touch()
+        self.ssh_add.return_value = mock.Mock(returncode=1)
+        with self.assertRaisesRegex(ou.RunnerError, "could not load .*id_rsa into this run's ssh agent"):
+            self.start()
+
+    def test_no_key_keeps_the_login_agent(self):
+        with self.assertLogs(ou.log, 'WARNING'):
+            agent = self.start()
+        self.assertEqual(self.procs, [])
+        self.assertEqual(os.environ['SSH_AUTH_SOCK'], '/keychain/sock')
+        agent.stop()
+
+
 class MainTest(Base):
     def setUp(self):
         super().setUp()
@@ -464,6 +536,26 @@ class MainTest(Base):
         runs = list(self.logs.glob('nocloud-*.log'))
         self.assertEqual(len(runs), 1)
         self.assertIn('nocloud.json is missing', runs[0].read_text())
+
+    def agent_runs(self, *argv, isatty=True):
+        agent = mock.Mock()
+        with mock.patch.object(ou, 'Agent', return_value=agent), mock.patch.object(ou.Runner, 'run_phase'), \
+                mock.patch.object(ou.sys.stdin, 'isatty', return_value=isatty):
+            rc = self.main(*argv)
+        return rc, agent.start.called, agent.stop.called
+
+    def test_a_changing_run_gets_its_own_agent(self):
+        self.assertEqual(self.agent_runs('ppc64', 'precheck'), (0, True, True))
+        self.assertEqual(self.agent_runs('ppc64', 'rollback'), (0, True, True))
+
+    def test_status_and_dry_runs_keep_the_login_agent(self):
+        self.assertEqual(self.agent_runs('ppc64', 'status'), (0, False, True))
+        self.assertEqual(self.agent_runs('ppc64', '-n', 'upgrade'), (0, False, True))
+
+    def test_no_agent_before_the_runner_or_the_terminal_check_passes(self):
+        self.assertEqual(self.agent_runs('nocloud', 'precheck'), (1, False, True))
+        self.assertEqual(self.agent_runs('ppc64', 'upgrade', isatty=False), (1, False, True))
+        self.assertEqual(self.agent_runs('ppc64', '-y', 'upgrade', isatty=False), (0, True, True))
 
     def test_status_keeps_no_transcript(self):
         self.assertEqual(self.main('nocloud', 'status'), 1)
