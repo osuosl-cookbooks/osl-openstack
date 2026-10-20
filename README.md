@@ -47,7 +47,8 @@ driven from the jumphost:
 - `/usr/local/sbin/openstack-node-upgrade` is each node's part of a window.
 - `recipe[osl-openstack::upgrade_runner]` on the jumphost installs
   `openstack-upgrade <cloud> <phase>`, which sequences the window and its
-  rollback.
+  rollback; `openstack-upgrade <cloud> upgrade` runs the whole window with
+  pauses at its decision points.
 
 [docs/RELEASE_UPGRADES.md](docs/RELEASE_UPGRADES.md) has the runbook, the
 points of no return and the rollback.

@@ -95,6 +95,31 @@ on ppc64).
 
 ## The window
 
+Run the whole window on the jumphost with one command, inside tmux, and
+keep its console, since ssh output reaches the terminal but not the
+runner's log:
+
+```bash
+script -f /root/upgrade-<cloud>-$(date -u +%Y%m%dT%H%MZ).log openstack-upgrade <cloud> upgrade
+```
+
+`upgrade` runs the phases below from `stop` to `finalize`, after `precheck`
+has passed. It pauses three times:
+- before `controller-db`, where you type `yes`;
+- after the canaries;
+- after `verify`.
+
+`-y` skips the pauses, which is for rehearsals. Without a terminal, and
+without `-y` or `--dry-run`, it refuses to start. If a phase fails, it stops there:
+- up to `verify`, rerun `upgrade` to resume, or roll back
+  (`openstack-upgrade --help-rollback`);
+- in `computes` or `finalize`, fix the host and rerun, which is fix
+  forward.
+
+A resumed `upgrade` skips the phases already done, and the verify pause
+once computes has started. The controller-db and canary pauses ask again
+until their phase finishes. Each phase can still be run on its own, as below.
+
 | Phase | What happens |
 |---|---|
 | `stop` | Both controllers stop: the API, scheduler and conductor are down. Instances, HA routers, DHCP and the metadata proxies keep running: the agents start keepalived, dnsmasq and haproxy through `sudo neutron-rootwrap-daemon`, which puts them in root's `session-*.scope`, outside the agent units. Set Nagios downtime on the cloud's `check_{keystone,glance,nova,nova_placement,neutron,cinder,heat}_api` and `check_novnc` |
@@ -135,8 +160,10 @@ key trusted by both controllers and the compute.
 2. Set `"release": "zed"` in `test/integration/data_bags/openstack/multinode.json`
    and upload it: `CHEF_SERVER="$(terraform output -raw chef_zero)" knife data bag from file openstack test/integration/data_bags/openstack/multinode.json -c test/chef-config/knife.rb`.
 3. `cinc-client` on controller1, controller2 and compute to stage zed.
-4. On the jumphost, as root: `openstack-upgrade multinode status`, then each
-   phase in order, timing them.
+4. On the jumphost, as root, in tmux: `openstack-upgrade multinode status`,
+   `openstack-upgrade multinode precheck`, then
+   `script -f /root/upgrade-multinode-$(date -u +%Y%m%dT%H%MZ).log openstack-upgrade multinode upgrade`
+   (add `-y` to run it without the pauses).
 5. Rehearse a rollback after `controller`. To run the window again, set
    `"release": "zed"` again, upload it, converge the three nodes to restage,
    and start over at `precheck`.

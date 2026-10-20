@@ -19,6 +19,8 @@ Phases, in order (docs/RELEASE_UPGRADES.md has the runbook):
   finalize       restart nova on the controllers, run online migrations, check,
                  and converge the controllers
 
+  upgrade        stop through finalize in one run, pausing before controller-db,
+                 after the canaries and after verify (-y skips the pauses)
   status         every node's state and the phase markers (any time)
   rollback       undo the installed release where it was installed; see --help-rollback
 """
@@ -36,6 +38,8 @@ INVENTORY_DIR = '/etc/openstack-upgrade'
 STATE_DIR = '/var/lib/openstack-upgrade'
 LOG_DIR = '/var/log/openstack-upgrade'
 PHASES = ['precheck', 'stop', 'backup', 'controller-db', 'controller', 'verify', 'computes', 'finalize']
+# What `upgrade` runs; precheck stays a separate step before the window
+UPGRADE = PHASES[1:]
 ROLLBACK_HELP = """Rollback, in this order:
   1. If controller-db started (points of no return 1 and 2), run
      openstack-node-upgrade stop  on every controller that ran install, then
@@ -70,6 +74,12 @@ class Runner:
         self.controllers = self.inv['controllers']
         self.hypervisors = [h['fqdn'] for h in self.inv['hypervisors']]
         self.unreachable = []
+        # upgrade state: the phase running, a pause in progress, and dry-run's pretend-done phases
+        self.upgrading = False
+        self.current = None
+        self.gating = None
+        self.entered = False
+        self.assume_done = set()
         if not self.db:
             raise RunnerError(f'no DB controller in {path}; has every controller converged this release-switch cookbook?')
 
@@ -123,6 +133,8 @@ class Runner:
             open(os.path.join(self.state_dir(target), f'{phase}.{state}'), 'w').close()
 
     def run_phase(self, phase, args):
+        if phase == 'upgrade':
+            return self.run_upgrade(args)
         if phase == 'rollback' and args.converge:
             return self.rollback_converge()
         rollback = phase == 'rollback'
@@ -133,17 +145,76 @@ class Runner:
         # Hypervisors flip to the reverted bag on their own cron; controllers stopped theirs
         target = self.target({h: statuses[h] for h in self.controllers} if rollback else statuses)
         if phase in PHASES:
-            missing = [p for p in PHASES[:PHASES.index(phase)] if not self.done(target, p)]
+            missing = [p for p in PHASES[:PHASES.index(phase)] if not self.done(target, p) and p not in self.assume_done]
             if missing:
                 raise RunnerError(f'{phase} needs {", ".join(missing)} first')
-            if self.done(target, phase) and phase != 'computes':
+            # Standalone computes re-enters for new hypervisors; a resumed upgrade does not
+            if self.done(target, phase) and (phase != 'computes' or self.upgrading):
                 log.info('%s already done for %s %s', phase, self.cloud, target)
                 return
+            if self.upgrading:
+                self.upgrade_gate(phase, target, args)
+                self.entered = True
             self.mark(target, phase, 'started')
         getattr(self, 'phase_' + phase.replace('-', '_'))(target, statuses, args)
         if phase in PHASES:
             self.mark(target, phase)
             log.info('%s done', phase)
+
+    def run_upgrade(self, args):
+        if not args.yes and not self.dry_run and not sys.stdin.isatty():
+            raise RunnerError('upgrade pauses for confirmation; run it in tmux, or pass -y')
+        self.upgrading = True
+        for phase in UPGRADE:
+            self.current = phase
+            self.run_phase(phase, args)
+            if self.dry_run:
+                self.assume_done.add(phase)
+        self.current = None
+        log.info('upgrade finished for %s', self.cloud)
+
+    def upgrade_gate(self, phase, target, args):
+        if phase == 'controller-db':
+            if self.done(target, 'controller-db', 'started'):
+                text = (f'controller-db already started on {self.db}: the schema may be synced. Going on is forward; '
+                        'a rollback now needs a restore (openstack-upgrade --help-rollback).')
+                guarding = 'controller-db (started)'
+            else:
+                text = (f'Next, controller-db installs {target} on {self.db} and runs the db syncs, and users reach '
+                        'the APIs again. From here a rollback restores the backup and loses every write since.')
+                guarding = phase
+            self.gate(args, text, confirm='yes', guarding=guarding)
+        elif phase == 'computes' and not self.done(target, 'computes', 'started'):
+            self.gate(args, f'verify passed. Check the APIs (boot a test instance) before the hypervisors move to {target}.',
+                      guarding=phase)
+
+    def gate(self, args, prompt, confirm=None, guarding=None):
+        """Pause for the operator; -y and --dry-run print the pause instead."""
+        log.info('pause: %s', prompt)
+        if args.yes or self.dry_run:
+            log.info('not pausing (%s)', '-y' if args.yes else 'dry run')
+            return
+        self.gating = guarding
+        try:
+            answer = input(f'{prompt} ' + ('Type yes to continue: ' if confirm else 'Press Enter to continue. '))
+        except EOFError:
+            raise RunnerError('no terminal to answer the pause; run it in tmux, or pass -y')
+        log.info('answer: %r', answer)
+        if confirm and answer.strip() != confirm:
+            raise RunnerError(f'stopped at the pause before {guarding}: the answer was not {confirm}')
+        self.gating = None
+
+    def resume_hint(self):
+        """What to do after upgrade stopped in self.current."""
+        if self.gating == 'controller-db':
+            return (f'nothing has run on {self.db} yet; rerun upgrade when ready, '
+                    'or roll back with openstack-upgrade --help-rollback')
+        if self.gating == 'computes':
+            return ('verify passed and no hypervisor has moved; rerun upgrade to resume, '
+                    'or roll back (openstack-upgrade --help-rollback)')
+        if self.current in ('computes', 'finalize'):
+            return f'{self.current} stopped: fix the host and rerun upgrade to resume (fix forward)'
+        return f'{self.current} stopped: rerun upgrade to resume, or see openstack-upgrade --help-rollback'
 
     def phase_status(self, target, statuses, args):
         for host, s in sorted(statuses.items()):
@@ -173,7 +244,11 @@ class Runner:
         running = [f'{h} {u} ({state})' for h in self.controllers
                    for u, state in sorted(statuses[h]['units'].items()) if state not in ('inactive', 'failed')]
         if running:
-            raise RunnerError('OpenStack units are not stopped; rerun stop first:\n  ' + '\n  '.join(running))
+            msg = 'OpenStack units are not stopped; rerun stop first:\n  ' + '\n  '.join(running)
+            # A dry run stopped nothing, so the refusal is expected there
+            if not self.dry_run:
+                raise RunnerError(msg)
+            print('would refuse:', msg)
         self.node(self.db, 'backup')
 
     def converge(self, host):
@@ -197,7 +272,8 @@ class Runner:
         canaries = [h for h in self.inv['canaries'] if h in self.hypervisors]
         rest = [h for h in self.hypervisors if h not in canaries]
         state = os.path.join(self.state_dir(target), 'computes')
-        os.makedirs(state, exist_ok=True)
+        if not self.dry_run:
+            os.makedirs(state, exist_ok=True)
 
         def one(host):
             if os.path.exists(os.path.join(state, host)):
@@ -209,8 +285,9 @@ class Runner:
 
         for host in canaries:
             one(host)
-        if canaries and rest and not args.yes and not self.dry_run:
-            input(f'Canaries {", ".join(canaries)} are on {target}. Check them, then press Enter for the rest. ')
+        if canaries and any(not os.path.exists(os.path.join(state, h)) for h in rest):
+            self.gate(args, f'Canaries {", ".join(canaries)} are on {target}. Check them before the rest.',
+                      guarding='the remaining hypervisors')
         batch = max(1, args.batch)
         for i in range(0, len(rest), batch):
             with concurrent.futures.ThreadPoolExecutor(max_workers=batch) as pool:
@@ -271,10 +348,10 @@ class Runner:
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('cloud', help='the cloud, as its openstack data bag item (x86, arm, ppc64)')
-    parser.add_argument('phase', choices=['status', 'rollback'] + PHASES)
+    parser.add_argument('phase', choices=['status', 'rollback', 'upgrade'] + PHASES)
     parser.add_argument('-n', '--dry-run', action='store_true', help='print what would run on each host')
     parser.add_argument('--batch', type=int, default=2, help='hypervisors upgraded at once after the canaries')
-    parser.add_argument('-y', '--yes', action='store_true', help='do not pause after the canaries')
+    parser.add_argument('-y', '--yes', action='store_true', help="skip every pause: upgrade's gates and the canary check")
     parser.add_argument('--restored', action='store_true', help='rollback: the databases are already restored')
     parser.add_argument('--converge', action='store_true', help='rollback: the bag is reverted; run cinc-client')
     parser.add_argument('--help-rollback', action='store_true', help='print the rollback procedure and exit')
@@ -287,13 +364,21 @@ def main():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s',
                         handlers=[logging.StreamHandler(sys.stdout),
                                   logging.FileHandler(os.path.join(LOG_DIR, f'{args.cloud}.log'))])
+    runner = None
     try:
-        Runner(args.cloud, dry_run=args.dry_run).run_phase(args.phase, args)
+        runner = Runner(args.cloud, dry_run=args.dry_run)
+        runner.run_phase(args.phase, args)
     except RunnerError as e:
         log.error('%s', e)
+        # No hint before an upgrade phase began: a missing precheck is its own whole answer
+        if runner and runner.upgrading and (runner.entered or runner.gating):
+            log.error('%s', runner.resume_hint())
         return 1
     except KeyboardInterrupt:
-        log.error('interrupted; rerun the same phase to resume')
+        if runner and runner.upgrading and (runner.entered or runner.gating):
+            log.error('interrupted: %s', runner.resume_hint())
+        else:
+            log.error('interrupted; rerun the same phase to resume')
         return 130
     return 0
 
