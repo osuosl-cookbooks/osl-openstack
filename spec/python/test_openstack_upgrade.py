@@ -507,6 +507,24 @@ class AgentTest(Base):
         agent.stop()
 
 
+class GateLogTest(Base):
+    def test_a_pause_prompt_ends_its_line_in_the_run_log_only(self):
+        path = os.path.join(self.tmp.name, 'run.log')
+        transcript = ou.Transcript(path)
+        self.addCleanup(transcript.file.close)
+        stream = io.StringIO()
+
+        def answer(prompt):
+            sys.stdout.write(prompt)
+            return ''
+
+        with mock.patch.object(ou.sys, 'stdout', ou.Tee(stream, transcript)), \
+                mock.patch('builtins.input', answer):
+            self.runner().gate(self.args(yes=False), 'Check them.')
+        self.assertIn('Check them. Press Enter to continue. \n', Path(path).read_text())
+        self.assertEqual(stream.getvalue(), 'Check them. Press Enter to continue. ')
+
+
 class MainTest(Base):
     def setUp(self):
         super().setUp()
