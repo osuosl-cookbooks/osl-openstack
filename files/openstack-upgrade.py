@@ -28,9 +28,12 @@ Phases, in order (docs/RELEASE_UPGRADES.md has the runbook):
 
 import argparse
 import concurrent.futures
+import ctypes
 import json
 import logging
 import os
+import shutil
+import signal
 import subprocess
 import sys
 import threading
@@ -40,6 +43,9 @@ INVENTORY_DIR = '/etc/openstack-upgrade'
 STATE_DIR = '/var/lib/openstack-upgrade'
 LOG_DIR = '/var/log/openstack-upgrade'
 SSH = ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=15']
+SSH_KEYS = ['/root/.ssh/id_rsa', '/root/.ssh/id_ecdsa', '/root/.ssh/id_ed25519']
+AGENT_DIR = '/run/openstack-upgrade'
+PR_SET_PDEATHSIG = 1
 PHASES = ['precheck', 'stop', 'backup', 'controller-db', 'controller', 'verify', 'computes', 'finalize']
 # What `upgrade` runs; precheck stays a separate step before the window
 UPGRADE = PHASES[1:]
@@ -100,6 +106,53 @@ class Tee:
 
     def flush(self):
         self.stream.flush()
+
+
+class Agent:
+    """This run's own ssh-agent, so keychain's 10-minute key timeout can't stop a window midway."""
+
+    def __init__(self):
+        self.proc = None
+        self.dir = None
+
+    def start(self):
+        keys = [k for k in SSH_KEYS if os.path.exists(k)]
+        if not keys:
+            log.warning('no key at %s; ssh uses the agent this shell already has', ', '.join(SSH_KEYS))
+            return
+        self.dir = os.path.join(AGENT_DIR, f'agent-{os.getpid()}')
+        os.makedirs(self.dir, mode=0o700, exist_ok=True)
+        sock = os.path.join(self.dir, 'sock')
+        if os.path.exists(sock):
+            os.unlink(sock)
+        prctl = ctypes.CDLL(None, use_errno=True).prctl
+        # PDEATHSIG fires when the starting thread exits, so this runs on the main thread only
+        self.proc = subprocess.Popen(['ssh-agent', '-D', '-a', sock], stdout=subprocess.DEVNULL,
+                                     stderr=subprocess.DEVNULL,
+                                     preexec_fn=lambda: prctl(PR_SET_PDEATHSIG, signal.SIGTERM))
+        for _ in range(50):
+            if os.path.exists(sock):
+                break
+            if self.proc.poll() is not None:
+                raise RunnerError(f'ssh-agent exited {self.proc.returncode} before it started')
+            time.sleep(0.1)
+        else:
+            raise RunnerError('ssh-agent did not start within 5 seconds')
+        os.environ['SSH_AUTH_SOCK'] = sock
+        os.environ.pop('SSH_AGENT_PID', None)
+        stdin = None if sys.stdin.isatty() else subprocess.DEVNULL
+        if subprocess.run(['ssh-add'] + keys, stdin=stdin, check=False).returncode != 0:
+            raise RunnerError(f"could not load {', '.join(keys)} into this run's ssh agent; "
+                              "a changing run needs a terminal for the key's passphrase")
+        log.info("loaded %s into this run's own ssh agent; keychain's timeout no longer applies", ', '.join(keys))
+
+    def stop(self):
+        if self.proc and self.proc.poll() is None:
+            self.proc.terminate()
+            self.proc.wait(timeout=5)
+            log.info("stopped this run's ssh agent")
+        if self.dir:
+            shutil.rmtree(self.dir, ignore_errors=True)
 
 
 class Runner:
@@ -212,9 +265,13 @@ class Runner:
             self.mark(target, phase)
             log.info('%s done', phase)
 
-    def run_upgrade(self, args):
+    def require_terminal(self, args):
         if not args.yes and not self.dry_run and not sys.stdin.isatty():
-            raise RunnerError('upgrade pauses for confirmation; run it in tmux, or pass -y')
+            raise RunnerError('upgrade pauses for confirmation; run it in tmux, or pass -y '
+                              "(a root key with a passphrase needs the terminal even then)")
+
+    def run_upgrade(self, args):
+        self.require_terminal(args)
         self.upgrading = True
         for phase in UPGRADE:
             self.current = phase
@@ -424,8 +481,14 @@ def main():
     if transcript:
         log.info('full output: %s', transcript.path)
     runner = None
+    agent = Agent()
     try:
         runner = Runner(args.cloud, dry_run=args.dry_run)
+        # status and dry runs are short, so they keep the login's agent
+        if args.phase != 'status' and not args.dry_run:
+            if args.phase == 'upgrade':
+                runner.require_terminal(args)
+            agent.start()
         runner.run_phase(args.phase, args)
         return 0
     except KeyboardInterrupt:
@@ -438,6 +501,8 @@ def main():
         log.error('%s', e)
     except Exception:
         log.exception('unexpected error')
+    finally:
+        agent.stop()
     # No hint before an upgrade phase began: a missing precheck is its own whole answer
     if runner and runner.upgrading and (runner.entered or runner.gating):
         log.error('%s', runner.resume_hint())
