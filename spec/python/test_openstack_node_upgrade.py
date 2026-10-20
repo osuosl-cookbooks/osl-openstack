@@ -112,6 +112,7 @@ class FakeRun:
         self.on_upgrade = None
         self.upgrade_changes = True
         self.debris_rc = 0
+        self.status_rc = {}
 
     def __call__(self, cmd, check=True, capture=False, user=None, env=None):
         self.calls.append(cmd)
@@ -127,6 +128,8 @@ class FakeRun:
             rc = next(self.rcs)
         elif cmd[0] == nu.DEBRIS_CHECK:
             rc = self.debris_rc
+        elif cmd[1:] == ['upgrade', 'check']:
+            rc = self.status_rc.get(cmd[0], 0)
         return types.SimpleNamespace(stdout=out, returncode=rc)
 
 
@@ -161,8 +164,11 @@ class Base(unittest.TestCase):
         self.cron = root / 'chef-client'
         self.lock = root / 'chef-client.lock'
         self.nova_conf = root / 'nova.conf'
+        self.bin = root / 'bin'
+        self.bin.mkdir()
         for name, value in (('REPO_DIR', self.repos), ('STATE_DIR', self.state), ('RELEASE_JSON', self.release),
-                            ('CRON', self.cron), ('CHEF_LOCK', self.lock), ('NOVA_CONF', self.nova_conf)):
+                            ('CRON', self.cron), ('CHEF_LOCK', self.lock), ('NOVA_CONF', self.nova_conf),
+                            ('BIN_DIR', self.bin)):
             self.patch(mock.patch.object(nu, name, str(value)))
         RPMDB.packages = []
         RPMDB.install('osuosl-openstack-nova-compute', 'yoga',
@@ -410,11 +416,48 @@ class NovaDBTest(Base):
         nu.cmd_precheck(None)
         self.assertIn([nu.DEBRIS_CHECK, '--exit-code'], self.run.calls)
 
+    def install_status_tools(self, *tools):
+        for tool in tools:
+            (self.bin / tool).touch()
+
+    def test_precheck_lists_a_failed_status_check_with_its_other_problems(self):
+        self.write_nova_conf()
+        self.mysql.rows['nova'] = [('old-hv.example.org', 56)]
+        self.patch(mock.patch.object(nu, 'openrc_env', return_value={}))
+        self.install_status_tools('cinder-status', 'keystone-status')
+        self.run.rcs, self.run.status_rc = iter([0, 0]), {'cinder-status': 2}
+        with self.assertRaisesRegex(nu.UpgradeError, r'old-hv.*\n  upgrade checks failed: cinder-status \(2\)$'):
+            nu.cmd_precheck(None)
+        self.assertIn(['keystone-status', 'upgrade', 'check'], self.run.calls)
+
+    def test_precheck_passes_a_status_warning(self):
+        self.write_nova_conf()
+        self.mysql.rows['nova'] = []
+        self.patch(mock.patch.object(nu, 'openrc_env', return_value={}))
+        self.install_status_tools('cinder-status')
+        self.run.rcs, self.run.status_rc = iter([0, 0]), {'cinder-status': 1}
+        nu.cmd_precheck(None)
+        self.assertIn(['cinder-status', 'upgrade', 'check'], self.run.calls)
+
     def test_a_failed_connect_names_the_database(self):
         self.write_nova_conf()
         self.mysql.connect = mock.Mock(side_effect=FakeMySQL.MySQLError('Access denied'))
         with self.assertRaisesRegex(nu.UpgradeError, 'cannot connect to db/nova_api: Access denied'):
             nu.nova_cell_urls()
+
+
+class CheckTest(Base):
+    def test_only_installed_tools_run(self):
+        (self.bin / 'nova-status').touch()
+        nu.cmd_check(None)
+        self.assertEqual(self.run.calls, [['nova-status', 'upgrade', 'check']])
+
+    def test_failures_and_crashes_are_named(self):
+        for tool in ('nova-status', 'cinder-status', 'heat-status'):
+            (self.bin / tool).touch()
+        self.run.status_rc = {'cinder-status': 2, 'heat-status': 255, 'nova-status': 1}
+        with self.assertRaisesRegex(nu.UpgradeError, r'^upgrade checks failed: cinder-status \(2\), heat-status \(255\)$'):
+            nu.cmd_check(None)
 
 
 class DbUrlTest(Base):
