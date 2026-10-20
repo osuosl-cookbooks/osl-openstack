@@ -4,6 +4,7 @@
 Each phase runs openstack-node-upgrade (or cinc-client) on the right hosts over
 ssh as root, and records a marker so the window can stop and resume. Hosts come
 from /etc/openstack-upgrade/<cloud>.json, which Chef writes from node search.
+Every run but status keeps its full output in /var/log/openstack-upgrade/<cloud>-<UTC>.log.
 
 Phases, in order (docs/RELEASE_UPGRADES.md has the runbook):
 
@@ -32,11 +33,13 @@ import logging
 import os
 import subprocess
 import sys
+import threading
 import time
 
 INVENTORY_DIR = '/etc/openstack-upgrade'
 STATE_DIR = '/var/lib/openstack-upgrade'
 LOG_DIR = '/var/log/openstack-upgrade'
+SSH = ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=15']
 PHASES = ['precheck', 'stop', 'backup', 'controller-db', 'controller', 'verify', 'computes', 'finalize']
 # What `upgrade` runs; precheck stays a separate step before the window
 UPGRADE = PHASES[1:]
@@ -58,6 +61,45 @@ log = logging.getLogger('openstack-upgrade')
 
 class RunnerError(Exception):
     pass
+
+
+class Transcript:
+    """One run's full output; a failed write warns once and stops, so the screen and ssh carry on."""
+
+    def __init__(self, path):
+        self.path = path
+        self.file = open(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600), 'a',
+                         encoding='utf-8', errors='replace')
+        self.lock = threading.Lock()
+        self.broken = False
+
+    def write(self, s):
+        if self.broken:
+            return
+        try:
+            self.file.write(s)
+            self.file.flush()
+        except (OSError, ValueError) as e:
+            self.broken = True
+            sys.__stderr__.write(f'{self.path}: no longer written: {e}\n')
+
+
+class Tee:
+    """A stream that also writes to the transcript; the lock keeps both in the same order."""
+
+    def __init__(self, stream, transcript):
+        self.stream = stream
+        self.transcript = transcript
+
+    def write(self, s):
+        with self.transcript.lock:
+            self.stream.write(s)
+            self.stream.flush()
+            self.transcript.write(s)
+        return len(s)
+
+    def flush(self):
+        self.stream.flush()
 
 
 class Runner:
@@ -84,16 +126,25 @@ class Runner:
             raise RunnerError(f'no DB controller in {path}; has every controller converged this release-switch cookbook?')
 
     def ssh(self, host, *args, capture=False):
-        cmd = ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=15', f'root@{host}'] + list(args)
+        cmd = SSH + [f'root@{host}'] + list(args)
+        # One write per line, so hosts running in parallel never split each other's lines
         if self.dry_run and not capture:
-            print('would run:', ' '.join(cmd))
+            sys.stdout.write(f'{host}: would run: {" ".join(cmd)}\n')
             return ''
         log.info('%s: %s', host, ' '.join(args))
-        res = subprocess.run(cmd, text=True, check=False,
-                             stdout=subprocess.PIPE if capture else None)
-        if res.returncode != 0:
-            raise RunnerError(f'{host}: {" ".join(args)} exited {res.returncode}')
-        return res.stdout if capture else ''
+        if capture:
+            proc = subprocess.run(cmd, text=True, errors='replace', capture_output=True, check=False)
+            for line in proc.stderr.splitlines():
+                sys.stderr.write(f'{host}: {line}\n')
+        else:
+            with subprocess.Popen(cmd, text=True, errors='replace', stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT) as proc:
+                for line in proc.stdout:
+                    line = line.rstrip('\n')
+                    sys.stdout.write(f'{host}: {line}\n')
+        if proc.returncode != 0:
+            raise RunnerError(f'{host}: {" ".join(args)} exited {proc.returncode}')
+        return proc.stdout if capture else ''
 
     def node(self, host, *args):
         return self.ssh(host, 'openstack-node-upgrade', *args)
@@ -361,26 +412,36 @@ def main():
     args = parser.parse_args()
 
     os.makedirs(LOG_DIR, exist_ok=True)
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s',
+    transcript = None
+    # status is read-only and run often; every other run keeps its whole output
+    if args.phase != 'status':
+        stamp = time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())
+        transcript = Transcript(os.path.join(LOG_DIR, f'{args.cloud}-{stamp}.log'))
+        sys.stdout, sys.stderr = Tee(sys.stdout, transcript), Tee(sys.stderr, transcript)
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s', force=True,
                         handlers=[logging.StreamHandler(sys.stdout),
                                   logging.FileHandler(os.path.join(LOG_DIR, f'{args.cloud}.log'))])
+    if transcript:
+        log.info('full output: %s', transcript.path)
     runner = None
     try:
         runner = Runner(args.cloud, dry_run=args.dry_run)
         runner.run_phase(args.phase, args)
-    except RunnerError as e:
-        log.error('%s', e)
-        # No hint before an upgrade phase began: a missing precheck is its own whole answer
-        if runner and runner.upgrading and (runner.entered or runner.gating):
-            log.error('%s', runner.resume_hint())
-        return 1
+        return 0
     except KeyboardInterrupt:
         if runner and runner.upgrading and (runner.entered or runner.gating):
             log.error('interrupted: %s', runner.resume_hint())
         else:
             log.error('interrupted; rerun the same phase to resume')
         return 130
-    return 0
+    except RunnerError as e:
+        log.error('%s', e)
+    except Exception:
+        log.exception('unexpected error')
+    # No hint before an upgrade phase began: a missing precheck is its own whole answer
+    if runner and runner.upgrading and (runner.entered or runner.gating):
+        log.error('%s', runner.resume_hint())
+    return 1
 
 
 if __name__ == '__main__':

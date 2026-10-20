@@ -74,7 +74,10 @@ controller, hypervisors, canaries) and installs
 `openstack-node-upgrade` and `cinc-client` over `ssh root@<host>`, refuses a
 phase until the earlier ones are done, and keeps markers in
 `/var/lib/openstack-upgrade/<cloud>-<release>/` so a window can resume.
-`--dry-run` prints what would run. Logs go to `/var/log/openstack-upgrade/`.
+`--dry-run` prints what would run. Every run except `status` writes its full
+output, each host's lines prefixed with its name, to
+`/var/log/openstack-upgrade/<cloud>-<UTC>.log`; `<cloud>.log` there keeps the
+runner's own lines across runs.
 
 Canaries are hypervisors with `node['osl-openstack']['upgrade_canary']` set,
 otherwise the first hypervisor of each CPU model (one POWER9 and one POWER10
@@ -95,12 +98,12 @@ on ppc64).
 
 ## The window
 
-Run the whole window on the jumphost with one command, inside tmux, and
-keep its console, since ssh output reaches the terminal but not the
-runner's log:
+Run the whole window on the jumphost with one command, inside tmux. It
+names its full-output log, `/var/log/openstack-upgrade/<cloud>-<UTC>.log`,
+as its first line:
 
 ```bash
-script -f /root/upgrade-<cloud>-$(date -u +%Y%m%dT%H%MZ).log openstack-upgrade <cloud> upgrade
+openstack-upgrade <cloud> upgrade
 ```
 
 `upgrade` runs the phases below from `stop` to `finalize`, after `precheck`
@@ -162,8 +165,8 @@ key trusted by both controllers and the compute.
 3. `cinc-client` on controller1, controller2 and compute to stage zed.
 4. On the jumphost, as root, in tmux: `openstack-upgrade multinode status`,
    `openstack-upgrade multinode precheck`, then
-   `script -f /root/upgrade-multinode-$(date -u +%Y%m%dT%H%MZ).log openstack-upgrade multinode upgrade`
-   (add `-y` to run it without the pauses).
+   `openstack-upgrade multinode upgrade` (add `-y` to run it without the
+   pauses).
 5. Rehearse a rollback after `controller`. To run the window again, set
    `"release": "zed"` again, upload it, converge the three nodes to restage,
    and start over at `precheck`.
