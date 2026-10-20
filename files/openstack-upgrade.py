@@ -307,6 +307,9 @@ class Runner:
             answer = input(f'{prompt} ' + ('Type yes to continue: ' if confirm else 'Press Enter to continue. '))
         except EOFError:
             raise RunnerError('no terminal to answer the pause; run it in tmux, or pass -y')
+        # The terminal echoed the Enter, but the run log never saw it; end the prompt's line there
+        if isinstance(sys.stdout, Tee):
+            sys.stdout.transcript.write('\n')
         log.info('answer: %r', answer)
         if confirm and answer.strip() != confirm:
             raise RunnerError(f'stopped at the pause before {guarding}: the answer was not {confirm}')
