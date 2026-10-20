@@ -16,6 +16,10 @@ control 'upgrade-runner' do
     it { should eq hypervisors }
   end
 
+  describe package('tmux') do
+    it { should be_installed }
+  end
+
   describe file('/usr/local/sbin/openstack-upgrade') do
     its('mode') { should cmp '0755' }
   end
