@@ -463,17 +463,26 @@ class MigrationsTest(Base):
     def test_stops_at_the_batch_cap(self):
         self.run.rcs = iter([1] * (nu.MAX_MIGRATION_BATCHES + 1) + [RuntimeError('no cap')])
         with self.assertRaisesRegex(nu.UpgradeError, 'still reports work'):
-            nu.run_migrations('nova-manage', 'nova')
+            nu.run_migrations('nova-manage', 'nova', '--max-count')
 
     def test_fails_on_errors(self):
         self.run.rcs = iter([1, 2])
         with self.assertRaisesRegex(nu.UpgradeError, 'exited 2'):
-            nu.run_migrations('nova-manage', 'nova')
+            nu.run_migrations('nova-manage', 'nova', '--max-count')
 
     def test_runs_until_done(self):
         self.run.rcs = iter([1, 1, 0])
-        nu.run_migrations('nova-manage', 'nova')
+        nu.run_migrations('nova-manage', 'nova', '--max-count')
         self.assertEqual(sum('online_data_migrations' in c for c in self.run.calls), 3)
+
+    def test_each_tool_gets_its_own_batch_flag(self):
+        self.run.rcs = iter([0, 0, 0])
+        with mock.patch.object(nu, 'require_db_node'):
+            nu.cmd_migrate(None)
+        calls = {c[0]: c[3] for c in self.run.calls if 'online_data_migrations' in c}
+        # cinder-manage rejects --max-count (cinder/cmd/manage.py:257 at 20.3.2 and 21.3.2)
+        self.assertEqual(calls, {'nova-manage': '--max-count', 'cinder-manage': '--max_count',
+                                 'placement-manage': '--max-count'})
 
 
 if __name__ == '__main__':
