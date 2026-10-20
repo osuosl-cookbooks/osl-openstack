@@ -8,9 +8,13 @@ call; the inventory and phase markers live in a tempdir.
 
 import argparse
 import importlib.util
+import io
 import json
+import logging
 import os
+import sys
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -358,6 +362,113 @@ class RollbackTest(Base):
         for host in CONTROLLERS + HYPERVISORS:
             self.assertTrue(self.ran(host, 'cinc-client'))
         self.assertFalse(any(c[-1] == 'status' for c in self.calls))
+
+
+class SshTest(Base):
+    def ssh(self, script, capture=False):
+        out, err = io.StringIO(), io.StringIO()
+        with mock.patch.object(ou, 'SSH', ['sh', '-c', script, 'sh']), \
+                mock.patch.object(ou.sys, 'stdout', out), mock.patch.object(ou.sys, 'stderr', err):
+            try:
+                return ou.Runner('ppc64').ssh('c1', 'check', capture=capture), out.getvalue(), err.getvalue()
+            except ou.RunnerError as e:
+                return e, out.getvalue(), err.getvalue()
+
+    def test_output_streams_with_the_host_on_each_line(self):
+        e, out, _ = self.ssh('echo out; echo err >&2; printf noeol; exit 3')
+        self.assertEqual(out, 'c1: out\nc1: err\nc1: noeol\n')
+        self.assertRegex(str(e), r'^c1: check exited 3$')
+
+    def test_capture_returns_stdout_and_prefixes_stderr(self):
+        ret, out, err = self.ssh('echo \'{"a": 1}\'; echo warn >&2', capture=True)
+        self.assertEqual((ret, out, err), ('{"a": 1}\n', '', 'c1: warn\n'))
+
+    def test_dry_run_prints_one_line_per_command(self):
+        out = io.StringIO()
+        with mock.patch.object(ou.sys, 'stdout', out):
+            ou.Runner('ppc64', dry_run=True).ssh('h1', 'cinc-client')
+        self.assertRegex(out.getvalue(), r'^h1: would run: ssh .* root@h1 cinc-client\n$')
+
+
+class TranscriptTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.path = os.path.join(self.tmp.name, 'run.log')
+        self.transcript = ou.Transcript(self.path)
+        self.addCleanup(self.transcript.file.close)
+
+    def test_writes_reach_the_stream_and_a_private_file(self):
+        stream = io.StringIO()
+        ou.Tee(stream, self.transcript).write('hello\n')
+        self.assertEqual(stream.getvalue(), 'hello\n')
+        self.assertEqual(Path(self.path).read_text(), 'hello\n')
+        self.assertEqual(os.stat(self.path).st_mode & 0o777, 0o600)
+
+    def test_threads_leave_the_file_in_the_streams_order(self):
+        stream = io.StringIO()
+        tee = ou.Tee(stream, self.transcript)
+        interval = sys.getswitchinterval()
+        sys.setswitchinterval(1e-6)
+        self.addCleanup(sys.setswitchinterval, interval)
+
+        def lines(n):
+            for i in range(2000):
+                tee.write(f'{n}:{i}\n')
+
+        threads = [threading.Thread(target=lines, args=(n,)) for n in range(4)]
+        for th in threads:
+            th.start()
+        for th in threads:
+            th.join()
+        self.assertEqual(Path(self.path).read_text(), stream.getvalue())
+        self.assertEqual(len(stream.getvalue().splitlines()), 8000)
+
+    def test_a_failed_file_write_warns_once_and_the_screen_goes_on(self):
+        stream, warn = io.StringIO(), io.StringIO()
+        self.transcript.file.close()
+        tee = ou.Tee(stream, self.transcript)
+        with mock.patch.object(ou.sys, '__stderr__', warn):
+            tee.write('a\n')
+            tee.write('b\n')
+        self.assertEqual(stream.getvalue(), 'a\nb\n')
+        self.assertEqual(warn.getvalue().count('no longer written'), 1)
+
+
+class MainTest(Base):
+    def setUp(self):
+        super().setUp()
+        self.logs = Path(self.tmp.name) / 'log'
+        self.addCleanup(self.close_handlers)
+        patcher = mock.patch.object(ou, 'LOG_DIR', str(self.logs))
+        self.addCleanup(patcher.stop)
+        patcher.start()
+
+    def close_handlers(self):
+        root = logging.getLogger()
+        for handler in root.handlers[:]:
+            root.removeHandler(handler)
+            handler.close()
+
+    def main(self, *argv):
+        with mock.patch.object(ou.sys, 'argv', ['openstack-upgrade', *argv]), \
+                mock.patch.object(ou.sys, 'stdout', io.StringIO()), mock.patch.object(ou.sys, 'stderr', io.StringIO()):
+            rc = ou.main()
+            # The patches put the real streams back on exit; the Tee's file is closed here
+            if isinstance(sys.stdout, ou.Tee):
+                sys.stdout.transcript.file.close()
+        return rc
+
+    def test_a_run_keeps_its_full_output(self):
+        self.assertEqual(self.main('nocloud', 'precheck'), 1)
+        runs = list(self.logs.glob('nocloud-*.log'))
+        self.assertEqual(len(runs), 1)
+        self.assertIn('nocloud.json is missing', runs[0].read_text())
+
+    def test_status_keeps_no_transcript(self):
+        self.assertEqual(self.main('nocloud', 'status'), 1)
+        self.assertEqual(list(self.logs.glob('nocloud-*.log')), [])
+        self.assertTrue((self.logs / 'nocloud.log').exists())
 
 
 if __name__ == '__main__':
