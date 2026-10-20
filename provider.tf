@@ -14,3 +14,8 @@ terraform {
     }
   }
 }
+
+# A reject from the API's connection throttle is retried rather than failing the build
+provider "openstack" {
+  max_retries = 5
+}

@@ -19,3 +19,11 @@ variable "network" {
 variable "region2" {
     default = "0"
 }
+variable "computes" {
+    type    = number
+    default = 1
+    validation {
+        condition     = var.computes >= 0 && var.computes <= 3
+        error_message = "computes is 0 to 3 (compute, compute2, compute3)."
+    }
+}

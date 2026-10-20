@@ -20,7 +20,13 @@ output "controller_region2" {
     value = length(module.region2) > 0 ? module.region2[0].controller_region2 : null
 }
 output "compute" {
-    value = "${openstack_compute_instance_v2.compute.network.0.fixed_ip_v4}"
+    value = length(openstack_compute_instance_v2.compute) > 0 ? openstack_compute_instance_v2.compute[0].network.0.fixed_ip_v4 : null
+}
+output "compute2" {
+    value = length(openstack_compute_instance_v2.compute) > 1 ? openstack_compute_instance_v2.compute[1].network.0.fixed_ip_v4 : null
+}
+output "compute3" {
+    value = length(openstack_compute_instance_v2.compute) > 2 ? openstack_compute_instance_v2.compute[2].network.0.fixed_ip_v4 : null
 }
 output "compute_region2" {
     value = length(module.region2) > 0 ? module.region2[0].compute_region2 : null
