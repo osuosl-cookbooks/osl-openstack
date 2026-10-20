@@ -57,6 +57,7 @@ REPO_DIR = '/etc/yum.repos.d'
 ROLLBACK_REPO = 'OSL-openstack-rollback'
 MAX_MIGRATION_BATCHES = 1000
 NOVA_CONF = '/etc/nova/nova.conf'
+BIN_DIR = '/usr/bin'
 OPENRC = '/root/openrc'
 DEBRIS_CHECK = '/usr/local/sbin/nova-resize-debris-check'
 # Its --exit-code results; precheck never passes --fix, so 1 is always an error
@@ -406,6 +407,9 @@ def cmd_precheck(args):
     debris = run([DEBRIS_CHECK, '--exit-code'], check=False, env=openrc_env()).returncode
     if debris:
         problems.append(DEBRIS_RESULTS.get(debris, f'{DEBRIS_CHECK} exited {debris}'))
+    failed = failed_checks()
+    if failed:
+        problems.append('upgrade checks failed: ' + ', '.join(failed))
     if problems:
         raise UpgradeError('precheck failed:\n  ' + '\n  '.join(problems))
     log.info('precheck passed')
@@ -483,15 +487,20 @@ def cmd_restore(args):
                 raise UpgradeError(f'restoring {name} failed')
 
 
-def cmd_check(args):
+def failed_checks():
     failed = []
     for tool, user in STATUS_TOOLS:
-        if not os.path.exists(f'/usr/bin/{tool}'):
+        if not os.path.exists(os.path.join(BIN_DIR, tool)):
             continue
         rc = run([tool, 'upgrade', 'check'], check=False, user=user).returncode
         # oslo.upgradecheck: 0 success, 1 warning, 2 failure, 255 crashed
         if rc >= 2:
             failed.append(f'{tool} ({rc})')
+    return failed
+
+
+def cmd_check(args):
+    failed = failed_checks()
     if failed:
         raise UpgradeError('upgrade checks failed: ' + ', '.join(failed))
     log.info('upgrade checks passed')
