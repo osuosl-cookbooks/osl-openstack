@@ -165,22 +165,27 @@ agreement on the target and keeps going past a failed host.
 ## Rehearsal in multi-node
 
 The multi-node suite has a `jumphost` VM running the runner, with a test root
-key trusted by both controllers and the compute.
+key trusted by both controllers and every compute. With `TF_VAR_computes=3`,
+`compute` is the canary and `compute2` and `compute3` upgrade as one batch
+(`--batch 2`, the default). Each compute runs two `upgrade-vm-*` VMs, one
+with a volume, for the upgrade to carry through.
 
-1. Converge the suite, then `terraform output jumphost`.
+1. Converge the suite, then `terraform output jumphost`. The data bag's
+   `release` must be the old one, or every node builds the new release.
 2. Set `"release": "zed"` in `test/integration/data_bags/openstack/multinode.json`
    and upload it: `CHEF_SERVER="$(terraform output -raw chef_zero)" knife data bag from file openstack test/integration/data_bags/openstack/multinode.json -c test/chef-config/knife.rb`.
-3. `cinc-client` on controller1, controller2 and compute to stage zed.
+3. `cinc-client` on controller1, controller2 and every compute to stage zed.
 4. On the jumphost, as root, in tmux: `openstack-upgrade multinode status`,
    `openstack-upgrade multinode precheck`, then
    `openstack-upgrade multinode upgrade` (add `-y` to run it without the
-   pauses).
+   pauses). Then, on controller1 as root, `/root/upgrade_vms.sh check`: every
+   `upgrade-vm-*` VM is ACTIVE and its volume in-use.
 5. Rehearse a rollback after `controller`. To run the window again, set
-   `"release": "zed"` again, upload it, converge the three nodes to restage,
-   and start over at `precheck`.
+   `"release": "zed"` again, upload it, converge the controllers and every
+   compute to restage, and start over at `precheck`.
 
-The suite has one compute, so it can't test a live migration between a yoga
-and a zed hypervisor.
+At the canary pause, `compute` is on zed and the others are on yoga, so a live
+migration between two releases can be tested there when they share a CPU model.
 
 ## Adding the next release
 
