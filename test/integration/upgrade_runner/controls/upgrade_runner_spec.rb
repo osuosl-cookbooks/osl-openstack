@@ -11,6 +11,11 @@ control 'upgrade-runner' do
     its('mode') { should cmp '0755' }
   end
 
+  describe command('/usr/local/sbin/openstack-upgrade --help') do
+    its('exit_status') { should eq 0 }
+    its('stdout') { should match /\{status,rollback,.*upgrade.*\}/ }
+  end
+
   describe command('/usr/local/sbin/openstack-upgrade multinode status') do
     its('exit_status') { should eq 0 }
     its('stdout') { should match /^controller1\.testing\.osuosl\.org\s+installed=yoga/ }
