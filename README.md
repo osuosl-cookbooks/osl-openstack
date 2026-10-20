@@ -243,6 +243,9 @@ $ ssh almalinux@$(terraform output compute_region2)
 
 # Or you can look at the IPs for all for all of the nodes at once
 $ terraform output
+# Or let the rehearsal helper pick the address and a known_hosts that survives rebuilds
+$ test/multinode-rehearse.sh nodes
+$ test/multinode-rehearse.sh ssh controller1
 ```
 
 ## Interacting with the chef-zero server

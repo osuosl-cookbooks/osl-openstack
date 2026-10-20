@@ -170,19 +170,51 @@ key trusted by both controllers and every compute. With `TF_VAR_computes=3`,
 (`--batch 2`, the default). Each compute runs two `upgrade-vm-*` VMs, one
 with a volume, for the upgrade to carry through.
 
-1. Converge the suite, then `terraform output jumphost`. The data bag's
-   `release` must be the old one, or every node builds the new release.
-2. Set `"release": "zed"` in `test/integration/data_bags/openstack/multinode.json`
-   and upload it: `CHEF_SERVER="$(terraform output -raw chef_zero)" knife data bag from file openstack test/integration/data_bags/openstack/multinode.json -c test/chef-config/knife.rb`.
-3. `cinc-client` on controller1, controller2 and every compute to stage zed.
-4. On the jumphost, as root, in tmux: `openstack-upgrade multinode status`,
-   `openstack-upgrade multinode precheck`, then
-   `openstack-upgrade multinode upgrade` (add `-y` to run it without the
-   pauses). Then, on controller1 as root, `/root/upgrade_vms.sh check`: every
-   `upgrade-vm-*` VM is ACTIVE and its volume in-use.
-5. Rehearse a rollback after `controller`. To run the window again, set
-   `"release": "zed"` again, upload it, converge the controllers and every
-   compute to restage, and start over at `precheck`.
+`test/multinode-rehearse.sh` runs these steps from the cookbook root; it
+connects as `almalinux` with its own known_hosts under `.kitchen/`, reset after
+every apply, since rebuilt VMs reuse addresses.
+
+1. Converge the suite with the bag's `release` left at the old one, or every
+   node builds the new release:
+
+   ```bash
+   export TF_VAR_computes=3
+   KITCHEN_YAML=kitchen.multi-node.yml kitchen converge multi-node
+   ```
+
+2. Stage zed: write `"release": "zed"` into
+   `test/integration/data_bags/openstack/multinode.json` and upload it, then run
+   `cinc-client` on controller1, then controller2, then every compute in
+   parallel. The release stays in the fixture so every later upload (each
+   converge, or `rake knife_upload`) keeps it; a bag without it means yoga, and
+   a node already on zed then refuses to converge. Leave it uncommitted;
+   `stage yoga` takes it out:
+
+   ```bash
+   test/multinode-rehearse.sh stage zed
+   ```
+
+3. Open a root tmux session on the jumphost and run the window there (add
+   `-y` to `upgrade` to skip the pauses):
+
+   ```bash
+   test/multinode-rehearse.sh jumphost
+   openstack-upgrade multinode status
+   openstack-upgrade multinode precheck
+   openstack-upgrade multinode upgrade
+   ```
+
+4. Check that every `upgrade-vm-*` VM is ACTIVE and its volume in-use:
+
+   ```bash
+   test/multinode-rehearse.sh vms
+   ```
+
+5. Rehearse a rollback after `controller`: follow
+   `openstack-upgrade --help-rollback`, setting the release back with
+   `test/multinode-rehearse.sh stage yoga` where it says to revert the bag. To
+   run the window again, run `test/multinode-rehearse.sh stage zed` to restage
+   and start over at `precheck`.
 
 At the canary pause, `compute` is on zed and the others are on yoga, so a live
 migration between two releases can be tested there when they share a CPU model.
