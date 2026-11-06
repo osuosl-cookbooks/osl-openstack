@@ -10,6 +10,9 @@ and migrations (the c24a44da incident taxonomy):
   6. recently errored migrations (debris signal; instance may need recovery)
   7. placement allocation orphans (via nova-manage)
   8. cinder volumes carrying more than one attachment
+  9. moves that crossed Ceph and local storage (the root disk is left behind),
+     flavor/host storage mismatches, leftover <uuid>_disk images, flavors
+     without a storage spec; advisory only
 
 Reports findings with suggested fix commands and changes nothing by default.
 --dry-run previews the fixes it could apply, --fix applies them. Only pure
@@ -51,6 +54,12 @@ LIVE_MIGRATION_STATES = ('accepted', 'queued', 'preparing', 'running', 'pre-migr
 # Terminal failure statuses: 'error' for cold/resize and conductor failures,
 # 'failed' for live migrations rolled back on the compute side.
 FAILED_MIGRATION_STATES = ('error', 'failed')
+# Aggregate metadata keys that mark a host's instance storage: x86 uses
+# storage_type=ceph|local, ppc64 uses local_storage=true|false
+STORAGE_KEYS = ('storage_type', 'local_storage')
+AGGREGATE_SPEC_PREFIX = 'aggregate_instance_extra_specs:'
+UUID_RE = r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+DISK_IMAGE = re.compile(rf'^({UUID_RE})_disk$')
 ATTACHMENT_MICROVERSION = '3.27'
 TIMESTAMP_FORMATS = ('%Y-%m-%dT%H:%M:%SZ', '%Y-%m-%dT%H:%M:%S.%fZ',
                      '%Y-%m-%dT%H:%M:%S', '%Y-%m-%dT%H:%M:%S.%f')
@@ -383,8 +392,9 @@ def check_rbd_snaps(ctx, rep):
             rep.note(f'  no keyring for client.{user}; this host has: {", ".join(have)}')
             rep.note(f'  re-run with --ceph-user {have[0]}')
         return
-    for line in out.splitlines():
-        name = line.split()[0] if line.split() else ''
+    names = [line.split()[0] for line in out.splitlines() if line.split()]
+    ctx.rbd_images = {n for n in names if '@' not in n}  # section 9 reads the images
+    for name in names:
         if not name.endswith('_disk@nova-resize'):
             continue
         uuid = name[:-len('_disk@nova-resize')]
@@ -525,6 +535,9 @@ def check_parked_verify_resize(ctx, rep):
             rep.finding(f'{s.name} ({s.id}) unconfirmed for {age_d}d, '
                         'double allocations, leak risk')
             rep.suggest(f"openstack server resize confirm {s.id}   # (or 'resize revert')")
+    if ctx.verify_resize:
+        rep.note('(a resize that crossed Ceph and local storage must be reverted, not '
+                 'confirmed; section 9 lists those)')
 
 
 def check_dead_migrations(ctx, rep):
@@ -681,9 +694,199 @@ def check_placement(ctx, rep):
             rep.suggest('or bulk:  nova-manage placement audit --delete')
 
 
+def storage_class(key, value):
+    """'local' or 'ceph' from an aggregate or flavor storage value, else None."""
+    if value is None:
+        return None
+    v = str(value).strip()
+    if v.lower().startswith('<is>'):  # the filter's optional operator prefix
+        v = v[4:].strip()
+    v = v.lower()
+    if key == 'storage_type':
+        return v if v in ('ceph', 'local') else None
+    if key == 'local_storage':
+        return {'true': 'local', 'false': 'ceph'}.get(v)
+    return None
+
+
+def storage_map(conn):
+    """(metadata key, {host: 'ceph'|'local'}) from the aggregates that mark storage."""
+    key, hosts = None, {}
+    for agg in conn.compute.aggregates():
+        meta = agg.metadata or {}
+        for k in STORAGE_KEYS:
+            cls = storage_class(k, meta.get(k))
+            if cls is None:
+                continue
+            key = key or k
+            for host in agg.hosts or []:
+                hosts[host] = cls
+    return key, hosts
+
+
+def volume_backed_instances(db):
+    """uuids whose root disk is a cinder volume (nova's is_volume_backed_instance rule)."""
+    roots = dict(db.query('SELECT instance_uuid, destination_type FROM block_device_mapping '
+                          'WHERE deleted = 0 AND boot_index = 0'))
+    rows = db.query('SELECT uuid, image_ref FROM instances WHERE deleted = 0')
+    return {uuid for uuid, image_ref in rows
+            if roots.get(uuid, 'volume' if not image_ref else 'local') == 'volume'}
+
+
+def flavor_storage_value(specs, key):
+    """The flavor's storage spec; the filter accepts the scoped and the bare key."""
+    return specs.get(AGGREGATE_SPEC_PREFIX + key, specs.get(key))
+
+
+def preserve_commands(ctx, uuid):
+    pool, user = ctx.args.rbd_pool, ctx.args.ceph_user
+    return [f'rbd --id {user} -p {pool} info {uuid}_disk',
+            f'rbd --id {user} snap create {pool}/{uuid}_disk@<TICKET>-preserve && '
+            f'rbd --id {user} snap protect {pool}/{uuid}_disk@<TICKET>-preserve'
+            '   # before anything else; docs/CROSS_STORAGE_RESIZE.md has the recovery']
+
+
+def check_crossed_moves(ctx, rep, hosts):
+    """9a: confirmed or unconfirmed resizes and cold migrations between storage types."""
+    reported = set()
+    if not ctx.db.available:
+        rep.note('9a skipped: no DB access')
+        return reported
+    rows = ctx.db.query("""
+        SELECT m.id, m.instance_uuid, m.migration_type, m.status,
+               m.source_compute, m.dest_compute, m.updated_at, i.host
+          FROM migrations m
+          JOIN instances i ON i.uuid = m.instance_uuid
+         WHERE m.deleted = 0 AND i.deleted = 0
+           AND m.migration_type IN ('resize', 'migration')
+           AND m.status IN ('finished', 'confirmed')
+         ORDER BY m.id""")
+    volume_backed = volume_backed_instances(ctx.db) if rows else set()
+    unclassified = 0
+    for mid, uuid, mtype, status, src_host, dst_host, upd, now_host in rows:
+        src, dst = hosts.get(src_host), hosts.get(dst_host)
+        if src is None or dst is None:
+            unclassified += 1
+            continue
+        if src == dst:
+            continue
+        where = f'{mtype} {mid} ({src_host}/{src} -> {dst_host}/{dst}, {upd}) of {uuid}'
+        if uuid in volume_backed:
+            rep.note(f'note: {where} crossed storage types; volume-backed, so nothing was lost')
+            continue
+        reported.add(uuid)
+        if status == 'finished':
+            rep.finding(f'{where} crossed storage types and is still in VERIFY_RESIZE; '
+                        'the guest runs on a fresh disk from its image')
+            rep.suggest(f'openstack server resize revert {uuid}   # do NOT confirm; '
+                        'revert brings the old disk back')
+        elif (src, dst) == ('ceph', 'local'):
+            if ctx.rbd_images is None:
+                rep.note(f'note: {where} crossed to local storage; the old root may still be '
+                         f'in the {ctx.args.rbd_pool} pool, which section 1 could not list')
+            elif f'{uuid}_disk' not in ctx.rbd_images:
+                rep.note(f'note: {where} crossed to local storage; its old root is no '
+                         'longer in the pool (recovered or cleaned up)')
+            elif hosts.get(now_host) == 'local':
+                rep.finding(f'{where} crossed to local storage; the old root is still '
+                            f'{ctx.args.rbd_pool}/{uuid}_disk and can be restored')
+                for cmd in preserve_commands(ctx, uuid):
+                    rep.suggest(cmd)
+            elif hosts.get(now_host) == 'ceph':
+                # moved back since: the RBD backend reuses an existing image as the root
+                rep.note(f'note: {where} crossed to local storage but the instance is on '
+                         f'{now_host} now; {ctx.args.rbd_pool}/{uuid}_disk is its current root')
+            else:
+                rep.note(f'note: {where} crossed to local storage; the instance is on '
+                         f'{now_host} now, which is in no storage aggregate, so check before '
+                         f'treating {ctx.args.rbd_pool}/{uuid}_disk as debris')
+        else:
+            rep.note(f'note: {where} crossed to Ceph storage; the old local disk went with '
+                     'the confirm, nothing to recover')
+    if unclassified:
+        rep.note(f'note: {unclassified} older move(s) involve a host outside today\'s '
+                 'storage aggregates and cannot be classified')
+    return reported
+
+
+def check_flavor_host_mismatch(ctx, rep, key, hosts, servers):
+    """9b: live instances whose flavor storage spec disagrees with their host."""
+    unclassified = 0
+    for s in servers:
+        if not s.compute_host:  # shelved offloaded
+            continue
+        host_cls = hosts.get(s.compute_host)
+        if host_cls is None:
+            unclassified += 1
+            continue
+        specs = (s.flavor or {}).get('extra_specs') or {}
+        flavor_cls = storage_class(key, flavor_storage_value(specs, key))
+        if flavor_cls is not None and flavor_cls != host_cls:
+            name = (s.flavor or {}).get('original_name', '?')
+            rep.note(f'note: {s.name} ({s.id}) runs on {s.compute_host} ({host_cls}) with '
+                     f'flavor {name} marked {flavor_cls}; its next cold move follows the flavor')
+    if unclassified:
+        rep.note(f'note: {unclassified} live instance(s) run on a host outside today\'s '
+                 'storage aggregates and cannot be classified')
+
+
+def check_leftover_disks(ctx, rep, hosts, servers, reported):
+    """9c: <uuid>_disk images whose instance is gone or now on local storage."""
+    if ctx.rbd_images is None:
+        rep.note('9c skipped: section 1 could not list the pool')
+        return
+    live = {s.id: s for s in servers}
+    for name in sorted(ctx.rbd_images):
+        m = DISK_IMAGE.match(name)
+        if not m or m[1] in reported:
+            continue
+        uuid = m[1]
+        s = live.get(uuid)
+        if s is None:
+            rep.finding(f'{ctx.args.rbd_pool}/{name} has no instance: an orphan image')
+        elif hosts.get(s.compute_host) == 'local':
+            rep.finding(f'{ctx.args.rbd_pool}/{name} is the old root of {s.name} ({uuid}), '
+                        f'now on local storage at {s.compute_host}; it can be restored')
+        else:
+            continue
+        for cmd in preserve_commands(ctx, uuid):
+            rep.suggest(cmd)
+
+
+def check_flavor_specs(ctx, rep, key):
+    """9d: flavors the scheduler may place on either storage type."""
+    for f in ctx.conn.compute.flavors(details=True, is_public=None, get_extra_specs=True):
+        value = flavor_storage_value(f.extra_specs or {}, key)
+        scope = 'public' if f.is_public else 'private'
+        if value is None:
+            rep.note(f'note: {scope} flavor {f.name} has no {AGGREGATE_SPEC_PREFIX}{key} spec')
+            rep.suggest(f'openstack flavor set --property {AGGREGATE_SPEC_PREFIX}{key}=<ceph|local> '
+                        f'{f.name}   # first check which hosts its instances run on')
+        elif storage_class(key, value) is None:
+            rep.note(f'note: {scope} flavor {f.name} has {key}={value!r}, which matches no '
+                     'storage aggregate')
+
+
+def check_cross_storage(ctx, rep):
+    rep.section('9. Moves across Ceph and local storage (advisory)')
+    # nova copies only file and block disks on a resize or cold migration, so a
+    # Ceph root is left behind and the guest comes back on a fresh image disk
+    key, hosts = storage_map(ctx.conn)
+    if not hosts:
+        rep.note('skipped: no aggregate carries a storage_type or local_storage key')
+        return
+    rep.note(f'storage key: {key}; {sum(c == "ceph" for c in hosts.values())} ceph host(s), '
+             f'{sum(c == "local" for c in hosts.values())} local host(s)')
+    reported = check_crossed_moves(ctx, rep, hosts)
+    servers = list(ctx.conn.compute.servers(details=True, all_projects=True))
+    check_flavor_host_mismatch(ctx, rep, key, hosts, servers)
+    check_leftover_disks(ctx, rep, hosts, servers, reported)
+    check_flavor_specs(ctx, rep, key)
+
+
 CHECKS = (check_resizing, check_rbd_snaps, check_migration_context, check_stuck_volumes,
           check_parked_verify_resize, check_dead_migrations, check_errored_migrations,
-          check_placement, check_duplicate_attachments)
+          check_placement, check_duplicate_attachments, check_cross_storage)
 
 
 class Context:
@@ -696,6 +899,7 @@ class Context:
         self.resizing = set()
         self.attachments = None
         self.live_attachments = None
+        self.rbd_images = None  # image names from section 1's rbd ls, when it ran
 
 
 def main(argv=None):
