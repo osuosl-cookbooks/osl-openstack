@@ -106,6 +106,8 @@ describe 'osl-openstack::compute' do
         )
       end
       it { is_expected.to modify_user('nova').with(shell: '/bin/sh') }
+      # A Ceph compute has no local disk to restore onto
+      it { is_expected.to delete_cookbook_file '/usr/local/sbin/nova-restore-local-disk' }
 
       it do
         is_expected.to create_osl_systemd_unit_drop_in('ulimit').with(
@@ -408,6 +410,11 @@ describe 'osl-openstack::compute' do
         it { is_expected.to_not create_directory '/var/run/ceph/guests' }
         it { is_expected.to_not create_directory '/var/log/ceph' }
         it { is_expected.to_not modify_group 'ceph-compute' }
+        it do
+          is_expected.to create_cookbook_file('/usr/local/sbin/nova-restore-local-disk').with(
+            source: 'restore-local-disk.py', mode: '0750'
+          )
+        end
 
         it do
           is_expected.to create_template('/root/openrc').with(

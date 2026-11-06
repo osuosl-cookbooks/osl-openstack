@@ -305,6 +305,14 @@ file '/var/lib/nova/.ssh/config' do
   mode '600'
 end
 
+# Restores the Ceph root a cross-storage resize left behind (docs/CROSS_STORAGE_RESIZE.md);
+# only a local-storage compute has a disk to restore onto
+cookbook_file '/usr/local/sbin/nova-restore-local-disk' do
+  source 'restore-local-disk.py'
+  mode '0750'
+  action openstack_local_storage_compute ? :create : :delete
+end
+
 logrotate_app 'var_log_ceph' do
   path '/var/log/ceph'
   frequency 'daily'
