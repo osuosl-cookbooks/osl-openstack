@@ -90,6 +90,10 @@ serves `/static` from `/var/www/horizon/static`, which `collectstatic` and
 Controllers get `nova-fix-flavors`, `nova-cold-migrate-host`,
 `nova-resize-debris-check` and `nova-maintenance-notice` in `/usr/local/sbin`;
 [docs/NOVA_FIX_FLAVORS.md](docs/NOVA_FIX_FLAVORS.md) covers the first.
+Local-storage computes get `nova-restore-local-disk`, which puts back the
+Ceph root that a resize to a local flavor leaves behind;
+[docs/CROSS_STORAGE_RESIZE.md](docs/CROSS_STORAGE_RESIZE.md) has the whole
+procedure and the audit that spots such moves.
 
 ## Migrating from RDO
 
