@@ -280,6 +280,30 @@ X0BwCgHRB7FvPAMu0hrDmEIJ87edGd1ziRYXpA9Lke/4VQk249pwzA==
       EOF
     end
   end
+
+  # The restore helper lives only where there is a local disk to restore onto
+  if local_storage
+    describe file('/usr/local/sbin/nova-restore-local-disk') do
+      it { should be_file }
+      its('mode') { should cmp '0750' }
+      its('owner') { should eq 'root' }
+      its('content') { should match %r{\A#!/usr/bin/python3\n} }
+    end
+
+    describe command('/usr/local/sbin/nova-restore-local-disk --help') do
+      its('exit_status') { should eq 0 }
+    end
+
+    # This node has no rbd_user (cinder is disabled), so the first guard refuses the dry run
+    describe command('/usr/local/sbin/nova-restore-local-disk 00000000-0000-0000-0000-000000000000 snap') do
+      its('exit_status') { should eq 1 }
+      its('stderr') { should match(/^refused: no rbd_user in \[libvirt\]/) }
+    end
+  else
+    describe file('/usr/local/sbin/nova-restore-local-disk') do
+      it { should_not exist }
+    end
+  end
 end
 
 control 'compute-privsep' do

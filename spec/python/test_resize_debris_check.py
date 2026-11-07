@@ -92,6 +92,8 @@ class Base(unittest.TestCase):
         self.rep = rdc.Report(out=self.out)
         self.conn = mock.Mock()
         self.conn.compute.servers.return_value = []
+        self.conn.compute.aggregates.return_value = []
+        self.conn.compute.flavors.return_value = []
         self.conn.block_storage.get.return_value = response({'volumes': []})
         self.db = mock.Mock(spec=rdc.NovaDB)
         self.db.available = True
@@ -766,6 +768,11 @@ class ParkedVerifyResizeTest(Base):
         self.assertIn("fix> openstack server resize confirm old   # (or 'resize revert')", t)
         self.assertNotIn('resize confirm new', t)
         self.assertIn('note: o (odd) has no parsable updated timestamp', t)
+        self.assertIn('must be reverted, not confirmed; section 9 lists those', t)
+
+    def test_no_pointer_when_nothing_is_parked(self):
+        rdc.check_parked_verify_resize(self.ctx, self.rep)
+        self.assertNotIn('section 9', self.text())
 
 
 class DeadMigrationsTest(Base):
@@ -868,6 +875,265 @@ class PlacementTest(Base):
         self.assertIn('FINDING: 1 orphaned placement allocation(s)', self.text())
 
 
+U1 = '11111111-1111-1111-1111-111111111111'
+U2 = '22222222-2222-2222-2222-222222222222'
+U3 = '33333333-3333-3333-3333-333333333333'
+
+
+def aggregate(name, metadata, hosts):
+    return types.SimpleNamespace(name=name, metadata=metadata, hosts=hosts)
+
+
+def vm(id, host, name='vm', flavor_name='m1', **specs):
+    flavor = {'original_name': flavor_name, 'extra_specs': specs}
+    return types.SimpleNamespace(id=id, name=name, compute_host=host, flavor=flavor)
+
+
+def flavor(name, is_public=True, **specs):
+    return types.SimpleNamespace(name=name, is_public=is_public, extra_specs=specs)
+
+
+class CrossStorageTest(Base):
+    X86 = [aggregate('ceph', {'storage_type': 'ceph'}, ['c1', 'c2']),
+           aggregate('local', {'storage_type': 'local'}, ['l1']),
+           aggregate('gpu', {'gpu': 'true'}, ['c1'])]
+    PPC = [aggregate('power9', {'local_storage': 'false', 'cpu_model': 'p9'}, ['p9a']),
+           aggregate('power10', {'local_storage': 'true'}, ['p10a'])]
+
+    def setUp(self):
+        super().setUp()
+        self.conn.compute.aggregates.return_value = self.X86
+        self.ctx.rbd_images = set()
+        self.migrations, self.roots, self.instances = [], [], []
+        self.db.query.side_effect = self.query
+
+    def query(self, sql, params=()):
+        if 'FROM migrations' in sql:
+            return self.migrations
+        if 'block_device_mapping' in sql:
+            return self.roots
+        if 'FROM instances' in sql:
+            return self.instances
+        raise AssertionError(sql)
+
+    def move(self, uuid, src, dst, status='confirmed', mtype='resize', mid=1, host=None):
+        self.migrations.append((mid, uuid, mtype, status, src, dst, '2026-11-04 14:41:00',
+                                host or dst))
+        self.instances.append((uuid, 'image-uuid'))
+
+    def test_storage_class(self):
+        for key, value, want in (('storage_type', 'ceph', 'ceph'), ('storage_type', 'Local', 'local'),
+                                 ('storage_type', '<is> local', 'local'), ('storage_type', 'nvme', None),
+                                 ('local_storage', 'true', 'local'), ('local_storage', 'False', 'ceph'),
+                                 ('local_storage', None, None), ('other', 'ceph', None)):
+            self.assertEqual(rdc.storage_class(key, value), want, (key, value))
+
+    def test_storage_map_x86_and_ppc64(self):
+        self.assertEqual(rdc.storage_map(self.conn),
+                         ('storage_type', {'c1': 'ceph', 'c2': 'ceph', 'l1': 'local'}))
+        self.conn.compute.aggregates.return_value = self.PPC
+        self.assertEqual(rdc.storage_map(self.conn),
+                         ('local_storage', {'p9a': 'ceph', 'p10a': 'local'}))
+
+    def test_skipped_without_storage_aggregates(self):
+        self.conn.compute.aggregates.return_value = [aggregate('gpu', {'gpu': 'true'}, ['c1'])]
+        rdc.check_cross_storage(self.ctx, self.rep)
+        self.assertIn('=== 9. Moves across Ceph and local storage (advisory) ===', self.text())
+        self.assertIn('skipped: no aggregate carries a storage_type or local_storage key', self.text())
+        self.db.query.assert_not_called()
+        self.conn.compute.servers.assert_not_called()
+        self.assertEqual(self.rep.findings, 0)
+
+    def test_heading_counts_hosts(self):
+        rdc.check_cross_storage(self.ctx, self.rep)
+        self.assertIn('storage key: storage_type; 2 ceph host(s), 1 local host(s)', self.text())
+
+    def test_ceph_to_local_with_the_image_still_there(self):
+        self.move(U1, 'c1', 'l1', mid=6103)
+        self.ctx.rbd_images = {f'{U1}_disk', f'{U2}_disk'}
+        self.conn.compute.servers.return_value = [vm(U1, 'l1', 'guest')]
+        rdc.check_cross_storage(self.ctx, self.rep)
+        t = self.text()
+        self.assertIn(f'FINDING: resize 6103 (c1/ceph -> l1/local, 2026-11-04 14:41:00) of {U1} '
+                      f'crossed to local storage; the old root is still vms/{U1}_disk', t)
+        self.assertIn(f'fix> rbd --id cinder -p vms info {U1}_disk', t)
+        self.assertIn(f'fix> rbd --id cinder snap create vms/{U1}_disk@<TICKET>-preserve && '
+                      f'rbd --id cinder snap protect vms/{U1}_disk@<TICKET>-preserve', t)
+        self.assertNotIn('rbd rm', t)
+        # 9c does not report the same image twice
+        self.assertEqual(t.count(f'snap create vms/{U1}_disk@'), 1)
+        self.assertEqual(self.rep.findings, 2)  # the move, plus U2's orphan image
+
+    def test_round_trip_back_to_ceph_is_a_note(self):
+        # ceph -> local -> ceph: the image in the pool is the live root again
+        self.move(U1, 'c1', 'l1', mid=1, host='c2')
+        self.move(U1, 'l1', 'c2', mid=2, host='c2')
+        self.ctx.rbd_images = {f'{U1}_disk'}
+        self.conn.compute.servers.return_value = [vm(U1, 'c2')]
+        rdc.check_cross_storage(self.ctx, self.rep)
+        t = self.text()
+        self.assertIn(f'note: resize 1 (c1/ceph -> l1/local, 2026-11-04 14:41:00) of {U1} crossed '
+                      f'to local storage but the instance is on c2 now; vms/{U1}_disk is its '
+                      'current root', t)
+        self.assertNotIn('FINDING', t)
+        self.assertNotIn('snap create', t)
+        self.assertEqual(self.rep.findings, 0)
+
+    def test_instance_now_outside_the_aggregates_is_a_note(self):
+        self.move(U1, 'c1', 'l1', host='new-host')
+        self.ctx.rbd_images = {f'{U1}_disk'}
+        self.conn.compute.servers.return_value = [vm(U1, 'new-host')]
+        rdc.check_cross_storage(self.ctx, self.rep)
+        t = self.text()
+        self.assertIn('the instance is on new-host now, which is in no storage aggregate, so '
+                      f'check before treating vms/{U1}_disk as debris', t)
+        self.assertNotIn('current root', t)
+        self.assertEqual(self.rep.findings, 0)
+
+    def test_ceph_to_local_with_the_image_gone_is_a_note(self):
+        self.move(U1, 'c1', 'l1')
+        rdc.check_cross_storage(self.ctx, self.rep)
+        self.assertIn('note: resize 1 (c1/ceph -> l1/local', self.text())
+        self.assertIn('old root is no longer in the pool (recovered or cleaned up)', self.text())
+        self.assertEqual(self.rep.findings, 0)
+
+    def test_ceph_to_local_without_a_pool_listing_is_a_note(self):
+        self.move(U1, 'c1', 'l1')
+        self.ctx.rbd_images = None
+        rdc.check_cross_storage(self.ctx, self.rep)
+        self.assertIn('the old root may still be in the vms pool, which section 1 could not list',
+                      self.text())
+        self.assertIn('9c skipped: section 1 could not list the pool', self.text())
+        self.assertEqual(self.rep.findings, 0)
+
+    def test_unconfirmed_crossing_says_revert(self):
+        self.move(U1, 'l1', 'c1', status='finished', mtype='migration')
+        rdc.check_cross_storage(self.ctx, self.rep)
+        t = self.text()
+        self.assertIn(f'FINDING: migration 1 (l1/local -> c1/ceph, 2026-11-04 14:41:00) of {U1} '
+                      'crossed storage types and is still in VERIFY_RESIZE', t)
+        self.assertIn(f'fix> openstack server resize revert {U1}   # do NOT confirm', t)
+        self.assertEqual(self.rep.findings, 1)
+
+    def test_local_to_ceph_confirmed_is_a_note(self):
+        self.move(U1, 'l1', 'c2')
+        self.ctx.rbd_images = {f'{U1}_disk'}  # the current root, not debris
+        self.conn.compute.servers.return_value = [vm(U1, 'c2')]
+        rdc.check_cross_storage(self.ctx, self.rep)
+        self.assertIn('crossed to Ceph storage; the old local disk went with the confirm', self.text())
+        self.assertEqual(self.rep.findings, 0)
+
+    def test_volume_backed_crossing_is_a_note(self):
+        self.move(U1, 'c1', 'l1')
+        self.move(U2, 'c1', 'l1', mid=2)
+        self.instances = [(U1, ''), (U2, 'image-uuid')]  # U1: no root bdm, no image
+        self.roots = [(U2, 'volume')]
+        self.ctx.rbd_images = {f'{U1}_disk', f'{U2}_disk'}
+        self.conn.compute.servers.return_value = [vm(U1, 'l1'), vm(U2, 'l1')]
+        rdc.check_cross_storage(self.ctx, self.rep)
+        self.assertEqual(self.text().count('volume-backed, so nothing was lost'), 2)
+        # 9c still lists their images, since nothing marked them as reported
+        self.assertEqual(self.rep.findings, 2)
+
+    def test_same_type_and_unclassified_moves(self):
+        self.move(U1, 'c1', 'c2')
+        self.move(U2, 'old-host', 'l1', mid=2)
+        self.move(U3, 'c1', 'new-host', mid=3)
+        rdc.check_cross_storage(self.ctx, self.rep)
+        t = self.text()
+        self.assertNotIn(U1, t)
+        self.assertIn("note: 2 older move(s) involve a host outside today's storage aggregates "
+                      'and cannot be classified', t)
+        self.assertEqual(self.rep.findings, 0)
+
+    def test_9a_skipped_without_db(self):
+        self.db.available = False
+        self.ctx.rbd_images = {f'{U1}_disk'}
+        self.conn.compute.servers.return_value = [vm(U1, 'l1')]
+        rdc.check_cross_storage(self.ctx, self.rep)
+        self.assertIn('9a skipped: no DB access', self.text())
+        self.assertIn(f'FINDING: vms/{U1}_disk is the old root of vm ({U1}), now on local storage '
+                      'at l1; it can be restored', self.text())
+        self.db.query.assert_not_called()
+
+    def test_flavor_host_mismatch_notes(self):
+        self.conn.compute.servers.return_value = [
+            vm(U1, 'c1', 'a', 'm2.local.8c8m100d',
+               **{'aggregate_instance_extra_specs:storage_type': 'local'}),
+            vm(U2, 'l1', 'b', 'm1.small', **{'aggregate_instance_extra_specs:storage_type': '<is> local'}),
+            vm(U3, None, 'shelved', 'm1.small', **{'aggregate_instance_extra_specs:storage_type': 'ceph'}),
+            vm('u4', 'unknown-host', 'd'),
+            vm('u5', 'c2', 'e')]
+        rdc.check_cross_storage(self.ctx, self.rep)
+        t = self.text()
+        self.assertIn(f'note: a ({U1}) runs on c1 (ceph) with flavor m2.local.8c8m100d marked local; '
+                      'its next cold move follows the flavor', t)
+        self.assertNotIn('note: b (', t)
+        self.assertNotIn('shelved', t)
+        self.assertIn("note: 1 live instance(s) run on a host outside today's storage aggregates", t)
+        self.assertEqual(self.rep.findings, 0)
+        self.conn.compute.servers.assert_called_once_with(details=True, all_projects=True)
+
+    def test_leftover_disks(self):
+        self.ctx.rbd_images = {f'{U1}_disk', f'{U2}_disk', f'{U3}_disk', f'{U3}_disk.config',
+                               'not-an-instance', f'{U2}_disk@nova-resize'}
+        self.conn.compute.servers.return_value = [vm(U2, 'c1'), vm(U3, 'l1', 'moved')]
+        rdc.check_cross_storage(self.ctx, self.rep)
+        t = self.text()
+        self.assertIn(f'FINDING: vms/{U1}_disk has no instance: an orphan image', t)
+        self.assertIn(f'FINDING: vms/{U3}_disk is the old root of moved ({U3}), now on local '
+                      'storage at l1; it can be restored', t)
+        self.assertNotIn(f'FINDING: vms/{U2}', t)
+        self.assertNotIn('not-an-instance', t)
+        self.assertEqual(self.rep.findings, 2)
+        self.assertEqual(t.count('fix> rbd --id cinder -p vms info'), 2)
+
+    def test_flavors_without_the_storage_spec(self):
+        self.conn.compute.flavors.return_value = [
+            flavor('m1.small', **{'aggregate_instance_extra_specs:storage_type': 'ceph'}),
+            flavor('p10.nvme.c4m8d200'),
+            flavor('oph.secret', is_public=False, cpu_model='p9')]
+        rdc.check_cross_storage(self.ctx, self.rep)
+        t = self.text()
+        self.assertNotIn('m1.small', t)
+        self.assertIn('note: public flavor p10.nvme.c4m8d200 has no '
+                      'aggregate_instance_extra_specs:storage_type spec', t)
+        self.assertIn('fix> openstack flavor set --property aggregate_instance_extra_specs:'
+                      'storage_type=<ceph|local> p10.nvme.c4m8d200   # first check which hosts', t)
+        self.assertIn('note: private flavor oph.secret has no', t)
+        self.assertEqual(self.rep.findings, 0)
+        self.conn.compute.flavors.assert_called_once_with(details=True, is_public=None,
+                                                          get_extra_specs=True)
+
+    def test_unrecognised_flavor_value_is_a_note(self):
+        self.conn.compute.flavors.return_value = [
+            flavor('x.nvme', **{'aggregate_instance_extra_specs:storage_type': 'nvme'})]
+        rdc.check_cross_storage(self.ctx, self.rep)
+        self.assertIn("note: public flavor x.nvme has storage_type='nvme', which matches no "
+                      'storage aggregate', self.text())
+        self.assertNotIn('has no aggregate_instance_extra_specs', self.text())
+        self.assertEqual(self.rep.findings, 0)
+
+    def test_bare_spec_key_counts_too(self):
+        # the filter honours storage_type without the aggregate_instance_extra_specs: scope
+        self.conn.compute.servers.return_value = [vm(U1, 'c1', 'a', 'x.local', storage_type='local')]
+        self.conn.compute.flavors.return_value = [flavor('x.local', storage_type='local')]
+        rdc.check_cross_storage(self.ctx, self.rep)
+        t = self.text()
+        self.assertIn(f'note: a ({U1}) runs on c1 (ceph) with flavor x.local marked local', t)
+        self.assertNotIn('has no aggregate_instance_extra_specs', t)
+
+    def test_ppc64_key_drives_the_flavor_checks(self):
+        self.conn.compute.aggregates.return_value = self.PPC
+        self.conn.compute.servers.return_value = [
+            vm(U1, 'p9a', 'x', 'p10.c4', **{'aggregate_instance_extra_specs:local_storage': 'true'})]
+        self.conn.compute.flavors.return_value = [flavor('p8.xxlarge')]
+        rdc.check_cross_storage(self.ctx, self.rep)
+        t = self.text()
+        self.assertIn('runs on p9a (ceph) with flavor p10.c4 marked local', t)
+        self.assertIn('public flavor p8.xxlarge has no aggregate_instance_extra_specs:local_storage', t)
+
+
 class MainTest(Base):
     def setUp(self):
         super().setUp()
@@ -887,9 +1153,18 @@ class MainTest(Base):
         rc, out = self.run_main()
         self.assertEqual(rc, 0)
         self.assertIn('nova DB: nova_cell on dbhost:3306 as nova (from /etc/nova/nova.conf)', out)
-        for n in range(1, 8):
+        for n in range(1, 10):
             self.assertIn(f'=== {n}. ', out)
+        self.assertIn('skipped: no aggregate carries a storage_type or local_storage key', out)
         self.assertIn('No resize/migration debris found.', out)
+
+    def test_a_leftover_image_reaches_the_exit_code(self):
+        self.which.return_value = '/usr/bin/rbd'
+        self.run.return_value = (0, f'{U1}_disk 20 GiB 2\n')
+        self.conn.compute.aggregates.return_value = CrossStorageTest.X86
+        rc, out = self.run_main('-x')
+        self.assertEqual(rc, 2)
+        self.assertIn(f'FINDING: vms/{U1}_disk has no instance: an orphan image', out)
 
     def test_findings_and_exit_code_flag(self):
         self.db.query.side_effect = lambda sql, params=(): (
