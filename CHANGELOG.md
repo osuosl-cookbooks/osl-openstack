@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+20.4.0 (2026-11-07)
+-------------------
+- Detect and recover resizes between Ceph and local storage
+
 20.3.0 (2026-10-19)
 -------------------
 - Run the OpenStack operator scripts on AlmaLinux Python and out of /root
