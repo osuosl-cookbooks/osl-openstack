@@ -159,8 +159,7 @@ describe 'osl-openstack::compute' do
         end
 
         before do
-          allow_any_instance_of(OSLOpenstack::Cookbook::Helpers).to receive(:openstack_virsh_secret?)
-            .with(CEPH_FSID, 'AQAjbr1aWv+aNBAAoGfqrwX9iSdNmtuvUkwGhA==').and_return(true)
+          stub_virsh_secret("AQAjbr1aWv+aNBAAoGfqrwX9iSdNmtuvUkwGhA==\n")
         end
 
         it { is_expected.to_not run_execute('update virsh ceph secret') }
