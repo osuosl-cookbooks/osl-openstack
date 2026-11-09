@@ -45,6 +45,24 @@ module OSLOpenstack
         shell_out('virsh', 'secret-get-value', uuid).stdout.strip == value
       end
 
+      # Upstream's modular daemons (libvirt docs/daemons.rst); each socket conflicts with libvirtd.socket
+      def openstack_libvirt_modular_units
+        units = %w(qemu interface network nodedev nwfilter secret storage proxy).flat_map do |drv|
+          ["virt#{drv}d.service", "virt#{drv}d.socket", "virt#{drv}d-ro.socket", "virt#{drv}d-admin.socket"]
+        end
+        units + %w(virtproxyd-tcp.socket virtproxyd-tls.socket)
+      end
+
+      def openstack_libvirtd_sockets
+        %w(libvirtd.socket libvirtd-ro.socket libvirtd-admin.socket libvirtd-tcp.socket)
+      end
+
+      # systemd refuses to start a socket while its service runs, so libvirtd has to stop first
+      def openstack_libvirtd_socket_down?
+        states = shell_out('systemctl', 'is-active', 'libvirtd.service', *openstack_libvirtd_sockets).stdout.split
+        states.first == 'active' && states.drop(1).any? { |s| s != 'active' }
+      end
+
       def openstack_rabbitmq_user?(user)
         openstack_shell_match?('rabbitmqctl -q list_users', /^#{Regexp.escape(user)}\s/)
       end

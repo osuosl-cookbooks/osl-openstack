@@ -71,6 +71,15 @@ shared_context 'network_stubs' do
   end
 end
 
+# systemctl is-active for libvirtd.service and its four sockets, as the stop guard reads them
+def stub_libvirtd_states(states)
+  stubs_for_resource('service[stop libvirtd for its sockets]') do |resource|
+    allow(resource).to receive_shell_out('systemctl', 'is-active', 'libvirtd.service', 'libvirtd.socket',
+                                         'libvirtd-ro.socket', 'libvirtd-admin.socket', 'libvirtd-tcp.socket')
+      .and_return(double(stdout: states.join("\n") + "\n"))
+  end
+end
+
 # virsh secret-get-value for the Ceph secret, as the update guard reads it
 def stub_virsh_secret(stdout)
   stubs_for_resource('execute[update virsh ceph secret]') do |resource|
@@ -87,5 +96,6 @@ shared_context 'compute_stubs' do
     stub_virsh_secret('')
     allow_any_instance_of(OSLOpenstack::Cookbook::Helpers).to receive(:openstack_keystone_reachable?).and_return(false)
     allow_any_instance_of(OSLOpenstack::Cookbook::Helpers).to receive(:kernel_module_available?).and_return(false)
+    stub_libvirtd_states(%w(inactive) * 5)
   end
 end

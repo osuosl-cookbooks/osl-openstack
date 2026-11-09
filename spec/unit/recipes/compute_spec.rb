@@ -64,8 +64,55 @@ describe 'osl-openstack::compute' do
       end
       it { is_expected.to upgrade_package 'osuosl-openstack-nova-compute' }
       it { is_expected.to delete_file '/etc/nova/nova-compute.conf' }
-      it { is_expected.to enable_service 'libvirtd-tcp.socket' }
-      it { is_expected.to start_service 'libvirtd-tcp.socket' }
+      %w(qemu interface network nodedev nwfilter secret storage proxy).each do |drv|
+        it { is_expected.to stop_service "virt#{drv}d.service" }
+        it { is_expected.to mask_service "virt#{drv}d.service" }
+        it { is_expected.to_not disable_service "virt#{drv}d.service" }
+        %W(virt#{drv}d.socket virt#{drv}d-ro.socket virt#{drv}d-admin.socket).each do |s|
+          it { is_expected.to stop_service s }
+          it { is_expected.to disable_service s }
+          it { is_expected.to mask_service s }
+        end
+      end
+      %w(virtproxyd-tcp.socket virtproxyd-tls.socket).each do |s|
+        it { is_expected.to stop_service s }
+        it { is_expected.to disable_service s }
+        it { is_expected.to mask_service s }
+      end
+      %w(virtlogd.socket virtlogd-admin.socket virtlockd.socket virtlockd-admin.socket).each do |s|
+        it { is_expected.to enable_service s }
+        it { is_expected.to_not start_service s }
+      end
+      it { is_expected.to_not stop_service 'stop libvirtd for its sockets' }
+      %w(libvirtd.socket libvirtd-ro.socket libvirtd-admin.socket libvirtd-tcp.socket).each do |s|
+        it { is_expected.to enable_service s }
+        it { is_expected.to start_service s }
+      end
+      it 'masks the modular units and stops libvirtd before its sockets and libvirtd start' do
+        names = chef_run.resource_collection.map(&:to_s)
+        order = ['service[virtqemud.service]', 'service[virtproxyd-tls.socket]', 'service[stop libvirtd for its sockets]',
+                 'service[libvirtd.socket]', 'service[libvirtd-tcp.socket]', 'service[libvirtd]']
+        expect(order.map { |r| names.index(r) }).to eq(order.map { |r| names.index(r) }.sort)
+      end
+
+      context 'when a libvirtd socket is down' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm).converge(described_recipe)
+        end
+
+        before do
+          stub_libvirtd_states(%w(active active inactive active active))
+        end
+
+        it { is_expected.to stop_service('stop libvirtd for its sockets').with(service_name: 'libvirtd') }
+        it do
+          expect(chef_run.service('stop libvirtd for its sockets')).to notify('service[libvirtd]').to(:start).delayed
+        end
+        it do
+          expect(chef_run.service('stop libvirtd for its sockets')).to \
+            notify('service[openstack-nova-compute]').to(:start).delayed
+        end
+      end
       it { expect(chef_run.link('/usr/bin/qemu-system-x86_64')).to link_to('/usr/libexec/qemu-kvm') }
       it { is_expected.to create_cookbook_file '/etc/libvirt/libvirtd.conf' }
       it { expect(chef_run.cookbook_file('/etc/libvirt/libvirtd.conf')).to notify('service[libvirtd]').to(:restart) }
