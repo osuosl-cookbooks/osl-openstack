@@ -393,6 +393,11 @@ describe OSLOpenstack::Cookbook::Helpers do
       tls_redirects = services.select { |s| s[:tls] && s[:redirect_to_https] }
       expect(tls_redirects).to be_empty
     end
+
+    it 'gives only glance-api a longer timeout' do
+      timeouts = services.select { |s| s[:timeout] }.to_h { |s| [s[:name], s[:timeout]] }
+      expect(timeouts).to eq('glance-api' => '5m')
+    end
   end
 
   describe '#openstack_db_node?' do

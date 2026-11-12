@@ -492,7 +492,7 @@ module OSLOpenstack
       def openstack_ha_services
         [
           { name: 'keystone',       port: 5000, tls: true },
-          { name: 'glance-api',     port: 9292 },
+          { name: 'glance-api',     port: 9292, timeout: '5m' },
           { name: 'nova-api',       port: 8774 },
           { name: 'nova-metadata',  port: 8775 },
           { name: 'placement',      port: 8778 },

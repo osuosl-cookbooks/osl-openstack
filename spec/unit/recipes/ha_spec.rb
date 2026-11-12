@@ -90,6 +90,20 @@ describe 'osl-openstack::ha' do
         expect(glance_first.option).to be_nil # property unset
       end
 
+      it 'raises the client and server timeouts on glance-api only' do
+        # The first resource per name carries extra_options; the second only
+        # adds the IPv6 bind.
+        glance_first = chef_run.find_resources(:haproxy_listen)
+                               .find { |r| r.name == 'glance-api' }
+        expect(glance_first.extra_options['timeout']).to eq(['client 5m', 'server 5m'])
+        expect(glance_first.extra_options['balance']).to eq('roundrobin')
+        expect(glance_first.extra_options).to include('stick-table', 'tcp-request')
+        %w(keystone nova-api cinder-api horizon-http).each do |name|
+          listen = chef_run.find_resources(:haproxy_listen).find { |r| r.name == name }
+          expect(listen.extra_options).not_to have_key('timeout')
+        end
+      end
+
       it 'makes horizon-http a 301 redirect to https with no backend' do
         # haproxy owns the http->https redirect in HA: mode http, the rule,
         # and no backend servers
