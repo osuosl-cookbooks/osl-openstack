@@ -57,6 +57,7 @@ REPO_DIR = '/etc/yum.repos.d'
 ROLLBACK_REPO = 'OSL-openstack-rollback'
 MAX_MIGRATION_BATCHES = 1000
 NOVA_CONF = '/etc/nova/nova.conf'
+BIN_DIR = '/usr/bin'
 OPENRC = '/root/openrc'
 DEBRIS_CHECK = '/usr/local/sbin/nova-resize-debris-check'
 # Its --exit-code results; precheck never passes --fix, so 1 is always an error
@@ -73,7 +74,9 @@ STATUS_TOOLS = [
     ('keystone-status', 'keystone'), ('glance-status', 'glance'), ('placement-status', 'placement'),
     ('nova-status', 'nova'), ('cinder-status', 'cinder'), ('neutron-status', 'neutron'), ('heat-status', 'heat'),
 ]
-MIGRATIONS = [('nova-manage', 'nova'), ('cinder-manage', 'cinder'), ('placement-manage', 'placement')]
+# Each tool and its batch-size flag; cinder spells it --max_count
+MIGRATIONS = [('nova-manage', 'nova', '--max-count'), ('cinder-manage', 'cinder', '--max_count'),
+              ('placement-manage', 'placement', '--max-count')]
 # Config file, section and option naming each service database
 DB_OPTIONS = [
     ('/etc/keystone/keystone.conf', 'database', 'connection'),
@@ -399,11 +402,14 @@ def cmd_precheck(args):
     for cell, host, version in old_computes(nova_cell_urls()):
         problems.append(f'nova-compute on {host} ({cell}) is at service version {version}, below {MIN_COMPUTE_VERSION}')
     log.info('running the yoga online data migrations to completion')
-    for tool, user in MIGRATIONS[:2]:
-        run_migrations(tool, user)
+    for tool, user, flag in MIGRATIONS[:2]:
+        run_migrations(tool, user, flag)
     debris = run([DEBRIS_CHECK, '--exit-code'], check=False, env=openrc_env()).returncode
     if debris:
         problems.append(DEBRIS_RESULTS.get(debris, f'{DEBRIS_CHECK} exited {debris}'))
+    failed = failed_checks()
+    if failed:
+        problems.append('upgrade checks failed: ' + ', '.join(failed))
     if problems:
         raise UpgradeError('precheck failed:\n  ' + '\n  '.join(problems))
     log.info('precheck passed')
@@ -481,23 +487,28 @@ def cmd_restore(args):
                 raise UpgradeError(f'restoring {name} failed')
 
 
-def cmd_check(args):
+def failed_checks():
     failed = []
     for tool, user in STATUS_TOOLS:
-        if not os.path.exists(f'/usr/bin/{tool}'):
+        if not os.path.exists(os.path.join(BIN_DIR, tool)):
             continue
         rc = run([tool, 'upgrade', 'check'], check=False, user=user).returncode
         # oslo.upgradecheck: 0 success, 1 warning, 2 failure, 255 crashed
         if rc >= 2:
             failed.append(f'{tool} ({rc})')
+    return failed
+
+
+def cmd_check(args):
+    failed = failed_checks()
     if failed:
         raise UpgradeError('upgrade checks failed: ' + ', '.join(failed))
     log.info('upgrade checks passed')
 
 
-def run_migrations(tool, user):
+def run_migrations(tool, user, flag):
     for _ in range(MAX_MIGRATION_BATCHES):
-        rc = run([tool, 'db', 'online_data_migrations', '--max-count', '1000'], check=False, user=user).returncode
+        rc = run([tool, 'db', 'online_data_migrations', flag, '1000'], check=False, user=user).returncode
         # 1 means a batch ran and more may remain; 0 is done; 2 is errors
         if rc == 0:
             return
@@ -508,9 +519,9 @@ def run_migrations(tool, user):
 
 def cmd_migrate(args):
     require_db_node()
-    for tool, user in MIGRATIONS:
+    for tool, user, flag in MIGRATIONS:
         log.info('%s online_data_migrations', tool)
-        run_migrations(tool, user)
+        run_migrations(tool, user, flag)
 
 
 def cmd_restart_nova(args):

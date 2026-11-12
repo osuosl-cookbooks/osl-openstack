@@ -47,7 +47,8 @@ driven from the jumphost:
 - `/usr/local/sbin/openstack-node-upgrade` is each node's part of a window.
 - `recipe[osl-openstack::upgrade_runner]` on the jumphost installs
   `openstack-upgrade <cloud> <phase>`, which sequences the window and its
-  rollback.
+  rollback; `openstack-upgrade <cloud> upgrade` runs the whole window with
+  pauses at its decision points.
 
 [docs/RELEASE_UPGRADES.md](docs/RELEASE_UPGRADES.md) has the runbook, the
 points of no return and the rollback.
@@ -187,7 +188,7 @@ export TF_VAR_ssh_key_name="$OS_SSH_KEYPAIR"
 - Database node
 - Ceph node
 - Controller node (MQ, Neutron, public apis, web interface, etc)
-- Compute node (also includes Cinder volume service)
+- Compute nodes, one by default and up to three (also includes Cinder volume service)
 - Jumphost running the release upgrade runner
 
 ## Testing
@@ -207,6 +208,19 @@ $ export TF_VAR_region2=1
 $ KITCHEN_YAML=kitchen.multi-node.yml kitchen test multi-node
 ```
 
+To test the upgrade runner's canary and a parallel batch, build three computes instead of one. ``TF_VAR_computes``
+takes 0 to 3, and each compute is an ``m2.local.8c8m100d``, so check the shared quota first:
+
+``` console
+$ export TF_VAR_computes=3
+$ KITCHEN_YAML=kitchen.multi-node.yml kitchen test multi-node
+```
+
+``compute`` is always the upgrade canary. Each compute gets two ``upgrade-vm-<host>-N`` VMs, the first with a volume,
+from ``/root/upgrade_vms.sh`` on controller1. Changing the count later rebuilds only the computes: a dropped compute
+first has its VMs, nova service, neutron agents and chef node removed. An environment built before this count existed
+needs a ``kitchen destroy multi-node`` first.
+
 Be patient as this will take a while to converge all of the nodes (approximately 40 minutes).
 
 ## Access the nodes
@@ -218,6 +232,9 @@ manually. To see what their IP addresses are, just run ``terraform output`` whic
 # You can run the following commands to login to each node
 $ ssh almalinux@$(terraform output controller)
 $ ssh almalinux@$(terraform output compute)
+# With TF_VAR_computes=3
+$ ssh almalinux@$(terraform output compute2)
+$ ssh almalinux@$(terraform output compute3)
 # The upgrade runner (docs/RELEASE_UPGRADES.md has the rehearsal)
 $ ssh almalinux@$(terraform output jumphost)
 # If you're testing multi-regions
@@ -226,6 +243,9 @@ $ ssh almalinux@$(terraform output compute_region2)
 
 # Or you can look at the IPs for all for all of the nodes at once
 $ terraform output
+# Or let the rehearsal helper pick the address and a known_hosts that survives rebuilds
+$ test/multinode-rehearse.sh nodes
+$ test/multinode-rehearse.sh ssh controller1
 ```
 
 ## Interacting with the chef-zero server
@@ -249,13 +269,16 @@ the knife config otherwise you will be interacting with our production chef serv
 You do not need to use kitchen-terraform directly if you're just doing development. It's primarily useful for testing
 the multi-node cluster using inspec. You can simply deploy the cluster using terraform directly by doing the following:
 
+The x86 cloud's API rejects a source that opens more than 50 connections in 10 seconds, so keep terraform's parallelism
+at 4, as ``kitchen.multi-node.yml`` does:
+
 ``` bash
 # Sanity check
 $ terraform plan
 # Deploy the cluster
-$ terraform apply
+$ terraform apply -parallelism=4
 # Destroy the cluster
-$ terraform destroy
+$ terraform destroy -parallelism=4
 ```
 
 ## Cleanup

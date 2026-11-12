@@ -107,8 +107,15 @@ resource "openstack_networking_port_v2" "controller2" {
     network_id      = data.openstack_networking_network_v2.network.id
 }
 
+# compute, compute2 and compute3, as TF_VAR_computes asks; compute is the upgrade canary
+locals {
+    compute_names = [for i in range(var.computes) : i == 0 ? "compute" : "compute${i + 1}"]
+    compute_ips   = ["10.1.2.4", "10.1.2.14", "10.1.2.15"]
+}
+
 resource "openstack_networking_port_v2" "compute" {
-    name            = "compute"
+    count           = var.computes
+    name            = local.compute_names[count.index]
     admin_state_up  = true
     network_id      = data.openstack_networking_network_v2.network.id
 }
@@ -191,13 +198,14 @@ resource "openstack_networking_port_v2" "controller2_openstack" {
 }
 
 resource "openstack_networking_port_v2" "compute_openstack" {
-    name                  = "compute_openstack"
+    count                 = var.computes
+    name                  = "${local.compute_names[count.index]}_openstack"
     admin_state_up        = true
     port_security_enabled = false
     network_id            = openstack_networking_network_v2.openstack_network.id
     fixed_ip {
         subnet_id = openstack_networking_subnet_v2.openstack_subnet.id
-        ip_address = "10.1.2.4"
+        ip_address = local.compute_ips[count.index]
     }
 }
 
@@ -336,20 +344,21 @@ resource "openstack_compute_instance_v2" "controller2" {
 }
 
 resource "openstack_compute_instance_v2" "compute" {
-    name            = "compute"
+    count           = var.computes
+    name            = local.compute_names[count.index]
     image_name      = var.os_image
     flavor_name     = "m2.local.8c8m100d"
     key_pair        = var.ssh_key_name
     security_groups = ["default"]
     connection {
         user = var.ssh_user_name
-        host = openstack_networking_port_v2.compute.all_fixed_ips.0
+        host = openstack_networking_port_v2.compute[count.index].all_fixed_ips.0
     }
     network {
-        port = openstack_networking_port_v2.compute.id
+        port = openstack_networking_port_v2.compute[count.index].id
     }
     network {
-        port = openstack_networking_port_v2.compute_openstack.id
+        port = openstack_networking_port_v2.compute_openstack[count.index].id
     }
     provisioner "remote-exec" {
         inline = concat([
@@ -538,7 +547,7 @@ resource "null_resource" "controller1" {
             knife bootstrap -c test/chef-config/knife.rb \
                 ${var.ssh_user_name}@${openstack_compute_instance_v2.controller1.network.0.fixed_ip_v4} \
                 --bootstrap-version ${var.chef_version} -y -N controller1 --sudo \
-                -r 'role[openstack_tf_common],role[openstack_controller],recipe[openstack_test::prometheus],recipe[osl-openstack::controller],recipe[osl-openstack::block_storage],recipe[osl-openstack::mon],recipe[openstack_test::image_upload],recipe[openstack_test::create_network]'
+                -r 'role[openstack_tf_common],role[openstack_controller],recipe[openstack_test::prometheus],recipe[osl-openstack::controller],recipe[osl-openstack::block_storage],recipe[osl-openstack::mon],recipe[openstack_test::image_upload],recipe[openstack_test::create_network],recipe[openstack_test::upgrade_vms]'
             EOF
         environment = {
             CHEF_SERVER = "${openstack_compute_instance_v2.chef_zero.network.0.fixed_ip_v4}"
@@ -598,21 +607,24 @@ resource "null_resource" "controller2" {
     ]
 }
 
+# Destroy clears the host from nova, neutron and chef-zero so precheck sees no ghost compute;
+# triggers keep port IPs, which survive a rebuild of controller1 or chef-zero
 resource "null_resource" "compute" {
+    count = var.computes
     triggers = {
-        instance_id = openstack_compute_instance_v2.compute.id
-    }
-    connection {
-        type = "ssh"
-        user = var.ssh_user_name
-        host = openstack_compute_instance_v2.compute.network.0.fixed_ip_v4
+        instance_id   = openstack_compute_instance_v2.compute[count.index].id
+        name          = local.compute_names[count.index]
+        compute_ip    = openstack_networking_port_v2.compute[count.index].all_fixed_ips.0
+        controller_ip = openstack_networking_port_v2.controller1.all_fixed_ips.0
+        chef_zero_ip  = openstack_networking_port_v2.chef_zero.all_fixed_ips.0
+        ssh_user      = var.ssh_user_name
     }
 
     provisioner "local-exec" {
         command = <<-EOF
             knife bootstrap -c test/chef-config/knife.rb \
-                ${var.ssh_user_name}@${openstack_compute_instance_v2.compute.network.0.fixed_ip_v4} \
-                --bootstrap-version ${var.chef_version} -y -N compute --sudo \
+                ${var.ssh_user_name}@${openstack_compute_instance_v2.compute[count.index].network.0.fixed_ip_v4} \
+                --bootstrap-version ${var.chef_version} -y -N ${local.compute_names[count.index]} --sudo \
                 -r 'role[openstack_tf_common],recipe[osl-openstack::compute]'
             EOF
         environment = {
@@ -621,18 +633,91 @@ resource "null_resource" "compute" {
     }
 
     provisioner "remote-exec" {
+        connection {
+            type = "ssh"
+            user = var.ssh_user_name
+            host = openstack_compute_instance_v2.compute[count.index].network.0.fixed_ip_v4
+        }
         inline = [
             "sudo cinc-client",
         ]
     }
 
+    # A running agent re-registers what the controller deletes, so stop them first
+    provisioner "remote-exec" {
+        when       = destroy
+        on_failure = continue
+        connection {
+            type    = "ssh"
+            user    = lookup(self.triggers, "ssh_user", "")
+            host    = lookup(self.triggers, "compute_ip", "")
+            timeout = "30s"
+        }
+        inline = [
+            "sudo systemctl stop openstack-nova-compute neutron-linuxbridge-agent",
+        ]
+    }
+
+    provisioner "remote-exec" {
+        when       = destroy
+        on_failure = continue
+        connection {
+            type    = "ssh"
+            user    = lookup(self.triggers, "ssh_user", "")
+            host    = lookup(self.triggers, "controller_ip", "")
+            timeout = "30s"
+        }
+        inline = [
+            "sudo /root/remove_compute.sh '${lookup(self.triggers, "name", "")}'",
+        ]
+    }
+
+    provisioner "local-exec" {
+        when       = destroy
+        on_failure = continue
+        command    = <<-EOF
+            [ -n "$NODE" ] || exit 0
+            knife node delete -y "$NODE" -c test/chef-config/knife.rb
+            knife client delete -y "$NODE" -c test/chef-config/knife.rb
+            EOF
+        environment = {
+            NODE        = lookup(self.triggers, "name", "")
+            CHEF_SERVER = lookup(self.triggers, "chef_zero_ip", "")
+        }
+    }
+
     depends_on = [
         openstack_compute_instance_v2.compute,
         null_resource.controller1,
+        null_resource.controller2,
     ]
 }
 
-# After both controllers and the compute, so its node search finds them all
+# Two VMs per compute, one with a volume, for an upgrade to carry through
+resource "null_resource" "upgrade_vms" {
+    count = var.computes > 0 ? 1 : 0
+    triggers = {
+        computes = join(",", openstack_compute_instance_v2.compute[*].id)
+    }
+    connection {
+        type = "ssh"
+        user = var.ssh_user_name
+        host = openstack_compute_instance_v2.controller1.network.0.fixed_ip_v4
+    }
+
+    provisioner "remote-exec" {
+        inline = [
+            "sudo /root/upgrade_vms.sh ${var.computes}",
+        ]
+    }
+
+    depends_on = [
+        null_resource.compute,
+        null_resource.jumphost,
+    ]
+}
+
+# After both controllers and every compute, so its node search finds them all
 resource "null_resource" "jumphost" {
     triggers = {
         instance_id = openstack_compute_instance_v2.jumphost.id

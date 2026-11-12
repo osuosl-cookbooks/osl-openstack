@@ -5,6 +5,9 @@ provisioner:
 driver:
   name: terraform
   command_timeout: 7200
+  # The x86 API's haproxy rejects a source over 50 connections per 10s
+  # (recipes/ha.rb); 10 parallel creates and polls pass it.
+  parallelism: 4
 
 transport:
   name: rsync
@@ -47,14 +50,18 @@ verifier:
       attrs:
         - test/integration/multi-node/controller2.yml
       sudo: true
-    - name: compute
+<% # TF_VAR_computes (0 to 3, default 1) is how many computes terraform builds %>
+<% (ENV['TF_VAR_computes'] || '1').to_i.times do |i| %>
+<% name = i.zero? ? 'compute' : "compute#{i + 1}" %>
+    - name: <%= name %>
       backend: ssh
-      hosts_output: compute
+      hosts_output: <%= name %>
       user: almalinux
       profile_locations:
         - test/integration/compute
         - test/integration/telemetry_compute
       sudo: true
+<% end %>
     - name: jumphost
       backend: ssh
       hosts_output: jumphost

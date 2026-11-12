@@ -49,7 +49,7 @@ same goes to `/etc/osl-openstack/release.json`.
 | `stop` | any | Removes the cinc cron, kills a cron run still in its splay sleep, waits (up to an hour) for a running converge by taking `/tmp/chef-client.lock`, then stops every unit the venv RPMs ship (and httpd on controllers) |
 | `install` | any | Saves the running release's repo as the disabled `OSL-openstack-rollback`, installs the staged release and records the dnf transaction |
 | `undo` | any | `dnf history undo` of that transaction, from `OSL-openstack-rollback` |
-| `precheck` | DB controller | nova-compute service versions >= 61 in every cell, yoga online migrations done, `/usr/local/sbin/nova-resize-debris-check --exit-code` clean, with its nova DB checks run |
+| `precheck` | DB controller | nova-compute service versions >= 61 in every cell, yoga online migrations done, `/usr/local/sbin/nova-resize-debris-check --exit-code` clean, with its nova DB checks run, and no `*-status upgrade check` Failure |
 | `backup` | DB controller | `mysqldump` of every service database to `/var/lib/osl-openstack/upgrade-backup/<release>/` |
 | `restore` | DB controller | Prints, then with `--yes` runs, the restore of those dumps |
 | `check` | any | Every `*-status upgrade check`; fails on rc >= 2 |
@@ -74,7 +74,10 @@ controller, hypervisors, canaries) and installs
 `openstack-node-upgrade` and `cinc-client` over `ssh root@<host>`, refuses a
 phase until the earlier ones are done, and keeps markers in
 `/var/lib/openstack-upgrade/<cloud>-<release>/` so a window can resume.
-`--dry-run` prints what would run. Logs go to `/var/log/openstack-upgrade/`.
+`--dry-run` prints what would run. Every run except `status` writes its full
+output, each host's lines prefixed with its name, to
+`/var/log/openstack-upgrade/<cloud>-<UTC>.log`; `<cloud>.log` there keeps the
+runner's own lines across runs.
 
 Canaries are hypervisors with `node['osl-openstack']['upgrade_canary']` set,
 otherwise the first hypervisor of each CPU model (one POWER9 and one POWER10
@@ -94,6 +97,39 @@ on ppc64).
 5. `openstack-upgrade <cloud> precheck`. Fix what it reports; it can be rerun.
 
 ## The window
+
+Run the whole window on the jumphost with one command, inside tmux. It
+names its full-output log, `/var/log/openstack-upgrade/<cloud>-<UTC>.log`,
+as its first line:
+
+```bash
+openstack-upgrade <cloud> upgrade
+```
+
+`upgrade` runs the phases below from `stop` to `finalize`, after `precheck`
+has passed. It pauses three times:
+- before `controller-db`, where you type `yes`;
+- after the canaries;
+- after `verify`.
+
+`-y` skips the pauses, which is for rehearsals. Without a terminal, and
+without `-y` or `--dry-run`, it refuses to start.
+
+Every run except `status` and `--dry-run` starts its own ssh-agent and loads
+root's key into it once, asking for the passphrase on the terminal, `-y`
+included. Keychain's 10-minute timeout on the login's agent then can't cut
+the window short; the agent ends with the run. `status` and `--dry-run` use
+the login's agent, so run `ssh-add` first if keychain has dropped the key.
+
+If a phase fails, it stops there:
+- up to `verify`, rerun `upgrade` to resume, or roll back
+  (`openstack-upgrade --help-rollback`);
+- in `computes` or `finalize`, fix the host and rerun, which is fix
+  forward.
+
+A resumed `upgrade` skips the phases already done, and the verify pause
+once computes has started. The controller-db and canary pauses ask again
+until their phase finishes. Each phase can still be run on its own, as below.
 
 | Phase | What happens |
 |---|---|
@@ -129,20 +165,59 @@ agreement on the target and keeps going past a failed host.
 ## Rehearsal in multi-node
 
 The multi-node suite has a `jumphost` VM running the runner, with a test root
-key trusted by both controllers and the compute.
+key trusted by both controllers and every compute. With `TF_VAR_computes=3`,
+`compute` is the canary and `compute2` and `compute3` upgrade as one batch
+(`--batch 2`, the default). Each compute runs two `upgrade-vm-*` VMs, one
+with a volume, for the upgrade to carry through.
 
-1. Converge the suite, then `terraform output jumphost`.
-2. Set `"release": "zed"` in `test/integration/data_bags/openstack/multinode.json`
-   and upload it: `CHEF_SERVER="$(terraform output -raw chef_zero)" knife data bag from file openstack test/integration/data_bags/openstack/multinode.json -c test/chef-config/knife.rb`.
-3. `cinc-client` on controller1, controller2 and compute to stage zed.
-4. On the jumphost, as root: `openstack-upgrade multinode status`, then each
-   phase in order, timing them.
-5. Rehearse a rollback after `controller`. To run the window again, set
-   `"release": "zed"` again, upload it, converge the three nodes to restage,
+`test/multinode-rehearse.sh` runs these steps from the cookbook root; it
+connects as `almalinux` with its own known_hosts under `.kitchen/`, reset after
+every apply, since rebuilt VMs reuse addresses.
+
+1. Converge the suite with the bag's `release` left at the old one, or every
+   node builds the new release:
+
+   ```bash
+   export TF_VAR_computes=3
+   KITCHEN_YAML=kitchen.multi-node.yml kitchen converge multi-node
+   ```
+
+2. Stage zed: write `"release": "zed"` into
+   `test/integration/data_bags/openstack/multinode.json` and upload it, then run
+   `cinc-client` on controller1, then controller2, then every compute in
+   parallel. The release stays in the fixture so every later upload (each
+   converge, or `rake knife_upload`) keeps it; a bag without it means yoga, and
+   a node already on zed then refuses to converge. Leave it uncommitted;
+   `stage yoga` takes it out:
+
+   ```bash
+   test/multinode-rehearse.sh stage zed
+   ```
+
+3. Open a root tmux session on the jumphost and run the window there (add
+   `-y` to `upgrade` to skip the pauses):
+
+   ```bash
+   test/multinode-rehearse.sh jumphost
+   openstack-upgrade multinode status
+   openstack-upgrade multinode precheck
+   openstack-upgrade multinode upgrade
+   ```
+
+4. Check that every `upgrade-vm-*` VM is ACTIVE and its volume in-use:
+
+   ```bash
+   test/multinode-rehearse.sh vms
+   ```
+
+5. Rehearse a rollback after `controller`: follow
+   `openstack-upgrade --help-rollback`, setting the release back with
+   `test/multinode-rehearse.sh stage yoga` where it says to revert the bag. To
+   run the window again, run `test/multinode-rehearse.sh stage zed` to restage
    and start over at `precheck`.
 
-The suite has one compute, so it can't test a live migration between a yoga
-and a zed hypervisor.
+At the canary pause, `compute` is on zed and the others are on yoga, so a live
+migration between two releases can be tested there when they share a CPU model.
 
 ## Adding the next release
 

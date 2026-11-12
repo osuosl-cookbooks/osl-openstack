@@ -20,6 +20,9 @@
 # The jumphost side of a release upgrade window; see docs/RELEASE_UPGRADES.md
 directory '/etc/openstack-upgrade'
 
+# docs/RELEASE_UPGRADES.md runs the window inside tmux
+package 'tmux'
+
 # Phase markers, so a window resumes after a dropped ssh session
 directory '/var/lib/openstack-upgrade' do
   mode '0700'

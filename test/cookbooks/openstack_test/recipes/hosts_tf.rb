@@ -20,7 +20,10 @@ end
 
 # The bare alias makes `hostname --fqdn`, and so node['fqdn'], the .testing.osuosl.org
 # name; compile_time puts these lines in before the ohai reload below
-{ '10.1.2.3' => 'controller1', '10.1.2.13' => 'controller2', '10.1.2.4' => 'compute' }.each do |ip, host|
+{
+  '10.1.2.3' => 'controller1', '10.1.2.13' => 'controller2',
+  '10.1.2.4' => 'compute', '10.1.2.14' => 'compute2', '10.1.2.15' => 'compute3'
+}.each do |ip, host|
   append_if_no_line ip do
     path '/etc/hosts'
     line "#{ip} #{host}.testing.osuosl.org #{host}"
@@ -59,7 +62,7 @@ end
 
 # Cloud-init's `127.0.0.1 <host>.novalocal` line wins `hostname --fqdn`; drop it and reload ohai
 # at compile time, before the ha block keys keepalived and the upgrade runner by node['fqdn']
-if %w(controller1 controller2 compute).include?(node['hostname'])
+if %w(controller1 controller2 compute compute2 compute3).include?(node['hostname'])
   ohai 'hostname after .novalocal cleanup' do
     plugin 'hostname'
     action :nothing

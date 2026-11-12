@@ -9,7 +9,7 @@ backup_ceph_pool = <%= @backup_ceph_pool %>
 backup_ceph_stripe_count = 0
 backup_ceph_stripe_unit = 0
 backup_ceph_user = <%= @backup_ceph_user %>
-backup_driver = cinder.backup.drivers.ceph
+backup_driver = cinder.backup.drivers.ceph.CephBackupDriver
 <% if @cluster -%>
 cluster = <%= @cluster %>
 <% end -%>
