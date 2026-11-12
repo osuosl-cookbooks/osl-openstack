@@ -64,6 +64,17 @@ control 'haproxy' do
     its('content') { should match(/tcp-request connection track-sc0 src if !throttle_exempt/) }
     its('content') { should match(/tcp-request connection reject if \{ sc0_conn_rate gt 50 \}/) }
   end
+
+  # glance-api alone outlasts the 1m defaults; sections end at a blank line
+  cfg = file('/etc/haproxy/haproxy.cfg').content.to_s
+  glance = cfg[/^listen glance-api\n.*?(?=\n\n|\z)/m].to_s
+  describe glance do
+    it { should match(/^\s*timeout client 5m$/) }
+    it { should match(/^\s*timeout server 5m$/) }
+  end
+  describe cfg.scan(/timeout (?:client|server) 5m/).size do
+    it { should eq 2 }
+  end
 end
 
 control 'haproxy-cert-bundle' do

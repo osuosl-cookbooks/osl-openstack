@@ -167,7 +167,11 @@ openstack_ha_services.each do |svc|
         'set-header X-Forwarded-Proto https if { ssl_fc }',
         'set-header X-Forwarded-Proto http if !{ ssl_fc }',
       ] if svc[:tls]
-      extra_options(throttle_opts.merge('balance' => svc[:balance] || 'roundrobin'))
+      opts = throttle_opts.merge('balance' => svc[:balance] || 'roundrobin')
+      # glance-api answers an image delete only after RBD removes it, which
+      # can outlast the 1m defaults; haproxy would cut the client off first.
+      opts['timeout'] = ["client #{svc[:timeout]}", "server #{svc[:timeout]}"] if svc[:timeout]
+      extra_options(opts)
       server servers
     end
   end
