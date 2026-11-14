@@ -65,6 +65,25 @@ The compute recipe picks the KVM-capable kernel from the CPU:
 first converge on a new host installs the KVM kernel and the module loads
 after the reboot.
 
+## Compute libvirt daemon
+
+Computes run the monolithic `libvirtd`, socket-activated, with live migration
+on `libvirtd-tcp.socket` (16509). libvirt's package presets enable the modular
+daemons (`virtqemud`, `virtproxyd`, `virtnetworkd` and five more) instead, and
+each of their sockets conflicts with `libvirtd.socket`. Left enabled, they can
+win that conflict at boot, so `libvirtd-tcp.socket` fails and migrations to the
+host are refused. The compute recipe masks all of them. Their sockets are
+disabled first; the services are only masked, since disabling `virtqemud.service`
+also disables the `virtlogd` and `virtlockd` sockets through its `Also=` line.
+
+systemd won't start a socket while its service runs. When `libvirtd` is running
+with one of its four sockets down, the recipe stops `libvirtd` first, which also
+stops `openstack-nova-compute` (`Requires=libvirtd.service`), then starts the
+sockets and both services again. Guests keep running: `libvirtd` uses
+`KillMode=process`. Don't run `systemctl preset` on these units, and never
+unmask `virtqemud.service` without disabling it, which would bring the conflict
+back at the next boot.
+
 ## WSGI services
 
 The API services run as uWSGI systemd units shipped by their RPMs. The cookbook

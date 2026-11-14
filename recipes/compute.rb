@@ -59,12 +59,37 @@ link "/usr/bin/qemu-system-#{node['kernel']['machine']}" do
   to '/usr/libexec/qemu-kvm'
 end
 
+# The package presets enable the modular daemons, whose sockets conflict with libvirtd.socket at boot.
+# Services are masked without a disable: virtqemud's Also= would take virtlogd's sockets with it.
+openstack_libvirt_modular_units.each do |u|
+  service u do
+    action u.end_with?('.socket') ? %i(stop disable mask) : %i(stop mask)
+  end
+end
+
+%w(virtlogd.socket virtlogd-admin.socket virtlockd.socket virtlockd-admin.socket).each do |sock|
+  service sock do
+    action :enable
+  end
+end
+
+# A libvirtd socket can't start while libvirtd runs; the delayed starts bring both back even if the run fails
+service 'stop libvirtd for its sockets' do
+  service_name 'libvirtd'
+  action :stop
+  only_if { openstack_libvirtd_socket_down? }
+  notifies :start, 'service[libvirtd]', :delayed
+  notifies :start, 'service[openstack-nova-compute]', :delayed
+end
+
 cookbook_file '/etc/libvirt/libvirtd.conf' do
   notifies :restart, 'service[libvirtd]'
 end
 
-service 'libvirtd-tcp.socket' do
-  action [:enable, :start]
+openstack_libvirtd_sockets.each do |sock|
+  service sock do
+    action [:enable, :start]
+  end
 end
 
 service 'libvirtd' do
