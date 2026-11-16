@@ -202,6 +202,43 @@ describe OSLOpenstack::Cookbook::Helpers do
     end
   end
 
+  describe '#openstack_libvirt_modular_units' do
+    it 'lists the eight modular daemons, their sockets and virtproxyd\'s TCP and TLS sockets' do
+      units = helper.openstack_libvirt_modular_units
+      expect(units.size).to eq(34)
+      expect(units.count { |u| u.end_with?('.service') }).to eq(8)
+      expect(units).to include('virtqemud.service', 'virtqemud-admin.socket', 'virtnetworkd-ro.socket',
+                               'virtproxyd-tcp.socket', 'virtproxyd-tls.socket')
+      expect(units.grep(/^libvirtd|^virtlogd|^virtlockd/)).to be_empty
+    end
+  end
+
+  describe '#openstack_libvirtd_socket_down?' do
+    def stub_states(*states)
+      allow(helper).to receive(:shell_out)
+        .with('systemctl', 'is-active', 'libvirtd.service', 'libvirtd.socket', 'libvirtd-ro.socket',
+              'libvirtd-admin.socket', 'libvirtd-tcp.socket')
+        .and_return(double(stdout: states.join("\n") + "\n"))
+    end
+
+    it 'is false when libvirtd and all four sockets are active' do
+      stub_states(*%w(active) * 5)
+      expect(helper.openstack_libvirtd_socket_down?).to be false
+    end
+
+    it 'is true when libvirtd runs without one of its sockets' do
+      stub_states('active', 'active', 'inactive', 'active', 'active')
+      expect(helper.openstack_libvirtd_socket_down?).to be true
+      stub_states('active', 'active', 'active', 'active', 'failed')
+      expect(helper.openstack_libvirtd_socket_down?).to be true
+    end
+
+    it 'is false when libvirtd is not running' do
+      stub_states(*%w(inactive) * 5)
+      expect(helper.openstack_libvirtd_socket_down?).to be false
+    end
+  end
+
   describe '#openstack_rabbitmq_policy?' do
     def stub_list_policies(stdout)
       allow(helper).to receive(:shell_out!)

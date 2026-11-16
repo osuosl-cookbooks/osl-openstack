@@ -12,9 +12,30 @@ control 'compute' do
     its('shell') { should cmp '/bin/sh' }
   end
 
-  describe service 'libvirtd-tcp.socket' do
+  %w(libvirtd.socket libvirtd-ro.socket libvirtd-admin.socket libvirtd-tcp.socket).each do |s|
+    describe service s do
+      it { should be_enabled }
+      it { should be_running }
+    end
+  end
+
+  # 'dependency' here is the boot failure that refused live migrations on 16509 (oprod6, Nov 3)
+  describe command('systemctl show -p Result --value libvirtd-tcp.socket') do
+    its('stdout.strip') { should eq 'success' }
+  end
+
+  # is-enabled exits 1 for a masked unit, so only stdout is checked
+  modular = %w(qemu interface network nodedev nwfilter secret storage proxy).flat_map do |drv|
+    %W(virt#{drv}d.service virt#{drv}d.socket virt#{drv}d-ro.socket virt#{drv}d-admin.socket)
+  end
+  (modular + %w(virtproxyd-tcp.socket virtproxyd-tls.socket)).each do |u|
+    describe command("systemctl is-enabled #{u}") do
+      its('stdout.strip') { should eq 'masked' }
+    end
+  end
+
+  describe service 'virtlogd.socket' do
     it { should be_enabled }
-    it { should be_running }
   end
 
   describe service 'libvirtd' do
