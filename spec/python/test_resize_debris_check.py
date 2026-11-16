@@ -954,7 +954,7 @@ class CrossStorageTest(Base):
         self.conn.compute.servers.return_value = [vm(U1, 'l1', 'guest')]
         rdc.check_cross_storage(self.ctx, self.rep)
         t = self.text()
-        self.assertIn(f'FINDING: resize 6103 (c1/ceph -> l1/local, 2026-11-04 14:41:00) of {U1} '
+        self.assertIn(f'REVIEW: resize 6103 (c1/ceph -> l1/local, 2026-11-04 14:41:00) of {U1} '
                       f'crossed to local storage; the old root is still vms/{U1}_disk', t)
         self.assertIn(f'fix> rbd --id cinder -p vms info {U1}_disk', t)
         self.assertIn(f'fix> rbd --id cinder snap create vms/{U1}_disk@<TICKET>-preserve && '
@@ -962,7 +962,9 @@ class CrossStorageTest(Base):
         self.assertNotIn('rbd rm', t)
         # 9c does not report the same image twice
         self.assertEqual(t.count(f'snap create vms/{U1}_disk@'), 1)
-        self.assertEqual(self.rep.findings, 2)  # the move, plus U2's orphan image
+        # lasting state: reviewed, never counted as findings
+        self.assertEqual(self.rep.reviews, 2)  # the move, plus U2's orphan image
+        self.assertEqual(self.rep.findings, 0)
 
     def test_round_trip_back_to_ceph_is_a_note(self):
         # ceph -> local -> ceph: the image in the pool is the live root again
@@ -976,8 +978,10 @@ class CrossStorageTest(Base):
                       f'to local storage but the instance is on c2 now; vms/{U1}_disk is its '
                       'current root', t)
         self.assertNotIn('FINDING', t)
+        self.assertNotIn('REVIEW', t)
         self.assertNotIn('snap create', t)
         self.assertEqual(self.rep.findings, 0)
+        self.assertEqual(self.rep.reviews, 0)
 
     def test_instance_now_outside_the_aggregates_is_a_note(self):
         self.move(U1, 'c1', 'l1', host='new-host')
@@ -1033,7 +1037,8 @@ class CrossStorageTest(Base):
         rdc.check_cross_storage(self.ctx, self.rep)
         self.assertEqual(self.text().count('volume-backed, so nothing was lost'), 2)
         # 9c still lists their images, since nothing marked them as reported
-        self.assertEqual(self.rep.findings, 2)
+        self.assertEqual(self.rep.reviews, 2)
+        self.assertEqual(self.rep.findings, 0)
 
     def test_same_type_and_unclassified_moves(self):
         self.move(U1, 'c1', 'c2')
@@ -1052,7 +1057,7 @@ class CrossStorageTest(Base):
         self.conn.compute.servers.return_value = [vm(U1, 'l1')]
         rdc.check_cross_storage(self.ctx, self.rep)
         self.assertIn('9a skipped: no DB access', self.text())
-        self.assertIn(f'FINDING: vms/{U1}_disk is the old root of vm ({U1}), now on local storage '
+        self.assertIn(f'REVIEW: vms/{U1}_disk is the old root of vm ({U1}), now on local storage '
                       'at l1; it can be restored', self.text())
         self.db.query.assert_not_called()
 
@@ -1080,12 +1085,13 @@ class CrossStorageTest(Base):
         self.conn.compute.servers.return_value = [vm(U2, 'c1'), vm(U3, 'l1', 'moved')]
         rdc.check_cross_storage(self.ctx, self.rep)
         t = self.text()
-        self.assertIn(f'FINDING: vms/{U1}_disk has no instance: an orphan image', t)
-        self.assertIn(f'FINDING: vms/{U3}_disk is the old root of moved ({U3}), now on local '
+        self.assertIn(f'REVIEW: vms/{U1}_disk has no instance: an orphan image', t)
+        self.assertIn(f'REVIEW: vms/{U3}_disk is the old root of moved ({U3}), now on local '
                       'storage at l1; it can be restored', t)
-        self.assertNotIn(f'FINDING: vms/{U2}', t)
+        self.assertNotIn(f'REVIEW: vms/{U2}', t)
         self.assertNotIn('not-an-instance', t)
-        self.assertEqual(self.rep.findings, 2)
+        self.assertEqual(self.rep.reviews, 2)
+        self.assertEqual(self.rep.findings, 0)
         self.assertEqual(t.count('fix> rbd --id cinder -p vms info'), 2)
 
     def test_flavors_without_the_storage_spec(self):
@@ -1158,13 +1164,29 @@ class MainTest(Base):
         self.assertIn('skipped: no aggregate carries a storage_type or local_storage key', out)
         self.assertIn('No resize/migration debris found.', out)
 
-    def test_a_leftover_image_reaches_the_exit_code(self):
+    def test_a_leftover_image_does_not_reach_the_exit_code(self):
+        # lasting state must not block a -x gate such as the upgrade precheck
         self.which.return_value = '/usr/bin/rbd'
         self.run.return_value = (0, f'{U1}_disk 20 GiB 2\n')
         self.conn.compute.aggregates.return_value = CrossStorageTest.X86
         rc, out = self.run_main('-x')
+        self.assertEqual(rc, 0)
+        self.assertIn(f'REVIEW: vms/{U1}_disk has no instance: an orphan image', out)
+        self.assertNotIn('FINDING', out)
+        self.assertIn('No resize/migration debris found.', out)
+        self.assertIn('1 item(s) to review in section 9; they do not affect --exit-code.', out)
+
+    def test_an_unconfirmed_crossing_still_reaches_the_exit_code(self):
+        self.conn.compute.aggregates.return_value = CrossStorageTest.X86
+        self.db.query.side_effect = lambda sql, params=(): (
+            [(1, U1, 'resize', 'finished', 'c1', 'l1', '2026-11-04 14:41:00', 'l1')]
+            if "m.status IN ('finished', 'confirmed')" in sql
+            else [(U1, 'image-uuid')] if 'SELECT uuid, image_ref FROM instances' in sql else [])
+        rc, out = self.run_main('-x')
         self.assertEqual(rc, 2)
-        self.assertIn(f'FINDING: vms/{U1}_disk has no instance: an orphan image', out)
+        self.assertIn(f'FINDING: resize 1 (c1/ceph -> l1/local, 2026-11-04 14:41:00) of {U1} '
+                      'crossed storage types and is still in VERIFY_RESIZE', out)
+        self.assertNotIn('to review in section 9', out)
 
     def test_findings_and_exit_code_flag(self):
         self.db.query.side_effect = lambda sql, params=(): (
@@ -1173,6 +1195,7 @@ class MainTest(Base):
         self.assertEqual(rc, 0)
         self.assertIn('1 finding(s) above. Also run on each hypervisor:', out)
         self.assertIn('ls -d /var/lib/nova/instances/*_resize', out)
+        self.assertNotIn('to review in section 9', out)
         rc, _ = self.run_main('-x')
         self.assertEqual(rc, 2)
 

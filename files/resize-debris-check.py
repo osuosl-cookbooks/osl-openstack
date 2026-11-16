@@ -12,7 +12,9 @@ and migrations (the c24a44da incident taxonomy):
   8. cinder volumes carrying more than one attachment
   9. moves that crossed Ceph and local storage (the root disk is left behind),
      flavor/host storage mismatches, leftover <uuid>_disk images, flavors
-     without a storage spec; advisory only
+     without a storage spec; advisory only. Its lasting state prints as
+     REVIEW lines that never count toward --exit-code; only a crossing still
+     in VERIFY_RESIZE is a finding
 
 Reports findings with suggested fix commands and changes nothing by default.
 --dry-run previews the fixes it could apply, --fix applies them. Only pure
@@ -84,7 +86,8 @@ def parse_args(argv=None):
     ap.add_argument('--error-days', type=int, default=int(env('ERROR_DAYS', 7)),
                     help='how far back to surface errored migrations (default 7)')
     ap.add_argument('-x', '--exit-code', action='store_true',
-                    help='exit 2 on findings, 3 when the nova DB checks could not run (for cron/NRPE)')
+                    help='exit 2 on findings (section 9 REVIEW lines excluded), 3 when the '
+                         'nova DB checks could not run (for cron/NRPE)')
     ap.add_argument('-n', '--dry-run', action='store_true',
                     help='show exactly what --fix would do, without doing it')
     ap.add_argument('--fix', action='store_true',
@@ -143,6 +146,7 @@ class Report:
 
     def __init__(self, out=None):
         self.findings = 0
+        self.reviews = 0
         self.fixes = 0
         self.fix_failures = 0
         self.out = out or sys.stdout
@@ -153,6 +157,11 @@ class Report:
     def finding(self, msg):
         self.findings += 1
         print(f'FINDING: {msg}', file=self.out)
+
+    def review(self, msg):
+        # lasting state an operator should look at; it never fails --exit-code
+        self.reviews += 1
+        print(f'REVIEW: {msg}', file=self.out)
 
     def suggest(self, cmd):
         print(f'  fix> {cmd}', file=self.out)
@@ -788,8 +797,8 @@ def check_crossed_moves(ctx, rep, hosts):
                 rep.note(f'note: {where} crossed to local storage; its old root is no '
                          'longer in the pool (recovered or cleaned up)')
             elif hosts.get(now_host) == 'local':
-                rep.finding(f'{where} crossed to local storage; the old root is still '
-                            f'{ctx.args.rbd_pool}/{uuid}_disk and can be restored')
+                rep.review(f'{where} crossed to local storage; the old root is still '
+                           f'{ctx.args.rbd_pool}/{uuid}_disk and can be restored')
                 for cmd in preserve_commands(ctx, uuid):
                     rep.suggest(cmd)
             elif hosts.get(now_host) == 'ceph':
@@ -843,10 +852,10 @@ def check_leftover_disks(ctx, rep, hosts, servers, reported):
         uuid = m[1]
         s = live.get(uuid)
         if s is None:
-            rep.finding(f'{ctx.args.rbd_pool}/{name} has no instance: an orphan image')
+            rep.review(f'{ctx.args.rbd_pool}/{name} has no instance: an orphan image')
         elif hosts.get(s.compute_host) == 'local':
-            rep.finding(f'{ctx.args.rbd_pool}/{name} is the old root of {s.name} ({uuid}), '
-                        f'now on local storage at {s.compute_host}; it can be restored')
+            rep.review(f'{ctx.args.rbd_pool}/{name} is the old root of {s.name} ({uuid}), '
+                       f'now on local storage at {s.compute_host}; it can be restored')
         else:
             continue
         for cmd in preserve_commands(ctx, uuid):
@@ -924,6 +933,8 @@ def main(argv=None):
     else:
         rep.note(f'{rep.findings} finding(s) above. Also run on each hypervisor:')
         rep.note('  ls -d /var/lib/nova/instances/*_resize   # leftover source dirs')
+    if rep.reviews:
+        rep.note(f'{rep.reviews} item(s) to review in section 9; they do not affect --exit-code.')
     if args.dry_run:
         rep.note('Dry run: nothing was changed. Re-run with --fix to apply.')
     elif args.fix:

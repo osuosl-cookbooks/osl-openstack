@@ -68,12 +68,16 @@ planned for after the Zed upgrade.
 sourced, reports:
 
 - resizes and cold migrations whose source and destination sit in different
-  storage aggregates (a finding while the old root is still in the pool,
-  or while the move is unconfirmed; a note otherwise);
+  storage aggregates (a finding while the move is unconfirmed, a `REVIEW`
+  line while the old root is still in the pool, a note otherwise);
 - live instances whose flavor spec disagrees with their host's aggregate;
 - `<uuid>_disk` images whose instance is gone, or now runs on local
-  storage;
+  storage (`REVIEW` lines);
 - flavors without the storage spec.
+
+`REVIEW` lines are lasting state for an operator to look at. Unlike
+findings, they never fail `--exit-code`, so they don't block the upgrade
+precheck.
 
 By hand:
 
