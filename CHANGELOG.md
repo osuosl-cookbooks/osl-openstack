@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+20.5.0 (2026-11-16)
+-------------------
+- Run the upgrade window with one command and fix what the rehearsal found
+
 20.4.2 (2026-11-16)
 -------------------
 - Keep computes on libvirtd across reboots
