@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+20.4.2 (2026-11-16)
+-------------------
+- Keep computes on libvirtd across reboots
+
 20.4.1 (2026-11-12)
 -------------------
 - Give the glance-api haproxy listener a 5m timeout
