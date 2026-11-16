@@ -49,7 +49,7 @@ same goes to `/etc/osl-openstack/release.json`.
 | `stop` | any | Removes the cinc cron, kills a cron run still in its splay sleep, waits (up to an hour) for a running converge by taking `/tmp/chef-client.lock`, then stops every unit the venv RPMs ship (and httpd on controllers) |
 | `install` | any | Saves the running release's repo as the disabled `OSL-openstack-rollback`, installs the staged release and records the dnf transaction |
 | `undo` | any | `dnf history undo` of that transaction, from `OSL-openstack-rollback` |
-| `precheck` | DB controller | nova-compute service versions >= 61 in every cell, yoga online migrations done, `/usr/local/sbin/nova-resize-debris-check --exit-code` clean, with its nova DB checks run, and no `*-status upgrade check` Failure |
+| `precheck` | DB controller | nova-compute service versions >= 61 in every cell, yoga online migrations done, `/usr/local/sbin/nova-resize-debris-check --exit-code` clean (section 9 `REVIEW` lines don't count), with its nova DB checks run, and no `*-status upgrade check` Failure |
 | `backup` | DB controller | `mysqldump` of every service database to `/var/lib/osl-openstack/upgrade-backup/<release>/` |
 | `restore` | DB controller | Prints, then with `--yes` runs, the restore of those dumps |
 | `check` | any | Every `*-status upgrade check`; fails on rc >= 2 |
@@ -115,11 +115,25 @@ has passed. It pauses three times:
 `-y` skips the pauses, which is for rehearsals. Without a terminal, and
 without `-y` or `--dry-run`, it refuses to start.
 
-Every run except `status` and `--dry-run` starts its own ssh-agent and loads
-root's key into it once, asking for the passphrase on the terminal, `-y`
-included. Keychain's 10-minute timeout on the login's agent then can't cut
-the window short; the agent ends with the run. `status` and `--dry-run` use
-the login's agent, so run `ssh-add` first if keychain has dropped the key.
+Inside a jh topic (`jh start <topic>`), a run uses the topic's agent once
+`ssh-add -T` proves it holds root's key (through `/root/.ssh/<key>.pub`), and
+asks for no passphrase, `-y` included. jh loads the keys for 12 hours, so on a
+window's morning empty the topic agent first, which makes `jh start` load them
+afresh:
+
+```bash
+SSH_AUTH_SOCK=/run/jh/<topic>/agent.sock ssh-add -D; jh start <topic>
+```
+
+If the keys still run out mid-run, the runner stops and says so; run
+`jh start <topic>` and rerun the same command to resume.
+
+Anywhere else, every run except `status` and `--dry-run` starts its own
+ssh-agent and loads root's key into it once, asking for the passphrase on the
+terminal, `-y` included. Keychain's 10-minute timeout on the login's agent
+then can't cut the window short; the agent ends with the run. `status` and
+`--dry-run` use the login's agent, so run `ssh-add` first if keychain has
+dropped the key.
 
 If a phase fails, it stops there:
 - up to `verify`, rerun `upgrade` to resume, or roll back

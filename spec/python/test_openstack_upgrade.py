@@ -463,6 +463,7 @@ class AgentTest(Base):
         self.patch_env = mock.patch.dict(os.environ, {'SSH_AUTH_SOCK': '/keychain/sock', 'SSH_AGENT_PID': '1'})
         self.patch_env.start()
         self.addCleanup(self.patch_env.stop)
+        os.environ.pop('JH_TOPIC', None)  # the shell running the tests may be in a topic
         self.procs = []
         self.ssh_add = mock.Mock(return_value=mock.Mock(returncode=0))
 
@@ -505,6 +506,86 @@ class AgentTest(Base):
         self.assertEqual(self.procs, [])
         self.assertEqual(os.environ['SSH_AUTH_SOCK'], '/keychain/sock')
         agent.stop()
+
+    def in_topic(self, sock='/run/jh/zed-upgrade/agent.sock', pub=True):
+        (self.keys / 'id_rsa').touch()
+        if pub:
+            (self.keys / 'id_rsa.pub').touch()
+        os.environ.update(JH_TOPIC='zed-upgrade', SSH_AUTH_SOCK=sock)
+
+    def test_reuses_the_jh_topic_agent_that_holds_roots_key(self):
+        self.in_topic()
+        agent = self.start()
+        self.assertEqual(agent.jh_topic, 'zed-upgrade')
+        self.assertEqual(self.procs, [])
+        self.assertEqual(self.ssh_add.call_args_list[0][0][0], ['ssh-add', '-T', str(self.keys / 'id_rsa.pub')])
+        self.assertEqual(len(self.ssh_add.call_args_list), 1)  # no passphrase prompt
+        self.assertEqual(os.environ['SSH_AUTH_SOCK'], '/run/jh/zed-upgrade/agent.sock')
+        agent.stop()
+        self.assertIsNone(agent.dir)
+
+    def test_keychain_in_a_topic_shell_gets_its_own_agent(self):
+        self.in_topic(sock='/root/.keychain/agent.sock')
+        agent = self.start()
+        self.assertIsNone(agent.jh_topic)
+        self.assertEqual(len(self.procs), 1)
+        self.assertNotIn(['ssh-add', '-T', str(self.keys / 'id_rsa.pub')],
+                         [c[0][0] for c in self.ssh_add.call_args_list])
+        agent.stop()
+
+    def test_topic_agent_without_roots_key_gets_its_own_agent(self):
+        # jh also loads id_rsa-unmanaged, so a non-empty agent proves nothing
+        self.in_topic()
+        self.ssh_add.side_effect = lambda argv, **kw: mock.Mock(returncode=1 if '-T' in argv else 0)
+        agent = self.start()
+        self.assertIsNone(agent.jh_topic)
+        self.assertEqual(len(self.procs), 1)
+        agent.stop()
+
+    def test_no_pub_file_gets_its_own_agent(self):
+        self.in_topic(pub=False)
+        agent = self.start()
+        self.assertIsNone(agent.jh_topic)
+        self.assertEqual(len(self.procs), 1)
+        agent.stop()
+
+
+class KeysExpiredTest(Base):
+    def ssh_255(self, runner, loaded=False, **kw):
+        with mock.patch.object(ou.subprocess, 'run', return_value=mock.Mock(returncode=255, stdout='', stderr='')), \
+                mock.patch.object(ou, 'root_key_loaded', return_value=loaded):
+            return runner.ssh('h1', 'openstack-node-upgrade', 'status', capture=True, **kw)
+
+    def test_a_reused_agent_that_lost_the_key_says_so(self):
+        runner = ou.Runner('ppc64')
+        runner.jh_topic = 'zed-upgrade'
+        with self.assertRaisesRegex(ou.KeysExpired, 'run jh start zed-upgrade in this tab, then rerun'):
+            self.ssh_255(runner)
+
+    def test_a_255_with_the_key_still_loaded_is_the_hosts(self):
+        runner = ou.Runner('ppc64')
+        runner.jh_topic = 'zed-upgrade'
+        with self.assertRaises(ou.RunnerError) as cm:
+            self.ssh_255(runner, loaded=True)
+        self.assertNotIsInstance(cm.exception, ou.KeysExpired)
+
+    def test_without_a_reused_agent_a_255_is_the_hosts(self):
+        with self.assertRaises(ou.RunnerError) as cm:
+            self.ssh_255(ou.Runner('ppc64'))
+        self.assertNotIsInstance(cm.exception, ou.KeysExpired)
+
+    def test_computes_batch_reraises_expired_keys(self):
+        runner = ou.Runner('ppc64')
+        runner.ssh = mock.Mock(side_effect=ou.KeysExpired('expired'))
+        runner.inv['canaries'] = []
+        with self.assertRaises(ou.KeysExpired):
+            runner.phase_computes('zed', {}, self.args())
+
+    def test_tolerant_statuses_do_not_skip_on_expired_keys(self):
+        runner = ou.Runner('ppc64')
+        runner.ssh = mock.Mock(side_effect=ou.KeysExpired('expired'))
+        with self.assertRaises(ou.KeysExpired):
+            runner.statuses(tolerant=True)
 
 
 class GateLogTest(Base):

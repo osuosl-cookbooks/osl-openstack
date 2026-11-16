@@ -69,6 +69,21 @@ class RunnerError(Exception):
     pass
 
 
+class KeysExpired(RunnerError):
+    """The reused jh topic agent dropped root's key; no host is at fault."""
+
+
+def root_key_loaded():
+    """True when the current agent can sign with one of SSH_KEYS (checked through its .pub)."""
+    for key in SSH_KEYS:
+        pub = key + '.pub'
+        if os.path.exists(pub) and subprocess.run(
+                ['ssh-add', '-T', pub], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL, check=False).returncode == 0:
+            return True
+    return False
+
+
 class Transcript:
     """One run's full output; a failed write warns once and stops, so the screen and ssh carry on."""
 
@@ -109,16 +124,25 @@ class Tee:
 
 
 class Agent:
-    """This run's own ssh-agent, so keychain's 10-minute key timeout can't stop a window midway."""
+    """The jh topic's agent when this shell is in one, else this run's own ssh-agent,
+    so keychain's 10-minute key timeout can't stop a window midway."""
 
     def __init__(self):
         self.proc = None
         self.dir = None
+        self.jh_topic = None
 
     def start(self):
         keys = [k for k in SSH_KEYS if os.path.exists(k)]
         if not keys:
             log.warning('no key at %s; ssh uses the agent this shell already has', ', '.join(SSH_KEYS))
+            return
+        topic = os.environ.get('JH_TOPIC')
+        # keychain's agent lists the same key, so only the topic's own socket counts
+        if topic and os.environ.get('SSH_AUTH_SOCK', '').endswith(f'/run/jh/{topic}/agent.sock') \
+                and root_key_loaded():
+            self.jh_topic = topic
+            log.info("using jh topic %s's agent, which holds root's key; no passphrase needed", topic)
             return
         self.dir = os.path.join(AGENT_DIR, f'agent-{os.getpid()}')
         os.makedirs(self.dir, mode=0o700, exist_ok=True)
@@ -175,6 +199,7 @@ class Runner:
         self.gating = None
         self.entered = False
         self.assume_done = set()
+        self.jh_topic = None  # set by main when the run reuses that topic's agent
         if not self.db:
             raise RunnerError(f'no DB controller in {path}; has every controller converged this release-switch cookbook?')
 
@@ -195,6 +220,10 @@ class Runner:
                 for line in proc.stdout:
                     line = line.rstrip('\n')
                     sys.stdout.write(f'{host}: {line}\n')
+        if proc.returncode == 255 and self.jh_topic and not root_key_loaded():
+            raise KeysExpired(f"{host}: ssh failed because jh topic {self.jh_topic}'s agent no longer "
+                              f'holds root\'s key (keys last 12 h after jh loaded them); run '
+                              f'jh start {self.jh_topic} in this tab, then rerun the same command to resume')
         if proc.returncode != 0:
             raise RunnerError(f'{host}: {" ".join(args)} exited {proc.returncode}')
         return proc.stdout if capture else ''
@@ -208,7 +237,7 @@ class Runner:
             try:
                 return host, json.loads(self.ssh(host, 'openstack-node-upgrade', 'status', capture=True))
             except RunnerError as e:
-                if not tolerant or host in self.controllers:
+                if not tolerant or host in self.controllers or isinstance(e, KeysExpired):
                     raise
                 log.warning('skipping %s: %s', host, e)
                 return host, None
@@ -268,7 +297,7 @@ class Runner:
     def require_terminal(self, args):
         if not args.yes and not self.dry_run and not sys.stdin.isatty():
             raise RunnerError('upgrade pauses for confirmation; run it in tmux, or pass -y '
-                              "(a root key with a passphrase needs the terminal even then)")
+                              "(outside a jh topic, a root key with a passphrase needs the terminal even then)")
 
     def run_upgrade(self, args):
         self.require_terminal(args)
@@ -403,6 +432,9 @@ class Runner:
         for i in range(0, len(rest), batch):
             with concurrent.futures.ThreadPoolExecutor(max_workers=batch) as pool:
                 futures = {h: pool.submit(one, h) for h in rest[i:i + batch]}
+            expired = [f.exception() for f in futures.values() if isinstance(f.exception(), KeysExpired)]
+            if expired:
+                raise expired[0]
             failed = [f'{h} ({f.exception()})' for h, f in futures.items() if f.exception()]
             if failed:
                 raise RunnerError(f'stopped after this batch failed: {", ".join(failed)}; fix them and rerun computes')
@@ -449,6 +481,8 @@ class Runner:
         for host in self.controllers + self.hypervisors:
             try:
                 self.ssh(host, 'cinc-client')
+            except KeysExpired:
+                raise
             except RunnerError as e:
                 log.error('%s', e)
                 failed.append(host)
@@ -492,6 +526,7 @@ def main():
             if args.phase == 'upgrade':
                 runner.require_terminal(args)
             agent.start()
+            runner.jh_topic = agent.jh_topic
         runner.run_phase(args.phase, args)
         return 0
     except KeyboardInterrupt:
@@ -500,6 +535,10 @@ def main():
         else:
             log.error('interrupted; rerun the same phase to resume')
         return 130
+    except KeysExpired as e:
+        # its message already says how to resume; the host hint would blame a healthy host
+        log.error('%s', e)
+        return 1
     except RunnerError as e:
         log.error('%s', e)
     except Exception:
