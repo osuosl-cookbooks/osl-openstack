@@ -85,6 +85,25 @@ sockets and both services again. Guests keep running: `libvirtd` uses
 unmask `virtqemud.service` without disabling it, which would bring the conflict
 back at the next boot.
 
+## Connection tracking
+
+Computes bridge guest traffic, and network controllers route it through the
+neutron L3 and DHCP agents, so both pass it through the host's conntrack table.
+`network_common`, which both include, sizes that table from the cloud's data
+bag item:
+
+| Key | Default | Sets |
+|---|---|---|
+| `compute.conntrack.max` | 2097152 | `net.netfilter.nf_conntrack_max` |
+| `compute.conntrack.tcp_timeout_established` | 86400 | `net.netfilter.nf_conntrack_tcp_timeout_established` |
+| `compute.conntrack.hashsize` | max / 4 | the `nf_conntrack` module's `hashsize`, at boot and live |
+
+A full table drops new connections, VRRP adverts included; on Nov 19 2026 that
+took the x86 API VIP down for about 40 minutes. The maximum is global, but the
+established timeout reaches only the host namespace: the `qrouter-*` and
+`qdhcp-*` namespaces keep the kernel's 5 days, and each namespace's count is
+checked against the maximum on its own.
+
 ## WSGI services
 
 The API services run as uWSGI systemd units shipped by their RPMs. The cookbook

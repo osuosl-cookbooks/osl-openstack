@@ -241,3 +241,26 @@ control 'network-db-sync' do
     end
   end
 end if controller
+
+# Computes and network controllers share the conntrack tuning from network_common
+control 'network-conntrack' do
+  describe kernel_module('nf_conntrack') do
+    it { should be_loaded }
+  end
+
+  describe file '/etc/modprobe.d/options_nf_conntrack.conf' do
+    its('content') { should cmp "options nf_conntrack hashsize=524288\n" }
+  end
+
+  describe kernel_parameter('net.netfilter.nf_conntrack_max') do
+    its('value') { should eq 2097152 }
+  end
+
+  describe kernel_parameter('net.netfilter.nf_conntrack_tcp_timeout_established') do
+    its('value') { should eq 86400 }
+  end
+
+  describe file '/sys/module/nf_conntrack/parameters/hashsize' do
+    its('content') { should cmp "524288\n" }
+  end
+end
