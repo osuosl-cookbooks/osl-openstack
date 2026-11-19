@@ -119,6 +119,20 @@ the VIP for 3 seconds and gave it back while the master never left MASTER, so
 the gateway kept the backup's MAC and IPv4 to the VIP failed until someone ran
 `arping` by hand. The refresh limits that to 10 seconds.
 
+## Controller metrics
+
+`osl-openstack::mon` gives controllers two cron jobs that write files for
+node_exporter's textfile collector in `/var/lib/node_exporter/`:
+
+| Job | Every | File | Metrics |
+|---|---|---|---|
+| `openstack-prometheus` | 10 minutes | `openstack.prom` | `openstack_instances`, `openstack_projects`, `openstack_start_time`, `openstack_completion_time`, read through the API |
+| `openstack-netns-conntrack` | minute | `openstack_netns_conntrack.prom` | `openstack_netns_conntrack_entries{netns}`, each `qrouter-*` and `qdhcp-*` namespace's conntrack count, and `openstack_netns_conntrack_last_success_timestamp_seconds` |
+
+The namespace counts don't depend on the API, so they keep coming when the API
+is down. node_exporter's own `node_nf_conntrack_entries` covers only the host
+namespace.
+
 ## WSGI services
 
 The API services run as uWSGI systemd units shipped by their RPMs. The cookbook

@@ -75,6 +75,16 @@ if node['osl-openstack']['node_type'] == 'controller'
     command '/usr/local/libexec/openstack-prometheus'
     minute '*/10'
   end
+
+  # Router and DHCP namespaces count against the conntrack max on their own, unseen
+  # by Nagios; kept apart from openstack-prometheus, which fails when the API does.
+  cookbook_file '/usr/local/libexec/openstack-netns-conntrack' do
+    mode '755'
+  end
+
+  cron 'openstack-netns-conntrack' do
+    command '/usr/local/libexec/openstack-netns-conntrack'
+  end
 end
 
 # Shared RabbitMQ messaging tier nodes.

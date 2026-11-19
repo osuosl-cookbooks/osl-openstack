@@ -93,6 +93,13 @@ describe 'osl-openstack::mon' do
             minute: '*/10'
           )
         end
+        it { is_expected.to create_cookbook_file('/usr/local/libexec/openstack-netns-conntrack').with(mode: '755') }
+        it do
+          is_expected.to create_cron('openstack-netns-conntrack').with(
+            command: '/usr/local/libexec/openstack-netns-conntrack',
+            minute: '*'
+          )
+        end
       end
       context 'HA controller' do
         cached(:chef_run) do
