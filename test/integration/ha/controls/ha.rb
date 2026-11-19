@@ -46,6 +46,20 @@ control 'vip' do
   end
 end
 
+control 'vip-probe' do
+  title 'haproxy answers the VIP probe: IPv4 from either node, IPv6 on the holder'
+  urls = ["http://#{vip_v4}:9184/"]
+  # The test net's fd00::/64 isn't in osl_only, so only the holder reaches the IPv6 probe
+  urls << "http://[#{vip_v6}]:9184/" if input('holds_vip')
+  urls.each do |url|
+    describe command("curl -s -m 10 -i #{url}") do
+      its('stdout') { should match(%r{^HTTP/1\.1 200}) }
+      its('stdout') { should match(%r{^content-type: text/plain; version=0\.0\.4\r?$}i) }
+      its('stdout') { should match(/^openstack_vip_up 1\r?$/) }
+    end
+  end
+end
+
 control 'haproxy' do
   describe service('haproxy') do
     it { should be_enabled }

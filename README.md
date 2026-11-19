@@ -119,6 +119,12 @@ the VIP for 3 seconds and gave it back while the master never left MASTER, so
 the gateway kept the backup's MAC and IPv4 to the VIP failed until someone ran
 `arping` by hand. The refresh limits that to 10 seconds.
 
+haproxy also answers a probe on each VIP address family at port 9184, with no
+backend: it returns `openstack_vip_up 1` from `/etc/haproxy/vip_probe.prom`.
+Prometheus on mon2 scrapes it per family from a routed network, so a VIP that
+stops answering on IPv4 or IPv6 alone still shows. The port is open to OSL's own
+ranges.
+
 ## Controller metrics
 
 `osl-openstack::mon` gives controllers two cron jobs that write files for
