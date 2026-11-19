@@ -52,6 +52,12 @@ describe 'osl-openstack::ha' do
         )
       end
 
+      it 'has the master re-announce both VIPs every 10 seconds' do
+        %w(openstack-ipv4 openstack-ipv6).each do |vrrp|
+          expect(chef_run).to create_keepalived_vrrp_instance(vrrp).with(garp_master_refresh: 10)
+        end
+      end
+
       it 'strips the CIDR and appends ssl crt to tls listeners' do
         # keystone binds carry `ssl crt`, so a missed CIDR strip would show as
         # '192.168.60.10/24:5000 ssl crt ...'

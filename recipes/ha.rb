@@ -42,6 +42,9 @@ end
     priority k['priority'][node['fqdn']]
     authentication auth_type: 'PASS', auth_pass: k['auth_pass']
     virtual_ipaddress [vip]
+    # A master never re-announces if it stays MASTER through a peer's brief
+    # takeover, so the gateway kept the peer's MAC on Nov 19 2026.
+    garp_master_refresh 10
     notifies :reload, 'service[keepalived]'
   end
 end

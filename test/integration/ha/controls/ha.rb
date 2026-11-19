@@ -11,6 +11,13 @@ control 'keepalived' do
   end
 end
 
+control 'keepalived-garp-refresh' do
+  title 'Both VIP instances re-announce from the master every 10 seconds'
+  describe command('grep -rh garp_master_refresh /etc/keepalived/') do
+    its('stdout') { should match(/\A(\s*garp_master_refresh 10\n){2}\z/) }
+  end
+end
+
 control 'ip_nonlocal_bind' do
   describe kernel_parameter('net.ipv4.ip_nonlocal_bind') do
     its('value') { should cmp 1 }

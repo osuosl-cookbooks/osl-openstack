@@ -104,6 +104,21 @@ established timeout reaches only the host namespace: the `qrouter-*` and
 `qdhcp-*` namespaces keep the kernel's 5 days, and each namespace's count is
 checked against the maximum on its own.
 
+## HA controllers
+
+A cloud whose data bag item has an `ha` block runs two controllers. keepalived
+holds the API VIP (one IPv4 and one IPv6 instance in a sync group), and haproxy
+on both controllers binds it and fronts the per-host Apache and uWSGI APIs. The
+`ha.keepalived.primary` controller starts as MASTER, and the one with the higher
+`ha.keepalived.priority` takes the VIP back after a failover.
+
+The master sends a gratuitous ARP and an unsolicited neighbour advert for the
+VIP every 10 seconds (`garp_master_refresh`). Without it, keepalived announces
+the VIP only when a controller becomes master. On Nov 19 2026 the backup held
+the VIP for 3 seconds and gave it back while the master never left MASTER, so
+the gateway kept the backup's MAC and IPv4 to the VIP failed until someone ran
+`arping` by hand. The refresh limits that to 10 seconds.
+
 ## WSGI services
 
 The API services run as uWSGI systemd units shipped by their RPMs. The cookbook
