@@ -14,4 +14,6 @@ node.default['prometheus-platform']['components']['prometheus']['config']['scrap
   }
 end
 
+# Production nodes get node_exporter and its textfile directory from base; the textfile scripts need it
+include_recipe 'osl-prometheus'
 include_recipe 'osl-prometheus::server'

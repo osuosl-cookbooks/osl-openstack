@@ -84,3 +84,24 @@ service 'neutron-linuxbridge-agent' do
   subscribes :restart, 'package[osuosl-openstack-neutron-agent]'
   action [:enable, :start]
 end
+
+# Computes bridge guest traffic and controllers route it, both through the
+# host conntrack table, so both get the same ceiling.
+kernel_module 'nf_conntrack' do
+  options ["hashsize=#{openstack_conntrack_hashsize}"]
+  action [:install, :load]
+end
+
+sysctl 'net.netfilter.nf_conntrack_max' do
+  value openstack_conntrack_max
+end
+
+sysctl 'net.netfilter.nf_conntrack_tcp_timeout_established' do
+  value openstack_conntrack_tcp_timeout_established
+end
+
+# Applies hashsize without a reboot. The modprobe option above already covers
+# boot, so no persist here.
+osl_sysfs_param '/sys/module/nf_conntrack/parameters/hashsize' do
+  value openstack_conntrack_hashsize
+end

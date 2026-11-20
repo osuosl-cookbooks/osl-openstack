@@ -42,6 +42,9 @@ end
     priority k['priority'][node['fqdn']]
     authentication auth_type: 'PASS', auth_pass: k['auth_pass']
     virtual_ipaddress [vip]
+    # A master never re-announces if it stays MASTER through a peer's brief
+    # takeover, so the gateway kept the peer's MAC on Nov 19 2026.
+    garp_master_refresh 10
     notifies :reload, 'service[keepalived]'
   end
 end
@@ -65,6 +68,13 @@ directory '/etc/haproxy/certs' do
   owner 'haproxy'
   group 'haproxy'
   mode '0700'
+end
+
+# Body of mon2's VIP probe. haproxy reads a `return ... file` while parsing its
+# config, so this must exist before the eager start below renders haproxy.cfg.
+file '/etc/haproxy/vip_probe.prom' do
+  content "openstack_vip_up 1\n"
+  notifies :reload, 'haproxy_service[haproxy]'
 end
 
 certificate_manage 'wildcard-haproxy' do
@@ -181,6 +191,18 @@ openstack_ha_services.each do |svc|
   end if vip6
 end
 
+# mon2 scrapes this on each VIP address family; haproxy answers it with no
+# backend, so it tests only the gateway, the VIP and haproxy.
+haproxy_listen 'vip_probe' do
+  bind "#{vip4}:9184"
+  mode 'http'
+  http_request ['return status 200 content-type "text/plain; version=0.0.4" file /etc/haproxy/vip_probe.prom']
+end
+
+haproxy_listen 'vip_probe' do
+  bind "[#{vip6}]:9184"
+end if vip6
+
 # Trust every controller's listen IP for mod_remoteip; identity.rb includes
 # the recipe after overriding the listen address.
 node.default['osl-apache']['mod_remoteip']['trusted_proxy'] =
@@ -229,5 +251,11 @@ end
 
 osl_firewall_port 'haproxy_stats' do
   ports [9000]
+  osl_only true
+end
+
+# OSL's own ranges, not the prometheus service's list, which has no IPv6 for mon2
+osl_firewall_port 'openstack_vip_probe' do
+  ports [9184]
   osl_only true
 end

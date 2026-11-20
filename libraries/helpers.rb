@@ -604,8 +604,8 @@ module OSLOpenstack
         end
       end
 
-      # Guest traffic is bridged through the host conntrack table, so 40+
-      # VMs per hypervisor outgrow the stock ceiling.
+      # Guest traffic crosses the host conntrack table on computes (bridged) and network
+      # controllers (routed); both outgrow the stock 262,144 ceiling.
       def openstack_conntrack_max
         safe_dig(os_secrets, 'compute', 'conntrack', 'max') || 2_097_152
       end

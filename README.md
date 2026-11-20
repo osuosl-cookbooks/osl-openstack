@@ -85,6 +85,60 @@ sockets and both services again. Guests keep running: `libvirtd` uses
 unmask `virtqemud.service` without disabling it, which would bring the conflict
 back at the next boot.
 
+## Connection tracking
+
+Computes bridge guest traffic, and network controllers route it through the
+neutron L3 and DHCP agents, so both pass it through the host's conntrack table.
+`network_common`, which both include, sizes that table from the cloud's data
+bag item:
+
+| Key | Default | Sets |
+|---|---|---|
+| `compute.conntrack.max` | 2097152 | `net.netfilter.nf_conntrack_max` |
+| `compute.conntrack.tcp_timeout_established` | 86400 | `net.netfilter.nf_conntrack_tcp_timeout_established` |
+| `compute.conntrack.hashsize` | max / 4 | the `nf_conntrack` module's `hashsize`, at boot and live |
+
+A full table drops new connections, VRRP adverts included; on Nov 19 2026 that
+took the x86 API VIP down for about 40 minutes. The maximum is global, but the
+established timeout reaches only the host namespace: the `qrouter-*` and
+`qdhcp-*` namespaces keep the kernel's 5 days, and each namespace's count is
+checked against the maximum on its own.
+
+## HA controllers
+
+A cloud whose data bag item has an `ha` block runs two controllers. keepalived
+holds the API VIP (one IPv4 and one IPv6 instance in a sync group), and haproxy
+on both controllers binds it and fronts the per-host Apache and uWSGI APIs. The
+`ha.keepalived.primary` controller starts as MASTER, and the one with the higher
+`ha.keepalived.priority` takes the VIP back after a failover.
+
+The master sends a gratuitous ARP and an unsolicited neighbour advert for the
+VIP every 10 seconds (`garp_master_refresh`). Without it, keepalived announces
+the VIP only when a controller becomes master. On Nov 19 2026 the backup held
+the VIP for 3 seconds and gave it back while the master never left MASTER, so
+the gateway kept the backup's MAC and IPv4 to the VIP failed until someone ran
+`arping` by hand. The refresh limits that to 10 seconds.
+
+haproxy also answers a probe on each VIP address family at port 9184, with no
+backend: it returns `openstack_vip_up 1` from `/etc/haproxy/vip_probe.prom`.
+Prometheus on mon2 scrapes it per family from a routed network, so a VIP that
+stops answering on IPv4 or IPv6 alone still shows. The port is open to OSL's own
+ranges.
+
+## Controller metrics
+
+`osl-openstack::mon` gives controllers two cron jobs that write files for
+node_exporter's textfile collector in `/var/lib/node_exporter/`:
+
+| Job | Every | File | Metrics |
+|---|---|---|---|
+| `openstack-prometheus` | 10 minutes | `openstack.prom` | `openstack_instances`, `openstack_projects`, `openstack_start_time`, `openstack_completion_time`, read through the API |
+| `openstack-netns-conntrack` | minute | `openstack_netns_conntrack.prom` | `openstack_netns_conntrack_entries{netns}`, each `qrouter-*` and `qdhcp-*` namespace's conntrack count, and `openstack_netns_conntrack_last_success_timestamp_seconds` |
+
+The namespace counts don't depend on the API, so they keep coming when the API
+is down. node_exporter's own `node_nf_conntrack_entries` covers only the host
+namespace.
+
 ## WSGI services
 
 The API services run as uWSGI systemd units shipped by their RPMs. The cookbook

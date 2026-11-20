@@ -11,6 +11,13 @@ control 'keepalived' do
   end
 end
 
+control 'keepalived-garp-refresh' do
+  title 'Both VIP instances re-announce from the master every 10 seconds'
+  describe command('grep -rh garp_master_refresh /etc/keepalived/') do
+    its('stdout') { should match(/\A(\s*garp_master_refresh 10\n){2}\z/) }
+  end
+end
+
 control 'ip_nonlocal_bind' do
   describe kernel_parameter('net.ipv4.ip_nonlocal_bind') do
     its('value') { should cmp 1 }
@@ -35,6 +42,20 @@ control 'vip' do
     end
     describe command("ip -6 addr show dev #{vrrp_iface}") do
       its('stdout') { should_not match(/#{Regexp.escape(vip_v6)}\b/) }
+    end
+  end
+end
+
+control 'vip-probe' do
+  title 'haproxy answers the VIP probe: IPv4 from either node, IPv6 on the holder'
+  urls = ["http://#{vip_v4}:9184/"]
+  # The test net's fd00::/64 isn't in osl_only, so only the holder reaches the IPv6 probe
+  urls << "http://[#{vip_v6}]:9184/" if input('holds_vip')
+  urls.each do |url|
+    describe command("curl -s -m 10 -i #{url}") do
+      its('stdout') { should match(%r{^HTTP/1\.1 200}) }
+      its('stdout') { should match(%r{^content-type: text/plain; version=0\.0\.4\r?$}i) }
+      its('stdout') { should match(/^openstack_vip_up 1\r?$/) }
     end
   end
 end

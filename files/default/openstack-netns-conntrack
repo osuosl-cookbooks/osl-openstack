@@ -1,0 +1,28 @@
+#!/bin/bash
+# Each network namespace's conntrack count for node_exporter's textfile collector.
+# Managed by Chef! Changes will be overwritten.
+# Full path: root's crontab PATH lacks /usr/sbin, the only place EL9 ships ip.
+IP=/usr/sbin/ip
+DIR=/var/lib/node_exporter
+PROM_FILE=$DIR/openstack_netns_conntrack.prom
+TMP="${PROM_FILE}.$$"
+
+[ -d "$DIR" ] || { echo "$DIR is missing; node_exporter's textfile collector isn't set up" >&2; exit 1; }
+# A failed list must not publish an empty file with a fresh timestamp
+namespaces=$($IP netns list) || { echo 'ip netns list failed' >&2; exit 1; }
+trap 'rm -f "$TMP"' EXIT
+{
+  echo '# HELP openstack_netns_conntrack_entries Conntrack entries in each network namespace'
+  echo '# TYPE openstack_netns_conntrack_entries gauge'
+  for ns in $(echo "$namespaces" | awk '{print $1}'); do
+    # A router deleted since the list fails here; skip it without cron mail
+    n=$($IP netns exec "$ns" cat /proc/sys/net/netfilter/nf_conntrack_count 2>/dev/null) || continue
+    [ -n "$n" ] || continue
+    echo "openstack_netns_conntrack_entries{netns=\"${ns}\"} ${n}"
+  done
+  echo '# HELP openstack_netns_conntrack_last_success_timestamp_seconds When this script last wrote the counts'
+  echo '# TYPE openstack_netns_conntrack_last_success_timestamp_seconds gauge'
+  echo "openstack_netns_conntrack_last_success_timestamp_seconds $(date +%s)"
+} > "$TMP"
+chmod 0644 "$TMP"
+mv "$TMP" "$PROM_FILE"

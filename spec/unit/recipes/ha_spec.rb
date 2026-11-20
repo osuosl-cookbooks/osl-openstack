@@ -52,6 +52,12 @@ describe 'osl-openstack::ha' do
         )
       end
 
+      it 'has the master re-announce both VIPs every 10 seconds' do
+        %w(openstack-ipv4 openstack-ipv6).each do |vrrp|
+          expect(chef_run).to create_keepalived_vrrp_instance(vrrp).with(garp_master_refresh: 10)
+        end
+      end
+
       it 'strips the CIDR and appends ssl crt to tls listeners' do
         # keystone binds carry `ssl crt`, so a missed CIDR strip would show as
         # '192.168.60.10/24:5000 ssl crt ...'
@@ -112,6 +118,31 @@ describe 'osl-openstack::ha' do
         expect(horizon_http.mode).to eq('http')
         expect(horizon_http.http_request).to include('redirect scheme https code 301')
         expect(horizon_http.server).to be_nil
+      end
+
+      it 'answers the VIP probe on both families from haproxy with no backend' do
+        probes = chef_run.find_resources(:haproxy_listen).select { |r| r.name == 'vip_probe' }
+        expect(probes.map(&:bind).flatten).to contain_exactly('192.168.60.10:9184', '[fc00::10]:9184')
+        expect(probes.first.mode).to eq('http')
+        expect(probes.first.http_request).to eq(
+          ['return status 200 content-type "text/plain; version=0.0.4" file /etc/haproxy/vip_probe.prom']
+        )
+        expect(probes.first.server).to be_nil
+        expect(probes.first.extra_options).to be_nil
+      end
+
+      it 'writes the probe body before the eager start renders haproxy.cfg' do
+        expect(chef_run).to create_file('/etc/haproxy/vip_probe.prom').with(content: "openstack_vip_up 1\n")
+        expect(chef_run.file('/etc/haproxy/vip_probe.prom')).to notify('haproxy_service[haproxy]').to(:reload)
+        # haproxy reads `return ... file` at config parse, so a later file fails the first start
+        names = chef_run.resource_collection.all_resources.map(&:to_s)
+        probe = names.index('file[/etc/haproxy/vip_probe.prom]')
+        eager = names.index('ruby_block[render haproxy.cfg + start haproxy before api calls]')
+        expect(probe).to be < eager
+      end
+
+      it 'opens the VIP probe port to OSL ranges' do
+        expect(chef_run).to accept_osl_firewall_port('openstack_vip_probe').with(ports: [9184], osl_only: true)
       end
 
       it 'rate-limits every listener per source IP with infra exempt' do
