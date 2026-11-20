@@ -4,6 +4,10 @@ CHANGELOG
 This file is used to list changes made in each version of the
 osl-openstack cookbook.
 
+20.6.0 (2026-11-20)
+-------------------
+- Size controller conntrack and re-announce the OpenStack API VIPs
+
 20.5.1 (2026-11-16)
 -------------------
 - Unblock the zed prechecks: section 9 review items and the jh agent
